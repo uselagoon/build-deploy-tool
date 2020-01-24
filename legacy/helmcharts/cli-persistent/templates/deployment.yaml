@@ -1,25 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nginx.fullname" . }}
+  name: {{ include "cli-persistent.fullname" . }}
   labels:
-    {{- include "nginx.labels" . | nindent 4 }}
+    {{- include "cli-persistent.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "nginx.selectorLabels" . | nindent 6 }}
+      {{- include "cli-persistent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nginx.selectorLabels" . | nindent 8 }}
+        {{- include "cli-persistent.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      priorityClassName: {{ include "cli-persistent.lagoon-priority" . }}
+      enableServiceLinks: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      volumes:
+        - name: lagoon-sshkey
+          secret:
+            defaultMode: 420
+            secretName: lagoon-sshkey
+        - name: {{ .Values.persistentStorageName }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistentStorageName }}
       containers:
         - name: {{ .Chart.Name }}
           securityContext:
@@ -29,23 +39,23 @@ spec:
           env:
             - name: CRONJOBS
               value: {{ .Values.cronjobs | quote }}
+            ## LAGOON_GIT_SHA is injected directly and not loaded via `lagoon-env` config
+            ## This will cause the cli-persistent.to redeploy on every deployment, even the files have not changed
             - name: LAGOON_GIT_SHA
               value: {{ .Values.gitSha | quote }}
+            - name: SERVICE_NAME
+              value: {{ .Release.Name | quote }}
           envFrom:
             - configMapRef:
                 name: lagoon-env
-          ports:
-            - name: http
-              containerPort: 8080
-              protocol: TCP
-          livenessProbe:
-            tcpSocket:
-              port: http
-          readinessProbe:
-            tcpSocket:
-              port: http
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /var/run/secrets/lagoon/sshkey/
+              name: lagoon-sshkey
+              readOnly: true
+            - name: {{ .Values.persistentStorageName }}
+              mountPath: {{ .Values.persistentStoragePath | quote }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

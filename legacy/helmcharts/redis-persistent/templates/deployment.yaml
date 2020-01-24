@@ -1,23 +1,27 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "nginx.fullname" . }}
+  name: {{ include "redis-persistent.fullname" . }}
   labels:
-    {{- include "nginx.labels" . | nindent 4 }}
+    {{- include "redis-persistent.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      {{- include "nginx.selectorLabels" . | nindent 6 }}
+      {{- include "redis-persistent.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "nginx.selectorLabels" . | nindent 8 }}
+        {{- include "redis-persistent.selectorLabels" . | nindent 8 }}
     spec:
     {{- with .Values.imagePullSecrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
     {{- end }}
+      volumes:
+        - name: {{ .Values.persistentStorage.name }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistentStorage.name }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -35,15 +39,22 @@ spec:
             - configMapRef:
                 name: lagoon-env
           ports:
-            - name: http
-              containerPort: 8080
+            - name: 6379-tcp
+              containerPort: 6379
               protocol: TCP
+          volumeMounts:
+            - name: {{ .Values.persistentStorage.name }}
+              mountPath: {{ .Values.persistentStorage.path | quote }}
           livenessProbe:
             tcpSocket:
-              port: http
+              port: 6379
+            initialDelaySeconds: 15
+            timeoutSeconds: 1
           readinessProbe:
             tcpSocket:
-              port: http
+              port: 6379
+            initialDelaySeconds: 120
+            periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
