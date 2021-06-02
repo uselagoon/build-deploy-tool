@@ -1,27 +1,21 @@
-# Default values for mongodb-single.
+# Default values for rabbitmq.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
 replicaCount: 1
 
 image: ""
+
 environmentType: production
 persistentStorage:
   size: 5Gi
-  path: "/data/db"
+  path: '/var/lib/rabbitmq'
 
 imagePullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
-
-serviceAccount:
-  # Specifies whether a service account should be created
-  create: true
-  # The name of the service account to use.
-  # If not set and create is true, a name is generated using the fullname template
-  name:
 
 podSecurityContext:
   fsGroup: 0
@@ -36,22 +30,7 @@ securityContext: {}
 
 service:
   type: ClusterIP
-  port: 27017
-
-ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: mongodb-single
-    # kubernetes.io/tls-acme: "true"
-  hosts:
-    - host: chart-example.local
-      paths: []
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
-
-annotations: {}
+  port: 5672
 
 resources:
   # limits:
@@ -68,8 +47,5 @@ tolerations: []
 affinity: {}
 
 inPodCronjobs: ""
-
-tls_acme: false
-routesAutogenerateInsecure: Allow
 
 configMapSha: ""
