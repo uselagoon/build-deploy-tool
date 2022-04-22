@@ -1,6 +1,10 @@
 package generator
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"reflect"
+	"strconv"
+)
 
 // RoutesV2 is the new routes definition
 type RoutesV2 struct {
@@ -54,6 +58,31 @@ type LagoonRoute struct {
 func (lr *LagoonRoute) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &lr.Name); err == nil {
 		return nil
+	}
+	if err := json.Unmarshal(data, &lr.Ingresses); err != nil {
+		// some things in .lagoon.yml can be defined as bool or string and lagoon builds don't care
+		// but types are more strict, so this unmarshaler attempts to change between the two types
+		// that can be bool or string
+		tmpMap := map[string]interface{}{}
+		json.Unmarshal(data, &tmpMap)
+		for k := range tmpMap {
+			if _, ok := tmpMap[k].(map[string]interface{})["tls-acme"]; ok {
+				if reflect.TypeOf(tmpMap[k].(map[string]interface{})["tls-acme"]).Kind() == reflect.Bool {
+					vBool := strconv.FormatBool(tmpMap[k].(map[string]interface{})["tls-acme"].(bool))
+					tmpMap[k].(map[string]interface{})["tls-acme"] = vBool
+				}
+			}
+			if _, ok := tmpMap[k].(map[string]interface{})["fastly"]; ok {
+				if reflect.TypeOf(tmpMap[k].(map[string]interface{})["fastly"].(map[string]interface{})["watch"]).Kind() == reflect.String {
+					vBool, err := strconv.ParseBool(tmpMap[k].(map[string]interface{})["fastly"].(map[string]interface{})["watch"].(string))
+					if err == nil {
+						tmpMap[k].(map[string]interface{})["fastly"].(map[string]interface{})["watch"] = vBool
+					}
+				}
+			}
+		}
+		newData, _ := json.Marshal(tmpMap)
+		return json.Unmarshal(newData, &lr.Ingresses)
 	}
 	return json.Unmarshal(data, &lr.Ingresses)
 }
