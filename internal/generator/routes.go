@@ -1,7 +1,7 @@
 package generator
 
 // GenerateRouteStructure generate the route structure for lagoon routes.
-func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRoute, activeStandby bool) {
+func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRoute, variables []LagoonEnvironmentVariable, activeStandby bool) {
 	for rName, lagoonRoutes := range routeMap {
 		for _, lagoonRoute := range lagoonRoutes {
 			newRoute := &RouteV2{}
@@ -39,6 +39,11 @@ func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRou
 				newRoute.Domain = lagoonRoute.Name
 				newRoute.Service = rName
 			}
+			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
+			if err != nil {
+			}
+			newRoute.Fastly = fConfig
+
 			genRoutes.Routes = append(genRoutes.Routes, *newRoute)
 		}
 	}

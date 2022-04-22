@@ -12,6 +12,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 	type args struct {
 		genRoutes     *RoutesV2
 		routeMap      map[string][]LagoonRoute
+		variables     []LagoonEnvironmentVariable
 		activeStandby bool
 	}
 	tests := []struct {
@@ -67,7 +68,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			GenerateRouteStructure(tt.args.genRoutes, tt.args.routeMap, tt.args.activeStandby)
+			GenerateRouteStructure(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.activeStandby)
 			if !cmp.Equal(tt.args.genRoutes, tt.want) {
 				stra, _ := json.Marshal(tt.args.genRoutes)
 				strb, _ := json.Marshal(tt.want)

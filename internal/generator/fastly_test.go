@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_generateFastlyAnnotations(t *testing.T) {
+func Test_GenerateFastlyConfiguration(t *testing.T) {
 	type args struct {
 		noCacheServiceID string
 		serviceID        string
@@ -13,9 +13,10 @@ func Test_generateFastlyAnnotations(t *testing.T) {
 		variables        []LagoonEnvironmentVariable
 	}
 	tests := []struct {
-		name string
-		args args
-		want Fastly
+		name    string
+		args    args
+		want    Fastly
+		wantErr bool
 	}{
 		{
 			name: "fastly",
@@ -79,7 +80,12 @@ func Test_generateFastlyAnnotations(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := generateFastlyAnnotations(tt.args.noCacheServiceID, tt.args.serviceID, tt.args.route, tt.args.variables); !reflect.DeepEqual(got, tt.want) {
+			got, err := GenerateFastlyConfiguration(tt.args.noCacheServiceID, tt.args.serviceID, tt.args.route, tt.args.variables)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateFastlyAnnotations() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("generateFastlyAnnotations() = %v, want %v", got, tt.want)
 			}
 		})

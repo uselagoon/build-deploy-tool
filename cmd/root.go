@@ -22,16 +22,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
-
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "routegen",
-	Short: "A brief description of your application",
-	Long:  `Long Description`,
-	// Uncomment the following line if your bare application
-	// has an action associated with it:
-	// Run: func(cmd *cobra.Command, args []string) {},
+	Use:   "lagoon-routegen",
+	Short: "A tool to help with generating Lagoon route/ingress resources for Lagoon builds",
+	Long: `A tool to help with generating Lagoon route/ingress resources for Lagoon builds
+This tool will read a .lagoon.yml file and also all the required environment variables from
+within a Lagoon build to help with generating the ingress resources`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -45,17 +42,9 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.cmd.yaml)")
-
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(routeGeneration)
+	rootCmd.AddCommand(fastlyConfigGeneration)
 }
 
 // initConfig reads in config file and ENV variables if set.

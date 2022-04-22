@@ -13,19 +13,16 @@ import (
 
 var lagoonYml, environmentName, projectName, activeEnvironment, standbyEnvironment, environmentType string
 var projectVariables, environmentVariables, monitoringStatusPageID, monitoringContact, lagoonRoutesJSON string
-var templatePath, yamlPath string
+var templatePath, yamlPath, lagoonFastlyCacheNoCahce, lagoonFastlyServiceID string
 var monitoringEnabled bool
 
 var routeGeneration = &cobra.Command{
-	Use:     "routegen",
+	Use:     "route-generation",
 	Aliases: []string{"r", "rg"},
-	Short:   "Generate routes",
+	Short:   "Generate the ingress templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		activeEnv := false
 		standbyEnv := false
-
-		projectVariables = getEnv("LAGOON_PROJECT_VARIABLES", projectVariables)
-		environmentVariables = getEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables)
 
 		monitoringContact = getEnv("MONITORING_ALERTCONTACT", monitoringContact)
 		monitoringStatusPageID = getEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID)
@@ -36,6 +33,9 @@ var routeGeneration = &cobra.Command{
 		activeEnvironment = getEnv("ACTIVE_ENVIRONMENT", activeEnvironment)
 		standbyEnvironment = getEnv("STANDBY_ENVIRONMENT", standbyEnvironment)
 		lagoonRoutesJSON = getEnv("LAGOON_ROUTES_JSON", lagoonRoutesJSON)
+
+		lagoonFastlyCacheNoCahce = getEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce)
+		lagoonFastlyServiceID = getEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID)
 
 		yamlPath = getEnv("YAML_FOLDER", yamlPath)
 
@@ -49,13 +49,16 @@ var routeGeneration = &cobra.Command{
 				standbyEnv = true
 			}
 		}
+		// get the project and environment variables
+		projectVariables = getEnv("LAGOON_PROJECT_VARIABLES", projectVariables)
+		environmentVariables = getEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables)
 
-		// merge the environment variables from the lagoon api
+		// unmarshal and then merge the two so there is only 1 set of variables to iterate over
 		projectVars := []generator.LagoonEnvironmentVariable{}
 		envVars := []generator.LagoonEnvironmentVariable{}
 		json.Unmarshal([]byte(projectVariables), &projectVars)
 		json.Unmarshal([]byte(environmentVariables), &envVars)
-		_ = generator.MergeVariables(projectVars, envVars)
+		lagoonEnvVars := generator.MergeVariables(projectVars, envVars)
 
 		// read the routes from the API
 		var apiRoutes generator.RoutesV2
@@ -86,26 +89,17 @@ var routeGeneration = &cobra.Command{
 		activeStanbyRoutes := &generator.RoutesV2{}
 		if activeEnv == true {
 			for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
-				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, true)
+				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
 			}
 		}
 		if standbyEnv == true {
 			for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
-				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, true)
+				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
 			}
 		}
 		lagoonValuesFile := generator.ReadValuesFile(fmt.Sprintf("%s/%s", templatePath, "values.yaml"))
+		// generate the templates for active/standby routes
 		for _, route := range activeStanbyRoutes.Routes {
-			// templateYAML, _ := generator.GenerateHelmTemplates(
-			// 	fmt.Sprintf("%s/custom-ingress", templatePath),
-			// 	fmt.Sprintf("%s/%s", templatePath, "values.yaml"),
-			// 	fmt.Sprintf("%s/%s-values.yaml", templatePath, route.Domain),
-			// 	route,
-			// 	monitoringContact,
-			// 	monitoringStatusPageID,
-			// 	monitoringEnabled,
-			// 	true,
-			// )
 			templateYAML := generator.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			generator.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", yamlPath, route.Domain), templateYAML)
 		}
@@ -121,28 +115,18 @@ var routeGeneration = &cobra.Command{
 				panic(fmt.Errorf("couldn't unmarshal %v: %v", strA, err))
 			}
 			for _, routeMap := range lYAMLPolysite.Environments[environmentName].Routes {
-				generator.GenerateRouteStructure(newRoutes, routeMap, false)
+				generator.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		} else {
 			// otherwise it just uses the default environment name
 			for _, routeMap := range lYAML.Environments[environmentName].Routes {
-				generator.GenerateRouteStructure(newRoutes, routeMap, false)
+				generator.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		}
 		// merge routes from the API on top of the routes from the `.lagoon.yml`
 		finalRoutes := generator.MergeRouteStructures(*newRoutes, apiRoutes)
-		// generate the helm templates
+		// generate the templates
 		for _, route := range finalRoutes.Routes {
-			// templateYAML, _ := generator.GenerateHelmTemplates(
-			// 	fmt.Sprintf("%s/helmcharts/custom-ingress", templatePath),
-			// 	fmt.Sprintf("%s/%s", templatePath, "values.yaml"),
-			// 	fmt.Sprintf("%s/%s-values.yaml", templatePath, route.Domain),
-			// 	route,
-			// 	monitoringContact,
-			// 	monitoringStatusPageID,
-			// 	monitoringEnabled,
-			// 	false,
-			// )
 			templateYAML := generator.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			generator.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", yamlPath, route.Domain), templateYAML)
 		}
