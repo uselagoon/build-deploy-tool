@@ -62,44 +62,58 @@ var routeGeneration = &cobra.Command{
 
 		// read the routes from the API
 		var apiRoutes generator.RoutesV2
-		rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonRoutesJSON)
-		rawJSON := []byte(rawJSONStr)
-		err := json.Unmarshal(rawJSON, &apiRoutes)
-		if err != nil {
-			return fmt.Errorf("couldn't unmarshal: %v", err)
+		if lagoonRoutesJSON != "" {
+			// if the routesJSON is populated, then attempt to decode and unmarshal it
+			rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonRoutesJSON)
+			rawJSON := []byte(rawJSONStr)
+			err := json.Unmarshal(rawJSON, &apiRoutes)
+			if err != nil {
+				return fmt.Errorf("couldn't unmarshal routes from Lagoon API, is it actually JSON that has been base64 encoded?: %v", err)
+			}
 		}
 
 		var lYAML generator.Lagoon
 		rawYAML, err := os.ReadFile(lagoonYml)
 		if err != nil {
-			panic(fmt.Errorf("couldn't read %v: %v", lagoonYml, err))
+			return fmt.Errorf("couldn't read %v: %v", lagoonYml, err)
 		}
 		err = yaml.Unmarshal(rawYAML, &lYAML)
 		if err != nil {
-			panic(fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err))
+			return fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err)
 		}
 		// because lagoonyaml is not really good yaml, unmarshal polysite into an unknown struct to check
 		lPolysite := make(map[string]interface{})
 		err = yaml.Unmarshal(rawYAML, &lPolysite)
 		if err != nil {
-			panic(fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err))
+			return fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err)
 		}
 
 		// handle the active/standby routes
 		activeStanbyRoutes := &generator.RoutesV2{}
-		if activeEnv == true {
-			for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
-				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+		if lYAML.ProductionRoutes != nil {
+			if activeEnv == true {
+				if lYAML.ProductionRoutes.Active != nil {
+					if lYAML.ProductionRoutes.Active.Routes != nil {
+						for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
+							generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+						}
+					}
+				}
 			}
-		}
-		if standbyEnv == true {
-			for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
-				generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+			if standbyEnv == true {
+				if lYAML.ProductionRoutes.Standby != nil {
+					if lYAML.ProductionRoutes.Standby.Routes != nil {
+						for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
+							generator.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+						}
+					}
+				}
 			}
 		}
 		lagoonValuesFile := generator.ReadValuesFile(fmt.Sprintf("%s/%s", templatePath, "values.yaml"))
 		// generate the templates for active/standby routes
 		for _, route := range activeStanbyRoutes.Routes {
+			fmt.Println(fmt.Sprintf("Generating Active/Standby Ingress manifest for %s", route.Domain))
 			templateYAML := generator.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			generator.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", yamlPath, route.Domain), templateYAML)
 		}
@@ -112,7 +126,7 @@ var routeGeneration = &cobra.Command{
 			var lYAMLPolysite generator.Lagoon
 			err = yaml.Unmarshal(strA, &lYAMLPolysite)
 			if err != nil {
-				panic(fmt.Errorf("couldn't unmarshal %v: %v", strA, err))
+				return fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
 			}
 			for _, routeMap := range lYAMLPolysite.Environments[environmentName].Routes {
 				generator.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
@@ -127,10 +141,10 @@ var routeGeneration = &cobra.Command{
 		finalRoutes := generator.MergeRouteStructures(*newRoutes, apiRoutes)
 		// generate the templates
 		for _, route := range finalRoutes.Routes {
+			fmt.Println(fmt.Sprintf("Generating Ingress manifest for %s", route.Domain))
 			templateYAML := generator.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			generator.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", yamlPath, route.Domain), templateYAML)
 		}
-
 		return nil
 	},
 }
