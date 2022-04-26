@@ -16,7 +16,7 @@ func TestMergeVariables(t *testing.T) {
 		want []EnvironmentVariable
 	}{
 		{
-			name: "string",
+			name: "test1",
 			args: args{
 				project: []EnvironmentVariable{
 					{
@@ -73,7 +73,7 @@ func TestGetLagoonVariable(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "get variable",
+			name: "test1",
 			args: args{
 				name: "LAGOON_FASTLY_SERVICE_ID",
 				variables: []EnvironmentVariable{
@@ -97,7 +97,7 @@ func TestGetLagoonVariable(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "get variable",
+			name: "test2",
 			args: args{
 				name: "NON_EXISTENT_VARIABLE",
 				variables: []EnvironmentVariable{

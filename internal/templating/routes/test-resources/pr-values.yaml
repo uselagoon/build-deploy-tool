@@ -10,4 +10,6 @@ kubernetes: lagoon.local
 routesAutogenerateInsecure: "true"
 routesAutogenerateEnabled: "true"
 routesAutogeneratePrefixHyphens: "false"
-branch: environment-with-really-really-reall-3fdb
+prNumber: 1234
+prBaseBranch: main
+prHeadBranch: main

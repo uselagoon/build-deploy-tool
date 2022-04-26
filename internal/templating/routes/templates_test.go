@@ -25,7 +25,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 		want string
 	}{
 		{
-			name: "test1",
+			name: "active-standby1",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
@@ -112,7 +112,7 @@ status:
 `,
 		},
 		{
-			name: "test2",
+			name: "custom-ingress1",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
@@ -219,7 +219,7 @@ func TestReadValuesFile(t *testing.T) {
 		want lagoon.BuildValues
 	}{
 		{
-			name: "read values",
+			name: "branch-values",
 			args: args{
 				file: "test-resources/values.yaml",
 			},
@@ -232,6 +232,28 @@ func TestReadValuesFile(t *testing.T) {
 				LagoonVersion:                   "v2.x.x",
 				Kubernetes:                      "lagoon.local",
 				Branch:                          "environment-with-really-really-reall-3fdb",
+				RoutesAutogeneratePrefixes:      []string{"www"},
+				RoutesAutogenerateInsecure:      "true",
+				RoutesAutogenerateEnabled:       "true",
+				RoutesAutogeneratePrefixHyphens: "false",
+			},
+		},
+		{
+			name: "pullrequest-values",
+			args: args{
+				file: "test-resources/pr-values.yaml",
+			},
+			want: lagoon.BuildValues{
+				Project:                         "myexample-project",
+				Environment:                     "environment-with-really-really-reall-3fdb",
+				EnvironmentType:                 "development",
+				Namespace:                       "myexample-project-environment-with-really-really-reall-3fdb",
+				BuildType:                       "branch",
+				LagoonVersion:                   "v2.x.x",
+				Kubernetes:                      "lagoon.local",
+				PRNumber:                        "1234",
+				PRHeadBranch:                    "main",
+				PRBaseBranch:                    "main",
 				RoutesAutogeneratePrefixes:      []string{"www"},
 				RoutesAutogenerateInsecure:      "true",
 				RoutesAutogenerateEnabled:       "true",

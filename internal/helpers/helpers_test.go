@@ -14,7 +14,7 @@ func TestGetMD5HashWithNewLine(t *testing.T) {
 		want string
 	}{
 		{
-			name: "route hash",
+			name: "test1",
 			args: args{
 				text: "a-really-long-name-that-should-truncate.www.example.com",
 			},

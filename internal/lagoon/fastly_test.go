@@ -19,7 +19,7 @@ func TestGenerateFastlyConfiguration(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "fastly",
+			name: "test1",
 			args: args{
 				noCacheServiceID: "",
 				serviceID:        "",
@@ -38,7 +38,7 @@ func TestGenerateFastlyConfiguration(t *testing.T) {
 			},
 		},
 		{
-			name: "fastly2",
+			name: "test2",
 			args: args{
 				noCacheServiceID: "",
 				serviceID:        "",
@@ -58,7 +58,7 @@ func TestGenerateFastlyConfiguration(t *testing.T) {
 			},
 		},
 		{
-			name: "fastly2",
+			name: "test3",
 			args: args{
 				noCacheServiceID: "",
 				serviceID:        "",

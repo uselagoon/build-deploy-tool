@@ -22,7 +22,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		want *RoutesV2
 	}{
 		{
-			name: "generate routes",
+			name: "test1",
 			args: args{
 				genRoutes: &RoutesV2{},
 				routeMap: map[string][]Route{
@@ -90,7 +90,7 @@ func TestMergeRouteStructures(t *testing.T) {
 		want RoutesV2
 	}{
 		{
-			name: "generate routes",
+			name: "test1",
 			args: args{
 				genRoutes: RoutesV2{
 					Routes: []RouteV2{
