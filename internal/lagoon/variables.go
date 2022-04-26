@@ -4,6 +4,13 @@ import (
 	"fmt"
 )
 
+// EnvironmentVariable is used to define Lagoon environment variables.
+type EnvironmentVariable struct {
+	Name  string `json:"name"`
+	Value string `json:"value"`
+	Scope string `json:"scope"`
+}
+
 // MergeVariables merges lagoon environment variables.
 func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVariable {
 	allVars := []EnvironmentVariable{}

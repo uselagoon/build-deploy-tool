@@ -61,7 +61,7 @@ func TestMergeVariables(t *testing.T) {
 	}
 }
 
-func Test_getLagoonVariable(t *testing.T) {
+func TestGetLagoonVariable(t *testing.T) {
 	type args struct {
 		name      string
 		variables []EnvironmentVariable

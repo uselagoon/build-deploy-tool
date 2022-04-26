@@ -14,9 +14,10 @@ import (
 )
 
 var lagoonYml, environmentName, projectName, activeEnvironment, standbyEnvironment, environmentType string
+var buildType, lagoonVersion, branch, prNumber, prHeadBranch, prBaseBranch string
 var projectVariables, environmentVariables, monitoringStatusPageID, monitoringContact string
 var templateValues, savedTemplates, lagoonFastlyCacheNoCahce, lagoonFastlyServiceID string
-var monitoringEnabled bool
+var monitoringEnabled, checkValuesFile bool
 
 var routeGeneration = &cobra.Command{
 	Use:     "routes",
@@ -26,23 +27,42 @@ var routeGeneration = &cobra.Command{
 		activeEnv := false
 		standbyEnv := false
 
-		monitoringContact = helpers.GetEnv("MONITORING_ALERTCONTACT", monitoringContact)
-		monitoringStatusPageID = helpers.GetEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID)
+		// environment variables will override what is provided by flags
+		monitoringContact = helpers.GetEnv("MONITORING_ALERTCONTACT", monitoringContact, true)
+		monitoringStatusPageID = helpers.GetEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID, true)
+		projectName = helpers.GetEnv("PROJECT", projectName, true)
+		environmentName = helpers.GetEnv("BRANCH", environmentName, true)
+		environmentType = helpers.GetEnv("ENVIRONMENT_TYPE", environmentType, true)
+		activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment, true)
+		standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment, true)
+		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, true)
+		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID, true)
+		savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, true)
 
-		projectName = helpers.GetEnv("PROJECT", projectName)
-		environmentName = helpers.GetEnv("BRANCH", environmentName)
-		environmentType = helpers.GetEnv("ENVIRONMENT_TYPE", environmentType)
-		activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment)
-		standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment)
+		if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
+			return fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
+		}
+		switch buildType {
+		case "branch", "promote":
+			if branch == "" {
+				return fmt.Errorf("Missing arguments: branch not defined")
+			}
+		case "pullrequest":
+			if prNumber == "" || prHeadBranch == "" || prBaseBranch == "" {
+				return fmt.Errorf("Missing arguments: pullrequest-number, pullrequest-head-branch, or pullrequest-base-branch not defined")
+			}
+		}
 
-		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce)
-		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID)
+		// get the project and environment variables
+		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
+		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
 
-		savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates)
-
+		// by default, environment routes are not monitored
 		monitoringEnabled = false
 		if environmentType == "production" {
+			// if this is a production environment, monitoring IS enabled
 			monitoringEnabled = true
+			// check if the environment is active or standby
 			if environmentName == activeEnvironment {
 				activeEnv = true
 			}
@@ -50,9 +70,6 @@ var routeGeneration = &cobra.Command{
 				standbyEnv = true
 			}
 		}
-		// get the project and environment variables
-		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables)
-		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables)
 
 		// unmarshal and then merge the two so there is only 1 set of variables to iterate over
 		projectVars := []lagoon.EnvironmentVariable{}
@@ -74,10 +91,11 @@ var routeGeneration = &cobra.Command{
 			}
 		}
 
+		// read the .lagoon.yml file
 		var lYAML lagoon.YAML
 		rawYAML, err := os.ReadFile(lagoonYml)
 		if err != nil {
-			return fmt.Errorf("couldn't read %v: %v", lagoonYml, err)
+			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
 		}
 		err = yaml.Unmarshal(rawYAML, &lYAML)
 		if err != nil {
@@ -90,34 +108,26 @@ var routeGeneration = &cobra.Command{
 			return fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err)
 		}
 
-		// handle the active/standby routes
-		activeStanbyRoutes := &lagoon.RoutesV2{}
-		if lYAML.ProductionRoutes != nil {
-			if activeEnv == true {
-				if lYAML.ProductionRoutes.Active != nil {
-					if lYAML.ProductionRoutes.Active.Routes != nil {
-						for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
-							lagoon.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
-						}
-					}
-				}
+		// get or generate the values file for generating route templates
+		lagoonValues := lagoon.BuildValues{}
+		if checkValuesFile {
+			fmt.Println(fmt.Sprintf("Collecting values for templating from %s", fmt.Sprintf("%s/%s", templateValues, "values.yaml")))
+			lagoonValues = routeTemplater.ReadValuesFile(fmt.Sprintf("%s/%s", templateValues, "values.yaml"))
+		} else {
+			fmt.Println("Generating values from provided flags")
+			lagoonValues.Project = projectName
+			lagoonValues.Environment = environmentName
+			lagoonValues.EnvironmentType = environmentType
+			lagoonValues.BuildType = buildType
+			lagoonValues.LagoonVersion = lagoonVersion
+			switch buildType {
+			case "branch", "promote":
+				lagoonValues.Branch = branch
+			case "pullrequest":
+				lagoonValues.PRNumber = prNumber
+				lagoonValues.PRHeadBranch = prHeadBranch
+				lagoonValues.PRBaseBranch = prBaseBranch
 			}
-			if standbyEnv == true {
-				if lYAML.ProductionRoutes.Standby != nil {
-					if lYAML.ProductionRoutes.Standby.Routes != nil {
-						for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
-							lagoon.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
-						}
-					}
-				}
-			}
-		}
-		lagoonValuesFile := routeTemplater.ReadValuesFile(fmt.Sprintf("%s/%s", templateValues, "values.yaml"))
-		// generate the templates for active/standby routes
-		for _, route := range activeStanbyRoutes.Routes {
-			fmt.Println(fmt.Sprintf("Generating Active/Standby Ingress manifest for %s", route.Domain))
-			templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
-			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 		}
 
 		// handle routes from the .lagoon.yml and the API specifically
@@ -131,21 +141,55 @@ var routeGeneration = &cobra.Command{
 				return fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
 			}
 			for _, routeMap := range lYAMLPolysite.Environments[environmentName].Routes {
-				lagoon.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		} else {
 			// otherwise it just uses the default environment name
 			for _, routeMap := range lYAML.Environments[environmentName].Routes {
-				lagoon.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		}
 		// merge routes from the API on top of the routes from the `.lagoon.yml`
-		finalRoutes := lagoon.MergeRouteStructures(*newRoutes, apiRoutes)
+		finalRoutes := lagoon.MergeRoutesV2(*newRoutes, apiRoutes)
 		// generate the templates
 		for _, route := range finalRoutes.Routes {
 			fmt.Println(fmt.Sprintf("Generating Ingress manifest for %s", route.Domain))
-			templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValuesFile, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+			templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
+		}
+
+		if activeEnv || standbyEnv {
+			// active/standby routes should not be changed by any environment defined routes.
+			// generate the templates for these independently of any previously generated routes,
+			// this WILL overwrite previously created templates ensuring that anything defined in the `production_routes`
+			// section are created correctly ensuring active/standby will work
+			activeStanbyRoutes := &lagoon.RoutesV2{}
+			if lYAML.ProductionRoutes != nil {
+				if activeEnv == true {
+					if lYAML.ProductionRoutes.Active != nil {
+						if lYAML.ProductionRoutes.Active.Routes != nil {
+							for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
+								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+							}
+						}
+					}
+				}
+				if standbyEnv == true {
+					if lYAML.ProductionRoutes.Standby != nil {
+						if lYAML.ProductionRoutes.Standby.Routes != nil {
+							for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
+								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+							}
+						}
+					}
+				}
+			}
+			// generate the templates for active/standby routes separately to normal routes
+			for _, route := range activeStanbyRoutes.Routes {
+				fmt.Println(fmt.Sprintf("Generating Active/Standby Ingress manifest for %s", route.Domain))
+				templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+				routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
+			}
 		}
 		return nil
 	},
@@ -161,6 +205,18 @@ func init() {
 		"The environment name to check")
 	routeGeneration.Flags().StringVarP(&environmentType, "environment-type", "E", "",
 		"The type of environment (development or production)")
+	routeGeneration.Flags().StringVarP(&buildType, "build-type", "d", "",
+		"The type of build (branch, pullrequest, promote)")
+	routeGeneration.Flags().StringVarP(&branch, "branch", "b", "",
+		"The name of the branch")
+	routeGeneration.Flags().StringVarP(&prNumber, "pullrequest-number", "P", "",
+		"The pullrequest number")
+	routeGeneration.Flags().StringVarP(&prHeadBranch, "pullrequest-head-branch", "H", "",
+		"The pullrequest head branch")
+	routeGeneration.Flags().StringVarP(&prBaseBranch, "pullrequest-base-branch", "B", "",
+		"The pullrequest base branch")
+	routeGeneration.Flags().StringVarP(&lagoonVersion, "lagoon-version", "L", "",
+		"The lagoon version")
 	routeGeneration.Flags().StringVarP(&activeEnvironment, "active-environment", "a", "",
 		"Name of the active environment if known")
 	routeGeneration.Flags().StringVarP(&standbyEnvironment, "standby-environment", "s", "",
@@ -177,4 +233,6 @@ func init() {
 		"The fastly cache no cache service ID to use")
 	routeGeneration.Flags().StringVarP(&lagoonFastlyServiceID, "fastly-service-id", "f", "",
 		"The fastly service ID to use")
+	routeGeneration.Flags().BoolVarP(&checkValuesFile, "check-values-file", "C", false,
+		"If set, will check for the values file defined in `${template-path}/values.yaml`")
 }

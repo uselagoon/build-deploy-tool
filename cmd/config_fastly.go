@@ -16,12 +16,13 @@ var fastlyConfigGeneration = &cobra.Command{
 	Aliases: []string{"f"},
 	Short:   "Generate fastly configuration for a specific ingress domain",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce)
-		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID)
+		// environment variables will override what is provided by flags
+		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, true)
+		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID, true)
 
 		// get the project and environment variables
-		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables)
-		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables)
+		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
+		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
 
 		// unmarshal and then merge the two so there is only 1 set of variables to iterate over
 		projectVars := []lagoon.EnvironmentVariable{}
@@ -30,6 +31,7 @@ var fastlyConfigGeneration = &cobra.Command{
 		json.Unmarshal([]byte(environmentVariables), &envVars)
 		lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
 
+		// generate the fastly configuration from the provided flags/variables
 		f, err := lagoon.GenerateFastlyConfiguration(lagoonFastlyCacheNoCahce, lagoonFastlyServiceID, domainName, lagoonEnvVars)
 		if err != nil {
 			return err

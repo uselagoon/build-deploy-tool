@@ -30,8 +30,11 @@ func GetMD5HashWithNewLine(text string) string {
 }
 
 // GetEnv gets an environment variable
-func GetEnv(key, fallback string) string {
+func GetEnv(key, fallback string, debug bool) string {
 	if value, ok := os.LookupEnv(key); ok {
+		if debug {
+			fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+		}
 		return value
 	}
 	return fallback

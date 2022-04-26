@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-func Test_GenerateFastlyConfiguration(t *testing.T) {
+func TestGenerateFastlyConfiguration(t *testing.T) {
 	type args struct {
 		noCacheServiceID string
 		serviceID        string

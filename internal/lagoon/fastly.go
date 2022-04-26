@@ -6,6 +6,13 @@ import (
 	"strings"
 )
 
+// Fastly represents the fastly configuration for a Lagoon route
+type Fastly struct {
+	ServiceID     string `json:"service-id,omitempty"`
+	APISecretName string `json:"api-secret-name,omitempty"`
+	Watch         bool   `json:"watch,omitempty"`
+}
+
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
 func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, variables []EnvironmentVariable) (Fastly, error) {
 	f := Fastly{}
