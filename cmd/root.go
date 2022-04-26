@@ -24,11 +24,25 @@ import (
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "lagoon-routegen",
-	Short: "A tool to help with generating Lagoon route/ingress resources for Lagoon builds",
-	Long: `A tool to help with generating Lagoon route/ingress resources for Lagoon builds
+	Use:   "lagoon-build",
+	Short: "A tool to help with generating Lagoon resources for Lagoon builds",
+	Long: `A tool to help with generating Lagoon resources for Lagoon builds
 This tool will read a .lagoon.yml file and also all the required environment variables from
-within a Lagoon build to help with generating the ingress resources`,
+within a Lagoon build to help with generating the resources`,
+}
+
+var templateCmd = &cobra.Command{
+	Use:     "template",
+	Aliases: []string{"t"},
+	Short:   "Generate templates",
+	Long:    `Generate any templates for Lagoon builds`,
+}
+
+var configCmd = &cobra.Command{
+	Use:     "configuration",
+	Aliases: []string{"config", "c"},
+	Short:   "Generate configurations",
+	Long:    `Generate any configurations for Lagoon builds`,
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -43,8 +57,8 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
-	rootCmd.AddCommand(routeGeneration)
-	rootCmd.AddCommand(fastlyConfigGeneration)
+	rootCmd.AddCommand(templateCmd)
+	rootCmd.AddCommand(configCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.

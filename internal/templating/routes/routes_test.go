@@ -1,4 +1,4 @@
-package generator
+package routes
 
 import (
 	"encoding/json"
@@ -6,26 +6,28 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/uselagoon/lagoon-routegen/internal/helpers"
+	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
 )
 
 func TestGenerateRouteStructure(t *testing.T) {
 	type args struct {
-		genRoutes     *RoutesV2
-		routeMap      map[string][]LagoonRoute
-		variables     []LagoonEnvironmentVariable
+		genRoutes     *lagoon.RoutesV2
+		routeMap      map[string][]lagoon.Route
+		variables     []lagoon.EnvironmentVariable
 		activeStandby bool
 	}
 	tests := []struct {
 		name string
 		args args
-		want *RoutesV2
+		want *lagoon.RoutesV2
 	}{
 		{
 			name: "generate routes",
 			args: args{
-				genRoutes: &RoutesV2{},
-				routeMap: map[string][]LagoonRoute{
-					"nginx": []LagoonRoute{
+				genRoutes: &lagoon.RoutesV2{},
+				routeMap: map[string][]lagoon.Route{
+					"nginx": []lagoon.Route{
 						{
 							Name: "example.com",
 						},
@@ -36,17 +38,17 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: &RoutesV2{
-				Routes: []RouteV2{
+			want: &lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
 					{
 						Domain:         "example.com",
 						Service:        "nginx",
 						MonitoringPath: "/",
-						Insecure:       strPtr("Redirect"),
-						HSTS:           strPtr("null"),
-						TLSAcme:        strPtr("true"),
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: Fastly{
+						Fastly: lagoon.Fastly{
 							Watch: false,
 						},
 					},
@@ -54,11 +56,11 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Domain:         "www.example.com",
 						Service:        "nginx",
 						MonitoringPath: "/",
-						Insecure:       strPtr("Redirect"),
-						HSTS:           strPtr("null"),
-						TLSAcme:        strPtr("true"),
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: Fastly{
+						Fastly: lagoon.Fastly{
 							Watch: false,
 						},
 					},
@@ -80,28 +82,28 @@ func TestGenerateRouteStructure(t *testing.T) {
 
 func TestMergeRouteStructures(t *testing.T) {
 	type args struct {
-		genRoutes RoutesV2
-		apiRoutes RoutesV2
+		genRoutes lagoon.RoutesV2
+		apiRoutes lagoon.RoutesV2
 	}
 	tests := []struct {
 		name string
 		args args
-		want RoutesV2
+		want lagoon.RoutesV2
 	}{
 		{
 			name: "generate routes",
 			args: args{
-				genRoutes: RoutesV2{
-					Routes: []RouteV2{
+				genRoutes: lagoon.RoutesV2{
+					Routes: []lagoon.RouteV2{
 						{
 							Domain:         "example.com",
 							Service:        "nginx",
 							MonitoringPath: "/",
-							Insecure:       strPtr("Redirect"),
-							HSTS:           strPtr("null"),
-							TLSAcme:        strPtr("true"),
+							Insecure:       helpers.StrPtr("Redirect"),
+							HSTS:           helpers.StrPtr("null"),
+							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
-							Fastly: Fastly{
+							Fastly: lagoon.Fastly{
 								Watch: true,
 							},
 						},
@@ -109,22 +111,22 @@ func TestMergeRouteStructures(t *testing.T) {
 							Domain:         "www.example.com",
 							Service:        "nginx",
 							MonitoringPath: "/",
-							Insecure:       strPtr("Redirect"),
-							HSTS:           strPtr("null"),
-							TLSAcme:        strPtr("true"),
+							Insecure:       helpers.StrPtr("Redirect"),
+							HSTS:           helpers.StrPtr("null"),
+							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
 					},
 				},
-				apiRoutes: RoutesV2{
-					Routes: []RouteV2{
+				apiRoutes: lagoon.RoutesV2{
+					Routes: []lagoon.RouteV2{
 						{
 							Domain:         "www.example.com",
 							Service:        "nginx",
 							MonitoringPath: "/",
-							Insecure:       strPtr("Redirect"),
-							HSTS:           strPtr("null"),
-							TLSAcme:        strPtr("true"),
+							Insecure:       helpers.StrPtr("Redirect"),
+							HSTS:           helpers.StrPtr("null"),
+							TLSAcme:        helpers.BoolPtr(true),
 							Annotations: map[string]string{
 								"nginx": "nginx",
 							},
@@ -133,25 +135,25 @@ func TestMergeRouteStructures(t *testing.T) {
 							Domain:         "another.example.com",
 							Service:        "nginx",
 							MonitoringPath: "/",
-							Insecure:       strPtr("Redirect"),
-							HSTS:           strPtr("null"),
-							TLSAcme:        strPtr("true"),
+							Insecure:       helpers.StrPtr("Redirect"),
+							HSTS:           helpers.StrPtr("null"),
+							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
 					},
 				},
 			},
-			want: RoutesV2{
-				Routes: []RouteV2{
+			want: lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
 					{
 						Domain:         "example.com",
 						Service:        "nginx",
 						MonitoringPath: "/",
-						Insecure:       strPtr("Redirect"),
-						HSTS:           strPtr("null"),
-						TLSAcme:        strPtr("true"),
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: Fastly{
+						Fastly: lagoon.Fastly{
 							Watch: true,
 						},
 					},
@@ -159,9 +161,9 @@ func TestMergeRouteStructures(t *testing.T) {
 						Domain:         "www.example.com",
 						Service:        "nginx",
 						MonitoringPath: "/",
-						Insecure:       strPtr("Redirect"),
-						HSTS:           strPtr("null"),
-						TLSAcme:        strPtr("true"),
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
 						Annotations: map[string]string{
 							"nginx": "nginx",
 						},
@@ -170,9 +172,9 @@ func TestMergeRouteStructures(t *testing.T) {
 						Domain:         "another.example.com",
 						Service:        "nginx",
 						MonitoringPath: "/",
-						Insecure:       strPtr("Redirect"),
-						HSTS:           strPtr("null"),
-						TLSAcme:        strPtr("true"),
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 					},
 				},

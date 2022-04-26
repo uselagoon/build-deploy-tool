@@ -1,4 +1,4 @@
-package generator
+package lagoon
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 )
 
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
-func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, variables []LagoonEnvironmentVariable) (Fastly, error) {
+func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, variables []EnvironmentVariable) (Fastly, error) {
 	f := Fastly{}
 	if serviceID == "" {
 		if noCacheServiceID != "" {
@@ -19,7 +19,7 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, vari
 	// this is supported as `SERVICE_ID:WATCH_STATUS:SECRET_NAME(optional)` eg: "fa23rsdgsdgas:false", "fa23rsdgsdgas:true" or "fa23rsdgsdgas:true:examplecom"
 	// this will apply to ALL ingresses if one is not specifically defined in the `LAGOON_FASTLY_SERVICE_IDS` environment variable override
 	// see section `FASTLY SERVICE ID PER INGRESS OVERRIDE` in `build-deploy-docker-compose.sh` for info on `LAGOON_FASTLY_SERVICE_IDS`
-	lfsID, err := getLagoonVariable("LAGOON_FASTLY_SERVICE_ID", variables)
+	lfsID, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_ID", variables)
 	if err == nil {
 		lfsIDSplit := strings.Split(lfsID.Value, ":")
 		if len(lfsIDSplit) == 1 {
@@ -40,7 +40,7 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, vari
 	// this is useful if all domains are using the nocache service, but you have a specific domain that should use a different service
 	// and you haven't defined it in the lagoon.yml file
 	// see section `FASTLY SERVICE ID PER INGRESS OVERRIDE` in `build-deploy-docker-compose.sh` for info on `LAGOON_FASTLY_SERVICE_IDS`
-	lfsIDs, err := getLagoonVariable("LAGOON_FASTLY_SERVICE_IDS", variables)
+	lfsIDs, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_IDS", variables)
 	if err == nil {
 		lfsIDsSplit := strings.Split(lfsIDs.Value, ",")
 		for _, lfs := range lfsIDsSplit {

@@ -1,4 +1,4 @@
-package generator
+package lagoon
 
 import (
 	"reflect"
@@ -10,7 +10,7 @@ func Test_GenerateFastlyConfiguration(t *testing.T) {
 		noCacheServiceID string
 		serviceID        string
 		route            string
-		variables        []LagoonEnvironmentVariable
+		variables        []EnvironmentVariable
 	}
 	tests := []struct {
 		name    string
@@ -24,7 +24,7 @@ func Test_GenerateFastlyConfiguration(t *testing.T) {
 				noCacheServiceID: "",
 				serviceID:        "",
 				route:            "",
-				variables: []LagoonEnvironmentVariable{
+				variables: []EnvironmentVariable{
 					{
 						Name:  "LAGOON_FASTLY_SERVICE_ID",
 						Value: "1234567:true",
@@ -43,7 +43,7 @@ func Test_GenerateFastlyConfiguration(t *testing.T) {
 				noCacheServiceID: "",
 				serviceID:        "",
 				route:            "",
-				variables: []LagoonEnvironmentVariable{
+				variables: []EnvironmentVariable{
 					{
 						Name:  "LAGOON_FASTLY_SERVICE_ID",
 						Value: "1234567:true:secretname",
@@ -63,7 +63,7 @@ func Test_GenerateFastlyConfiguration(t *testing.T) {
 				noCacheServiceID: "",
 				serviceID:        "",
 				route:            "www.example.com",
-				variables: []LagoonEnvironmentVariable{
+				variables: []EnvironmentVariable{
 					{
 						Name:  "LAGOON_FASTLY_SERVICE_IDS",
 						Value: "www.example.com:abcdefg:true:secretname,example.com:1234567:true:secretname",

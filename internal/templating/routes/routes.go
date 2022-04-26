@@ -1,19 +1,24 @@
-package generator
+package routes
+
+import (
+	"github.com/uselagoon/lagoon-routegen/internal/helpers"
+	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
+)
 
 // GenerateRouteStructure generate the route structure for lagoon routes.
-func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRoute, variables []LagoonEnvironmentVariable, activeStandby bool) {
+func GenerateRouteStructure(genRoutes *lagoon.RoutesV2, routeMap map[string][]lagoon.Route, variables []lagoon.EnvironmentVariable, activeStandby bool) {
 	for rName, lagoonRoutes := range routeMap {
 		for _, lagoonRoute := range lagoonRoutes {
-			newRoute := &RouteV2{}
-			newRoute.TLSAcme = strPtr("true")
-			newRoute.Insecure = strPtr("Redirect")
+			newRoute := &lagoon.RouteV2{}
+			newRoute.TLSAcme = helpers.BoolPtr(true)
+			newRoute.Insecure = helpers.StrPtr("Redirect")
 			newRoute.MonitoringPath = "/"
-			newRoute.HSTS = strPtr("null")
+			newRoute.HSTS = helpers.StrPtr("null")
 			newRoute.Annotations = map[string]string{}
 			newRoute.Fastly.ServiceID = ""
 			newRoute.Fastly.Watch = false
 			if activeStandby {
-				newRoute.Migrate = "true"
+				newRoute.Migrate = helpers.BoolPtr(true)
 			}
 			if lagoonRoute.Name == "" {
 				// this route has fields
@@ -39,7 +44,7 @@ func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRou
 				newRoute.Domain = lagoonRoute.Name
 				newRoute.Service = rName
 			}
-			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
+			fConfig, err := lagoon.GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
 			if err != nil {
 			}
 			newRoute.Fastly = fConfig
@@ -50,13 +55,13 @@ func GenerateRouteStructure(genRoutes *RoutesV2, routeMap map[string][]LagoonRou
 }
 
 // MergeRouteStructures merge route structures for lagoon routes.
-func MergeRouteStructures(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
-	finalRoutes := &RoutesV2{}
+func MergeRouteStructures(genRoutes lagoon.RoutesV2, apiRoutes lagoon.RoutesV2) lagoon.RoutesV2 {
+	finalRoutes := &lagoon.RoutesV2{}
 	existsInAPI := false
 	// replace any routes from the lagoon yaml with ones from the api
 	// this only modifies ones that exist in lagoon yaml
 	for _, route := range genRoutes.Routes {
-		add := RouteV2{}
+		add := lagoon.RouteV2{}
 		for _, aRoute := range apiRoutes.Routes {
 			if aRoute.Domain == route.Domain {
 				existsInAPI = true
@@ -65,17 +70,17 @@ func MergeRouteStructures(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 				if aRoute.TLSAcme != nil {
 					add.TLSAcme = aRoute.TLSAcme
 				} else {
-					add.TLSAcme = strPtr("true")
+					add.TLSAcme = helpers.BoolPtr(true)
 				}
 				if aRoute.Insecure != nil {
 					add.Insecure = aRoute.Insecure
 				} else {
-					add.Insecure = strPtr("Redirect")
+					add.Insecure = helpers.StrPtr("Redirect")
 				}
 				if aRoute.HSTS != nil {
 					add.HSTS = aRoute.HSTS
 				} else {
-					add.HSTS = strPtr("null")
+					add.HSTS = helpers.StrPtr("null")
 				}
 				if aRoute.Annotations != nil {
 					add.Annotations = aRoute.Annotations
@@ -93,24 +98,24 @@ func MergeRouteStructures(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 	}
 	// add any that exist in the api only to the final routes list
 	for _, aRoute := range apiRoutes.Routes {
-		add := RouteV2{}
+		add := lagoon.RouteV2{}
 		for _, route := range finalRoutes.Routes {
 			add = aRoute
 			add.Fastly = aRoute.Fastly
 			if aRoute.TLSAcme != nil {
 				add.TLSAcme = aRoute.TLSAcme
 			} else {
-				add.TLSAcme = strPtr("true")
+				add.TLSAcme = helpers.BoolPtr(true)
 			}
 			if aRoute.Insecure != nil {
 				add.Insecure = aRoute.Insecure
 			} else {
-				add.Insecure = strPtr("Redirect")
+				add.Insecure = helpers.StrPtr("Redirect")
 			}
 			if aRoute.HSTS != nil {
 				add.HSTS = aRoute.HSTS
 			} else {
-				add.HSTS = strPtr("null")
+				add.HSTS = helpers.StrPtr("null")
 			}
 			if aRoute.Annotations != nil {
 				add.Annotations = aRoute.Annotations
