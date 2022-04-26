@@ -3,7 +3,6 @@ package routes
 import (
 	"fmt"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 
@@ -147,46 +146,6 @@ func GenerateKubeTemplate(route lagoon.RouteV2, lValues lagoon.BuildValues,
 	separator := []byte("---\n")
 	result := append(separator[:], ingressBytes[:]...)
 	return result
-}
-
-// GenerateHelmTemplates generates the lagoon template to apply.
-// Use `GenerateKubeTemplate` instead, it is much faster
-func GenerateHelmTemplates(
-	template, values, domainValues string,
-	route lagoon.RouteV2, monitoringContact, monitoringStatusPageID string,
-	monitoringEnabled, activeStandby bool) ([]byte, error) {
-	annotations := &lagoon.Annotations{
-		Annotations: route.Annotations,
-	}
-	annotationBytes, _ := yaml.Marshal(annotations)
-	err := os.WriteFile(domainValues, annotationBytes, 0644)
-	if err != nil {
-		return []byte{}, err
-	}
-	ingressName := route.Domain
-	if len(ingressName) >= 53 {
-		ingressName = fmt.Sprintf("%s-%s", strings.Split(ingressName, ".")[0], helpers.GetMD5HashWithNewLine(ingressName)[:5])
-	}
-	args := []string{"template", ingressName, template,
-		"--set", fmt.Sprintf("host=%s", route.Domain),
-		"--set", fmt.Sprintf("service=%s", route.Service),
-		"--set", fmt.Sprintf("tls_acme=%s", strconv.FormatBool(*route.TLSAcme)),
-		"--set", fmt.Sprintf("insecure=%s", *route.Insecure),
-		"--set", fmt.Sprintf("hsts=%s", *route.HSTS),
-		"--set", fmt.Sprintf("routeMigrate=%s", strconv.FormatBool(*route.Migrate)),
-		"--set", fmt.Sprintf("ingressmonitorcontroller.enabled=%s", strconv.FormatBool(monitoringEnabled)),
-		"--set", fmt.Sprintf("ingressmonitorcontroller.path=%s", route.MonitoringPath),
-		"--set", fmt.Sprintf("ingressmonitorcontroller.alertContacts=%s", monitoringContact),
-		"--set", fmt.Sprintf("ingressmonitorcontroller.statuspageId=%s", monitoringStatusPageID),
-		"--set", fmt.Sprintf("fastly.watch=%s", strconv.FormatBool(route.Fastly.Watch)),
-		"-f", values, "-f", domainValues,
-	}
-	cmd := exec.Command("helm", args...)
-	stdout, err := cmd.Output()
-	if err != nil {
-		return []byte{}, err
-	}
-	return stdout, nil
 }
 
 // WriteTemplateFile writes the template to a file.

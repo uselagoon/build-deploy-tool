@@ -97,7 +97,7 @@ var routeGeneration = &cobra.Command{
 				if lYAML.ProductionRoutes.Active != nil {
 					if lYAML.ProductionRoutes.Active.Routes != nil {
 						for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
-							routeTemplater.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+							lagoon.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
 						}
 					}
 				}
@@ -106,7 +106,7 @@ var routeGeneration = &cobra.Command{
 				if lYAML.ProductionRoutes.Standby != nil {
 					if lYAML.ProductionRoutes.Standby.Routes != nil {
 						for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
-							routeTemplater.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+							lagoon.GenerateRouteStructure(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
 						}
 					}
 				}
@@ -131,16 +131,16 @@ var routeGeneration = &cobra.Command{
 				return fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
 			}
 			for _, routeMap := range lYAMLPolysite.Environments[environmentName].Routes {
-				routeTemplater.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		} else {
 			// otherwise it just uses the default environment name
 			for _, routeMap := range lYAML.Environments[environmentName].Routes {
-				routeTemplater.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRouteStructure(newRoutes, routeMap, lagoonEnvVars, false)
 			}
 		}
 		// merge routes from the API on top of the routes from the `.lagoon.yml`
-		finalRoutes := routeTemplater.MergeRouteStructures(*newRoutes, apiRoutes)
+		finalRoutes := lagoon.MergeRouteStructures(*newRoutes, apiRoutes)
 		// generate the templates
 		for _, route := range finalRoutes.Routes {
 			fmt.Println(fmt.Sprintf("Generating Ingress manifest for %s", route.Domain))

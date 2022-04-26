@@ -1,4 +1,4 @@
-package routes
+package lagoon
 
 import (
 	"encoding/json"
@@ -7,27 +7,26 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/uselagoon/lagoon-routegen/internal/helpers"
-	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
 )
 
 func TestGenerateRouteStructure(t *testing.T) {
 	type args struct {
-		genRoutes     *lagoon.RoutesV2
-		routeMap      map[string][]lagoon.Route
-		variables     []lagoon.EnvironmentVariable
+		genRoutes     *RoutesV2
+		routeMap      map[string][]Route
+		variables     []EnvironmentVariable
 		activeStandby bool
 	}
 	tests := []struct {
 		name string
 		args args
-		want *lagoon.RoutesV2
+		want *RoutesV2
 	}{
 		{
 			name: "generate routes",
 			args: args{
-				genRoutes: &lagoon.RoutesV2{},
-				routeMap: map[string][]lagoon.Route{
-					"nginx": []lagoon.Route{
+				genRoutes: &RoutesV2{},
+				routeMap: map[string][]Route{
+					"nginx": []Route{
 						{
 							Name: "example.com",
 						},
@@ -38,8 +37,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: &lagoon.RoutesV2{
-				Routes: []lagoon.RouteV2{
+			want: &RoutesV2{
+				Routes: []RouteV2{
 					{
 						Domain:         "example.com",
 						Service:        "nginx",
@@ -48,7 +47,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: lagoon.Fastly{
+						Fastly: Fastly{
 							Watch: false,
 						},
 					},
@@ -60,7 +59,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: lagoon.Fastly{
+						Fastly: Fastly{
 							Watch: false,
 						},
 					},
@@ -82,19 +81,19 @@ func TestGenerateRouteStructure(t *testing.T) {
 
 func TestMergeRouteStructures(t *testing.T) {
 	type args struct {
-		genRoutes lagoon.RoutesV2
-		apiRoutes lagoon.RoutesV2
+		genRoutes RoutesV2
+		apiRoutes RoutesV2
 	}
 	tests := []struct {
 		name string
 		args args
-		want lagoon.RoutesV2
+		want RoutesV2
 	}{
 		{
 			name: "generate routes",
 			args: args{
-				genRoutes: lagoon.RoutesV2{
-					Routes: []lagoon.RouteV2{
+				genRoutes: RoutesV2{
+					Routes: []RouteV2{
 						{
 							Domain:         "example.com",
 							Service:        "nginx",
@@ -103,7 +102,7 @@ func TestMergeRouteStructures(t *testing.T) {
 							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
-							Fastly: lagoon.Fastly{
+							Fastly: Fastly{
 								Watch: true,
 							},
 						},
@@ -118,8 +117,8 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				apiRoutes: lagoon.RoutesV2{
-					Routes: []lagoon.RouteV2{
+				apiRoutes: RoutesV2{
+					Routes: []RouteV2{
 						{
 							Domain:         "www.example.com",
 							Service:        "nginx",
@@ -143,8 +142,8 @@ func TestMergeRouteStructures(t *testing.T) {
 					},
 				},
 			},
-			want: lagoon.RoutesV2{
-				Routes: []lagoon.RouteV2{
+			want: RoutesV2{
+				Routes: []RouteV2{
 					{
 						Domain:         "example.com",
 						Service:        "nginx",
@@ -153,7 +152,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
-						Fastly: lagoon.Fastly{
+						Fastly: Fastly{
 							Watch: true,
 						},
 					},
