@@ -143,6 +143,9 @@ func GenerateKubeTemplate(route lagoon.RouteV2, lValues lagoon.BuildValues,
 		},
 	}
 	ingressBytes, _ := yaml.Marshal(ingress)
+	// add the seperator to the template so that it can be `kubectl apply` in bulk as part
+	// of the current build process
+	// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
 	separator := []byte("---\n")
 	result := append(separator[:], ingressBytes[:]...)
 	return result
