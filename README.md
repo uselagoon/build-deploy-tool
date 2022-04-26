@@ -1,3 +1,3 @@
-# Lagoon Route Generation
+# Build and Deploy Resource Generator
 
-This is a tool to read a `.lagoon.yml` file and the Lagoon API variables to handle generating the helm templates for Lagoon ingress resources
+This is a tool used to help with creating resources for Lagoon builds
