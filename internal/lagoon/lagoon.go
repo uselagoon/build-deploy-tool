@@ -16,6 +16,7 @@ type Environments map[string]Environment
 
 // YAML represents the .lagoon.yml file.
 type YAML struct {
-	Environments     Environments      `json:"environments"`
-	ProductionRoutes *ProductionRoutes `json:"production_routes"`
+	DockerComposeYAML string            `json:"docker-compose-yaml"`
+	Environments      Environments      `json:"environments"`
+	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
 }

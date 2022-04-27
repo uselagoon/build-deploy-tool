@@ -1,0 +1,22 @@
+docker-compose-yaml: docker-compose.yml
+environments:
+    master:
+        routes:
+        -   nginx:
+            - a.example.com:
+                tls-acme: "true"
+            - b.example.com
+            - c.example.com
+production_routes:
+  active:
+    routes:
+      - nginx:
+          - "active.example.com":
+              tls-acme: "true"
+              insecure: Redirect
+  standby:
+    routes:
+      - nginx:
+          - "standby.example.com":
+              tls-acme: "false"
+              insecure: Redirect
