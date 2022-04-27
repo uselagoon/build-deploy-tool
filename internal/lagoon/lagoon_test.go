@@ -144,6 +144,70 @@ func TestLagoonYAMLUnmarshal(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-booleans-represented-as-strings-and-booleans",
+			yaml: "test-resources/lagoon-stringbooleans-combo.yml",
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"master": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												TLSAcme: helpers.BoolPtr(true),
+											},
+										},
+									},
+									{
+										Name: "b.example.com",
+									},
+									{
+										Name: "c.example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+				ProductionRoutes: &ProductionRoutes{
+					Active: &Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"active.example.com": {
+												TLSAcme:  helpers.BoolPtr(true),
+												Insecure: helpers.StrPtr("Redirect"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+					Standby: &Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"standby.example.com": {
+												TLSAcme:  helpers.BoolPtr(false),
+												Insecure: helpers.StrPtr("Redirect"),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, tt := range tests {
