@@ -2,6 +2,8 @@ package lagoon
 
 import (
 	"fmt"
+
+	"github.com/uselagoon/lagoon-routegen/internal/helpers"
 )
 
 // EnvironmentVariable is used to define Lagoon environment variables.
@@ -34,9 +36,16 @@ func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVar
 }
 
 // GetLagoonVariable returns a given environment variable
-func GetLagoonVariable(name string, variables []EnvironmentVariable) (*EnvironmentVariable, error) {
+func GetLagoonVariable(name string, scope []string, variables []EnvironmentVariable) (*EnvironmentVariable, error) {
 	for _, v := range variables {
-		if v.Name == name {
+		scoped := true
+		if scope != nil {
+			scoped = false
+			if helpers.Contains(scope, v.Scope) {
+				scoped = true
+			}
+		}
+		if v.Name == name && scoped {
 			return &v, nil
 		}
 	}

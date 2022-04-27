@@ -64,6 +64,7 @@ func TestMergeVariables(t *testing.T) {
 func TestGetLagoonVariable(t *testing.T) {
 	type args struct {
 		name      string
+		scope     []string
 		variables []EnvironmentVariable
 	}
 	tests := []struct {
@@ -75,7 +76,8 @@ func TestGetLagoonVariable(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				name: "LAGOON_FASTLY_SERVICE_ID",
+				name:  "LAGOON_FASTLY_SERVICE_ID",
+				scope: []string{"global"},
 				variables: []EnvironmentVariable{
 					{
 						Name:  "PROJECT_SPECIFIC_VARIABLE",
@@ -99,7 +101,8 @@ func TestGetLagoonVariable(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				name: "NON_EXISTENT_VARIABLE",
+				name:  "NON_EXISTENT_VARIABLE",
+				scope: []string{"global"},
 				variables: []EnvironmentVariable{
 					{
 						Name:  "PROJECT_SPECIFIC_VARIABLE",
@@ -119,7 +122,7 @@ func TestGetLagoonVariable(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetLagoonVariable(tt.args.name, tt.args.variables)
+			got, err := GetLagoonVariable(tt.args.name, tt.args.scope, tt.args.variables)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getLagoonVariable() error = %v, wantErr %v", err, tt.wantErr)
 				return

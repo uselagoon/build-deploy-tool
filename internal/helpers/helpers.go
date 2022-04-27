@@ -39,3 +39,14 @@ func GetEnv(key, fallback string, debug bool) string {
 	}
 	return fallback
 }
+
+// Contains checks if a string slice contains a specific string.
+func Contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+
+	return false
+}
