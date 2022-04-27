@@ -28,11 +28,16 @@ var routeGeneration = &cobra.Command{
 		standbyEnv := false
 
 		// environment variables will override what is provided by flags
+		// the following variables have been identified as used by custom-ingress objects
+		// these are available within a lagoon build as standard
 		monitoringContact = helpers.GetEnv("MONITORING_ALERTCONTACT", monitoringContact, true)
 		monitoringStatusPageID = helpers.GetEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID, true)
 		projectName = helpers.GetEnv("PROJECT", projectName, true)
 		environmentName = helpers.GetEnv("ENVIRONMENT", environmentName, true)
 		branch = helpers.GetEnv("BRANCH", branch, true)
+		prNumber = helpers.GetEnv("PR_NUMBER", prNumber, true)
+		prHeadBranch = helpers.GetEnv("PR_HEAD_BRANCH", prHeadBranch, true)
+		prBaseBranch = helpers.GetEnv("PR_BASE_BRANCH", prBaseBranch, true)
 		environmentType = helpers.GetEnv("ENVIRONMENT_TYPE", environmentType, true)
 		buildType = helpers.GetEnv("BUILD_TYPE", buildType, true)
 		activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment, true)
