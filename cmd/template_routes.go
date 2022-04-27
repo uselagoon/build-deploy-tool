@@ -31,8 +31,10 @@ var routeGeneration = &cobra.Command{
 		monitoringContact = helpers.GetEnv("MONITORING_ALERTCONTACT", monitoringContact, true)
 		monitoringStatusPageID = helpers.GetEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID, true)
 		projectName = helpers.GetEnv("PROJECT", projectName, true)
-		environmentName = helpers.GetEnv("BRANCH", environmentName, true)
+		environmentName = helpers.GetEnv("ENVIRONMENT", environmentName, true)
+		branch = helpers.GetEnv("BRANCH", branch, true)
 		environmentType = helpers.GetEnv("ENVIRONMENT_TYPE", environmentType, true)
+		buildType = helpers.GetEnv("BUILD_TYPE", buildType, true)
 		activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment, true)
 		standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment, true)
 		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, true)
@@ -114,7 +116,7 @@ var routeGeneration = &cobra.Command{
 			fmt.Println(fmt.Sprintf("Collecting values for templating from %s", fmt.Sprintf("%s/%s", templateValues, "values.yaml")))
 			lagoonValues = routeTemplater.ReadValuesFile(fmt.Sprintf("%s/%s", templateValues, "values.yaml"))
 		} else {
-			fmt.Println("Generating values from provided flags")
+			fmt.Println("Collecting values for templating from environment variables or flags")
 			lagoonValues.Project = projectName
 			lagoonValues.Environment = environmentName
 			lagoonValues.EnvironmentType = environmentType
@@ -153,7 +155,7 @@ var routeGeneration = &cobra.Command{
 		finalRoutes := lagoon.MergeRoutesV2(*newRoutes, apiRoutes)
 		// generate the templates
 		for _, route := range finalRoutes.Routes {
-			fmt.Println(fmt.Sprintf("Generating Ingress manifest for %s", route.Domain))
+			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 		}
@@ -186,7 +188,7 @@ var routeGeneration = &cobra.Command{
 			}
 			// generate the templates for active/standby routes separately to normal routes
 			for _, route := range activeStanbyRoutes.Routes {
-				fmt.Println(fmt.Sprintf("Generating Active/Standby Ingress manifest for %s", route.Domain))
+				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 				templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 				routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 			}
