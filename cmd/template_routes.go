@@ -7,9 +7,9 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
-	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
-	routeTemplater "github.com/uselagoon/lagoon-routegen/internal/templating/routes"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	routeTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/routes"
 	"sigs.k8s.io/yaml"
 )
 

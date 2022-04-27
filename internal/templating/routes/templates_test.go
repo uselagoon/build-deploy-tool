@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
-	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
 func TestGenerateKubeTemplate(t *testing.T) {

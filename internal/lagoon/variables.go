@@ -3,7 +3,7 @@ package lagoon
 import (
 	"fmt"
 
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 // EnvironmentVariable is used to define Lagoon environment variables.

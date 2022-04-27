@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
-	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 

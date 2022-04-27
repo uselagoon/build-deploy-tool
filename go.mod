@@ -1,4 +1,4 @@
-module github.com/uselagoon/lagoon-routegen
+module github.com/uselagoon/build-deploy-tool
 
 go 1.17
 
