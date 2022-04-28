@@ -1,6 +1,6 @@
 docker-compose-yaml: docker-compose.yml
 environments:
-    master:
+    main:
         routes:
         -   nginx:
             - a.example.com:

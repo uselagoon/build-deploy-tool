@@ -1,28 +1,35 @@
 package lagoon
 
 import (
-	"fmt"
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	"sigs.k8s.io/yaml"
 )
 
-func TestLagoonYAMLUnmarshal(t *testing.T) {
+func TestUnmarshalLagoonYAML(t *testing.T) {
+	type args struct {
+		file string
+		l    *YAML
+		p    *map[string]interface{}
+	}
 	tests := []struct {
-		name string
-		yaml string
-		want *YAML
+		name    string
+		args    args
+		want    *YAML
+		wantErr bool
 	}{
 		{
 			name: "test-booleans-represented-as-strings",
-			yaml: "test-resources/lagoon-stringbooleans.yml",
+			args: args{
+				file: "test-resources/lagoon-stringbooleans.yml",
+				l:    &YAML{},
+				p:    &map[string]interface{}{},
+			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
 				Environments: Environments{
-					"master": Environment{
+					"main": Environment{
 						Routes: []map[string][]Route{
 							{
 								"nginx": {
@@ -82,11 +89,15 @@ func TestLagoonYAMLUnmarshal(t *testing.T) {
 		},
 		{
 			name: "test-booleans-represented-as-booleans",
-			yaml: "test-resources/lagoon-booleans.yml",
+			args: args{
+				file: "test-resources/lagoon-booleans.yml",
+				l:    &YAML{},
+				p:    &map[string]interface{}{},
+			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
 				Environments: Environments{
-					"master": Environment{
+					"main": Environment{
 						Routes: []map[string][]Route{
 							{
 								"nginx": {
@@ -146,11 +157,15 @@ func TestLagoonYAMLUnmarshal(t *testing.T) {
 		},
 		{
 			name: "test-booleans-represented-as-strings-and-booleans",
-			yaml: "test-resources/lagoon-stringbooleans-combo.yml",
+			args: args{
+				file: "test-resources/lagoon-stringbooleans-combo.yml",
+				l:    &YAML{},
+				p:    &map[string]interface{}{},
+			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
 				Environments: Environments{
-					"master": Environment{
+					"main": Environment{
 						Routes: []map[string][]Route{
 							{
 								"nginx": {
@@ -209,17 +224,13 @@ func TestLagoonYAMLUnmarshal(t *testing.T) {
 			},
 		},
 	}
-
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rawYAML, err := os.ReadFile(tt.yaml)
-			if err != nil {
-				panic(fmt.Errorf("couldn't read %v: %v", tt.yaml, err))
+			if err := UnmarshalLagoonYAML(tt.args.file, tt.args.l, tt.args.p); (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalLagoonYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			got := &YAML{}
-			yaml.Unmarshal(rawYAML, got)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Unmarshal() = got %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(tt.args.l, tt.want) {
+				t.Errorf("Unmarshal() = got %v, want %v", tt.args.l, tt.want)
 			}
 		})
 	}

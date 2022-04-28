@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -100,19 +99,9 @@ var routeGeneration = &cobra.Command{
 
 		// read the .lagoon.yml file
 		var lYAML lagoon.YAML
-		rawYAML, err := os.ReadFile(lagoonYml)
-		if err != nil {
-			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
-		}
-		err = yaml.Unmarshal(rawYAML, &lYAML)
-		if err != nil {
-			return fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err)
-		}
-		// because lagoonyaml is not really good yaml, unmarshal polysite into an unknown struct to check
 		lPolysite := make(map[string]interface{})
-		err = yaml.Unmarshal(rawYAML, &lPolysite)
-		if err != nil {
-			return fmt.Errorf("couldn't unmarshal %v: %v", lagoonYml, err)
+		if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
+			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
 		}
 
 		// get or generate the values file for generating route templates
