@@ -11,6 +11,7 @@ require (
 )
 
 require (
+	github.com/PaesslerAG/gval v1.1.2 // indirect
 	github.com/go-logr/logr v1.2.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
