@@ -6,15 +6,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
-	"github.com/uselagoon/lagoon-routegen/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	"sigs.k8s.io/yaml"
 )
 
-// ReadValuesFile .
+// ReadValuesFile reads a provided values file and unmarshals into build values.
 func ReadValuesFile(file string) lagoon.BuildValues {
 	rawYAML, err := os.ReadFile(file)
 	if err != nil {
@@ -29,10 +29,15 @@ func ReadValuesFile(file string) lagoon.BuildValues {
 func GenerateKubeTemplate(route lagoon.RouteV2, lValues lagoon.BuildValues,
 	monitoringContact, monitoringStatusPageID string,
 	monitoringEnabled bool) []byte {
+
+	// generate the name for the ingress fromt he route domain
+	// shorten it if required with a hash
 	ingressName := route.Domain
 	if len(ingressName) >= 53 {
 		ingressName = fmt.Sprintf("%s-%s", strings.Split(ingressName, ".")[0], helpers.GetMD5HashWithNewLine(ingressName)[:5])
 	}
+
+	// create the ingress object for templating
 	ingress := &networkv1.Ingress{}
 	ingress.TypeMeta = metav1.TypeMeta{
 		Kind:       "Ingress",

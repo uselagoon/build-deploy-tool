@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 func TestGenerateRouteStructure(t *testing.T) {

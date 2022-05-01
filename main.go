@@ -15,7 +15,7 @@ limitations under the License.
 */
 package main
 
-import "github.com/uselagoon/lagoon-routegen/cmd"
+import "github.com/uselagoon/build-deploy-tool/cmd"
 
 func main() {
 	cmd.Execute()

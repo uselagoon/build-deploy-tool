@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"strconv"
 
-	"github.com/uselagoon/lagoon-routegen/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 // RoutesV2 is the new routes definition

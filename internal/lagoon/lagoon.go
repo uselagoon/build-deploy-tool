@@ -1,5 +1,12 @@
 package lagoon
 
+import (
+	"fmt"
+	"os"
+
+	"sigs.k8s.io/yaml"
+)
+
 // ProductionRoutes represents an active/standby configuration.
 type ProductionRoutes struct {
 	Active  *Environment `json:"active"`
@@ -16,6 +23,20 @@ type Environments map[string]Environment
 
 // YAML represents the .lagoon.yml file.
 type YAML struct {
-	Environments     Environments      `json:"environments"`
-	ProductionRoutes *ProductionRoutes `json:"production_routes"`
+	DockerComposeYAML string            `json:"docker-compose-yaml"`
+	Environments      Environments      `json:"environments"`
+	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
+}
+
+// UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
+func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error {
+	rawYAML, err := os.ReadFile(file)
+	if err != nil {
+		return fmt.Errorf("couldn't read %v: %v", file, err)
+	}
+	// lagoon.yml
+	yaml.Unmarshal(rawYAML, l)
+	// polysite
+	yaml.Unmarshal(rawYAML, p)
+	return nil
 }
