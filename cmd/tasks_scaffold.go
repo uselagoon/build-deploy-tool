@@ -43,7 +43,7 @@ var tasksScaffold = &cobra.Command{
 			"-c",
 			"env",
 		}
-		stdout, stdin, error := lagoon.ExecPod("nginx-deployment", "default", command, false)
+		stdout, stdin, error := lagoon.ExecPod("nginx-deployment", "default", command, false, "ubuntu")
 
 		if error != nil {
 			panic(error.Error())

@@ -79,7 +79,9 @@ func ExecPod(
 	command []string,
 	//stdin io.Reader,
 	tty bool,
+	container string,
 ) (string, string, error) {
+
 	restCfg, err := getConfig()
 	if err != nil {
 		return "", "", err
@@ -92,13 +94,13 @@ func ExecPod(
 
 	depClient := clientset.AppsV1().Deployments(namespace)
 
-	deploymentLabel := "lagoon.sh/service=" + podName
+	lagoonServiceLabel := "lagoon.sh/service=" + podName
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
-		LabelSelector: deploymentLabel,
+		LabelSelector: lagoonServiceLabel,
 	})
 	if len(deployments.Items) == 0 {
-		return "", "", errors.New("No deployments found matching label: " + deploymentLabel)
+		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
 	}
 
 	deployment := &deployments.Items[0]
@@ -128,12 +130,42 @@ func ExecPod(
 		}
 	}
 
-	//grab pod
-	pod, err := clientset
+	//grab pod - for now we'll copy precisely what the build script does and use the labels
+
+	podClient := clientset.CoreV1().Pods(namespace)
+	clientList, err := podClient.List(context.TODO(), v1.ListOptions{
+		LabelSelector: lagoonServiceLabel,
+	})
+
+	if err != nil {
+		return "", "", err
+	}
+
+	var pod corev1.Pod
+	foundRunningPod := false
+	for _, i2 := range clientList.Items {
+		if i2.Status.Phase == "Running" {
+			if container != "" {
+				//is this container contained herein?
+				for _, c := range i2.Spec.Containers {
+					if c.Name != container {
+						continue
+					}
+				}
+			}
+			pod = i2
+			foundRunningPod = true
+			break
+		}
+	}
+	if !foundRunningPod {
+		return "", "", errors.New("Unable to find running Pod for namespace: " + namespace)
+	}
+	fmt.Println("Going to exec into ", pod.Name)
 
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
-		Name(podName).
+		Name(pod.Name).
 		Namespace(namespace).
 		SubResource("exec")
 
@@ -145,9 +177,11 @@ func ExecPod(
 	if len(command) == 0 {
 		command = []string{"sh"}
 	}
+
 	parameterCodec := runtime.NewParameterCodec(scheme)
 	req.VersionedParams(&corev1.PodExecOptions{
-		Command: command,
+		Container: container,
+		Command:   command,
 		//Stdin:   stdin != nil,
 		Stdout: true,
 		Stderr: true,
@@ -161,7 +195,7 @@ func ExecPod(
 
 	var stdout, stderr bytes.Buffer
 	err = exec.Stream(remotecommand.StreamOptions{
-		//Stdin:  stdin,
+		//Stdin:  stdin, //TODO: does this need to be implemented?
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    tty,
@@ -171,4 +205,5 @@ func ExecPod(
 	}
 
 	return stdout.String(), stderr.String(), nil
+
 }
