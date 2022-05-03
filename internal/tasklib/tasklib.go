@@ -9,9 +9,9 @@ import (
 
 type TaskEnvironment map[string]interface{}
 
-func BuildTaskEnvironmentFromEnv() TaskEnvironment {
-
-}
+//func BuildTaskEnvironmentFromEnv() TaskEnvironment {
+//
+//}
 
 func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment) (interface{}, error) {
 	value, err := gval.Evaluate(expression, env)

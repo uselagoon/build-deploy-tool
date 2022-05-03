@@ -59,6 +59,7 @@ func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(tasksScaffold) //TODO: BMK :- Remove or change this to the appropriate command when ready
 }
 
 // initConfig reads in config file and ENV variables if set.
