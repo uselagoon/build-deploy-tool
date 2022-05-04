@@ -34,6 +34,17 @@ var tasksScaffold = &cobra.Command{
 
 		//For now, we actually just want to run some arbitrary command in a running container, perhaps?
 
+		// read the .lagoon.yml file
+		var lYAML lagoon.YAML
+		lPolysite := make(map[string]interface{})
+		if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
+			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
+		}
+
+		fmt.Println(lYAML)
+
+		return nil
+
 		task := lagoon.NewTask()
 		task.Command = "env"
 		lagoon.ExecuteTaskInEnvironment(task)
@@ -57,10 +68,10 @@ var tasksScaffold = &cobra.Command{
 
 func init() {
 	configCmd.AddCommand(tasksScaffold)
-	tasksScaffold.Flags().StringVarP(&domainName, "domain", "D", "",
-		"The .lagoon.yml file to read")
 	tasksScaffold.Flags().StringVarP(&projectVariables, "project-variables", "v", "",
 		"The projects environment variables JSON payload")
 	tasksScaffold.Flags().StringVarP(&environmentVariables, "environment-variables", "V", "",
 		"The environments environment variables JSON payload")
+	tasksScaffold.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+		"The .lagoon.yml file to read")
 }

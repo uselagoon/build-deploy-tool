@@ -52,6 +52,6 @@ func init() {
 		"The environments environment variables JSON payload")
 	fastlyConfigGeneration.Flags().StringVarP(&lagoonFastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
 		"The fastly cache no cache service ID to use")
-	fastlyConfigGeneration.Flags().StringVarP(&lagoonFastlyServiceID, "fastly-service-id", "f", "",
-		"The fastly service ID to use")
+	fastlyConfigGeneration.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+		"The .lagoon.yml file to read")
 }

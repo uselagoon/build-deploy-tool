@@ -17,10 +17,11 @@ import (
 )
 
 type Task struct {
-	Command   string
-	Namespace string
-	Service   string
-	Shell     string
+	Name      string `json:"name"`
+	Command   string `json:"command"`
+	Namespace string `json:"namespace"`
+	Service   string `json:"service"`
+	Shell     string `json:"shell"`
 }
 
 func NewTask() Task {
