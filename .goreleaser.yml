@@ -1,0 +1,8 @@
+builds:
+- dir: .
+  ldflags:
+  - >
+    -s -w -X main.date={{.Date}} -X "main.goVersion={{.Env.GOVERSION}}"
+    -X main.shortCommit={{.ShortCommit}} -X main.version={{.Version}}
+  env:
+  - CGO_ENABLED=0
