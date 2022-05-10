@@ -80,7 +80,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 }
 
 // GenerateRoutesV2 generate routesv2 definitions from lagoon route mappings
-func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variables []EnvironmentVariable, activeStandby bool) {
+func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variables []EnvironmentVariable, secretPrefix string, activeStandby bool) {
 	for rName, lagoonRoutes := range routeMap {
 		for _, lagoonRoute := range lagoonRoutes {
 			newRoute := &RouteV2{}
@@ -122,7 +122,7 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 				newRoute.Service = rName
 			}
 			// generate the fastly configuration for this route
-			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
+			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)
 			if err != nil {
 			}
 			newRoute.Fastly = fConfig

@@ -43,6 +43,7 @@ var routeGeneration = &cobra.Command{
 		standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment, true)
 		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, true)
 		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID, true)
+		lagoonFastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", lagoonFastlyAPISecretPrefix, true)
 		savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, true)
 
 		if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
@@ -138,12 +139,12 @@ var routeGeneration = &cobra.Command{
 				return fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
 			}
 			for _, routeMap := range lYAMLPolysite.Environments[environmentName].Routes {
-				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, lagoonFastlyAPISecretPrefix, false)
 			}
 		} else {
 			// otherwise it just uses the default environment name
 			for _, routeMap := range lYAML.Environments[environmentName].Routes {
-				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, false)
+				lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, lagoonFastlyAPISecretPrefix, false)
 			}
 		}
 		// merge routes from the API on top of the routes from the `.lagoon.yml`
@@ -166,7 +167,7 @@ var routeGeneration = &cobra.Command{
 					if lYAML.ProductionRoutes.Active != nil {
 						if lYAML.ProductionRoutes.Active.Routes != nil {
 							for _, routeMap := range lYAML.ProductionRoutes.Active.Routes {
-								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, lagoonFastlyAPISecretPrefix, true)
 							}
 						}
 					}
@@ -175,7 +176,7 @@ var routeGeneration = &cobra.Command{
 					if lYAML.ProductionRoutes.Standby != nil {
 						if lYAML.ProductionRoutes.Standby.Routes != nil {
 							for _, routeMap := range lYAML.ProductionRoutes.Standby.Routes {
-								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, true)
+								lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, lagoonEnvVars, lagoonFastlyAPISecretPrefix, true)
 							}
 						}
 					}

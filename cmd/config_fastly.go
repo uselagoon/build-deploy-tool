@@ -9,7 +9,10 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var domainName string
+var (
+	domainName                  string
+	lagoonFastlyAPISecretPrefix string
+)
 
 var fastlyConfigGeneration = &cobra.Command{
 	Use:     "fastly",
@@ -19,6 +22,7 @@ var fastlyConfigGeneration = &cobra.Command{
 		// environment variables will override what is provided by flags
 		lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, true)
 		lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID, true)
+		lagoonFastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", lagoonFastlyAPISecretPrefix, true)
 
 		// get the project and environment variables
 		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
@@ -32,7 +36,7 @@ var fastlyConfigGeneration = &cobra.Command{
 		lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
 
 		// generate the fastly configuration from the provided flags/variables
-		f, err := lagoon.GenerateFastlyConfiguration(lagoonFastlyCacheNoCahce, lagoonFastlyServiceID, domainName, lagoonEnvVars)
+		f, err := lagoon.GenerateFastlyConfiguration(lagoonFastlyCacheNoCahce, lagoonFastlyServiceID, domainName, lagoonFastlyAPISecretPrefix, lagoonEnvVars)
 		if err != nil {
 			return err
 		}
