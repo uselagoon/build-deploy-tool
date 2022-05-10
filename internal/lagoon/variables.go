@@ -17,10 +17,12 @@ type EnvironmentVariable struct {
 func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVariable {
 	allVars := []EnvironmentVariable{}
 	existsInEnvironment := false
+	// replace any variables from the project with ones from the environment
+	// this only modifies ones that exist in project
 	for _, pVar := range project {
 		add := EnvironmentVariable{}
 		for _, eVar := range environment {
-			if pVar.Name == eVar.Name {
+			if eVar.Name == pVar.Name {
 				existsInEnvironment = true
 				add = eVar
 			}
@@ -30,6 +32,21 @@ func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVar
 			existsInEnvironment = false
 		} else {
 			allVars = append(allVars, pVar)
+		}
+	}
+	// add any that exist in the environment only to the final variables list
+	for _, eVar := range environment {
+		add := EnvironmentVariable{}
+		for _, aVar := range allVars {
+			add = eVar
+			if eVar.Name == aVar.Name {
+				existsInEnvironment = true
+			}
+		}
+		if existsInEnvironment {
+			existsInEnvironment = false
+		} else {
+			allVars = append(allVars, add)
 		}
 	}
 	return allVars

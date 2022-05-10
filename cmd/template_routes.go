@@ -88,6 +88,7 @@ var routeGeneration = &cobra.Command{
 		var apiRoutes lagoon.RoutesV2
 		lagoonRoutesJSON, err := lagoon.GetLagoonVariable("LAGOON_ROUTES_JSON", []string{"build", "global"}, lagoonEnvVars)
 		if lagoonRoutesJSON != nil {
+			fmt.Println("Collecting routes from environment variable LAGOON_ROUTES_JSON"))
 			// if the routesJSON is populated, then attempt to decode and unmarshal it
 			rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonRoutesJSON.Value)
 			rawJSON := []byte(rawJSONStr)
