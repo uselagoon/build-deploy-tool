@@ -14,6 +14,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		genRoutes     *RoutesV2
 		routeMap      map[string][]Route
 		variables     []EnvironmentVariable
+		secretPrefix  string
 		activeStandby bool
 	}
 	tests := []struct {
@@ -35,6 +36,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
+				secretPrefix:  "",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -69,7 +71,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			GenerateRoutesV2(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.activeStandby)
+			GenerateRoutesV2(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.secretPrefix, tt.args.activeStandby)
 			if !cmp.Equal(tt.args.genRoutes, tt.want) {
 				stra, _ := json.Marshal(tt.args.genRoutes)
 				strb, _ := json.Marshal(tt.want)

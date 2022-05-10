@@ -14,7 +14,7 @@ type Fastly struct {
 }
 
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
-func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, variables []EnvironmentVariable) (Fastly, error) {
+func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefix string, variables []EnvironmentVariable) (Fastly, error) {
 	f := Fastly{}
 	if serviceID == "" {
 		if noCacheServiceID != "" {
@@ -40,7 +40,7 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, vari
 		f.Watch = watch
 		if len(lfsIDSplit) == 3 {
 			// the optional secret has been defined
-			f.APISecretName = lfsIDSplit[2]
+			f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, lfsIDSplit[2])
 		}
 	}
 	// check the `LAGOON_FASTLY_SERVICE_IDS` to see if we have a domain specific override
@@ -68,7 +68,7 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route string, vari
 				f.APISecretName = ""
 				if len(lfsIDSplit) == 4 {
 					// the optional secret has been defined
-					f.APISecretName = lfsIDSplit[3]
+					f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, lfsIDSplit[3])
 				}
 			}
 		}
