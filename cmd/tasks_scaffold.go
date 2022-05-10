@@ -8,11 +8,23 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var tasksScaffold = &cobra.Command{
-	Use:     "taskScaffold",
-	Aliases: []string{"ts"},
-	Short:   "This is just a scaffolding command to get me started writing tasks stuff",
+var runPreRollout, runPostRollout bool
+var namespace string
+
+var tasksRun = &cobra.Command{
+	Use:     "tasks",
+	Aliases: []string{"tr"},
+	Short:   "Will run pre and/or post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
+
+		if !runPostRollout && !runPostRollout {
+			return fmt.Errorf("Neither pre nor post rollout tasks have been selected - exiting")
+		}
+
+		if namespace == "" {
+			return fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
+		}
+
 		// get the project and environment variables
 		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
 		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
@@ -24,54 +36,80 @@ var tasksScaffold = &cobra.Command{
 		json.Unmarshal([]byte(environmentVariables), &envVars)
 		lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
 
+		// Give context in the logs to how the tasks execution is being evaluated
 		if len(envVars) > 0 {
-			for i, envVar := range lagoonEnvVars {
-				fmt.Sprintf("lagoonEnvVars[%i] is %v:%v\n", i, envVar.Name, envVar.Value)
+			fmt.Println("Evaluating tasks with the following variables")
+			for _, envVar := range lagoonEnvVars {
+				//Trim the value of the env var so it doesn't persist in the logs
+				fmt.Printf("%v:%v\n", envVar.Name, envVar.Value[0:1]+"...")
 			}
 		} else {
-			fmt.Println("No Project or Environment Variables!")
+			fmt.Println("There were no Environment or Projects values found for evaluation - continuing.")
 		}
-
-		//For now, we actually just want to run some arbitrary command in a running container, perhaps?
 
 		// read the .lagoon.yml file
 		var lYAML lagoon.YAML
 		lPolysite := make(map[string]interface{})
 		if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
-			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
+			return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
 		}
 
-		fmt.Println(lYAML)
+		//TODO: Answer question - is the only diff between pre and post that if they fail, the process exits?
 
-		return nil
-
-		task := lagoon.NewTask()
-		task.Command = "env"
-		lagoon.ExecuteTaskInEnvironment(task)
-
-		command := []string{
-			"sh",
-			"-c",
-			"env",
+		if runPreRollout {
+			fmt.Println("Executing Pre-rollout Tasks")
+			for _, run := range lYAML.Tasks.Prerollout {
+				task := lagoon.NewTask()
+				task.Command = run.Run.Command
+				task.Namespace = namespace
+				task.Service = run.Run.Service
+				task.Shell = run.Run.Shell
+				task.Container = run.Run.Container
+				err := lagoon.ExecuteTaskInEnvironment(task)
+				if err != nil {
+					return err
+				}
+			}
+			fmt.Println("Pre-rollout Tasks Complete")
+		} else {
+			fmt.Println("Skipping pre-rollout tasks")
 		}
-		stdout, stdin, error := lagoon.ExecPod("nginx-deployment", "default", command, false, "ubuntu")
 
-		if error != nil {
-			panic(error.Error())
+		if runPostRollout {
+			for _, run := range lYAML.Tasks.Postrollout {
+				fmt.Println("Executing Post-rollout Tasks")
+				task := lagoon.NewTask()
+				task.Command = run.Run.Command
+				task.Namespace = namespace
+				task.Service = run.Run.Service
+				task.Shell = run.Run.Shell
+				task.Container = run.Run.Container
+				err := lagoon.ExecuteTaskInEnvironment(task)
+				if err != nil {
+					return err
+				}
+				fmt.Println("Post-rollout Tasks Complete")
+			}
+		} else {
+			fmt.Println("Skipping post-rollout tasks")
 		}
-		fmt.Println(stdout)
-		fmt.Println(stdin)
 
 		return nil
 	},
 }
 
 func init() {
-	configCmd.AddCommand(tasksScaffold)
-	tasksScaffold.Flags().StringVarP(&projectVariables, "project-variables", "v", "",
+	configCmd.AddCommand(tasksRun)
+	tasksRun.Flags().StringVarP(&projectVariables, "project-variables", "v", "",
 		"The projects environment variables JSON payload")
-	tasksScaffold.Flags().StringVarP(&environmentVariables, "environment-variables", "V", "",
+	tasksRun.Flags().StringVarP(&environmentVariables, "environment-variables", "V", "",
 		"The environments environment variables JSON payload")
-	tasksScaffold.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+	tasksRun.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
+	tasksRun.Flags().BoolVarP(&runPreRollout, "pre-rollout", "", false,
+		"Will run pre-rollout tasks if true")
+	tasksRun.Flags().BoolVarP(&runPostRollout, "post-rollout", "", false,
+		"Will run post-rollout tasks if true")
+	tasksRun.Flags().StringVarP(&namespace, "namespace", "n", "",
+		"The environments environment variables JSON payload")
 }

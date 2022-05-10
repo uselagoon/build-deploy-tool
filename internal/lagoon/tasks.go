@@ -22,6 +22,7 @@ type Task struct {
 	Namespace string `json:"namespace"`
 	Service   string `json:"service"`
 	Shell     string `json:"shell"`
+	Container string `json:"container"`
 }
 
 func NewTask() Task {
@@ -66,9 +67,27 @@ func getConfig() (*rest.Config, error) {
 
 //TODO: code to exec pre/post rollout tasks
 func ExecuteTaskInEnvironment(task Task) error {
-	fmt.Println("Executing task ", task)
 
-	return nil
+	fmt.Println("Executing task ", task)
+	command := make([]string, 0, 5)
+	if task.Shell != "" {
+		command = append(command, task.Shell)
+	} else {
+		command = append(command, "sh")
+	}
+
+	command = append(command, "-c")
+	command = append(command, task.Command)
+
+	//TODO: add container to the incoming task
+	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container)
+	if err == nil {
+
+		fmt.Println(stdout)
+		
+		fmt.Println(stderr)
+	}
+	return err
 }
 
 func log(data string) {
@@ -78,7 +97,6 @@ func log(data string) {
 func ExecPod(
 	podName, namespace string,
 	command []string,
-	//stdin io.Reader,
 	tty bool,
 	container string,
 ) (string, string, error) {
@@ -96,10 +114,16 @@ func ExecPod(
 	depClient := clientset.AppsV1().Deployments(namespace)
 
 	lagoonServiceLabel := "lagoon.sh/service=" + podName
+	fmt.Println("Label: ", lagoonServiceLabel)
+	//This doesn't seem to be working ...
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
 	})
+	if err != nil {
+		return "", "", err
+	}
+
 	if len(deployments.Items) == 0 {
 		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
 	}
@@ -183,10 +207,9 @@ func ExecPod(
 	req.VersionedParams(&corev1.PodExecOptions{
 		Container: container,
 		Command:   command,
-		//Stdin:   stdin != nil,
-		Stdout: true,
-		Stderr: true,
-		TTY:    tty,
+		Stdout:    true,
+		Stderr:    true,
+		TTY:       tty,
 	}, parameterCodec)
 
 	exec, err := remotecommand.NewSPDYExecutor(restCfg, "POST", req.URL())
@@ -196,7 +219,6 @@ func ExecPod(
 
 	var stdout, stderr bytes.Buffer
 	err = exec.Stream(remotecommand.StreamOptions{
-		//Stdin:  stdin, //TODO: does this need to be implemented?
 		Stdout: &stdout,
 		Stderr: &stderr,
 		Tty:    tty,

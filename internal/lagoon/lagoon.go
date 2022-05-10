@@ -27,6 +27,7 @@ type TaskRun struct {
 }
 
 type Tasks struct {
+	Prerollout  []TaskRun `json:"pre-rollout"`
 	Postrollout []TaskRun `json:"post-rollout"`
 }
 
