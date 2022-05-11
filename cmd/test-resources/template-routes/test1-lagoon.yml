@@ -1,0 +1,10 @@
+docker-compose-yaml: docker-compose.yml
+
+environment_variables:
+  git_sha: 'true'
+
+environments:
+  fastly-annotations:
+    routes:
+    - node:
+      - annotations.com
