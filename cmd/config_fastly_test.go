@@ -1,12 +1,10 @@
 package cmd
 
 import (
-	"encoding/json"
 	"os"
 	"reflect"
 	"testing"
 
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
@@ -143,28 +141,13 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 
-			// pull data from environment variables
-			lagoonFastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", lagoonFastlyCacheNoCahce, false)
-			lagoonFastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", lagoonFastlyServiceID, false)
-			lagoonFastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", lagoonFastlyAPISecretPrefix, false)
-
-			// get the project and environment variables
-			projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, false)
-			environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, false)
-
-			projectVars := []lagoon.EnvironmentVariable{}
-			envVars := []lagoon.EnvironmentVariable{}
-			json.Unmarshal([]byte(projectVariables), &projectVars)
-			json.Unmarshal([]byte(environmentVariables), &envVars)
-			lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
-
 			// generate the fastly configuration from the provided flags/variables
-			got, err := lagoon.GenerateFastlyConfiguration(lagoonFastlyCacheNoCahce, lagoonFastlyServiceID, tt.args.domain, lagoonFastlyAPISecretPrefix, lagoonEnvVars)
+			got, err := FastlyConfigGeneration(false, tt.args.domain)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateFastlyConfiguration() = %v, want %v", got, tt.want)
+				t.Errorf("fastlyConfigGeneration() = %v, want %v", got, tt.want)
 			}
 		})
 	}
