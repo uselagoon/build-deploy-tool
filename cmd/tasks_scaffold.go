@@ -54,18 +54,10 @@ var tasksRun = &cobra.Command{
 			return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
 		}
 
-		//TODO: Answer question - is the only diff between pre and post that if they fail, the process exits?
-
 		if runPreRollout {
 			fmt.Println("Executing Pre-rollout Tasks")
 			for _, run := range lYAML.Tasks.Prerollout {
-				task := lagoon.NewTask()
-				task.Command = run.Run.Command
-				task.Namespace = namespace
-				task.Service = run.Run.Service
-				task.Shell = run.Run.Shell
-				task.Container = run.Run.Container
-				err := lagoon.ExecuteTaskInEnvironment(task)
+				err := runCleanTaskInEnvironment(run.Run)
 				if err != nil {
 					return err
 				}
@@ -78,13 +70,10 @@ var tasksRun = &cobra.Command{
 		if runPostRollout {
 			for _, run := range lYAML.Tasks.Postrollout {
 				fmt.Println("Executing Post-rollout Tasks")
-				task := lagoon.NewTask()
-				task.Command = run.Run.Command
-				task.Namespace = namespace
-				task.Service = run.Run.Service
-				task.Shell = run.Run.Shell
-				task.Container = run.Run.Container
-				err := lagoon.ExecuteTaskInEnvironment(task)
+				err := runCleanTaskInEnvironment(run.Run)
+				if err != nil {
+					return err
+				}
 				if err != nil {
 					return err
 				}
@@ -96,6 +85,17 @@ var tasksRun = &cobra.Command{
 
 		return nil
 	},
+}
+
+func runCleanTaskInEnvironment(incoming lagoon.Task) error {
+	task := lagoon.NewTask()
+	task.Command = incoming.Command
+	task.Namespace = namespace
+	task.Service = incoming.Service
+	task.Shell = incoming.Shell
+	task.Container = incoming.Container
+	err := lagoon.ExecuteTaskInEnvironment(task)
+	return err
 }
 
 func init() {
