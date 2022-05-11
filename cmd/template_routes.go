@@ -158,7 +158,7 @@ func RouteGeneration(debug bool) error {
 		}
 	}
 	// merge routes from the API on top of the routes from the `.lagoon.yml`
-	finalRoutes := lagoon.MergeRoutesV2(*newRoutes, apiRoutes)
+	finalRoutes := lagoon.MergeRoutesV2(*newRoutes, apiRoutes, lagoonEnvVars, fastlyAPISecretPrefix)
 	// generate the templates
 	for _, route := range finalRoutes.Routes {
 		if debug {
