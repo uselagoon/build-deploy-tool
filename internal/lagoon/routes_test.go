@@ -135,8 +135,10 @@ func TestGenerateRouteStructure(t *testing.T) {
 
 func TestMergeRouteStructures(t *testing.T) {
 	type args struct {
-		genRoutes RoutesV2
-		apiRoutes RoutesV2
+		genRoutes    RoutesV2
+		apiRoutes    RoutesV2
+		variables    []EnvironmentVariable
+		secretPrefix string
 	}
 	tests := []struct {
 		name string
@@ -156,7 +158,9 @@ func TestMergeRouteStructures(t *testing.T) {
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 							Fastly: Fastly{
-								Watch: true,
+								Watch:         true,
+								ServiceID:     "12345",
+								APISecretName: "annotationscom",
 							},
 						},
 						{
@@ -191,6 +195,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
+				secretPrefix: "fastly-api-",
 			},
 			want: RoutesV2{
 				Routes: []RouteV2{
@@ -202,7 +207,9 @@ func TestMergeRouteStructures(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							Watch: true,
+							Watch:         true,
+							ServiceID:     "12345",
+							APISecretName: "fastly-api-annotationscom",
 						},
 					},
 					{
@@ -229,7 +236,7 @@ func TestMergeRouteStructures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MergeRoutesV2(tt.args.genRoutes, tt.args.apiRoutes); !reflect.DeepEqual(got, tt.want) {
+			if got := MergeRoutesV2(tt.args.genRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.secretPrefix); !reflect.DeepEqual(got, tt.want) {
 				stra, _ := json.Marshal(got)
 				strb, _ := json.Marshal(tt.want)
 				t.Errorf("MergeRouteStructures() = %v, want %v", string(stra), string(strb))
