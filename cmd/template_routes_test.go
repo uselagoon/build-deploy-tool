@@ -234,14 +234,6 @@ func TestTemplateRoutes(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			err = os.Setenv("ROUTE_FASTLY_SERVICE_ID", tt.args.serviceID)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("FASTLY_API_SECRET_PREFIX", tt.args.secretPrefix)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
 			err = os.Setenv("LAGOON_PROJECT_VARIABLES", tt.args.projectVars)
 			if err != nil {
 				t.Errorf("%v", err)
@@ -254,10 +246,6 @@ func TestTemplateRoutes(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			err = os.Setenv("YAML_FOLDER", tt.args.templatePath)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
 			lagoonYml = tt.args.lagoonYAML
 			templateValues = tt.args.valuesFilePath
 			checkValuesFile = tt.args.checkValuesFile
@@ -266,6 +254,9 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
 			savedTemplates = tt.args.templatePath
+			fastlyAPISecretPrefix = tt.args.secretPrefix
+			fastlyServiceID = tt.args.serviceID
+
 			defer os.RemoveAll(savedTemplates)
 
 			err = RouteGeneration(false)
