@@ -122,10 +122,10 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 				newRoute.Service = rName
 			}
 			// generate the fastly configuration for this route
-			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)
+			err := GenerateFastlyConfiguration(&newRoute.Fastly, "", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)
 			if err != nil {
+				//@TODO: error handling
 			}
-			newRoute.Fastly = fConfig
 
 			genRoutes.Routes = append(genRoutes.Routes, *newRoute)
 		}

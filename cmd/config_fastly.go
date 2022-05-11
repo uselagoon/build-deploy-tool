@@ -48,11 +48,12 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
 
 	// generate the fastly configuration from the provided flags/variables
-	f, err := lagoon.GenerateFastlyConfiguration(fastlyCacheNoCahce, fastlyServiceID, domain, fastlyAPISecretPrefix, lagoonEnvVars)
+	f := &lagoon.Fastly{}
+	err := lagoon.GenerateFastlyConfiguration(f, fastlyCacheNoCahce, fastlyServiceID, domain, fastlyAPISecretPrefix, lagoonEnvVars)
 	if err != nil {
 		return lagoon.Fastly{}, err
 	}
-	return f, nil
+	return *f, nil
 }
 
 func init() {

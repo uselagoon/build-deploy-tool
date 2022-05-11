@@ -68,6 +68,62 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test2",
+			args: args{
+				genRoutes: &RoutesV2{},
+				routeMap: map[string][]Route{
+					"nginx": []Route{
+						{
+							Name: "example.com",
+						},
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": Ingress{
+									Fastly: Fastly{
+										APISecretName: "annotationscom",
+										Watch:         true,
+										ServiceID:     "12345",
+									},
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:         "example.com",
+						Service:        "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							Watch: false,
+						},
+					},
+					{
+						Domain:         "www.example.com",
+						Service:        "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						HSTS:           helpers.StrPtr("null"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							APISecretName: "fastly-api-annotationscom",
+							Watch:         true,
+							ServiceID:     "12345",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
