@@ -246,7 +246,7 @@ func init() {
 		"The fastly cache no cache service ID to use")
 	routeGeneration.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
 		"The fastly service ID to use")
-	routeGeneration.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "",
+	routeGeneration.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
 	routeGeneration.Flags().BoolVarP(&checkValuesFile, "check-values-file", "C", false,
 		"If set, will check for the values file defined in `${template-path}/values.yaml`")
