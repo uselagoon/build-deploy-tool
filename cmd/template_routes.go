@@ -48,10 +48,12 @@ func RouteGeneration(debug bool) error {
 	activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment, debug)
 	standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment, debug)
 	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
-	fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
-	fastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", fastlyAPISecretPrefix, debug)
 	lagoonVersion = helpers.GetEnv("LAGOON_VERSION", lagoonVersion, debug)
-	savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, debug)
+
+	// these aren't available as environment variables in builds
+	// fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
+	// fastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", fastlyAPISecretPrefix, debug)
+	// savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, debug)
 
 	// read the .lagoon.yml file
 	var lYAML lagoon.YAML
@@ -244,6 +246,8 @@ func init() {
 		"The fastly cache no cache service ID to use")
 	routeGeneration.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
 		"The fastly service ID to use")
+	routeGeneration.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "",
+		"The fastly secret prefix to use")
 	routeGeneration.Flags().BoolVarP(&checkValuesFile, "check-values-file", "C", false,
 		"If set, will check for the values file defined in `${template-path}/values.yaml`")
 }
