@@ -46,7 +46,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -58,7 +57,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -100,7 +98,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -112,7 +109,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -157,7 +153,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 							Fastly: Fastly{
@@ -169,7 +164,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
@@ -182,7 +176,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations: map[string]string{
 								"nginx": "nginx",
@@ -193,7 +186,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
@@ -207,7 +199,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -219,7 +210,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations: map[string]string{
 							"nginx": "nginx",
@@ -230,7 +220,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 					},

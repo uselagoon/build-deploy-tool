@@ -20,7 +20,6 @@ type RouteV2 struct {
 	TLSAcme        *bool             `json:"tls-acme"`
 	Migrate        *bool             `json:"migrate,omitempty"`
 	Insecure       *string           `json:"insecure,omitempty"`
-	HSTS           *string           `json:"hsts,omitempty"`
 	MonitoringPath string            `json:"monitoring-path,omitempty"`
 	Fastly         Fastly            `json:"fastly,omitempty"`
 	Annotations    map[string]string `json:"annotations"`
@@ -31,7 +30,6 @@ type Ingress struct {
 	TLSAcme        *bool             `json:"tls-acme,omitempty"`
 	Migrate        *bool             `json:"migrate,omitempty"`
 	Insecure       *string           `json:"insecure,omitempty"`
-	HSTS           *string           `json:"hsts,omitempty"`
 	MonitoringPath string            `json:"monitoring-path,omitempty"`
 	Fastly         Fastly            `json:"fastly,omitempty"`
 	Annotations    map[string]string `json:"annotations,omitempty"`
@@ -88,7 +86,6 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 			newRoute.TLSAcme = helpers.BoolPtr(true)
 			newRoute.Insecure = helpers.StrPtr("Redirect")
 			newRoute.MonitoringPath = "/"
-			newRoute.HSTS = helpers.StrPtr("null")
 			newRoute.Annotations = map[string]string{}
 			newRoute.Fastly.ServiceID = ""
 			newRoute.Fastly.Watch = false
@@ -110,9 +107,6 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 					}
 					if ingress.Insecure != nil {
 						newRoute.Insecure = ingress.Insecure
-					}
-					if ingress.HSTS != nil {
-						newRoute.HSTS = ingress.HSTS
 					}
 				}
 			} else {
@@ -155,11 +149,6 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 				} else {
 					add.Insecure = helpers.StrPtr("Redirect")
 				}
-				if aRoute.HSTS != nil {
-					add.HSTS = aRoute.HSTS
-				} else {
-					add.HSTS = helpers.StrPtr("null")
-				}
 				if aRoute.Annotations != nil {
 					add.Annotations = aRoute.Annotations
 				} else {
@@ -189,11 +178,6 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 				add.Insecure = aRoute.Insecure
 			} else {
 				add.Insecure = helpers.StrPtr("Redirect")
-			}
-			if aRoute.HSTS != nil {
-				add.HSTS = aRoute.HSTS
-			} else {
-				add.HSTS = helpers.StrPtr("null")
 			}
 			if aRoute.Annotations != nil {
 				add.Annotations = aRoute.Annotations

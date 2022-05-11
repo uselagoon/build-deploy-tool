@@ -33,7 +33,6 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Service:        "nginx",
 					MonitoringPath: "/",
 					Insecure:       helpers.StrPtr("Redirect"),
-					HSTS:           helpers.StrPtr("null"),
 					TLSAcme:        helpers.BoolPtr(true),
 					Migrate:        helpers.BoolPtr(true),
 					Annotations: map[string]string{
@@ -68,7 +67,6 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Service:        "nginx",
 					MonitoringPath: "/",
 					Insecure:       helpers.StrPtr("Redirect"),
-					HSTS:           helpers.StrPtr("null"),
 					TLSAcme:        helpers.BoolPtr(true),
 					Migrate:        helpers.BoolPtr(false),
 					Annotations: map[string]string{
