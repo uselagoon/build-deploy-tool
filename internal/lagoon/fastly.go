@@ -14,8 +14,7 @@ type Fastly struct {
 }
 
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
-func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefix string, variables []EnvironmentVariable) (Fastly, error) {
-	f := Fastly{}
+func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route, secretPrefix string, variables []EnvironmentVariable) error {
 	f.ServiceID = serviceID
 	if serviceID == "" {
 		if noCacheServiceID != "" {
@@ -31,11 +30,11 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefi
 	if err == nil {
 		lfsIDSplit := strings.Split(lfsID.Value, ":")
 		if len(lfsIDSplit) == 1 {
-			return f, fmt.Errorf("no watch status was provided, only the service id")
+			return fmt.Errorf("no watch status was provided, only the service id")
 		}
 		watch, err := strconv.ParseBool(lfsIDSplit[1])
 		if err != nil {
-			return f, fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[1])
+			return fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[1])
 		}
 		f.ServiceID = lfsIDSplit[0]
 		f.Watch = watch
@@ -55,11 +54,11 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefi
 			lfsIDSplit := strings.Split(lfs, ":")
 			if lfsIDSplit[0] == route {
 				if len(lfsIDSplit) == 2 {
-					return f, fmt.Errorf("no watch status was provided, only the route and service id")
+					return fmt.Errorf("no watch status was provided, only the route and service id")
 				}
 				watch, err := strconv.ParseBool(lfsIDSplit[2])
 				if err != nil {
-					return f, fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[2])
+					return fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[2])
 				}
 				f.ServiceID = lfsIDSplit[1]
 				f.Watch = watch
@@ -74,5 +73,10 @@ func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefi
 			}
 		}
 	}
-	return f, nil
+	if f.APISecretName != "" {
+		if !strings.HasPrefix(f.APISecretName, secretPrefix) {
+			f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, f.APISecretName)
+		}
+	}
+	return nil
 }

@@ -30,7 +30,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID:     "service-id",
@@ -46,7 +46,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID:     "service-id",
@@ -62,11 +62,11 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID:     "service-id",
-				APISecretName: "faslty-api-secret",
+				APISecretName: "fastly-api-secret",
 				Watch:         true,
 			},
 		},
@@ -78,11 +78,11 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID:     "service-id",
-				APISecretName: "faslty-api-secret",
+				APISecretName: "fastly-api-secret",
 				Watch:         true,
 			},
 		},
@@ -94,7 +94,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID: "dedicated-service-id",
@@ -109,7 +109,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
 				domain:       "example.com",
-				secretPrefix: "faslty-api-",
+				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID: "service-id",
