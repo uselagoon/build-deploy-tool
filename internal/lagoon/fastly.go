@@ -16,6 +16,7 @@ type Fastly struct {
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
 func GenerateFastlyConfiguration(noCacheServiceID, serviceID, route, secretPrefix string, variables []EnvironmentVariable) (Fastly, error) {
 	f := Fastly{}
+	f.ServiceID = serviceID
 	if serviceID == "" {
 		if noCacheServiceID != "" {
 			f.ServiceID = noCacheServiceID
