@@ -1,0 +1,6 @@
+environments:
+  branch/routes:
+    routes:
+    - node:
+      - customdomain-will-be-main-domain.com
+      - customdomain-will-be-not-be-main-domain.com
