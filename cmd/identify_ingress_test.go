@@ -235,6 +235,26 @@ func TestIdentifyRoute(t *testing.T) {
 			},
 			want: "annotations.com",
 		},
+		{
+			name: "test11 multidomain no values",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "project-name7",
+				environmentName: "branch-routes",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "branch/routes",
+				projectVars:     `[]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "test-resources/template-ingress/multi-lagoon2.yml",
+				checkValuesFile: false,
+				templatePath:    "test-resources/template-ingress/output",
+			},
+			want: "customdomain-will-be-main-domain.com",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
