@@ -238,6 +238,26 @@ func TestTemplateRoutes(t *testing.T) {
 			},
 			want: "test-resources/template-ingress/test11-results",
 		},
+		{
+			name: "test11 multidomain no values",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "project-name7",
+				environmentName: "branch-routes",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "branch/routes",
+				projectVars:     `[]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "test-resources/template-ingress/multi-lagoon2.yml",
+				checkValuesFile: false,
+				templatePath:    "test-resources/template-ingress/output",
+			},
+			want: "test-resources/template-ingress/test12-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
