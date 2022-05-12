@@ -46,12 +46,12 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
-				valuesFilePath:  "test-resources/template-routes/test1-results",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
+				valuesFilePath:  "test-resources/template-ingress/test1-results",
 				checkValuesFile: true,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test1-results",
+			want: "test-resources/template-ingress/test1-results",
 		},
 		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and with values",
@@ -61,12 +61,12 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
-				valuesFilePath:  "test-resources/template-routes/test2-results",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
+				valuesFilePath:  "test-resources/template-ingress/test2-results",
 				checkValuesFile: true,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test2-results",
+			want: "test-resources/template-ingress/test2-results",
 		},
 		{
 			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and with values",
@@ -76,12 +76,12 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
-				valuesFilePath:  "test-resources/template-routes/test3-results",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
+				valuesFilePath:  "test-resources/template-ingress/test3-results",
 				checkValuesFile: true,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test3-results",
+			want: "test-resources/template-ingress/test3-results",
 		},
 		{
 			name: "test4 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
@@ -97,11 +97,11 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				checkValuesFile: false,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test1-results",
+			want: "test-resources/template-ingress/test1-results",
 		},
 		{
 			name: "test5 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
@@ -117,11 +117,11 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				checkValuesFile: false,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test2-results",
+			want: "test-resources/template-ingress/test2-results",
 		},
 		{
 			name: "test6 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
@@ -137,11 +137,11 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				checkValuesFile: false,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test3-results",
+			want: "test-resources/template-ingress/test3-results",
 		},
 		{
 			name: "test7 check no fastly and with values",
@@ -151,12 +151,12 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
-				valuesFilePath:  "test-resources/template-routes/test7-results",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
+				valuesFilePath:  "test-resources/template-ingress/test7-results",
 				checkValuesFile: true,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test7-results",
+			want: "test-resources/template-ingress/test7-results",
 		},
 		{
 			name: "test8 check no fastly and no values",
@@ -172,11 +172,71 @@ func TestTemplateRoutes(t *testing.T) {
 				projectVars:     `[]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-routes/test1-lagoon.yml",
+				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				checkValuesFile: false,
-				templatePath:    "test-resources/template-routes/output",
+				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "test-resources/template-routes/test7-results",
+			want: "test-resources/template-ingress/test7-results",
+		},
+		{
+			name: "test9 multiproject1 no values",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "ci-multiproject1-control-k8s",
+				environmentName: "multiproject",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "multiproject",
+				projectVars:     `[]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
+				checkValuesFile: false,
+				templatePath:    "test-resources/template-ingress/output",
+			},
+			want: "test-resources/template-ingress/test9-results",
+		},
+		{
+			name: "test10 multiproject2 no values",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "ci-multiproject2-control-k8s",
+				environmentName: "multiproject",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "multiproject",
+				projectVars:     `[]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
+				checkValuesFile: false,
+				templatePath:    "test-resources/template-ingress/output",
+			},
+			want: "test-resources/template-ingress/test10-results",
+		},
+		{
+			name: "test11 multidomain no values",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "project-name7",
+				environmentName: "fastly-annotations",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "fastly-annotations",
+				projectVars:     `[]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "test-resources/template-ingress/multi-lagoon.yml",
+				checkValuesFile: false,
+				templatePath:    "test-resources/template-ingress/output",
+			},
+			want: "test-resources/template-ingress/test11-results",
 		},
 	}
 	for _, tt := range tests {
@@ -259,7 +319,7 @@ func TestTemplateRoutes(t *testing.T) {
 
 			defer os.RemoveAll(savedTemplates)
 
-			err = RouteGeneration(false)
+			err = IngressTemplateGeneration(false)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -273,6 +333,13 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("couldn't read directory %v: %v", tt.want, err)
 			}
 			if len(files) != (len(results) - 1) {
+				for _, f := range files {
+					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
+					if err != nil {
+						t.Errorf("couldn't read file %v: %v", savedTemplates, err)
+					}
+					fmt.Println(string(f1))
+				}
 				t.Errorf("number of generated templates doesn't match results %v/%v: %v", len(files), (len(results) - 1), err)
 			}
 			for _, f := range files {

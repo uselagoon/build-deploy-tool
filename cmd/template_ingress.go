@@ -19,16 +19,16 @@ var templateValues, savedTemplates, fastlyCacheNoCahce, fastlyServiceID, fastlyA
 var monitoringEnabled, checkValuesFile bool
 
 var routeGeneration = &cobra.Command{
-	Use:     "routes",
-	Aliases: []string{"route", "rs", "r"},
-	Short:   "Generate the ingress/route templates for a Lagoon build",
+	Use:     "ingress",
+	Aliases: []string{"i"},
+	Short:   "Generate the ingress templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return RouteGeneration(true)
+		return IngressTemplateGeneration(true)
 	},
 }
 
-// RouteGeneration .
-func RouteGeneration(debug bool) error {
+// IngressTemplateGeneration .
+func IngressTemplateGeneration(debug bool) error {
 	activeEnv := false
 	standbyEnv := false
 

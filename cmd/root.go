@@ -45,6 +45,13 @@ var configCmd = &cobra.Command{
 	Long:    `Generate any configurations for Lagoon builds`,
 }
 
+var identifyCmd = &cobra.Command{
+	Use:     "identify",
+	Aliases: []string{"id", "i"},
+	Short:   "Identify resources",
+	Long:    `Identify resources for Lagoon builds`,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -59,6 +66,7 @@ func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
+	rootCmd.AddCommand(identifyCmd)
 }
 
 // initConfig reads in config file and ENV variables if set.
