@@ -151,12 +151,12 @@ func IdentifyPrimaryIngress(debug bool) (string, error) {
 		if err != nil {
 			return primaryIngress, fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
 		}
-		for _, routeMap := range lYAMLPolysite.Environments[lagoonValues.Environment].Routes {
+		for _, routeMap := range lYAMLPolysite.Environments[lagoonValues.Branch].Routes {
 			lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, fastlyAPISecretPrefix, false)
 		}
 	} else {
 		// otherwise it just uses the default environment name
-		for _, routeMap := range lYAML.Environments[lagoonValues.Environment].Routes {
+		for _, routeMap := range lYAML.Environments[lagoonValues.Branch].Routes {
 			lagoon.GenerateRoutesV2(newRoutes, routeMap, lagoonEnvVars, fastlyAPISecretPrefix, false)
 		}
 	}
