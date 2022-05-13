@@ -68,7 +68,7 @@ func getConfig() (*rest.Config, error) {
 	*kubeconfig = helpers.GetEnv("KUBECONFIG", dirname+"/.kube/config", false)
 
 	// use the current context in kubeconfig
-	config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
