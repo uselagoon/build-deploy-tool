@@ -54,7 +54,6 @@ func IngressTemplateGeneration(debug bool) error {
 		templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 		routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 	}
-
 	if activeEnv || standbyEnv {
 		// active/standby routes should not be changed by any environment defined routes.
 		// generate the templates for these independently of any previously generated routes,
