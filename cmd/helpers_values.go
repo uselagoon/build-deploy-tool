@@ -93,10 +93,10 @@ func collectIngressVariablesValues(debug bool, activeEnv, standbyEnv *bool,
 		monitoringEnabled = true
 		// check if the environment is active or standby
 		if lagoonValues.Environment == activeEnvironment {
-			activeEnv = helpers.BoolPtr(true)
+			*activeEnv = true
 		}
 		if lagoonValues.Environment == standbyEnvironment {
-			standbyEnv = helpers.BoolPtr(true)
+			*standbyEnv = true
 		}
 	}
 
