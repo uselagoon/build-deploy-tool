@@ -1,0 +1,11 @@
+project: "project-name7"
+environment: "fastly-annotations"
+environmentType: "production"
+namespace: "project-name-fastly-annotations"
+gitSha: "00000000"
+buildType: "branch"
+routesAutogenerateInsecure: Allow
+routesAutogenerateEnabled: true
+kubernetes: "cluster1"
+lagoonVersion: "v2.7.x"
+branch: "fastly-annotations"

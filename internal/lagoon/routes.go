@@ -20,7 +20,6 @@ type RouteV2 struct {
 	TLSAcme        *bool             `json:"tls-acme"`
 	Migrate        *bool             `json:"migrate,omitempty"`
 	Insecure       *string           `json:"insecure,omitempty"`
-	HSTS           *string           `json:"hsts,omitempty"`
 	MonitoringPath string            `json:"monitoring-path,omitempty"`
 	Fastly         Fastly            `json:"fastly,omitempty"`
 	Annotations    map[string]string `json:"annotations"`
@@ -31,7 +30,6 @@ type Ingress struct {
 	TLSAcme        *bool             `json:"tls-acme,omitempty"`
 	Migrate        *bool             `json:"migrate,omitempty"`
 	Insecure       *string           `json:"insecure,omitempty"`
-	HSTS           *string           `json:"hsts,omitempty"`
 	MonitoringPath string            `json:"monitoring-path,omitempty"`
 	Fastly         Fastly            `json:"fastly,omitempty"`
 	Annotations    map[string]string `json:"annotations,omitempty"`
@@ -80,15 +78,14 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 }
 
 // GenerateRoutesV2 generate routesv2 definitions from lagoon route mappings
-func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variables []EnvironmentVariable, activeStandby bool) {
+func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variables []EnvironmentVariable, secretPrefix string, activeStandby bool) {
 	for rName, lagoonRoutes := range routeMap {
 		for _, lagoonRoute := range lagoonRoutes {
-			newRoute := &RouteV2{}
+			newRoute := RouteV2{}
 			// set the defaults for routes
 			newRoute.TLSAcme = helpers.BoolPtr(true)
 			newRoute.Insecure = helpers.StrPtr("Redirect")
 			newRoute.MonitoringPath = "/"
-			newRoute.HSTS = helpers.StrPtr("null")
 			newRoute.Annotations = map[string]string{}
 			newRoute.Fastly.ServiceID = ""
 			newRoute.Fastly.Watch = false
@@ -111,9 +108,6 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 					if ingress.Insecure != nil {
 						newRoute.Insecure = ingress.Insecure
 					}
-					if ingress.HSTS != nil {
-						newRoute.HSTS = ingress.HSTS
-					}
 				}
 			} else {
 				// this route is just a domain
@@ -122,19 +116,19 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 				newRoute.Service = rName
 			}
 			// generate the fastly configuration for this route
-			fConfig, err := GenerateFastlyConfiguration("", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
+			err := GenerateFastlyConfiguration(&newRoute.Fastly, "", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)
 			if err != nil {
+				//@TODO: error handling
 			}
-			newRoute.Fastly = fConfig
 
-			genRoutes.Routes = append(genRoutes.Routes, *newRoute)
+			genRoutes.Routes = append(genRoutes.Routes, newRoute)
 		}
 	}
 }
 
 // MergeRoutesV2 merge routes from the API onto the previously generated routes.
-func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
-	finalRoutes := &RoutesV2{}
+func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []EnvironmentVariable, secretPrefix string) RoutesV2 {
+	finalRoutes := RoutesV2{}
 	existsInAPI := false
 	// replace any routes from the lagoon yaml with ones from the api
 	// this only modifies ones that exist in lagoon yaml
@@ -154,11 +148,6 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 					add.Insecure = aRoute.Insecure
 				} else {
 					add.Insecure = helpers.StrPtr("Redirect")
-				}
-				if aRoute.HSTS != nil {
-					add.HSTS = aRoute.HSTS
-				} else {
-					add.HSTS = helpers.StrPtr("null")
 				}
 				if aRoute.Annotations != nil {
 					add.Annotations = aRoute.Annotations
@@ -190,11 +179,6 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 			} else {
 				add.Insecure = helpers.StrPtr("Redirect")
 			}
-			if aRoute.HSTS != nil {
-				add.HSTS = aRoute.HSTS
-			} else {
-				add.HSTS = helpers.StrPtr("null")
-			}
 			if aRoute.Annotations != nil {
 				add.Annotations = aRoute.Annotations
 			} else {
@@ -210,5 +194,14 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2) RoutesV2 {
 			finalRoutes.Routes = append(finalRoutes.Routes, add)
 		}
 	}
-	return *finalRoutes
+	finalRoutes2 := RoutesV2{}
+	for _, fRoute := range finalRoutes.Routes {
+		// generate the fastly configuration for this route if required
+		err := GenerateFastlyConfiguration(&fRoute.Fastly, "", fRoute.Fastly.ServiceID, fRoute.Domain, secretPrefix, variables)
+		if err != nil {
+			//@TODO: error handling
+		}
+		finalRoutes2.Routes = append(finalRoutes2.Routes, fRoute)
+	}
+	return finalRoutes2
 }

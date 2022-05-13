@@ -51,6 +51,37 @@ func TestMergeVariables(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test2",
+			args: args{
+				project: []EnvironmentVariable{
+					{
+						Name:  "PROJECT_SPECIFIC_VARIABLE",
+						Value: "projectvariable",
+						Scope: "global",
+					},
+				},
+				environment: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_ROUTES_JSON",
+						Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+						Scope: "build",
+					},
+				},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "PROJECT_SPECIFIC_VARIABLE",
+					Value: "projectvariable",
+					Scope: "global",
+				},
+				{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -118,6 +149,31 @@ func TestGetLagoonVariable(t *testing.T) {
 			},
 			want:    nil,
 			wantErr: true,
+		},
+		{
+			name: "test3",
+			args: args{
+				name:  "LAGOON_ROUTES_JSON",
+				scope: []string{"global", "build"},
+				variables: []EnvironmentVariable{
+					{
+						Name:  "PROJECT_SPECIFIC_VARIABLE",
+						Value: "projectvariable",
+						Scope: "global",
+					},
+					{
+						Name:  "LAGOON_ROUTES_JSON",
+						Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+						Scope: "build",
+					},
+				},
+			},
+			want: &EnvironmentVariable{
+				Name:  "LAGOON_ROUTES_JSON",
+				Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+				Scope: "build",
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

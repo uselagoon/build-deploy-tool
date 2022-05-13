@@ -14,6 +14,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		genRoutes     *RoutesV2
 		routeMap      map[string][]Route
 		variables     []EnvironmentVariable
+		secretPrefix  string
 		activeStandby bool
 	}
 	tests := []struct {
@@ -35,6 +36,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
+				secretPrefix:  "",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -44,7 +46,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -56,7 +57,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
@@ -66,10 +66,64 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test2",
+			args: args{
+				genRoutes: &RoutesV2{},
+				routeMap: map[string][]Route{
+					"nginx": []Route{
+						{
+							Name: "example.com",
+						},
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": Ingress{
+									Fastly: Fastly{
+										APISecretName: "annotationscom",
+										Watch:         true,
+										ServiceID:     "12345",
+									},
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:         "example.com",
+						Service:        "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							Watch: false,
+						},
+					},
+					{
+						Domain:         "www.example.com",
+						Service:        "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							APISecretName: "fastly-api-annotationscom",
+							Watch:         true,
+							ServiceID:     "12345",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			GenerateRoutesV2(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.activeStandby)
+			GenerateRoutesV2(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.secretPrefix, tt.args.activeStandby)
 			if !cmp.Equal(tt.args.genRoutes, tt.want) {
 				stra, _ := json.Marshal(tt.args.genRoutes)
 				strb, _ := json.Marshal(tt.want)
@@ -81,8 +135,10 @@ func TestGenerateRouteStructure(t *testing.T) {
 
 func TestMergeRouteStructures(t *testing.T) {
 	type args struct {
-		genRoutes RoutesV2
-		apiRoutes RoutesV2
+		genRoutes    RoutesV2
+		apiRoutes    RoutesV2
+		variables    []EnvironmentVariable
+		secretPrefix string
 	}
 	tests := []struct {
 		name string
@@ -99,11 +155,12 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 							Fastly: Fastly{
-								Watch: true,
+								Watch:         true,
+								ServiceID:     "12345",
+								APISecretName: "annotationscom",
 							},
 						},
 						{
@@ -111,7 +168,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
@@ -124,7 +180,6 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations: map[string]string{
 								"nginx": "nginx",
@@ -135,12 +190,12 @@ func TestMergeRouteStructures(t *testing.T) {
 							Service:        "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
-							HSTS:           helpers.StrPtr("null"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
 					},
 				},
+				secretPrefix: "fastly-api-",
 			},
 			want: RoutesV2{
 				Routes: []RouteV2{
@@ -149,11 +204,12 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							Watch: true,
+							Watch:         true,
+							ServiceID:     "12345",
+							APISecretName: "fastly-api-annotationscom",
 						},
 					},
 					{
@@ -161,7 +217,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations: map[string]string{
 							"nginx": "nginx",
@@ -172,7 +227,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						Service:        "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
-						HSTS:           helpers.StrPtr("null"),
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 					},
@@ -182,7 +236,7 @@ func TestMergeRouteStructures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MergeRoutesV2(tt.args.genRoutes, tt.args.apiRoutes); !reflect.DeepEqual(got, tt.want) {
+			if got := MergeRoutesV2(tt.args.genRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.secretPrefix); !reflect.DeepEqual(got, tt.want) {
 				stra, _ := json.Marshal(got)
 				strb, _ := json.Marshal(tt.want)
 				t.Errorf("MergeRouteStructures() = %v, want %v", string(stra), string(strb))
