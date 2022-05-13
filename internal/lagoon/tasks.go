@@ -13,6 +13,7 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
+	"os"
 	"time"
 )
 
@@ -38,8 +39,6 @@ func (t Task) String() string {
 	return fmt.Sprintf("{command: '%v', ns: '%v', service: '%v', shell:'%v'}", t.Command, t.Namespace, t.Service, t.Shell)
 }
 
-//TODO: do we want some kind of validation?
-
 //TODO: build get config for kubernetes
 // This will either be in cluster or out of cluster - we start with out of cluster to test
 // TODO: BMK - ensure that this is responsive to the context
@@ -53,19 +52,29 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
+	if helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" && helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" {
+		config, err := rest.InClusterConfig()
+		if err != nil {
+			return nil, err
+		}
+		return config, nil
+	}
 	var kubeconfig *string
 	kubeconfig = new(string)
-	*kubeconfig = helpers.GetEnv("KUBECONFIG", "/home/bomoko/.kube/config", false)
+	dirname, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
+	*kubeconfig = helpers.GetEnv("KUBECONFIG", dirname+"/.kube/config", false)
 
 	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	config, err = clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		panic(err.Error())
 	}
 	return config, err
 }
 
-//TODO: code to exec pre/post rollout tasks
 func ExecuteTaskInEnvironment(task Task) error {
 
 	fmt.Println("Executing task ", task)
@@ -84,7 +93,7 @@ func ExecuteTaskInEnvironment(task Task) error {
 	if err == nil {
 
 		fmt.Println(stdout)
-		
+
 		fmt.Println(stderr)
 	}
 	return err

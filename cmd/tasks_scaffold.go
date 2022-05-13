@@ -112,4 +112,5 @@ func init() {
 		"Will run post-rollout tasks if true")
 	tasksRun.Flags().StringVarP(&namespace, "namespace", "n", "",
 		"The environments environment variables JSON payload")
+
 }
