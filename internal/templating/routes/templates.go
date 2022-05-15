@@ -61,22 +61,23 @@ func GenerateIngressTemplate(route lagoon.RouteV2, lValues lagoon.BuildValues,
 		ingress.ObjectMeta.Labels[key] = value
 	}
 	ingress.ObjectMeta.Annotations = map[string]string{
-		"kubernetes.io/tls-acme":                    strconv.FormatBool(*route.TLSAcme),
-		"fastly.amazee.io/watch":                    strconv.FormatBool(route.Fastly.Watch),
-		"lagoon.sh/version":                         lValues.LagoonVersion,
-		"uptimerobot.monitor.stakater.com/interval": "60", //this is hardcoded
+		"kubernetes.io/tls-acme": strconv.FormatBool(*route.TLSAcme),
+		"fastly.amazee.io/watch": strconv.FormatBool(route.Fastly.Watch),
+		"lagoon.sh/version":      lValues.LagoonVersion,
 	}
 	additionalAnnotations := map[string]string{}
 	additionalAnnotations["monitor.stakater.com/enabled"] = "false"
 	if monitoringEnabled {
+		// only add the monitring annotations if monitoring is enabled
 		additionalAnnotations["monitor.stakater.com/enabled"] = "true"
-	}
-	additionalAnnotations["uptimerobot.monitor.stakater.com/alert-contacts"] = "unconfigured"
-	if monitoringContact != "" {
-		additionalAnnotations["uptimerobot.monitor.stakater.com/alert-contacts"] = monitoringContact
-	}
-	if monitoringStatusPageID != "" {
-		additionalAnnotations["uptimerobot.monitor.stakater.com/status-pages"] = monitoringStatusPageID
+		additionalAnnotations["uptimerobot.monitor.stakater.com/alert-contacts"] = "unconfigured"
+		if monitoringContact != "" {
+			additionalAnnotations["uptimerobot.monitor.stakater.com/alert-contacts"] = monitoringContact
+		}
+		if monitoringStatusPageID != "" {
+			additionalAnnotations["uptimerobot.monitor.stakater.com/status-pages"] = monitoringStatusPageID
+		}
+		additionalAnnotations["uptimerobot.monitor.stakater.com/interval"] = "60"
 	}
 	if route.MonitoringPath != "" {
 		additionalAnnotations["monitor.stakater.com/overridePath"] = route.MonitoringPath
