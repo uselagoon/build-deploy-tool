@@ -58,6 +58,8 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 		lagoonValues.PRHeadBranch = prHeadBranch
 		lagoonValues.PRBaseBranch = prBaseBranch
 	}
+	// create the services map
+	lagoonValues.Services = make(map[string]lagoon.ServiceValues)
 
 	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
 		return fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
