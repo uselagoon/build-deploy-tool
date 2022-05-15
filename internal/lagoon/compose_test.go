@@ -26,7 +26,7 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 			},
 			want: &Compose{
 				Services: map[string]Service{
-					"cli": Service{
+					"cli": {
 						Build: ServiceBuild{
 							Context:    ".",
 							Dockerfile: "lagoon/cli.dockerfile",
@@ -38,7 +38,7 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 							"lagoon.type":            "cli-persistent",
 						},
 					},
-					"nginx": Service{
+					"nginx": {
 						Build: ServiceBuild{
 							Context:    ".",
 							Dockerfile: "lagoon/nginx.dockerfile",
@@ -49,7 +49,7 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 							"lagoon.type":       "nginx-php-persistent",
 						},
 					},
-					"php": Service{
+					"php": {
 						Build: ServiceBuild{
 							Context:    ".",
 							Dockerfile: "lagoon/php.dockerfile",
@@ -61,19 +61,19 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 							"lagoon.type":       "nginx-php-persistent",
 						},
 					},
-					"mariadb": Service{
+					"mariadb": {
 						Labels: map[string]string{
 							"lando.type":  "mariadb-drupal",
 							"lagoon.type": "mariadb",
 						},
 					},
-					"redis": Service{
+					"redis": {
 						Labels: map[string]string{
 							"lando.type":  "redis",
 							"lagoon.type": "redis",
 						},
 					},
-					"solr": Service{
+					"solr": {
 						Labels: map[string]string{
 							"lando.type":  "solr-drupal",
 							"lagoon.type": "solr",
@@ -90,7 +90,7 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 			},
 			want: &Compose{
 				Services: map[string]Service{
-					"node": Service{
+					"node": {
 						Build: ServiceBuild{
 							Context:    ".",
 							Dockerfile: "node.dockerfile",
