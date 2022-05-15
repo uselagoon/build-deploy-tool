@@ -43,7 +43,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
@@ -77,7 +77,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
@@ -90,6 +90,40 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				activeStandby:          false,
 			},
 			want: "test-resources/result-custom-ingress1.yaml",
+		},
+		{
+			name: "custom-ingress2",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Service:        "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+				},
+				values: lagoon.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+				},
+				monitoringContact:      "abcdefg",
+				monitoringStatusPageID: "12345",
+				monitoringEnabled:      true,
+				activeStandby:          false,
+			},
+			want: "test-resources/result-custom-ingress2.yaml",
 		},
 	}
 	for _, tt := range tests {
