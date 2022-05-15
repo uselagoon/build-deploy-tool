@@ -19,9 +19,9 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 		want    *Compose
 	}{
 		{
-			name: "test1",
+			name: "test1 docker-compose drupal example",
 			args: args{
-				file: "test-resources/docker-compose1.yml",
+				file: "test-resources/drupal-docker-compose.yml",
 				l:    &Compose{},
 			},
 			want: &Compose{
@@ -83,9 +83,9 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 			},
 		},
 		{
-			name: "test2",
+			name: "test2 docker-compose node example",
 			args: args{
-				file: "test-resources/docker-compose2.yml",
+				file: "test-resources/node-docker-compose.yml",
 				l:    &Compose{},
 			},
 			want: &Compose{
