@@ -2,9 +2,12 @@ package helpers
 
 import (
 	"crypto/md5"
+	"crypto/sha256"
+	"encoding/base32"
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strings"
 )
 
 // StrPtr .
@@ -27,6 +30,15 @@ func BoolPtr(b bool) *bool {
 func GetMD5HashWithNewLine(text string) string {
 	hash := md5.Sum([]byte(fmt.Sprintf("%s\n", text)))
 	return hex.EncodeToString(hash[:])
+}
+
+func GetSha256Hash(text string) []byte {
+	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", text)))
+	return hash[:]
+}
+
+func GetBase32EncodedLowercase(data []byte) string {
+	return strings.ToLower(base32.StdEncoding.EncodeToString(data)[:])
 }
 
 // GetEnv gets an environment variable

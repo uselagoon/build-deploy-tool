@@ -1,7 +1,7 @@
-docker-compose-yaml: docker-compose.yml
+docker-compose-yaml: test-resources/template-ingress/docker-compose.yml
 
 environment_variables:
-  git_sha: 'true'
+  git_sha: "true"
 
 production_routes:
   active:
@@ -16,9 +16,9 @@ production_routes:
 environments:
   main:
     routes:
-    - node:
-      - example.com
+      - node:
+          - example.com
   main2:
     routes:
-    - node:
-      - example.com
+      - node:
+          - example.com

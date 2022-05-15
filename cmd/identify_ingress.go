@@ -30,8 +30,9 @@ func IdentifyPrimaryIngress(debug bool) (string, error) {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
+	lCompose := lagoon.Compose{}
 	lPolysite := make(map[string]interface{})
-	collectIngressVariablesValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite, &lCompose)
 
 	// read the routes from the API
 	apiRoutes, err := getRoutesFromAPIEnvVar(lagoonEnvVars, debug)
