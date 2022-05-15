@@ -36,9 +36,8 @@ func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVar
 	}
 	// add any that exist in the environment only to the final variables list
 	for _, eVar := range environment {
-		add := EnvironmentVariable{}
+		add := eVar
 		for _, aVar := range allVars {
-			add = eVar
 			if eVar.Name == aVar.Name {
 				existsInEnvironment = true
 			}

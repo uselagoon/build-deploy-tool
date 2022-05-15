@@ -363,6 +363,9 @@ func TestTemplateRoutes(t *testing.T) {
 				}
 				t.Errorf("resulting templates do not match")
 			}
+			t.Cleanup(func() {
+				unsetEnvVars(nil)
+			})
 		})
 	}
 }

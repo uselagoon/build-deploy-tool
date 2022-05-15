@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -100,4 +101,22 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	json.Unmarshal([]byte(environmentVariables), &envVars)
 	*lagoonEnvVars = lagoon.MergeVariables(projectVars, envVars)
 	return nil
+}
+
+func unsetEnvVars(localVars []struct {
+	name  string
+	value string
+}) {
+	varNames := []string{"MONITORING_ALERTCONTACT", "MONITORING_STATUSPAGEID",
+		"PROJECT", "ENVIRONMENT", "BRANCH", "PR_NUMBER", "PR_HEAD_BRANCH",
+		"PR_BASE_BRANCH", "ENVIRONMENT_TYPE", "BUILD_TYPE", "ACTIVE_ENVIRONMENT",
+		"STANDBY_ENVIRONMENT", "LAGOON_FASTLY_NOCACHE_SERVICE_ID", "LAGOON_PROJECT_VARIABLES",
+		"LAGOON_ENVIRONMENT_VARIABLES", "LAGOON_VERSION",
+	}
+	for _, varName := range varNames {
+		os.Unsetenv(varName)
+	}
+	for _, varName := range localVars {
+		os.Unsetenv(varName.name)
+	}
 }
