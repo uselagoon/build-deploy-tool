@@ -5,15 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
-	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
-	"os"
 	"time"
 )
 
@@ -52,27 +49,27 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
-	if helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" && helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" {
-		config, err := rest.InClusterConfig()
-		if err != nil {
-			return nil, err
-		}
-		return config, nil
-	}
-	var kubeconfig *string
-	kubeconfig = new(string)
-	dirname, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	*kubeconfig = helpers.GetEnv("KUBECONFIG", dirname+"/.kube/config", false)
-
-	// use the current context in kubeconfig
-	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	if err != nil {
-		panic(err.Error())
-	}
+	//if helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" && helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" {
+	config, err := rest.InClusterConfig()
+	//if err != nil {
+	//	return nil, err
+	//}
 	return config, err
+	//}
+	//var kubeconfig *string
+	//kubeconfig = new(string)
+	//dirname, err := os.UserHomeDir()
+	//if err != nil {
+	//	return nil, err
+	//}
+	//*kubeconfig = helpers.GetEnv("KUBECONFIG", dirname+"/.kube/config", false)
+	//
+	//// use the current context in kubeconfig
+	//config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
+	//if err != nil {
+	//	panic(err.Error())
+	//}
+	//return config, err
 }
 
 func ExecuteTaskInEnvironment(task Task) error {
