@@ -12,7 +12,7 @@ var lagoonYml, environmentName, projectName, activeEnvironment, standbyEnvironme
 var buildType, lagoonVersion, branch, prNumber, prHeadBranch, prBaseBranch string
 var projectVariables, environmentVariables, monitoringStatusPageID, monitoringContact string
 var templateValues, savedTemplates, fastlyCacheNoCahce, fastlyServiceID, fastlyAPISecretPrefix string
-var monitoringEnabled, checkValuesFile bool
+var monitoringEnabled bool
 
 var routeGeneration = &cobra.Command{
 	Use:     "ingress",
@@ -78,44 +78,4 @@ func IngressTemplateGeneration(debug bool) error {
 
 func init() {
 	templateCmd.AddCommand(routeGeneration)
-	routeGeneration.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-		"The .lagoon.yml file to read")
-	routeGeneration.Flags().StringVarP(&projectName, "project-name", "p", "",
-		"The project name")
-	routeGeneration.Flags().StringVarP(&environmentName, "environment-name", "e", "",
-		"The environment name to check")
-	routeGeneration.Flags().StringVarP(&environmentType, "environment-type", "E", "",
-		"The type of environment (development or production)")
-	routeGeneration.Flags().StringVarP(&buildType, "build-type", "d", "",
-		"The type of build (branch, pullrequest, promote)")
-	routeGeneration.Flags().StringVarP(&branch, "branch", "b", "",
-		"The name of the branch")
-	routeGeneration.Flags().StringVarP(&prNumber, "pullrequest-number", "P", "",
-		"The pullrequest number")
-	routeGeneration.Flags().StringVarP(&prHeadBranch, "pullrequest-head-branch", "H", "",
-		"The pullrequest head branch")
-	routeGeneration.Flags().StringVarP(&prBaseBranch, "pullrequest-base-branch", "B", "",
-		"The pullrequest base branch")
-	routeGeneration.Flags().StringVarP(&lagoonVersion, "lagoon-version", "L", "",
-		"The lagoon version")
-	routeGeneration.Flags().StringVarP(&activeEnvironment, "active-environment", "a", "",
-		"Name of the active environment if known")
-	routeGeneration.Flags().StringVarP(&standbyEnvironment, "standby-environment", "s", "",
-		"Name of the standby environment if known")
-	routeGeneration.Flags().StringVarP(&templateValues, "template-path", "t", "/kubectl-build-deploy/",
-		"Path to the template on disk")
-	routeGeneration.Flags().StringVarP(&savedTemplates, "saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
-		"Path to where the resulting templates are saved")
-	routeGeneration.Flags().StringVarP(&monitoringContact, "monitoring-config", "M", "",
-		"The monitoring contact config if known")
-	routeGeneration.Flags().StringVarP(&monitoringStatusPageID, "monitoring-status-page-id", "m", "",
-		"The monitoring status page ID if known")
-	routeGeneration.Flags().StringVarP(&fastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
-		"The fastly cache no cache service ID to use")
-	routeGeneration.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
-		"The fastly service ID to use")
-	routeGeneration.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
-		"The fastly secret prefix to use")
-	routeGeneration.Flags().BoolVarP(&checkValuesFile, "check-values-file", "C", false,
-		"If set, will check for the values file defined in `${template-path}/values.yaml`")
 }
