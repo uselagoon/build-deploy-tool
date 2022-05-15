@@ -43,7 +43,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
@@ -77,7 +77,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",

@@ -56,10 +56,12 @@ func GenerateIngressTemplate(
 		"lagoon.sh/buildType":          lValues.BuildType,
 	}
 	additionalLabels := map[string]string{}
-	if route.Migrate != nil {
-		additionalLabels["dioscuri.amazee.io/migrate"] = strconv.FormatBool(*route.Migrate)
-	} else {
-		additionalLabels["dioscuri.amazee.io/migrate"] = "false"
+	if lValues.EnvironmentType == "production" {
+		if route.Migrate != nil {
+			additionalLabels["dioscuri.amazee.io/migrate"] = strconv.FormatBool(*route.Migrate)
+		} else {
+			additionalLabels["dioscuri.amazee.io/migrate"] = "false"
+		}
 	}
 	for key, value := range additionalLabels {
 		ingress.ObjectMeta.Labels[key] = value
