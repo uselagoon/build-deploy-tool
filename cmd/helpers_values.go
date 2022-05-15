@@ -8,8 +8,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-// collectBuildValues is used to collect variables and values that are used for custom ingress
-// related generation
+// collectBuildValues is used to collect variables and values that are used within a build
 func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	lagoonEnvVars *[]lagoon.EnvironmentVariable,
 	lagoonValues *lagoon.BuildValues,
@@ -36,11 +35,6 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
 	lagoonVersion = helpers.GetEnv("LAGOON_VERSION", lagoonVersion, debug)
 
-	// these aren't available as environment variables in builds
-	// fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
-	// fastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", fastlyAPISecretPrefix, debug)
-	// savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, debug)
-
 	// read the .lagoon.yml file
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, lPolysite); err != nil {
 		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
@@ -51,14 +45,6 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 		return err
 	}
 
-	//@TODO: valuesfiles will eventually go away, probably don't need to use this method
-	// // get or generate the values file for generating route templates
-	// if checkValuesFile {
-	// 	if debug {
-	// 		fmt.Println(fmt.Sprintf("Collecting values for templating from %s", fmt.Sprintf("%s/%s", templateValues, "values.yaml")))
-	// 	}
-	// 	*lagoonValues = routeTemplater.ReadValuesFile(fmt.Sprintf("%s/%s", templateValues, "values.yaml"))
-	// } else {
 	lagoonValues.Project = projectName
 	lagoonValues.Environment = environmentName
 	lagoonValues.EnvironmentType = environmentType
@@ -72,7 +58,6 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 		lagoonValues.PRHeadBranch = prHeadBranch
 		lagoonValues.PRBaseBranch = prBaseBranch
 	}
-	// }
 
 	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
 		return fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
