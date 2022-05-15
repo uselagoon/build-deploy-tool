@@ -9,14 +9,9 @@ metadata:
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: environment-with-really-really-reall-3fdb
     lagoon.sh/version: v2.x.x
-    monitor.stakater.com/enabled: "true"
-    monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/server-snippet: |
       add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    uptimerobot.monitor.stakater.com/alert-contacts: abcdefg
-    uptimerobot.monitor.stakater.com/interval: "60"
-    uptimerobot.monitor.stakater.com/status-pages: "12345"
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: extra-long-name.a-really-long-name-that-should-truncate.www.example.com
