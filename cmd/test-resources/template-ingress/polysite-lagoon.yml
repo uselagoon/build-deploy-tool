@@ -1,17 +1,17 @@
-docker-compose-yaml: docker-compose.yml
+docker-compose-yaml: test-resources/template-ingress/docker-compose.yml
 
 environment_variables:
-  git_sha: 'true'
+  git_sha: "true"
 
 ci-multiproject1-control-k8s:
   environments:
     multiproject:
       routes:
         - node:
-          - multiproject1.com
+            - multiproject1.com
 ci-multiproject2-control-k8s:
   environments:
     multiproject:
       routes:
         - node:
-          - multiproject2.com
+            - multiproject2.com

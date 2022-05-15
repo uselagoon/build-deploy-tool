@@ -1,11 +1,11 @@
-docker-compose-yaml: docker-compose.yml
+docker-compose-yaml: test-resources/template-ingress/docker-compose.yml
 
 environment_variables:
-  git_sha: 'true'
+  git_sha: "true"
 
 environments:
   fastly-annotations:
     routes:
-    - node:
-      - annotations.com
-      - www.annotations.com
+      - node:
+          - annotations.com
+          - www.annotations.com

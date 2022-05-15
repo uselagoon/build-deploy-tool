@@ -27,7 +27,6 @@ func TestIdentifyRoute(t *testing.T) {
 		lagoonVersion      string
 		lagoonYAML         string
 		valuesFilePath     string
-		checkValuesFile    bool
 		templatePath       string
 	}
 	tests := []struct {
@@ -36,52 +35,7 @@ func TestIdentifyRoute(t *testing.T) {
 		want string
 	}{
 		{
-			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret and values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				valuesFilePath:  "test-resources/template-ingress/test1-results",
-				checkValuesFile: true,
-				templatePath:    "test-resources/template-ingress/output",
-			},
-			want: "annotations.com",
-		},
-		{
-			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and with values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"annotations.com:service-id:true","scope":"build"}]`,
-				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				valuesFilePath:  "test-resources/template-ingress/test2-results",
-				checkValuesFile: true,
-				templatePath:    "test-resources/template-ingress/output",
-			},
-			want: "annotations.com",
-		},
-		{
-			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and with values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectVars:     `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"build"}]`,
-				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				valuesFilePath:  "test-resources/template-ingress/test3-results",
-				checkValuesFile: true,
-				templatePath:    "test-resources/template-ingress/output",
-			},
-			want: "annotations.com",
-		},
-		{
-			name: "test4 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
+			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -95,13 +49,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "annotations.com",
 		},
 		{
-			name: "test5 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
+			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -115,13 +68,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "annotations.com",
 		},
 		{
-			name: "test6 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
+			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -135,28 +87,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "annotations.com",
 		},
 		{
-			name: "test7 check no fastly and with values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectVars:     `[]`,
-				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				valuesFilePath:  "test-resources/template-ingress/test7-results",
-				checkValuesFile: true,
-				templatePath:    "test-resources/template-ingress/output",
-			},
-			want: "annotations.com",
-		},
-		{
-			name: "test8 check no fastly and no values",
+			name: "test4 check no fastly and no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -170,13 +106,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "annotations.com",
 		},
 		{
-			name: "test9 multiproject1 no values",
+			name: "test5 multiproject1 no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -190,13 +125,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "multiproject1.com",
 		},
 		{
-			name: "test10 multiproject2 no values",
+			name: "test6 multiproject2 no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -210,13 +144,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "multiproject2.com",
 		},
 		{
-			name: "test11 multidomain no values",
+			name: "test7 multidomain no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -230,13 +163,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/multi-lagoon.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "annotations.com",
 		},
 		{
-			name: "test12 multidomain no values",
+			name: "test8 multidomain no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -250,13 +182,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "test-resources/template-ingress/multi-lagoon2.yml",
-				checkValuesFile: false,
 				templatePath:    "test-resources/template-ingress/output",
 			},
 			want: "customdomain-will-be-main-domain.com",
 		},
 		{
-			name: "test13 active no values",
+			name: "test9 active no values",
 			args: args{
 				alertContact:      "alertcontact",
 				statusPageID:      "statuspageid",
@@ -271,13 +202,12 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:           `[]`,
 				secretPrefix:      "fastly-api-",
 				lagoonYAML:        "test-resources/template-ingress/activestandby-lagoon.yml",
-				checkValuesFile:   false,
 				templatePath:      "test-resources/template-ingress/output",
 			},
 			want: "active.example.com",
 		},
 		{
-			name: "test14 standby no values",
+			name: "test10 standby no values",
 			args: args{
 				alertContact:       "alertcontact",
 				statusPageID:       "statuspageid",
@@ -292,7 +222,6 @@ func TestIdentifyRoute(t *testing.T) {
 				envVars:            `[]`,
 				secretPrefix:       "fastly-api-",
 				lagoonYAML:         "test-resources/template-ingress/activestandby-lagoon.yml",
-				checkValuesFile:    false,
 				templatePath:       "test-resources/template-ingress/output",
 			},
 			want: "standby.example.com",
@@ -367,7 +296,6 @@ func TestIdentifyRoute(t *testing.T) {
 			}
 			lagoonYml = tt.args.lagoonYAML
 			templateValues = tt.args.valuesFilePath
-			checkValuesFile = tt.args.checkValuesFile
 
 			savedTemplates = tt.args.templatePath
 			fastlyAPISecretPrefix = tt.args.secretPrefix

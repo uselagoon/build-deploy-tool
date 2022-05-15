@@ -31,8 +31,12 @@ func IngressTemplateGeneration(debug bool) error {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
+	lCompose := lagoon.Compose{}
 	lPolysite := make(map[string]interface{})
-	collectIngressVariablesValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite, &lCompose)
+	if err != nil {
+		return err
+	}
 
 	// read the routes from the API
 	apiRoutes, err := getRoutesFromAPIEnvVar(lagoonEnvVars, debug)
@@ -51,7 +55,7 @@ func IngressTemplateGeneration(debug bool) error {
 		if debug {
 			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 		}
-		templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+		templateYAML := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 		routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 	}
 	if activeEnv || standbyEnv {
@@ -65,7 +69,7 @@ func IngressTemplateGeneration(debug bool) error {
 			if debug {
 				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			}
-			templateYAML := routeTemplater.GenerateKubeTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+			templateYAML := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
 			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 		}
 	}
