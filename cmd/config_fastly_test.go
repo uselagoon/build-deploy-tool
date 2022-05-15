@@ -149,6 +149,9 @@ func TestGenerateFastlyConfig(t *testing.T) {
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("fastlyConfigGeneration() = %v, want %v", got, tt.want)
 			}
+			t.Cleanup(func() {
+				unsetEnvVars(nil)
+			})
 		})
 	}
 }

@@ -82,6 +82,26 @@ func TestMergeVariables(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test3",
+			args: args{
+				project: []EnvironmentVariable{},
+				environment: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_ROUTES_JSON",
+						Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+						Scope: "build",
+					},
+				},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
