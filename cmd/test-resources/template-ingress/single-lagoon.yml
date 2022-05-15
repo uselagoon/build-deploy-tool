@@ -4,7 +4,7 @@ environment_variables:
   git_sha: "true"
 
 environments:
-  fastly-annotations:
+  main:
     routes:
       - node:
-          - annotations.com
+          - example.com

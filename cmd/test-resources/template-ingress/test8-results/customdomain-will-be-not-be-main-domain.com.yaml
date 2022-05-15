@@ -25,7 +25,7 @@ metadata:
     lagoon.sh/buildType: branch
     lagoon.sh/environment: branch-routes
     lagoon.sh/environmentType: production
-    lagoon.sh/project: project-name7
+    lagoon.sh/project: example-project
     lagoon.sh/service: customdomain-will-be-not-be-main-domain.com
     lagoon.sh/service-type: custom-ingress
   name: customdomain-will-be-not-be-main-domain.com
