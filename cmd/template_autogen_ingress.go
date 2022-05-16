@@ -225,6 +225,10 @@ func generateAutogenRoutes(
 					if err != nil {
 						return autogenRoutes, err
 					}
+					insecure := "Allow"
+					if lagoonYAML.Routes.Autogenerate.Insecure != "" {
+						insecure = lagoonYAML.Routes.Autogenerate.Insecure
+					}
 					autogenRoute := lagoon.RouteV2{
 						Domain:  domain,
 						Fastly:  *fastlyConfig,
@@ -240,8 +244,7 @@ func generateAutogenRoutes(
 						},
 						Service:          serviceName,
 						IngressName:      serviceName,
-						Migrate:          helpers.BoolPtr(false),
-						Insecure:         helpers.StrPtr(lagoonYAML.Routes.Autogenerate.Insecure), //use what is in lagoon.yml
+						Insecure:         &insecure,
 						AlternativeNames: alternativeNames,
 					}
 					autogenRoutes.Routes = append(autogenRoutes.Routes, autogenRoute)
