@@ -5,12 +5,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
+	"os"
 	"time"
 )
 
@@ -111,6 +113,22 @@ func ExecPod(
 	if err != nil {
 		return "", "", err
 	}
+
+	// read the deployer token.
+	token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
+	if err != nil {
+		fmt.Printf("Task failed to read the token, error was: %v", err)
+		os.Exit(1)
+	}
+	restCfg.BearerToken = string(token)
+	// generate the rest config for the client.
+	//restCfg := &rest.Config{
+	//	BearerToken: string(token),
+	//	Host:        "https://kubernetes.default.svc",
+	//	TLSClientConfig: rest.TLSClientConfig{
+	//		Insecure: true,
+	//	},
+	//}
 
 	clientset, err := GetK8sClient(restCfg)
 	if err != nil {
