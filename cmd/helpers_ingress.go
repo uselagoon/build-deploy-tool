@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"sigs.k8s.io/yaml"
 )
 
 // generateActiveStandby generates the active/standby routes from the provided lagoon yaml
@@ -69,27 +68,14 @@ func getRoutesFromAPIEnvVar(
 func generateAndMerge(
 	api lagoon.RoutesV2,
 	envVars []lagoon.EnvironmentVariable,
-	lagoonYAMLPolysite map[string]interface{},
 	lagoonYAML lagoon.YAML,
 	lagoonValues lagoon.BuildValues,
 ) (*lagoon.RoutesV2, error) {
 	n := &lagoon.RoutesV2{} // placeholder for generated routes
-	if _, ok := lagoonYAMLPolysite[lagoonValues.Project]; ok {
-		// POLYSITE: if this is polysite, then the `projectname` routes block should be defined
-		strA, _ := yaml.Marshal(lagoonYAMLPolysite[lagoonValues.Project])
-		var lYAMLPolysite lagoon.YAML
-		err := yaml.Unmarshal(strA, &lYAMLPolysite)
-		if err != nil {
-			return nil, fmt.Errorf("couldn't unmarshal for polysite %v: %v", strA, err)
-		}
-		for _, routeMap := range lYAMLPolysite.Environments[lagoonValues.Branch].Routes {
-			lagoon.GenerateRoutesV2(n, routeMap, envVars, fastlyAPISecretPrefix, false)
-		}
-	} else {
-		// otherwise it just uses the default environment name
-		for _, routeMap := range lagoonYAML.Environments[lagoonValues.Branch].Routes {
-			lagoon.GenerateRoutesV2(n, routeMap, envVars, fastlyAPISecretPrefix, false)
-		}
+
+	// otherwise it just uses the default environment name
+	for _, routeMap := range lagoonYAML.Environments[lagoonValues.Branch].Routes {
+		lagoon.GenerateRoutesV2(n, routeMap, envVars, fastlyAPISecretPrefix, false)
 	}
 	// merge routes from the API on top of the routes from the `.lagoon.yml`
 	merged := lagoon.MergeRoutesV2(*n, api, envVars, fastlyAPISecretPrefix)

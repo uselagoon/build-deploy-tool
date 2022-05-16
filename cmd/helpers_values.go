@@ -8,6 +8,7 @@ import (
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"sigs.k8s.io/yaml"
 )
 
 // collectBuildValues is used to collect variables and values that are used within a build
@@ -15,10 +16,8 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	lagoonEnvVars *[]lagoon.EnvironmentVariable,
 	lagoonValues *lagoon.BuildValues,
 	lYAML *lagoon.YAML,
-	lPolysite *map[string]interface{},
 	lCompose *lagoon.Compose,
 ) error {
-
 	// environment variables will override what is provided by flags
 	// the following variables have been identified as used by custom-ingress objects
 	// these are available within a lagoon build as standard
@@ -38,8 +37,15 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	lagoonVersion = helpers.GetEnv("LAGOON_VERSION", lagoonVersion, debug)
 
 	// read the .lagoon.yml file
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, lPolysite); err != nil {
+	lPolysite := make(map[string]interface{})
+	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
 		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
+	}
+
+	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	if _, ok := lPolysite[projectName]; ok {
+		s, _ := yaml.Marshal(lPolysite[projectName])
+		_ = yaml.Unmarshal(s, &lYAML)
 	}
 
 	// unmarshal the docker-compose.yml file
@@ -62,6 +68,19 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	}
 	// create the services map
 	lagoonValues.Services = make(map[string]lagoon.ServiceValues)
+
+	// convert docker-compose services to service values
+	for csName, csValues := range lCompose.Services {
+		serviceType := csValues.Labels["lagoon.type"]
+		if value, ok := lYAML.Environments[environmentName].Types[csName]; ok {
+			serviceType = value
+		}
+		cService := lagoon.ServiceValues{
+			Name: csName,
+			Type: serviceType,
+		}
+		lagoonValues.Services[csName] = cService
+	}
 
 	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
 		return fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")

@@ -31,8 +31,7 @@ func IdentifyPrimaryIngress(debug bool) (string, error) {
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
 	lCompose := lagoon.Compose{}
-	lPolysite := make(map[string]interface{})
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite, &lCompose)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lCompose)
 	if err != nil {
 		return "", err
 	}
@@ -54,7 +53,7 @@ func IdentifyPrimaryIngress(debug bool) (string, error) {
 	}
 
 	// handle routes from the .lagoon.yml and the API specifically
-	finalRoutes, err := generateAndMerge(*apiRoutes, lagoonEnvVars, lPolysite, lYAML, lagoonValues)
+	finalRoutes, err := generateAndMerge(*apiRoutes, lagoonEnvVars, lYAML, lagoonValues)
 	if err != nil {
 		return primaryIngress, fmt.Errorf("couldn't generate and merge routes: %v", err)
 	}
