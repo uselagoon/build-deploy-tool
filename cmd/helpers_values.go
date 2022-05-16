@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -100,6 +101,15 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
 	*lagoonEnvVars = lagoon.MergeVariables(projectVars, envVars)
+
+	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", []string{"build"}, envVars)
+	if lagoonServiceTypes != nil {
+		serviceTypesSplit := strings.Split(lagoonServiceTypes.Value, ",")
+		for _, serviceType := range serviceTypesSplit {
+			serviceTypeSplit := strings.Split(serviceType, ":")
+			lCompose.Services[serviceTypeSplit[0]].Labels["lagoon.type"] = serviceTypeSplit[1]
+		}
+	}
 	return nil
 }
 
