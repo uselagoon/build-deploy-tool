@@ -110,7 +110,7 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 
 	// create the services map
 	lagoonValues.Services = make(map[string]lagoon.ServiceValues)
-	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", []string{"build"}, envVars)
+	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", []string{"build"}, *lagoonEnvVars)
 	// convert docker-compose services to servicevalues
 	for csName, csValues := range lCompose.Services {
 		cService, err := composeToServiceValues(lYAML, lagoonServiceTypes, csName, csValues)
@@ -130,10 +130,10 @@ func composeToServiceValues(lYAML *lagoon.YAML, lagoonServiceTypes *lagoon.Envir
 		}
 		if lagoonServiceTypes != nil {
 			serviceTypesSplit := strings.Split(lagoonServiceTypes.Value, ",")
-			for _, serviceType := range serviceTypesSplit {
-				serviceTypeSplit := strings.Split(serviceType, ":")
-				if serviceTypeSplit[0] == csName {
-					serviceType = serviceTypeSplit[1]
+			for _, sType := range serviceTypesSplit {
+				sTypeSplit := strings.Split(sType, ":")
+				if sTypeSplit[0] == csName {
+					serviceType = sTypeSplit[1]
 				}
 			}
 		}
