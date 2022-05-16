@@ -5,15 +5,23 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"io/ioutil"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
+	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
 	"time"
 )
+
+var runOutOfCluster bool
+
+func RunTasksOutOfCluster() {
+	runOutOfCluster = true
+}
 
 type Task struct {
 	Name      string `json:"name"`
@@ -37,9 +45,6 @@ func (t Task) String() string {
 	return fmt.Sprintf("{command: '%v', ns: '%v', service: '%v', shell:'%v'}", t.Command, t.Namespace, t.Service, t.Shell)
 }
 
-//TODO: build get config for kubernetes
-// This will either be in cluster or out of cluster - we start with out of cluster to test
-// TODO: BMK - ensure that this is responsive to the context
 func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 	// create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
@@ -50,26 +55,40 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
-	// read the deployer token.
-	token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
+	if !runOutOfCluster {
+		// read the deployer token.
+		token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
+		if err != nil {
+			return nil, err
+		}
+		// generate the rest config for the client.
+		restCfg := &rest.Config{
+			BearerToken: string(token),
+			Host:        "https://kubernetes.default.svc",
+			TLSClientConfig: rest.TLSClientConfig{
+				Insecure: true,
+			},
+		}
+		return restCfg, nil
+	}
+	//else we attempt to connect using standard KUBECONFIG
+	var kubeconfig *string
+	kubeconfig = new(string)
+	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
+	if *kubeconfig == "" {
+		return nil, fmt.Errorf("Unable to find a valid KUBECONFIG")
+	}
+	// use the current context in kubeconfig
+	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
-		return nil, err
+		panic(err.Error())
 	}
-	// generate the rest config for the client.
-	restCfg := &rest.Config{
-		BearerToken: string(token),
-		Host:        "https://kubernetes.default.svc",
-		TLSClientConfig: rest.TLSClientConfig{
-			Insecure: true,
-		},
-	}
-
-	return restCfg, nil
+	return config, err
 }
 
 func ExecuteTaskInEnvironment(task Task) error {
 
-	fmt.Println("Executing task ", task)
+	fmt.Println("Executing task :", task.Command)
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
 		command = append(command, task.Shell)
@@ -80,19 +99,16 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, "-c")
 	command = append(command, task.Command)
 
-	//TODO: add container to the incoming task
 	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container)
 	if err == nil {
-
-		fmt.Println(stdout)
-
-		fmt.Println(stderr)
+		if len(stdout) > 0 {
+			fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
+		}
+		if len(stderr) > 0 {
+			fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
+		}
 	}
 	return err
-}
-
-func log(data string) {
-	fmt.Printf("LOG[%v]:%v\n", time.Now().Format(time.Kitchen), data)
 }
 
 func ExecPod(
@@ -116,7 +132,6 @@ func ExecPod(
 
 	lagoonServiceLabel := "lagoon.sh/service=" + podName
 	fmt.Println("Label: ", lagoonServiceLabel)
-	//This doesn't seem to be working ...
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
@@ -139,7 +154,7 @@ func ExecPod(
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			log("No ready replicas found, scaling up")
+			fmt.Println("No ready replicas found, scaling up")
 			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
@@ -230,4 +245,8 @@ func ExecPod(
 
 	return stdout.String(), stderr.String(), nil
 
+}
+
+func init() {
+	runOutOfCluster = false
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var runPreRollout, runPostRollout bool
+var runPreRollout, runPostRollout, outOfClusterConfig bool
 var namespace string
 
 var tasksRun = &cobra.Command{
@@ -54,6 +54,10 @@ var tasksRun = &cobra.Command{
 			return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
 		}
 
+		if outOfClusterConfig == true {
+			lagoon.RunTasksOutOfCluster()
+		}
+
 		if runPreRollout {
 			fmt.Println("Executing Pre-rollout Tasks")
 			for _, run := range lYAML.Tasks.Prerollout {
@@ -82,7 +86,6 @@ var tasksRun = &cobra.Command{
 		} else {
 			fmt.Println("Skipping post-rollout tasks")
 		}
-
 		return nil
 	},
 }
@@ -112,5 +115,7 @@ func init() {
 		"Will run post-rollout tasks if true")
 	tasksRun.Flags().StringVarP(&namespace, "namespace", "n", "",
 		"The environments environment variables JSON payload")
+	tasksRun.Flags().BoolVarP(&outOfClusterConfig, "out-of-cluster", "", false,
+		"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
 
 }
