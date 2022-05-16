@@ -68,8 +68,8 @@ var tasksRun = &cobra.Command{
 		}
 
 		if runPostRollout {
+			fmt.Println("Executing Post-rollout Tasks")
 			for _, run := range lYAML.Tasks.Postrollout {
-				fmt.Println("Executing Post-rollout Tasks")
 				err := runCleanTaskInEnvironment(run.Run)
 				if err != nil {
 					return err
@@ -77,8 +77,8 @@ var tasksRun = &cobra.Command{
 				if err != nil {
 					return err
 				}
-				fmt.Println("Post-rollout Tasks Complete")
 			}
+			fmt.Println("Post-rollout Tasks Complete")
 		} else {
 			fmt.Println("Skipping post-rollout tasks")
 		}

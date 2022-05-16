@@ -12,7 +12,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/remotecommand"
-	"os"
 	"time"
 )
 
@@ -51,27 +50,21 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
-	//if helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" && helpers.GetEnv("KUBERNETES_SERVICE_HOST", "", false) != "" {
-	config, err := rest.InClusterConfig()
-	//if err != nil {
-	//	return nil, err
-	//}
-	return config, err
-	//}
-	//var kubeconfig *string
-	//kubeconfig = new(string)
-	//dirname, err := os.UserHomeDir()
-	//if err != nil {
-	//	return nil, err
-	//}
-	//*kubeconfig = helpers.GetEnv("KUBECONFIG", dirname+"/.kube/config", false)
-	//
-	//// use the current context in kubeconfig
-	//config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
-	//if err != nil {
-	//	panic(err.Error())
-	//}
-	//return config, err
+	// read the deployer token.
+	token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
+	if err != nil {
+		return nil, err
+	}
+	// generate the rest config for the client.
+	restCfg := &rest.Config{
+		BearerToken: string(token),
+		Host:        "https://kubernetes.default.svc",
+		TLSClientConfig: rest.TLSClientConfig{
+			Insecure: true,
+		},
+	}
+
+	return restCfg, nil
 }
 
 func ExecuteTaskInEnvironment(task Task) error {
@@ -113,22 +106,6 @@ func ExecPod(
 	if err != nil {
 		return "", "", err
 	}
-
-	// read the deployer token.
-	token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
-	if err != nil {
-		fmt.Printf("Task failed to read the token, error was: %v", err)
-		os.Exit(1)
-	}
-	restCfg.BearerToken = string(token)
-	// generate the rest config for the client.
-	//restCfg := &rest.Config{
-	//	BearerToken: string(token),
-	//	Host:        "https://kubernetes.default.svc",
-	//	TLSClientConfig: rest.TLSClientConfig{
-	//		Insecure: true,
-	//	},
-	//}
 
 	clientset, err := GetK8sClient(restCfg)
 	if err != nil {
