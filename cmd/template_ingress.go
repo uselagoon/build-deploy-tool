@@ -31,8 +31,7 @@ func IngressTemplateGeneration(debug bool) error {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
-	lCompose := lagoon.Compose{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lCompose)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML)
 	if err != nil {
 		return err
 	}
