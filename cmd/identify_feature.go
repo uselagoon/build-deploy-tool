@@ -30,9 +30,7 @@ func IdentifyFeatureFlag(name string, debug bool) (string, error) {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
-	lCompose := lagoon.Compose{}
-	lPolysite := make(map[string]interface{})
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, &lPolysite, &lCompose)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML)
 	if err != nil {
 		return "", err
 	}
