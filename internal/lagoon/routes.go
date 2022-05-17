@@ -32,12 +32,13 @@ type RouteV2 struct {
 
 // Ingress represents a Lagoon route.
 type Ingress struct {
-	TLSAcme        *bool             `json:"tls-acme,omitempty"`
-	Migrate        *bool             `json:"migrate,omitempty"`
-	Insecure       *string           `json:"insecure,omitempty"`
-	MonitoringPath string            `json:"monitoring-path,omitempty"`
-	Fastly         Fastly            `json:"fastly,omitempty"`
-	Annotations    map[string]string `json:"annotations,omitempty"`
+	TLSAcme          *bool             `json:"tls-acme,omitempty"`
+	Migrate          *bool             `json:"migrate,omitempty"`
+	Insecure         *string           `json:"insecure,omitempty"`
+	MonitoringPath   string            `json:"monitoring-path,omitempty"`
+	Fastly           Fastly            `json:"fastly,omitempty"`
+	Annotations      map[string]string `json:"annotations,omitempty"`
+	AlternativeNames []string          `json:"alternativenames,omitempty"`
 }
 
 // Route can be either a string or a map[string]Ingress, so we must
@@ -94,6 +95,7 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 			newRoute.Annotations = map[string]string{}
 			newRoute.Fastly.ServiceID = ""
 			newRoute.Fastly.Watch = false
+			newRoute.AlternativeNames = []string{}
 			if activeStandby {
 				newRoute.Migrate = helpers.BoolPtr(true)
 			}
@@ -112,6 +114,9 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 					}
 					if ingress.Insecure != nil {
 						newRoute.Insecure = ingress.Insecure
+					}
+					if ingress.AlternativeNames != nil {
+						newRoute.AlternativeNames = ingress.AlternativeNames
 					}
 				}
 			} else {
@@ -159,12 +164,21 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []Environme
 				} else {
 					add.Annotations = map[string]string{}
 				}
+				if aRoute.AlternativeNames != nil {
+					add.AlternativeNames = aRoute.AlternativeNames
+				} else {
+					add.AlternativeNames = []string{}
+				}
 			}
 		}
 		if existsInAPI {
 			finalRoutes.Routes = append(finalRoutes.Routes, add)
 			existsInAPI = false
 		} else {
+
+			if route.AlternativeNames == nil {
+				route.AlternativeNames = []string{}
+			}
 			finalRoutes.Routes = append(finalRoutes.Routes, route)
 		}
 	}
@@ -188,6 +202,11 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []Environme
 				add.Annotations = aRoute.Annotations
 			} else {
 				add.Annotations = map[string]string{}
+			}
+			if aRoute.AlternativeNames != nil {
+				add.AlternativeNames = aRoute.AlternativeNames
+			} else {
+				add.AlternativeNames = []string{}
 			}
 			if aRoute.Domain == route.Domain {
 				existsInAPI = true

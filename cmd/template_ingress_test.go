@@ -229,6 +229,26 @@ func TestTemplateRoutes(t *testing.T) {
 			},
 			want: "test-resources/template-ingress/test10-results",
 		},
+		{
+			name: "test11 alternative names",
+			args: args{
+				alertContact:       "alertcontact",
+				statusPageID:       "statuspageid",
+				projectName:        "example-project",
+				environmentName:    "main",
+				environmentType:    "production",
+				buildType:          "branch",
+				standbyEnvironment: "main2",
+				lagoonVersion:      "v2.7.x",
+				branch:             "main",
+				projectVars:        `[]`,
+				envVars:            `[]`,
+				secretPrefix:       "fastly-api-",
+				lagoonYAML:         "test-resources/template-ingress/altnames-lagoon.yml",
+				templatePath:       "test-resources/template-ingress/output",
+			},
+			want: "test-resources/template-ingress/test11-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

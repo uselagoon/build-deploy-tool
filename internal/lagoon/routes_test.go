@@ -51,6 +51,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Fastly: Fastly{
 							Watch: false,
 						},
+						AlternativeNames: []string{},
 					},
 					{
 						Domain:         "www.example.com",
@@ -62,6 +63,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Fastly: Fastly{
 							Watch: false,
 						},
+						AlternativeNames: []string{},
 					},
 				},
 			},
@@ -103,6 +105,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Fastly: Fastly{
 							Watch: false,
 						},
+						AlternativeNames: []string{},
 					},
 					{
 						Domain:         "www.example.com",
@@ -116,6 +119,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 							Watch:         true,
 							ServiceID:     "12345",
 						},
+						AlternativeNames: []string{},
 					},
 				},
 			},
@@ -211,6 +215,7 @@ func TestMergeRouteStructures(t *testing.T) {
 							ServiceID:     "12345",
 							APISecretName: "fastly-api-annotationscom",
 						},
+						AlternativeNames: []string{},
 					},
 					{
 						Domain:         "www.example.com",
@@ -221,14 +226,16 @@ func TestMergeRouteStructures(t *testing.T) {
 						Annotations: map[string]string{
 							"nginx": "nginx",
 						},
+						AlternativeNames: []string{},
 					},
 					{
-						Domain:         "another.example.com",
-						Service:        "nginx",
-						MonitoringPath: "/",
-						Insecure:       helpers.StrPtr("Redirect"),
-						TLSAcme:        helpers.BoolPtr(true),
-						Annotations:    map[string]string{},
+						Domain:           "another.example.com",
+						Service:          "nginx",
+						MonitoringPath:   "/",
+						Insecure:         helpers.StrPtr("Redirect"),
+						TLSAcme:          helpers.BoolPtr(true),
+						Annotations:      map[string]string{},
+						AlternativeNames: []string{},
 					},
 				},
 			},
