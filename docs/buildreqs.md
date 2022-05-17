@@ -1,0 +1,63 @@
+# Build Requirements
+
+## Variables
+These are variables that are injected into a build pod
+* `BUILD_TYPE` can be one of `branch|pullrequest|promote`
+* `PROJECT` is the safed version of the project name
+* `ENVIRONMENT` is the safed version of the environment name
+* `BRANCH` is the unedited name of the branch
+* `ENVIRONMENT_TYPE` can be one of `development|production`
+* `ACTIVE_ENVIRONMENT` is populated with the current active environment if active/standby is enabled
+* `STANDBY_ENVIRONMENT` is populated with the current standby environment if active/standby is enabled
+
+## Pullrequest Variables
+* `PR_TITLE` is the title of the pullrequest
+* `PR_NUMBER` is the number of the pullrequest
+* `PR_HEAD_BRANCH` head branch
+* `PR_HEAD_SHA` head sha
+* `PR_BASE_BRANCH` base branch
+* `PR_BASE_SHA` base sha
+
+## 
+* PROMOTION_SOURCE_ENVIRONMENT
+
+* LAGOON_PROJECT_VARIABLES
+* LAGOON_ENVIRONMENT_VARIABLES
+
+* MONITORING_ALERTCONTACT
+* MONITORING_STATUSPAGEID
+
+* SOURCE_REPOSITORY
+* GIT_REF
+* SUBFOLDER
+* PROJECT_SECRET
+* KUBERNETES
+* REGISTRY
+* LAGOON_FASTLY_NOCACHE_SERVICE_ID
+
+* LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD
+* LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD
+* LAGOON_FEATURE_FLAG_FORCE_ISOLATION_NETWORK_POLICY
+* LAGOON_FEATURE_FLAG_DEFAULT_ISOLATION_NETWORK_POLICY
+* LAGOON_FEATURE_FLAG_FORCE_INSIGHTS
+* LAGOON_FEATURE_FLAG_DEFAULT_INSIGHTS
+* LAGOON_FEATURE_FLAG_FORCE_RWX_TO_RWO
+* LAGOON_FEATURE_FLAG_DEFAULT_RWX_TO_RWO
+
+### Backup related variables
+* DEFAULT_BACKUP_SCHEDULE
+* MONTHLY_BACKUP_DEFAULT_RETENTION
+* WEEKLY_BACKUP_DEFAULT_RETENTION
+* DAILY_BACKUP_DEFAULT_RETENTION
+* HOURLY_BACKUP_DEFAULT_RETENTION
+* LAGOON_FEATURE_BACKUP_DEV_SCHEDULE
+* LAGOON_FEATURE_BACKUP_PR_SCHEDULE
+* LAGOON_FEATURE_BACKUP_DEV_RETENTION
+* LAGOON_FEATURE_BACKUP_PR_RETENTION
+* K8UP_WEEKLY_RANDOM_FEATURE_FLAG
+* NATIVE_CRON_POD_MINIMUM_FREQUENCY
+
+### Proxy related variables
+* HTTP_PROXY / http_proxy
+* HTTPS_PROXY / https_proxy
+* NO_PROXY / no_proxy
