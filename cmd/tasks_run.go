@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
@@ -17,7 +18,7 @@ var tasksRun = &cobra.Command{
 	Short:   "Will run pre and/or post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if !runPostRollout && !runPostRollout {
+		if !runPostRollout {
 			return fmt.Errorf("Neither pre nor post rollout tasks have been selected - exiting")
 		}
 
@@ -58,6 +59,11 @@ var tasksRun = &cobra.Command{
 			lagoon.RunTasksOutOfCluster()
 		}
 
+		lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
+		for _, envVar := range lagoonEnvVars {
+			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
+		}
+
 		if runPreRollout {
 			fmt.Println("Executing Pre-rollout Tasks")
 			for _, run := range lYAML.Tasks.Prerollout {
@@ -74,12 +80,21 @@ var tasksRun = &cobra.Command{
 		if runPostRollout {
 			fmt.Println("Executing Post-rollout Tasks")
 			for _, run := range lYAML.Tasks.Postrollout {
-				err := runCleanTaskInEnvironment(run.Run)
+
+				runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, run.Run)
 				if err != nil {
 					return err
 				}
-				if err != nil {
-					return err
+				if runTask {
+					err := runCleanTaskInEnvironment(run.Run)
+					if err != nil {
+						return err
+					}
+					if err != nil {
+						return err
+					}
+				} else {
+					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", run.Run.When, run.Run.Command)
 				}
 			}
 			fmt.Println("Post-rollout Tasks Complete")
@@ -88,6 +103,27 @@ var tasksRun = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task) (bool, error) {
+
+	if len(task.When) == 0 { //no condition, so we run ...
+		return true, nil
+	}
+	fmt.Println("Evaluating task condition - ", task.When)
+	ret, err := tasklib.EvaluateExpressionsInTaskEnvironment(task.When, environment)
+	if err != nil {
+		fmt.Println("Error evaluating condition: ", err.Error())
+		return false, err
+	}
+
+	retBool, okay := ret.(bool)
+	if !okay {
+		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
+		fmt.Println(err.Error())
+		return false, err
+	}
+	return retBool, nil
 }
 
 func runCleanTaskInEnvironment(incoming lagoon.Task) error {

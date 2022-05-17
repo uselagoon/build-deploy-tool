@@ -30,6 +30,7 @@ type Task struct {
 	Service   string `json:"service"`
 	Shell     string `json:"shell"`
 	Container string `json:"container"`
+	When      string `json:"when"`
 }
 
 func NewTask() Task {
