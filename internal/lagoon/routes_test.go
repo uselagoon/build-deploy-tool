@@ -12,7 +12,7 @@ import (
 func TestGenerateRouteStructure(t *testing.T) {
 	type args struct {
 		genRoutes     *RoutesV2
-		routeMap      map[string][]Route
+		yamlRouteMap  map[string][]Route
 		variables     []EnvironmentVariable
 		secretPrefix  string
 		activeStandby bool
@@ -26,7 +26,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 			name: "test1",
 			args: args{
 				genRoutes: &RoutesV2{},
-				routeMap: map[string][]Route{
+				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
 							Name: "example.com",
@@ -72,7 +72,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 			name: "test2",
 			args: args{
 				genRoutes: &RoutesV2{},
-				routeMap: map[string][]Route{
+				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
 							Name: "example.com",
@@ -124,10 +124,58 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test3",
+			args: args{
+				genRoutes: &RoutesV2{},
+				yamlRouteMap: map[string][]Route{
+					"nginx": {
+						{
+							Ingresses: map[string]Ingress{
+								"example.com": {
+									Fastly: Fastly{
+										APISecretName: "annotationscom",
+										Watch:         true,
+										ServiceID:     "12345",
+									},
+									AlternativeNames: []string{
+										"www.example.com",
+										"en.example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:         "example.com",
+						Service:        "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							APISecretName: "fastly-api-annotationscom",
+							Watch:         true,
+							ServiceID:     "12345",
+						},
+						AlternativeNames: []string{
+							"www.example.com",
+							"en.example.com",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			GenerateRoutesV2(tt.args.genRoutes, tt.args.routeMap, tt.args.variables, tt.args.secretPrefix, tt.args.activeStandby)
+			GenerateRoutesV2(tt.args.genRoutes, tt.args.yamlRouteMap, tt.args.variables, tt.args.secretPrefix, tt.args.activeStandby)
 			if !cmp.Equal(tt.args.genRoutes, tt.want) {
 				stra, _ := json.Marshal(tt.args.genRoutes)
 				strb, _ := json.Marshal(tt.want)
