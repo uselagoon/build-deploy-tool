@@ -128,7 +128,10 @@ func TestGenerateKubeTemplate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GenerateIngressTemplate(tt.args.route, tt.args.values, tt.args.monitoringContact, tt.args.monitoringStatusPageID, tt.args.monitoringEnabled)
+			got, err := GenerateIngressTemplate(tt.args.route, tt.args.values, tt.args.monitoringContact, tt.args.monitoringStatusPageID, tt.args.monitoringEnabled)
+			if err != nil {
+				t.Errorf("couldn't generate template %v: %v", tt.want, err)
+			}
 			r1, err := os.ReadFile(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
