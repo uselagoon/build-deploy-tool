@@ -18,7 +18,7 @@ var tasksRun = &cobra.Command{
 	Short:   "Will run pre and/or post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		if !runPostRollout {
+		if !runPostRollout && !runPreRollout {
 			return fmt.Errorf("Neither pre nor post rollout tasks have been selected - exiting")
 		}
 
