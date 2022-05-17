@@ -26,28 +26,6 @@ var tasksRun = &cobra.Command{
 			return fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
 		}
 
-		// get the project and environment variables
-		projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
-		environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
-
-		// unmarshal and then merge the two so there is only 1 set of variables to iterate over
-		projectVars := []lagoon.EnvironmentVariable{}
-		envVars := []lagoon.EnvironmentVariable{}
-		json.Unmarshal([]byte(projectVariables), &projectVars)
-		json.Unmarshal([]byte(environmentVariables), &envVars)
-		lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
-
-		// Give context in the logs to how the tasks execution is being evaluated
-		if len(envVars) > 0 {
-			fmt.Println("Evaluating tasks with the following variables")
-			for _, envVar := range lagoonEnvVars {
-				//Trim the value of the env var so it doesn't persist in the logs
-				fmt.Printf("%v:%v\n", envVar.Name, envVar.Value[0:1]+"...")
-			}
-		} else {
-			fmt.Println("There were no Environment or Projects values found for evaluation - continuing.")
-		}
-
 		// read the .lagoon.yml file
 		var lYAML lagoon.YAML
 		lPolysite := make(map[string]interface{})
@@ -59,17 +37,28 @@ var tasksRun = &cobra.Command{
 			lagoon.RunTasksOutOfCluster()
 		}
 
-		lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
-		for _, envVar := range lagoonEnvVars {
-			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
+		lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation()
+		if err != nil {
+			return err
 		}
 
 		if runPreRollout {
 			fmt.Println("Executing Pre-rollout Tasks")
 			for _, run := range lYAML.Tasks.Prerollout {
-				err := runCleanTaskInEnvironment(run.Run)
+				runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, run.Run)
 				if err != nil {
 					return err
+				}
+				if runTask {
+					err := runCleanTaskInEnvironment(run.Run)
+					if err != nil {
+						return err
+					}
+					if err != nil {
+						return err
+					}
+				} else {
+					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", run.Run.When, run.Run.Command)
 				}
 			}
 			fmt.Println("Pre-rollout Tasks Complete")
@@ -80,7 +69,6 @@ var tasksRun = &cobra.Command{
 		if runPostRollout {
 			fmt.Println("Executing Post-rollout Tasks")
 			for _, run := range lYAML.Tasks.Postrollout {
-
 				runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, run.Run)
 				if err != nil {
 					return err
@@ -103,6 +91,27 @@ var tasksRun = &cobra.Command{
 		}
 		return nil
 	},
+}
+
+func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment, error) {
+	projectVars := []lagoon.EnvironmentVariable{}
+	envVars := []lagoon.EnvironmentVariable{}
+	// get the project and environment variables
+	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
+	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
+	json.Unmarshal([]byte(projectVariables), &projectVars)
+	json.Unmarshal([]byte(environmentVariables), &envVars)
+	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
+	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
+
+	// Give context in the logs to how the tasks execution is being evaluated
+	if len(lagoonEnvVars) > 0 {
+		for _, envVar := range lagoonEnvVars {
+			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
+		}
+	}
+
+	return lagoonConditionalEvaluationEnvironment, nil
 }
 
 func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task) (bool, error) {
