@@ -15,14 +15,19 @@ type RoutesV2 struct {
 
 // RouteV2 is the new route definition
 type RouteV2 struct {
-	Domain         string            `json:"domain"`
-	Service        string            `json:"service"`
-	TLSAcme        *bool             `json:"tls-acme"`
-	Migrate        *bool             `json:"migrate,omitempty"`
-	Insecure       *string           `json:"insecure,omitempty"`
-	MonitoringPath string            `json:"monitoring-path,omitempty"`
-	Fastly         Fastly            `json:"fastly,omitempty"`
-	Annotations    map[string]string `json:"annotations"`
+	Domain            string            `json:"domain"`
+	Service           string            `json:"service"`
+	TLSAcme           *bool             `json:"tls-acme"`
+	Migrate           *bool             `json:"migrate,omitempty"`
+	Insecure          *string           `json:"insecure,omitempty"`
+	MonitoringPath    string            `json:"monitoring-path,omitempty"`
+	Fastly            Fastly            `json:"fastly,omitempty"`
+	Annotations       map[string]string `json:"annotations"`
+	Labels            map[string]string `json:"labels"`
+	AlternativeNames  []string          `json:"alternativeNames"`
+	ServicePortNumber *int32            `json:"servicePortNumber"`
+	ServicePortName   *string           `json:"servicePortName"`
+	IngressName       string            `json:"ingressName"`
 }
 
 // Ingress represents a Lagoon route.

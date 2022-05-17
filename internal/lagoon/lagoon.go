@@ -15,7 +15,9 @@ type ProductionRoutes struct {
 
 // Environment represents a Lagoon environment.
 type Environment struct {
-	Routes []map[string][]Route `json:"routes"`
+	AutogenerateRoutes *bool                `json:"autogenerateRoutes"`
+	Types              map[string]string    `json:"types"`
+	Routes             []map[string][]Route `json:"routes"`
 }
 
 // Environments .
@@ -37,6 +39,18 @@ type YAML struct {
 	Environments      Environments      `json:"environments"`
 	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
 	Tasks             Tasks             `json:"tasks"`
+	Routes            Routes            `json:"routes"`
+}
+
+type Routes struct {
+	Autogenerate Autogenerate `json:"autogenerate"`
+}
+
+type Autogenerate struct {
+	Enabled           *bool    `json:"enabled"`
+	AllowPullRequests *bool    `json:"allowPullRequests"`
+	Insecure          string   `json:"insecure"`
+	Prefixes          []string `json:"prefixes"`
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.

@@ -1,8 +1,6 @@
 package routes
 
 import (
-	"encoding/json"
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -45,7 +43,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
@@ -79,7 +77,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				values: lagoon.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
+					EnvironmentType: "production",
 					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
@@ -93,81 +91,50 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			},
 			want: "test-resources/result-custom-ingress1.yaml",
 		},
+		{
+			name: "custom-ingress2",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Service:        "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+				},
+				values: lagoon.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+				},
+				monitoringContact:      "abcdefg",
+				monitoringStatusPageID: "12345",
+				monitoringEnabled:      true,
+				activeStandby:          false,
+			},
+			want: "test-resources/result-custom-ingress2.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := GenerateKubeTemplate(tt.args.route, tt.args.values, tt.args.monitoringContact, tt.args.monitoringStatusPageID, tt.args.monitoringEnabled)
+			got := GenerateIngressTemplate(tt.args.route, tt.args.values, tt.args.monitoringContact, tt.args.monitoringStatusPageID, tt.args.monitoringEnabled)
 			r1, err := os.ReadFile(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
 			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateKubeTemplate() = %v, want %v", string(got), string(r1))
-			}
-		})
-	}
-}
-
-func TestReadValuesFile(t *testing.T) {
-	type args struct {
-		file string
-	}
-	tests := []struct {
-		name string
-		args args
-		want lagoon.BuildValues
-	}{
-		{
-			name: "branch-values",
-			args: args{
-				file: "test-resources/values.yaml",
-			},
-			want: lagoon.BuildValues{
-				Project:                         "myexample-project",
-				Environment:                     "environment-with-really-really-reall-3fdb",
-				EnvironmentType:                 "development",
-				Namespace:                       "myexample-project-environment-with-really-really-reall-3fdb",
-				BuildType:                       "branch",
-				LagoonVersion:                   "v2.x.x",
-				Kubernetes:                      "lagoon.local",
-				Branch:                          "environment-with-really-really-reall-3fdb",
-				RoutesAutogeneratePrefixes:      []string{"www"},
-				RoutesAutogenerateInsecure:      "true",
-				RoutesAutogenerateEnabled:       "true",
-				RoutesAutogeneratePrefixHyphens: "false",
-			},
-		},
-		{
-			name: "pullrequest-values",
-			args: args{
-				file: "test-resources/pr-values.yaml",
-			},
-			want: lagoon.BuildValues{
-				Project:                         "myexample-project",
-				Environment:                     "environment-with-really-really-reall-3fdb",
-				EnvironmentType:                 "development",
-				Namespace:                       "myexample-project-environment-with-really-really-reall-3fdb",
-				BuildType:                       "branch",
-				LagoonVersion:                   "v2.x.x",
-				Kubernetes:                      "lagoon.local",
-				PRNumber:                        "1234",
-				PRHeadBranch:                    "main",
-				PRBaseBranch:                    "main",
-				RoutesAutogeneratePrefixes:      []string{"www"},
-				RoutesAutogenerateInsecure:      "true",
-				RoutesAutogenerateEnabled:       "true",
-				RoutesAutogeneratePrefixHyphens: "false",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ReadValuesFile(tt.args.file); !reflect.DeepEqual(got, tt.want) {
-				stra, _ := json.Marshal(got)
-				strb, _ := json.Marshal(tt.want)
-				fmt.Println(string(stra))
-				fmt.Println(string(strb))
-				t.Errorf("ReadValuesFile() = %v, want %v", got, tt.want)
+				t.Errorf("GenerateIngressTemplate() = %v, want %v", string(got), string(r1))
 			}
 		})
 	}

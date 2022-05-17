@@ -3,21 +3,22 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"reflect"
+	"strconv"
+	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	routeTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/routes"
+	"sigs.k8s.io/yaml"
 )
 
-// collectIngressVariablesValues is used to collect variables and values that are used for custom ingress
-// related generation
-func collectIngressVariablesValues(debug bool, activeEnv, standbyEnv *bool,
+// collectBuildValues is used to collect variables and values that are used within a build
+func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 	lagoonEnvVars *[]lagoon.EnvironmentVariable,
 	lagoonValues *lagoon.BuildValues,
 	lYAML *lagoon.YAML,
-	lPolysite *map[string]interface{},
 ) error {
-
 	// environment variables will override what is provided by flags
 	// the following variables have been identified as used by custom-ingress objects
 	// these are available within a lagoon build as standard
@@ -36,48 +37,48 @@ func collectIngressVariablesValues(debug bool, activeEnv, standbyEnv *bool,
 	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
 	lagoonVersion = helpers.GetEnv("LAGOON_VERSION", lagoonVersion, debug)
 
-	// these aren't available as environment variables in builds
-	// fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
-	// fastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", fastlyAPISecretPrefix, debug)
-	// savedTemplates = helpers.GetEnv("YAML_FOLDER", savedTemplates, debug)
-
 	// read the .lagoon.yml file
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, lPolysite); err != nil {
+	lPolysite := make(map[string]interface{})
+	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
 		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
 	}
 
-	// get or generate the values file for generating route templates
-	if checkValuesFile {
-		if debug {
-			fmt.Println(fmt.Sprintf("Collecting values for templating from %s", fmt.Sprintf("%s/%s", templateValues, "values.yaml")))
-		}
-		*lagoonValues = routeTemplater.ReadValuesFile(fmt.Sprintf("%s/%s", templateValues, "values.yaml"))
-	} else {
-		lagoonValues.Project = projectName
-		lagoonValues.Environment = environmentName
-		lagoonValues.EnvironmentType = environmentType
-		lagoonValues.BuildType = buildType
-		lagoonValues.LagoonVersion = lagoonVersion
-		switch buildType {
-		case "branch", "promote":
-			lagoonValues.Branch = branch
-		case "pullrequest":
-			lagoonValues.PRNumber = prNumber
-			lagoonValues.PRHeadBranch = prHeadBranch
-			lagoonValues.PRBaseBranch = prBaseBranch
-		}
+	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	if _, ok := lPolysite[projectName]; ok {
+		s, _ := yaml.Marshal(lPolysite[projectName])
+		_ = yaml.Unmarshal(s, &lYAML)
 	}
 
-	if lagoonValues.Project == "" || lagoonValues.Environment == "" || lagoonValues.EnvironmentType == "" || lagoonValues.BuildType == "" {
+	lCompose := lagoon.Compose{}
+	// unmarshal the docker-compose.yml file
+	if err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, &lCompose); err != nil {
+		return err
+	}
+
+	lagoonValues.Project = projectName
+	lagoonValues.Environment = environmentName
+	lagoonValues.EnvironmentType = environmentType
+	lagoonValues.BuildType = buildType
+	lagoonValues.LagoonVersion = lagoonVersion
+	switch buildType {
+	case "branch", "promote":
+		lagoonValues.Branch = branch
+	case "pullrequest":
+		lagoonValues.PRNumber = prNumber
+		lagoonValues.PRHeadBranch = prHeadBranch
+		lagoonValues.PRBaseBranch = prBaseBranch
+	}
+
+	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
 		return fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
 	}
-	switch lagoonValues.BuildType {
+	switch buildType {
 	case "branch", "promote":
-		if lagoonValues.Branch == "" {
+		if branch == "" {
 			return fmt.Errorf("Missing arguments: branch not defined")
 		}
 	case "pullrequest":
-		if lagoonValues.PRNumber == "" || lagoonValues.PRHeadBranch == "" || lagoonValues.PRBaseBranch == "" {
+		if prNumber == "" || prHeadBranch == "" || prBaseBranch == "" {
 			return fmt.Errorf("Missing arguments: pullrequest-number, pullrequest-head-branch, or pullrequest-base-branch not defined")
 		}
 	}
@@ -88,14 +89,14 @@ func collectIngressVariablesValues(debug bool, activeEnv, standbyEnv *bool,
 
 	// by default, environment routes are not monitored
 	monitoringEnabled = false
-	if lagoonValues.EnvironmentType == "production" {
+	if environmentType == "production" {
 		// if this is a production environment, monitoring IS enabled
 		monitoringEnabled = true
 		// check if the environment is active or standby
-		if lagoonValues.Environment == activeEnvironment {
+		if environmentName == activeEnvironment {
 			*activeEnv = true
 		}
-		if lagoonValues.Environment == standbyEnvironment {
+		if environmentName == standbyEnvironment {
 			*standbyEnv = true
 		}
 	}
@@ -106,5 +107,66 @@ func collectIngressVariablesValues(debug bool, activeEnv, standbyEnv *bool,
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
 	*lagoonEnvVars = lagoon.MergeVariables(projectVars, envVars)
+
+	// create the services map
+	lagoonValues.Services = make(map[string]lagoon.ServiceValues)
+	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", []string{"build"}, *lagoonEnvVars)
+	// convert docker-compose services to servicevalues
+	for csName, csValues := range lCompose.Services {
+		cService, err := composeToServiceValues(lYAML, lagoonServiceTypes, csName, csValues)
+		if err != nil {
+			return err
+		}
+		lagoonValues.Services[csName] = cService
+	}
 	return nil
+}
+
+func composeToServiceValues(lYAML *lagoon.YAML, lagoonServiceTypes *lagoon.EnvironmentVariable, csName string, csValues lagoon.Service) (lagoon.ServiceValues, error) {
+	serviceType := lagoon.CheckServiceLagoonLabel(csValues.Labels, "lagoon.type")
+	if serviceType != "" {
+		if value, ok := lYAML.Environments[environmentName].Types[csName]; ok {
+			serviceType = value
+		}
+		if lagoonServiceTypes != nil {
+			serviceTypesSplit := strings.Split(lagoonServiceTypes.Value, ",")
+			for _, sType := range serviceTypesSplit {
+				sTypeSplit := strings.Split(sType, ":")
+				if sTypeSplit[0] == csName {
+					serviceType = sTypeSplit[1]
+				}
+			}
+		}
+		cService := lagoon.ServiceValues{
+			Name: csName,
+			Type: serviceType,
+		}
+		serviceAutogenerated := lagoon.CheckServiceLagoonLabel(csValues.Labels, "lagoon.autogeneratedroute")
+		if reflect.TypeOf(serviceAutogenerated).Kind() == reflect.String {
+			vBool, err := strconv.ParseBool(serviceAutogenerated)
+			if err == nil {
+				cService.AutogeneratedRoutes = &vBool
+			}
+		}
+		return cService, nil
+	}
+	return lagoon.ServiceValues{}, fmt.Errorf("Service %s has no `lagoon.type` label in the docker-compose.yml file", csName)
+}
+
+func unsetEnvVars(localVars []struct {
+	name  string
+	value string
+}) {
+	varNames := []string{"MONITORING_ALERTCONTACT", "MONITORING_STATUSPAGEID",
+		"PROJECT", "ENVIRONMENT", "BRANCH", "PR_NUMBER", "PR_HEAD_BRANCH",
+		"PR_BASE_BRANCH", "ENVIRONMENT_TYPE", "BUILD_TYPE", "ACTIVE_ENVIRONMENT",
+		"STANDBY_ENVIRONMENT", "LAGOON_FASTLY_NOCACHE_SERVICE_ID", "LAGOON_PROJECT_VARIABLES",
+		"LAGOON_ENVIRONMENT_VARIABLES", "LAGOON_VERSION",
+	}
+	for _, varName := range varNames {
+		os.Unsetenv(varName)
+	}
+	for _, varName := range localVars {
+		os.Unsetenv(varName.name)
+	}
 }

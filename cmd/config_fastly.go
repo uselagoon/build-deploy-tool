@@ -60,14 +60,4 @@ func init() {
 	configCmd.AddCommand(fastlyConfigGeneration)
 	fastlyConfigGeneration.Flags().StringVarP(&domainName, "domain", "D", "",
 		"The .lagoon.yml file to read")
-	fastlyConfigGeneration.Flags().StringVarP(&projectVariables, "project-variables", "v", "",
-		"The projects environment variables JSON payload")
-	fastlyConfigGeneration.Flags().StringVarP(&environmentVariables, "environment-variables", "V", "",
-		"The environments environment variables JSON payload")
-	fastlyConfigGeneration.Flags().StringVarP(&fastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
-		"The fastly cache no cache service ID to use")
-	fastlyConfigGeneration.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-		"The .lagoon.yml file to read")
-	fastlyConfigGeneration.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
-		"The fastly service ID to use")
 }

@@ -27,7 +27,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 			args: args{
 				genRoutes: &RoutesV2{},
 				routeMap: map[string][]Route{
-					"nginx": []Route{
+					"nginx": {
 						{
 							Name: "example.com",
 						},
@@ -71,13 +71,13 @@ func TestGenerateRouteStructure(t *testing.T) {
 			args: args{
 				genRoutes: &RoutesV2{},
 				routeMap: map[string][]Route{
-					"nginx": []Route{
+					"nginx": {
 						{
 							Name: "example.com",
 						},
 						{
 							Ingresses: map[string]Ingress{
-								"www.example.com": Ingress{
+								"www.example.com": {
 									Fastly: Fastly{
 										APISecretName: "annotationscom",
 										Watch:         true,
