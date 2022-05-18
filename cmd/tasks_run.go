@@ -137,9 +137,6 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 		fmt.Println("Error evaluating condition: ", err.Error())
 		return false, err
 	}
-	fmt.Println("/././")
-	fmt.Println(ret)
-	fmt.Println("/././")
 	retBool, okay := ret.(bool)
 	if !okay {
 		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
