@@ -120,9 +120,6 @@ func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment,
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
-	for k, v := range lagoonConditionalEvaluationEnvironment {
-		fmt.Println(k, ":", v)
-	}
 	return lagoonConditionalEvaluationEnvironment, nil
 }
 

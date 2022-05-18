@@ -1,7 +1,6 @@
 package tasklib
 
 import (
-	"fmt"
 	"github.com/PaesslerAG/gval"
 )
 
@@ -14,14 +13,16 @@ func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment
 	value, err := gval.Evaluate(expression, env,
 		gval.Function("env", func(args ...interface{}) (interface{}, error) {
 			name := args[0].(string)
-			var theDefault interface{}
+			var val, theDefault interface{}
+			val, ok := env[name]
 			if len(args) == 2 {
-				theDefault := args[1]
+				theDefault = args[1]
+			}
+			if !ok {
+				return theDefault, nil
 			}
 
-			if val, ok := env[name]; ok != nil
-
-			return false, nil
+			return val, nil
 		}))
 	if err != nil {
 		return nil, err

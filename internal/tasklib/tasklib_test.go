@@ -47,6 +47,39 @@ func TestEvaluateExpressionsInTaskEnvironment(t *testing.T) {
 			want:    nil,
 			wantErr: true, //error = parsing error: )1==1 :1:1 - 1:2 unexpected ")" while scanning extensions, wantErr false
 		},
+		{
+			name: "Uses env with no need for default",
+			args: args{
+				expression: `env("value", "adefault") == "test"`,
+				env: TaskEnvironment{
+					"value": "test",
+				},
+			},
+			want:    true,
+			wantErr: false, //error = parsing error: )1==1 :1:1 - 1:2 unexpected ")" while scanning extensions, wantErr false
+		},
+		{
+			name: "Uses env with default",
+			args: args{
+				expression: `env("valuethatdoesntexist'", "the_default") == "the_default"`,
+				env: TaskEnvironment{
+					"value": "test",
+				},
+			},
+			want:    true,
+			wantErr: false, //error = parsing error: )1==1 :1:1 - 1:2 unexpected ")" while scanning extensions, wantErr false
+		},
+		{
+			name: "Uses regex match",
+			args: args{
+				expression: `env("LAGOON_PR_VALUE")=~"PR.*"`,
+				env: TaskEnvironment{
+					"LAGOON_PR_VALUE": "PR-9345",
+				},
+			},
+			want:    true,
+			wantErr: false, //error = parsing error: )1==1 :1:1 - 1:2 unexpected ")" while scanning extensions, wantErr false
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
