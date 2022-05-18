@@ -7,6 +7,8 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
+	"os"
+	"strings"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
@@ -94,6 +96,15 @@ var tasksRun = &cobra.Command{
 }
 
 func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment, error) {
+
+	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
+	//pull all pod env vars
+	allEnvVarNames := os.Environ()
+	for _, n := range allEnvVarNames {
+		kv := strings.Split(n, "=")
+		lagoonConditionalEvaluationEnvironment[kv[0]] = kv[1]
+	}
+
 	projectVars := []lagoon.EnvironmentVariable{}
 	envVars := []lagoon.EnvironmentVariable{}
 	// get the project and environment variables
@@ -102,7 +113,6 @@ func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment,
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
 	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
-	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
 
 	// Give context in the logs to how the tasks execution is being evaluated
 	if len(lagoonEnvVars) > 0 {
@@ -110,7 +120,9 @@ func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment,
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
-
+	for k, v := range lagoonConditionalEvaluationEnvironment {
+		fmt.Println(k, ":", v)
+	}
 	return lagoonConditionalEvaluationEnvironment, nil
 }
 
@@ -125,7 +137,9 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 		fmt.Println("Error evaluating condition: ", err.Error())
 		return false, err
 	}
-
+	fmt.Println("/././")
+	fmt.Println(ret)
+	fmt.Println("/././")
 	retBool, okay := ret.(bool)
 	if !okay {
 		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
