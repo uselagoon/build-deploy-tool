@@ -37,11 +37,3 @@ func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment
 	}
 	return value, nil
 }
-
-type environmentTools struct {
-	Env TaskEnvironment
-}
-
-//func (t *environmentTools) exists(environmentElement string) bool {
-//	if _, ok := t.Env[environmentElement]
-//}
