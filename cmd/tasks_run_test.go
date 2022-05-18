@@ -5,6 +5,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -103,13 +104,21 @@ func Test_getEnvironmentVariablesForConditionalEvaluation(t *testing.T) {
 			wantErr: false,
 		},
 	}
+
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			//We want to clear out all env vars
+			prevEnv := os.Environ()
+			for _, entry := range prevEnv {
+				parts := strings.SplitN(entry, "=", 2)
+				os.Unsetenv(parts[0])
+			}
 			oldProjVars := os.Getenv("LAGOON_PROJECT_VARIABLES")
 			oldEnvVars := os.Getenv("LAGOON_ENVIRONMENT_VARIABLES")
+
 			os.Setenv("LAGOON_PROJECT_VARIABLES", tt.projectVars)
 			os.Setenv("LAGOON_ENVIRONMENT_VARIABLES", tt.envVars)
-			got, err := getEnvironmentVariablesForConditionalEvaluation()
+			got, err := getEnvironmentVariablesForConditionalEvaluation(false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("getEnvironmentVariablesForConditionalEvaluation() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -119,6 +128,12 @@ func Test_getEnvironmentVariablesForConditionalEvaluation(t *testing.T) {
 			}
 			os.Setenv("LAGOON_PROJECT_VARIABLES", oldProjVars)
 			os.Setenv("LAGOON_ENVIRONMENT_VARIABLES", oldEnvVars)
+			t.Cleanup(func() {
+				for _, entry := range prevEnv {
+					parts := strings.SplitN(entry, "=", 2)
+					os.Setenv(parts[0], parts[1])
+				}
+			})
 		})
 	}
 }

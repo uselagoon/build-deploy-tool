@@ -39,7 +39,7 @@ var tasksRun = &cobra.Command{
 			lagoon.RunTasksOutOfCluster()
 		}
 
-		lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation()
+		lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation(true)
 		if err != nil {
 			return err
 		}
@@ -98,15 +98,17 @@ func iterateTasks(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment
 	return nil, false
 }
 
-func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment, error) {
+func getEnvironmentVariablesForConditionalEvaluation(pullWiderEnvironment bool) (tasklib.TaskEnvironment, error) {
 
 	//TODO: a lot of this will likely be replacable by library functions
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
 	//pull all pod env vars
-	allEnvVarNames := os.Environ()
-	for _, n := range allEnvVarNames {
-		kv := strings.Split(n, "=")
-		lagoonConditionalEvaluationEnvironment[kv[0]] = kv[1]
+	if pullWiderEnvironment {
+		allEnvVarNames := os.Environ()
+		for _, n := range allEnvVarNames {
+			kv := strings.Split(n, "=")
+			lagoonConditionalEvaluationEnvironment[kv[0]] = kv[1]
+		}
 	}
 
 	projectVars := []lagoon.EnvironmentVariable{}
