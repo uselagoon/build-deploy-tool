@@ -65,7 +65,7 @@ func GetLagoonVariable(name string, scope []string, variables []EnvironmentVaria
 			return &v, nil
 		}
 	}
-	return nil, fmt.Errorf("variable not found")
+	return nil, fmt.Errorf("variable %s not found", name)
 }
 
 // VariableExists checks if a variable exists in a slice of environment variables
