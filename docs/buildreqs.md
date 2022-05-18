@@ -1,7 +1,14 @@
 # Build Requirements
 
+## Required Files
+* `.lagoon.yml`
+* `docker-compose.yml`
+
 ## Variables
-These are variables that are injected into a build pod
+
+These are variables that are injected into a build pod by `remote-controller`, some are provided by Lagoon core
+
+### Main Variables
 * `BUILD_TYPE` can be one of `branch|pullrequest|promote`
 * `PROJECT` is the safed version of the project name
 * `ENVIRONMENT` is the safed version of the environment name
@@ -10,54 +17,58 @@ These are variables that are injected into a build pod
 * `ACTIVE_ENVIRONMENT` is populated with the current active environment if active/standby is enabled
 * `STANDBY_ENVIRONMENT` is populated with the current standby environment if active/standby is enabled
 
-## Pullrequest Variables
-* `PR_TITLE` is the title of the pullrequest
-* `PR_NUMBER` is the number of the pullrequest
-* `PR_HEAD_BRANCH` head branch
-* `PR_HEAD_SHA` head sha
-* `PR_BASE_BRANCH` base branch
-* `PR_BASE_SHA` base sha
+### Pullrequest Variables
+* `PR_TITLE`
+* `PR_NUMBER`
+* `PR_HEAD_BRANCH`
+* `PR_HEAD_SHA`
+* `PR_BASE_BRANCH`
+* `PR_BASE_SHA`
 
-## 
-* PROMOTION_SOURCE_ENVIRONMENT
+###  Promotion Variables
+* `PROMOTION_SOURCE_ENVIRONMENT`
 
-* LAGOON_PROJECT_VARIABLES
-* LAGOON_ENVIRONMENT_VARIABLES
+### Environment Variables
+* `LAGOON_PROJECT_VARIABLES` contains any project specific environment variables
+* `LAGOON_ENVIRONMENT_VARIABLES` contains any environment specific environment variables
 
-* MONITORING_ALERTCONTACT
-* MONITORING_STATUSPAGEID
+### Monitoring Variables
+* `MONITORING_ALERTCONTACT`
+* `MONITORING_STATUSPAGEID`
 
-* SOURCE_REPOSITORY
-* GIT_REF
-* SUBFOLDER
-* PROJECT_SECRET
-* KUBERNETES
-* REGISTRY
-* LAGOON_FASTLY_NOCACHE_SERVICE_ID
+### Build Variables
+* `SOURCE_REPOSITORY` is the git repository
+* `GIT_REF` is the git reference / commit
+* `SUBFOLDER` if the project is in a subfolder, this variable contains the directory to change to
+* `PROJECT_SECRET` is used for backups
+* `KUBERNETES` is the kubernetes cluster name from Lagoon
+* `REGISTRY` is the registry that is passed from Lagoon (will be deprecated)
+* `LAGOON_FASTLY_NOCACHE_SERVICE_ID` is a default cache no cache service id that can be consumed
+* `NATIVE_CRON_POD_MINIMUM_FREQUENCY` changes the interval of which cronjobs go from inside cli pods to native k8s cronjobs (default 15m)
 
-* LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD
-* LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD
-* LAGOON_FEATURE_FLAG_FORCE_ISOLATION_NETWORK_POLICY
-* LAGOON_FEATURE_FLAG_DEFAULT_ISOLATION_NETWORK_POLICY
-* LAGOON_FEATURE_FLAG_FORCE_INSIGHTS
-* LAGOON_FEATURE_FLAG_DEFAULT_INSIGHTS
-* LAGOON_FEATURE_FLAG_FORCE_RWX_TO_RWO
-* LAGOON_FEATURE_FLAG_DEFAULT_RWX_TO_RWO
+### Build Flags
+* `LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD`
+* `LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD`
+* `LAGOON_FEATURE_FLAG_FORCE_ISOLATION_NETWORK_POLICY`
+* `LAGOON_FEATURE_FLAG_DEFAULT_ISOLATION_NETWORK_POLICY`
+* `LAGOON_FEATURE_FLAG_FORCE_INSIGHTS`
+* `LAGOON_FEATURE_FLAG_DEFAULT_INSIGHTS`
+* `LAGOON_FEATURE_FLAG_FORCE_RWX_TO_RWO`
+* `LAGOON_FEATURE_FLAG_DEFAULT_RWX_TO_RWO`
 
 ### Backup related variables
-* DEFAULT_BACKUP_SCHEDULE
-* MONTHLY_BACKUP_DEFAULT_RETENTION
-* WEEKLY_BACKUP_DEFAULT_RETENTION
-* DAILY_BACKUP_DEFAULT_RETENTION
-* HOURLY_BACKUP_DEFAULT_RETENTION
-* LAGOON_FEATURE_BACKUP_DEV_SCHEDULE
-* LAGOON_FEATURE_BACKUP_PR_SCHEDULE
-* LAGOON_FEATURE_BACKUP_DEV_RETENTION
-* LAGOON_FEATURE_BACKUP_PR_RETENTION
-* K8UP_WEEKLY_RANDOM_FEATURE_FLAG
-* NATIVE_CRON_POD_MINIMUM_FREQUENCY
+* `DEFAULT_BACKUP_SCHEDULE`
+* `MONTHLY_BACKUP_DEFAULT_RETENTION`
+* `WEEKLY_BACKUP_DEFAULT_RETENTION`
+* `DAILY_BACKUP_DEFAULT_RETENTION`
+* `HOURLY_BACKUP_DEFAULT_RETENTION`
+* `LAGOON_FEATURE_BACKUP_DEV_SCHEDULE`
+* `LAGOON_FEATURE_BACKUP_PR_SCHEDULE`
+* `LAGOON_FEATURE_BACKUP_DEV_RETENTION`
+* `LAGOON_FEATURE_BACKUP_PR_RETENTION`
+* `K8UP_WEEKLY_RANDOM_FEATURE_FLAG`
 
 ### Proxy related variables
-* HTTP_PROXY / http_proxy
-* HTTPS_PROXY / https_proxy
-* NO_PROXY / no_proxy
+* `HTTP_PROXY / http_proxy`
+* `HTTPS_PROXY / https_proxy`
+* `NO_PROXY / no_proxy`
