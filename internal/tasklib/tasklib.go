@@ -11,7 +11,7 @@ type TaskEnvironment map[string]interface{}
 
 func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment) (interface{}, error) {
 	value, err := gval.Evaluate(expression, env,
-		gval.Function("env", func(args ...interface{}) (interface{}, error) {
+		gval.Function("withDefault", func(args ...interface{}) (interface{}, error) {
 			name := args[0].(string)
 			var val, theDefault interface{}
 			val, ok := env[name]
@@ -23,6 +23,14 @@ func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment
 			}
 
 			return val, nil
+		}),
+		gval.Function("exists", func(args ...interface{}) bool {
+			name := args[0].(string)
+			_, ok := env[name]
+			if !ok {
+				return false
+			}
+			return true
 		}))
 	if err != nil {
 		return nil, err
