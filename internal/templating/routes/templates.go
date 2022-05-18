@@ -21,7 +21,7 @@ func GenerateIngressTemplate(
 	monitoringContact,
 	monitoringStatusPageID string,
 	monitoringEnabled bool,
-) []byte {
+) ([]byte, error) {
 
 	// generate the name for the ingress fromt he route domain
 	// shorten it if required with a hash
@@ -220,12 +220,15 @@ func GenerateIngressTemplate(
 
 	// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
 	// marshal the resulting ingress
-	ingressBytes, _ := yaml.Marshal(ingress)
+	ingressBytes, err := yaml.Marshal(ingress)
+	if err != nil {
+		return nil, err
+	}
 	// add the seperator to the template so that it can be `kubectl apply` in bulk as part
 	// of the current build process
 	separator := []byte("---\n")
 	result := append(separator[:], ingressBytes[:]...)
-	return result
+	return result, nil
 }
 
 // WriteTemplateFile writes the template to a file.

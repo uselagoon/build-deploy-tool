@@ -53,7 +53,10 @@ func IngressTemplateGeneration(debug bool) error {
 		if debug {
 			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 		}
-		templateYAML := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+		templateYAML, err := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
 		routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 	}
 	if activeEnv || standbyEnv {
@@ -67,7 +70,10 @@ func IngressTemplateGeneration(debug bool) error {
 			if debug {
 				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			}
-			templateYAML := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+			templateYAML, err := routeTemplater.GenerateIngressTemplate(route, lagoonValues, monitoringContact, monitoringStatusPageID, monitoringEnabled)
+			if err != nil {
+				return fmt.Errorf("couldn't generate template: %v", err)
+			}
 			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 		}
 	}
