@@ -46,22 +46,9 @@ var tasksRun = &cobra.Command{
 
 		if runPreRollout {
 			fmt.Println("Executing Pre-rollout Tasks")
-			for _, run := range lYAML.Tasks.Prerollout {
-				runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, run.Run)
-				if err != nil {
-					return err
-				}
-				if runTask {
-					err := runCleanTaskInEnvironment(run.Run)
-					if err != nil {
-						return err
-					}
-					if err != nil {
-						return err
-					}
-				} else {
-					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", run.Run.When, run.Run.Command)
-				}
+			err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
+			if done {
+				return err2
 			}
 			fmt.Println("Pre-rollout Tasks Complete")
 		} else {
@@ -70,22 +57,9 @@ var tasksRun = &cobra.Command{
 
 		if runPostRollout {
 			fmt.Println("Executing Post-rollout Tasks")
-			for _, run := range lYAML.Tasks.Postrollout {
-				runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, run.Run)
-				if err != nil {
-					return err
-				}
-				if runTask {
-					err := runCleanTaskInEnvironment(run.Run)
-					if err != nil {
-						return err
-					}
-					if err != nil {
-						return err
-					}
-				} else {
-					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", run.Run.When, run.Run.Command)
-				}
+			err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
+			if done {
+				return err2
 			}
 			fmt.Println("Post-rollout Tasks Complete")
 		} else {
@@ -95,8 +69,38 @@ var tasksRun = &cobra.Command{
 	},
 }
 
+func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
+	var tasks []lagoon.Task
+	for _, taskrun := range taskRun {
+		tasks = append(tasks, taskrun.Run)
+	}
+	return tasks
+}
+
+func iterateTasks(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (error, bool) {
+	for _, task := range tasks {
+		runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
+		if err != nil {
+			return err, true
+		}
+		if runTask {
+			err := runCleanTaskInEnvironment(task)
+			if err != nil {
+				return err, true
+			}
+			if err != nil {
+				return err, true
+			}
+		} else {
+			fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
+		}
+	}
+	return nil, false
+}
+
 func getEnvironmentVariablesForConditionalEvaluation() (tasklib.TaskEnvironment, error) {
 
+	//TODO: a lot of this will likely be replacable by library functions
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
 	//pull all pod env vars
 	allEnvVarNames := os.Environ()

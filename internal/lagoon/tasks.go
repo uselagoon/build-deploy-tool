@@ -17,7 +17,7 @@ import (
 	"time"
 )
 
-var runOutOfCluster bool
+var runOutOfCluster, debug bool
 
 func RunTasksOutOfCluster() {
 	runOutOfCluster = true
@@ -88,8 +88,9 @@ func getConfig() (*rest.Config, error) {
 }
 
 func ExecuteTaskInEnvironment(task Task) error {
-
-	fmt.Println("Executing task :", task.Command)
+	if debug {
+		fmt.Println("Executing task :", task.Command)
+	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
 		command = append(command, task.Shell)
@@ -132,7 +133,6 @@ func ExecPod(
 	depClient := clientset.AppsV1().Deployments(namespace)
 
 	lagoonServiceLabel := "lagoon.sh/service=" + podName
-	fmt.Println("Label: ", lagoonServiceLabel)
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
@@ -155,7 +155,9 @@ func ExecPod(
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Println("No ready replicas found, scaling up")
+			if debug {
+				fmt.Println("No ready replicas found, scaling up")
+			}
 			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
@@ -203,8 +205,9 @@ func ExecPod(
 	if !foundRunningPod {
 		return "", "", errors.New("Unable to find running Pod for namespace: " + namespace)
 	}
-	fmt.Println("Going to exec into ", pod.Name)
-
+	if debug {
+		fmt.Println("Going to exec into ", pod.Name)
+	}
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod.Name).
@@ -250,4 +253,6 @@ func ExecPod(
 
 func init() {
 	runOutOfCluster = false
+	//TODO: will potentially be useful to wire this up to the global debug into
+	debug = true
 }

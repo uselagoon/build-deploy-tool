@@ -66,7 +66,7 @@ func init() {
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
-	rootCmd.AddCommand(tasksRun) //TODO: BMK :- Remove or change this to the appropriate command when ready
+	rootCmd.AddCommand(tasksRun)
 	rootCmd.AddCommand(identifyCmd)
 
 	rootCmd.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
