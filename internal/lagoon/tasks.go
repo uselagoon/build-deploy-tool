@@ -17,11 +17,7 @@ import (
 	"time"
 )
 
-var runOutOfCluster, debug bool
-
-func RunTasksOutOfCluster() {
-	runOutOfCluster = true
-}
+var debug bool
 
 type Task struct {
 	Name      string `json:"name"`
@@ -56,7 +52,14 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
-	if !runOutOfCluster {
+	var kubeconfig *string
+	kubeconfig = new(string)
+	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
+
+	if *kubeconfig == "" {
+		//return nil, fmt.Errorf("Unable to find a valid KUBECONFIG")
+		//Fall back on out of cluster
+
 		// read the deployer token.
 		token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
 		if err != nil {
@@ -72,14 +75,6 @@ func getConfig() (*rest.Config, error) {
 		}
 		return restCfg, nil
 	}
-	//else we attempt to connect using standard KUBECONFIG
-	var kubeconfig *string
-	kubeconfig = new(string)
-	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
-	if *kubeconfig == "" {
-		return nil, fmt.Errorf("Unable to find a valid KUBECONFIG")
-	}
-	// use the current context in kubeconfig
 	config, err := clientcmd.BuildConfigFromFlags("", *kubeconfig)
 	if err != nil {
 		panic(err.Error())
@@ -252,7 +247,6 @@ func ExecPod(
 }
 
 func init() {
-	runOutOfCluster = false
 	//TODO: will potentially be useful to wire this up to the global debug into
 	debug = true
 }

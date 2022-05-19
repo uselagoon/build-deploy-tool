@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
+	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -14,59 +16,85 @@ import (
 var runPreRollout, runPostRollout, outOfClusterConfig bool
 var namespace string
 
-var tasksRun = &cobra.Command{
+const (
+	PRE_ROLLOUT_TASKS = iota
+	POST_ROLLOUT_TASKS
+)
+
+var taskCmd = &cobra.Command{
 	Use:     "tasks",
-	Aliases: []string{"tr"},
-	Short:   "Will run pre and/or post rollout tasks defined in .lagoon.yml",
+	Aliases: []string{"tsk"},
+	Short:   "Run tasks",
+	Long:    `Will run Pre/Post/etc. tasks defined in a .lagoon.yml`,
+}
+
+var tasksPreRun = &cobra.Command{
+	Use:     "pre-rollout",
+	Aliases: []string{"pre"},
+	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		return runTasks(PRE_ROLLOUT_TASKS)
+	},
+}
 
-		if !runPostRollout && !runPreRollout {
-			return fmt.Errorf("Neither pre nor post rollout tasks have been selected - exiting")
-		}
+var tasksPostRun = &cobra.Command{
+	Use:     "post-rollout",
+	Aliases: []string{"post"},
+	Short:   "Will run post rollout tasks defined in .lagoon.yml",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		return runTasks(POST_ROLLOUT_TASKS)
+	},
+}
 
-		if namespace == "" {
+func runTasks(taskType int) error {
+
+	if namespace == "" {
+		//Try load from file
+		const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 			return fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
 		}
-
-		// read the .lagoon.yml file
-		var lYAML lagoon.YAML
-		lPolysite := make(map[string]interface{})
-		if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
-			return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
-		}
-
-		if outOfClusterConfig == true {
-			lagoon.RunTasksOutOfCluster()
-		}
-
-		lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation(true)
+		nsb, err := ioutil.ReadFile(filename)
 		if err != nil {
 			return err
 		}
+		namespace = strings.Trim(string(nsb), "\n ")
+	}
 
-		if runPreRollout {
-			fmt.Println("Executing Pre-rollout Tasks")
-			err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
-			if done {
-				return err2
-			}
-			fmt.Println("Pre-rollout Tasks Complete")
-		} else {
-			fmt.Println("Skipping pre-rollout tasks")
-		}
+	// read the .lagoon.yml file
+	var lYAML lagoon.YAML
+	lPolysite := make(map[string]interface{})
+	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
+		return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
+	}
 
-		if runPostRollout {
-			fmt.Println("Executing Post-rollout Tasks")
-			err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
-			if done {
-				return err2
-			}
-			fmt.Println("Post-rollout Tasks Complete")
-		} else {
-			fmt.Println("Skipping post-rollout tasks")
+	lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation(true)
+	if err != nil {
+		return err
+	}
+
+	if taskType == PRE_ROLLOUT_TASKS {
+		fmt.Println("Executing Pre-rollout Tasks")
+		err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
+		if done {
+			return err2
 		}
-		return nil
-	},
+		fmt.Println("Pre-rollout Tasks Complete")
+	} else {
+		fmt.Println("Skipping pre-rollout tasks")
+	}
+
+	if taskType == POST_ROLLOUT_TASKS {
+		fmt.Println("Executing Post-rollout Tasks")
+		err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
+		if done {
+			return err2
+		}
+		fmt.Println("Post-rollout Tasks Complete")
+	} else {
+		fmt.Println("Skipping post-rollout tasks")
+	}
+	return nil
 }
 
 func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
@@ -126,6 +154,14 @@ func getEnvironmentVariablesForConditionalEvaluation(pullWiderEnvironment bool) 
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
+	blockList := []string{
+		"LAGOON_PROJECT_VARIABLES",
+		"LAGOON_ENVIRONMENT_VARIABLES",
+	}
+	for _, blockItem := range blockList {
+		delete(lagoonConditionalEvaluationEnvironment, blockItem)
+	}
+
 	return lagoonConditionalEvaluationEnvironment, nil
 }
 
@@ -161,20 +197,18 @@ func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 }
 
 func init() {
-	configCmd.AddCommand(tasksRun)
-	tasksRun.Flags().StringVarP(&projectVariables, "project-variables", "v", "",
-		"The projects environment variables JSON payload")
-	tasksRun.Flags().StringVarP(&environmentVariables, "environment-variables", "V", "",
-		"The environments environment variables JSON payload")
-	tasksRun.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-		"The .lagoon.yml file to read")
-	tasksRun.Flags().BoolVarP(&runPreRollout, "pre-rollout", "", false,
-		"Will run pre-rollout tasks if true")
-	tasksRun.Flags().BoolVarP(&runPostRollout, "post-rollout", "", false,
-		"Will run post-rollout tasks if true")
-	tasksRun.Flags().StringVarP(&namespace, "namespace", "n", "",
-		"The environments environment variables JSON payload")
-	tasksRun.Flags().BoolVarP(&outOfClusterConfig, "out-of-cluster", "", false,
-		"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
+	taskCmd.AddCommand(tasksPreRun)
+	taskCmd.AddCommand(tasksPostRun)
+	//tasksPreRun.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+	//	"The .lagoon.yml file to read")
 
+	addArgs := func(command *cobra.Command) {
+		command.Flags().StringVarP(&namespace, "namespace", "n", "",
+			"The environments environment variables JSON payload")
+		//	"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
+		command.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+			"The .lagoon.yml file to read")
+	}
+	addArgs(tasksPreRun)
+	addArgs(tasksPostRun)
 }
