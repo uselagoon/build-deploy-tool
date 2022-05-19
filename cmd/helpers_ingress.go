@@ -70,7 +70,7 @@ func generateAndMerge(
 	envVars []lagoon.EnvironmentVariable,
 	lagoonYAML lagoon.YAML,
 	lagoonValues lagoon.BuildValues,
-) (*lagoon.RoutesV2, error) {
+) (lagoon.RoutesV2, error) {
 	n := &lagoon.RoutesV2{} // placeholder for generated routes
 
 	// otherwise it just uses the default environment name
@@ -78,6 +78,6 @@ func generateAndMerge(
 		lagoon.GenerateRoutesV2(n, routeMap, envVars, fastlyAPISecretPrefix, false)
 	}
 	// merge routes from the API on top of the routes from the `.lagoon.yml`
-	merged := lagoon.MergeRoutesV2(*n, api, envVars, fastlyAPISecretPrefix)
-	return &merged, nil
+	mainRoutes := lagoon.MergeRoutesV2(*n, api, envVars, fastlyAPISecretPrefix)
+	return mainRoutes, nil
 }
