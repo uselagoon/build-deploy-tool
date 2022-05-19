@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -30,9 +31,11 @@ func TestIdentifyRoute(t *testing.T) {
 		templatePath       string
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name        string
+		args        args
+		want        string
+		wantRemain  []string
+		wantautoGen []string
 	}{
 		{
 			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
@@ -51,7 +54,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "example.com",
+			want:        "https://example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
@@ -70,7 +75,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "example.com",
+			want:        "https://example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
@@ -89,7 +96,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "example.com",
+			want:        "https://example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test4 check no fastly and no values",
@@ -108,7 +117,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "example.com",
+			want:        "https://example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test5 multiproject1 no values",
@@ -127,7 +138,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "multiproject1.com",
+			want:        "https://multiproject1.com",
+			wantRemain:  []string{"https://node-multiproject1-multiproject.example.com"},
+			wantautoGen: []string{"https://node-multiproject1-multiproject.example.com"},
 		},
 		{
 			name: "test6 multiproject2 no values",
@@ -146,7 +159,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/polysite-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "multiproject2.com",
+			want:        "https://multiproject2.com",
+			wantRemain:  []string{"https://node-multiproject2-multiproject.example.com"},
+			wantautoGen: []string{"https://node-multiproject2-multiproject.example.com"},
 		},
 		{
 			name: "test7 multidomain no values",
@@ -165,7 +180,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/multi-lagoon.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "example.com",
+			want:        "https://example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com", "https://www.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test8 multidomain no values",
@@ -184,7 +201,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:      "test-resources/template-ingress/multi-lagoon2.yml",
 				templatePath:    "test-resources/template-ingress/output",
 			},
-			want: "customdomain-will-be-main-domain.com",
+			want:        "https://customdomain-will-be-main-domain.com",
+			wantRemain:  []string{"https://node-example-project-branch-routes.example.com", "https://customdomain-will-be-not-be-main-domain.com"},
+			wantautoGen: []string{"https://node-example-project-branch-routes.example.com"},
 		},
 		{
 			name: "test9 active no values",
@@ -204,7 +223,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:        "test-resources/template-ingress/activestandby-lagoon.yml",
 				templatePath:      "test-resources/template-ingress/output",
 			},
-			want: "active.example.com",
+			want:        "https://active.example.com",
+			wantRemain:  []string{"https://node-example-project-main.example.com", "https://main.example.com"},
+			wantautoGen: []string{"https://node-example-project-main.example.com"},
 		},
 		{
 			name: "test10 standby no values",
@@ -224,7 +245,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:         "test-resources/template-ingress/activestandby-lagoon.yml",
 				templatePath:       "test-resources/template-ingress/output",
 			},
-			want: "standby.example.com",
+			want:        "https://standby.example.com",
+			wantRemain:  []string{"https://node-example-project-main2.example.com", "https://main2.example.com"},
+			wantautoGen: []string{"https://node-example-project-main2.example.com"},
 		},
 		{
 			name: "test11 no custom ingress",
@@ -244,7 +267,9 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:         "test-resources/template-ingress/noingress-lagoon.yml",
 				templatePath:       "test-resources/template-ingress/output",
 			},
-			want: "node-example-project-no-ingress.example.com",
+			want:        "https://node-example-project-no-ingress.example.com",
+			wantRemain:  []string{},
+			wantautoGen: []string{"https://node-example-project-no-ingress.example.com"},
 		},
 	}
 	for _, tt := range tests {
@@ -321,13 +346,21 @@ func TestIdentifyRoute(t *testing.T) {
 			fastlyAPISecretPrefix = tt.args.secretPrefix
 			fastlyServiceID = tt.args.serviceID
 
-			primaryIngress, err := IdentifyPrimaryIngress(false)
+			primary, remainders, autogen, err := IdentifyPrimaryIngress(false)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
 
-			if primaryIngress != tt.want {
-				t.Errorf("returned route %v doesn't match want %v", primaryIngress, tt.want)
+			if primary != tt.want {
+				t.Errorf("returned primary %v doesn't match want %v", primary, tt.want)
+			}
+
+			if !reflect.DeepEqual(remainders, tt.wantRemain) {
+				t.Errorf("returned remainders %v doesn't match want %v", remainders, tt.wantRemain)
+			}
+
+			if !reflect.DeepEqual(autogen, tt.wantautoGen) {
+				t.Errorf("returned autogen %v doesn't match want %v", autogen, tt.wantautoGen)
 			}
 		})
 	}

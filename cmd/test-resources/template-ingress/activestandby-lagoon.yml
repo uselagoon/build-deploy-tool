@@ -17,8 +17,8 @@ environments:
   main:
     routes:
       - node:
-          - example.com
+          - main.example.com
   main2:
     routes:
       - node:
-          - example.com
+          - main2.example.com
