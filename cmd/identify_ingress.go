@@ -65,6 +65,12 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 		for i := 1; i <= rangeVal; i++ {
 			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
 			autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
+			for a := 0; a < len(autogenRoutes.Routes[i].AlternativeNames); a++ {
+				autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].AlternativeNames[a]))
+			}
+		}
+		for a := 0; a < len(autogenRoutes.Routes[0].AlternativeNames); a++ {
+			autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[0].AlternativeNames[a]))
 		}
 		primary = fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[0].Domain)
 	}
@@ -83,6 +89,12 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 		rangeVal := len(mainRoutes.Routes) - 1
 		for i := 1; i <= rangeVal; i++ {
 			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
+			for a := 0; a < len(mainRoutes.Routes[i].AlternativeNames); a++ {
+				remainders = append(autogen, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].AlternativeNames[a]))
+			}
+		}
+		for a := 0; a < len(mainRoutes.Routes[0].AlternativeNames); a++ {
+			remainders = append(autogen, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[0].AlternativeNames[a]))
 		}
 		primary = fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[0].Domain)
 	}
@@ -101,6 +113,12 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 			rangeVal := len(activeStanbyRoutes.Routes) - 1
 			for i := 1; i <= rangeVal; i++ {
 				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
+				for a := 0; a < len(activeStanbyRoutes.Routes[i].AlternativeNames); a++ {
+					remainders = append(autogen, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].AlternativeNames[a]))
+				}
+			}
+			for a := 0; a < len(activeStanbyRoutes.Routes[0].AlternativeNames); a++ {
+				remainders = append(autogen, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[0].AlternativeNames[a]))
 			}
 			primary = fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[0].Domain)
 		}
