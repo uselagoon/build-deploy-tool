@@ -214,11 +214,15 @@ func Test_runTasks(t *testing.T) {
 		},
 	}
 
+	oldNamespace := namespace
+	namespace = "default"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := runTasks(tt.args.taskType, tt.args.taskRunner, tt.args.lYAML, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
 				t.Errorf("runTasks() error = %v, wantErr %v", err, tt.wantErr)
 			}
+
 		})
 	}
+	namespace = oldNamespace
 }
