@@ -271,6 +271,39 @@ func TestIdentifyRoute(t *testing.T) {
 			wantRemain:  []string{},
 			wantautoGen: []string{"https://node-example-project-no-ingress.example.com"},
 		},
+		{
+			name: "test12 no custom ingress",
+			args: args{
+				alertContact:       "alertcontact",
+				statusPageID:       "statuspageid",
+				projectName:        "example-project",
+				environmentName:    "no-ingress",
+				environmentType:    "production",
+				buildType:          "branch",
+				standbyEnvironment: "no-ingress",
+				lagoonVersion:      "v2.7.x",
+				branch:             "main2",
+				projectVars:        `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:            `[]`,
+				secretPrefix:       "fastly-api-",
+				lagoonYAML:         "test-resources/template-ingress/prefixes-lagoon.yml",
+				templatePath:       "test-resources/template-ingress/output",
+			},
+			want: "https://node-example-project-no-ingress.example.com",
+			wantRemain: []string{
+				"https://www.node-example-project-no-ingress.example.com",
+				"https://en.node-example-project-no-ingress.example.com",
+				"https://de.node-example-project-no-ingress.example.com",
+				"https://fi.node-example-project-no-ingress.example.com",
+			},
+			wantautoGen: []string{
+				"https://node-example-project-no-ingress.example.com",
+				"https://www.node-example-project-no-ingress.example.com",
+				"https://en.node-example-project-no-ingress.example.com",
+				"https://de.node-example-project-no-ingress.example.com",
+				"https://fi.node-example-project-no-ingress.example.com",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
