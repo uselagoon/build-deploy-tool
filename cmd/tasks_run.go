@@ -33,7 +33,12 @@ var tasksPreRun = &cobra.Command{
 	Aliases: []string{"pre"},
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runTasks(PRE_ROLLOUT_TASKS)
+
+		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo()
+		if err != nil {
+			return err
+		}
+		return runTasks(PRE_ROLLOUT_TASKS, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
 	},
 }
 
@@ -42,11 +47,43 @@ var tasksPostRun = &cobra.Command{
 	Aliases: []string{"post"},
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return runTasks(POST_ROLLOUT_TASKS)
+
+		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo()
+		if err != nil {
+			return err
+		}
+
+		return runTasks(POST_ROLLOUT_TASKS, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
 	},
 }
 
-func runTasks(taskType int) error {
+func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
+	// read the .lagoon.yml file
+	activeEnv := false
+	standbyEnv := false
+
+	lagoonEnvVars := []lagoon.EnvironmentVariable{}
+	lagoonValues := lagoon.BuildValues{}
+	lYAML := lagoon.YAML{}
+	autogenRoutes := new(lagoon.RoutesV2)
+	mainRoutes := new(lagoon.RoutesV2)
+	activeStandbyRoutes := new(lagoon.RoutesV2)
+
+	err := collectBuildValues(true, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
+	if err != nil {
+		return lagoon.YAML{}, nil, err
+	}
+
+	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
+	if len(lagoonEnvVars) > 0 {
+		for _, envVar := range lagoonEnvVars {
+			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
+		}
+	}
+	return lYAML, lagoonConditionalEvaluationEnvironment, nil
+}
+
+func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
 
 	if namespace == "" {
 		//Try load from file
@@ -61,21 +98,9 @@ func runTasks(taskType int) error {
 		namespace = strings.Trim(string(nsb), "\n ")
 	}
 
-	// read the .lagoon.yml file
-	var lYAML lagoon.YAML
-	lPolysite := make(map[string]interface{})
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, &lYAML, &lPolysite); err != nil {
-		return fmt.Errorf("couldn't read provided file `%v`: %v", lagoonYml, err)
-	}
-
-	lagoonConditionalEvaluationEnvironment, err := getEnvironmentVariablesForConditionalEvaluation(true)
-	if err != nil {
-		return err
-	}
-
 	if taskType == PRE_ROLLOUT_TASKS {
 		fmt.Println("Executing Pre-rollout Tasks")
-		err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
+		err2, done := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
 		if done {
 			return err2
 		}
@@ -86,7 +111,8 @@ func runTasks(taskType int) error {
 
 	if taskType == POST_ROLLOUT_TASKS {
 		fmt.Println("Executing Post-rollout Tasks")
-		err2, done := iterateTasks(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
+		fmt.Println(lYAML.Tasks.Postrollout)
+		err2, done := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
 		if done {
 			return err2
 		}
@@ -104,6 +130,8 @@ func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 	}
 	return tasks
 }
+
+type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (error, bool)
 
 func iterateTasks(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (error, bool) {
 	for _, task := range tasks {
