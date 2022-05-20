@@ -60,13 +60,18 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 	}
 	// get the first route from the list of routes
 	if len(autogenRoutes.Routes) > 0 {
-		rangeVal := len(autogenRoutes.Routes) - 1
-		autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[0].Domain))
-		for i := 1; i <= rangeVal; i++ {
-			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
+		for i := 0; i < len(autogenRoutes.Routes); i++ {
 			autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
+			if i == 0 {
+				primary = fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain)
+			} else {
+				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
+			}
+			for a := 0; a < len(autogenRoutes.Routes[i].AlternativeNames); a++ {
+				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].AlternativeNames[a]))
+				autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].AlternativeNames[a]))
+			}
 		}
-		primary = fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[0].Domain)
 	}
 
 	// handle routes from the .lagoon.yml and the API specifically
@@ -80,11 +85,16 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 		if primary != "" {
 			remainders = append(remainders, primary)
 		}
-		rangeVal := len(mainRoutes.Routes) - 1
-		for i := 1; i <= rangeVal; i++ {
-			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
+		for i := 0; i < len(mainRoutes.Routes); i++ {
+			if i == 0 {
+				primary = fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain)
+			} else {
+				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
+			}
+			for a := 0; a < len(mainRoutes.Routes[i].AlternativeNames); a++ {
+				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].AlternativeNames[a]))
+			}
 		}
-		primary = fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[0].Domain)
 	}
 
 	if activeEnv || standbyEnv {
@@ -98,11 +108,16 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 			if primary != "" {
 				remainders = append(remainders, primary)
 			}
-			rangeVal := len(activeStanbyRoutes.Routes) - 1
-			for i := 1; i <= rangeVal; i++ {
-				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
+			for i := 0; i < len(activeStanbyRoutes.Routes); i++ {
+				if i == 0 {
+					primary = fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain)
+				} else {
+					remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
+				}
+				for a := 0; a < len(activeStanbyRoutes.Routes[i].AlternativeNames); a++ {
+					remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].AlternativeNames[a]))
+				}
 			}
-			primary = fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[0].Domain)
 		}
 	}
 
