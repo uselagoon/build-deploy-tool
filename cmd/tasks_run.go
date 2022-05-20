@@ -1,11 +1,9 @@
 package cmd
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/spf13/cobra"
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 	"io/ioutil"
@@ -69,7 +67,7 @@ func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
 	mainRoutes := new(lagoon.RoutesV2)
 	activeStandbyRoutes := new(lagoon.RoutesV2)
 
-	err := collectBuildValues(true, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
+	err := collectBuildValues(false, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
 	if err != nil {
 		return lagoon.YAML{}, nil, err
 	}
@@ -152,45 +150,6 @@ func iterateTasks(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment
 		}
 	}
 	return nil, false
-}
-
-func getEnvironmentVariablesForConditionalEvaluation(pullWiderEnvironment bool) (tasklib.TaskEnvironment, error) {
-
-	//TODO: a lot of this will likely be replacable by library functions
-	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
-	//pull all pod env vars
-	if pullWiderEnvironment {
-		allEnvVarNames := os.Environ()
-		for _, n := range allEnvVarNames {
-			kv := strings.Split(n, "=")
-			lagoonConditionalEvaluationEnvironment[kv[0]] = kv[1]
-		}
-	}
-
-	projectVars := []lagoon.EnvironmentVariable{}
-	envVars := []lagoon.EnvironmentVariable{}
-	// get the project and environment variables
-	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, true)
-	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, true)
-	json.Unmarshal([]byte(projectVariables), &projectVars)
-	json.Unmarshal([]byte(environmentVariables), &envVars)
-	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
-
-	// Give context in the logs to how the tasks execution is being evaluated
-	if len(lagoonEnvVars) > 0 {
-		for _, envVar := range lagoonEnvVars {
-			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
-		}
-	}
-	blockList := []string{
-		"LAGOON_PROJECT_VARIABLES",
-		"LAGOON_ENVIRONMENT_VARIABLES",
-	}
-	for _, blockItem := range blockList {
-		delete(lagoonConditionalEvaluationEnvironment, blockItem)
-	}
-
-	return lagoonConditionalEvaluationEnvironment, nil
 }
 
 func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task) (bool, error) {
