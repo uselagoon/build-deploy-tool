@@ -289,8 +289,13 @@ func TestIdentifyRoute(t *testing.T) {
 				lagoonYAML:         "test-resources/template-ingress/prefixes-lagoon.yml",
 				templatePath:       "test-resources/template-ingress/output",
 			},
-			want:       "https://node-example-project-no-ingress.example.com",
-			wantRemain: []string{},
+			want: "https://node-example-project-no-ingress.example.com",
+			wantRemain: []string{
+				"https://www.node-example-project-no-ingress.example.com",
+				"https://en.node-example-project-no-ingress.example.com",
+				"https://de.node-example-project-no-ingress.example.com",
+				"https://fi.node-example-project-no-ingress.example.com",
+			},
 			wantautoGen: []string{
 				"https://node-example-project-no-ingress.example.com",
 				"https://www.node-example-project-no-ingress.example.com",
