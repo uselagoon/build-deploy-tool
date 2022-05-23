@@ -8,12 +8,6 @@ import (
 	routeTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/routes"
 )
 
-var lagoonYml, environmentName, projectName, activeEnvironment, standbyEnvironment, environmentType string
-var buildType, lagoonVersion, branch, prNumber, prHeadBranch, prBaseBranch string
-var projectVariables, environmentVariables, monitoringStatusPageID, monitoringContact string
-var templateValues, savedTemplates, fastlyCacheNoCahce, fastlyServiceID, fastlyAPISecretPrefix string
-var monitoringEnabled bool
-
 var routeGeneration = &cobra.Command{
 	Use:     "ingress",
 	Aliases: []string{"i"},
@@ -21,6 +15,21 @@ var routeGeneration = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return IngressTemplateGeneration(true)
 	},
+}
+
+func generateIngress(values lagoon.BuildValues, lYAML lagoon.YAML, envVars []lagoon.EnvironmentVariable, mainRoutes *lagoon.RoutesV2, debug bool) error {
+	// read the routes from the API
+	apiRoutes, err := getRoutesFromAPIEnvVar(envVars, debug)
+	if err != nil {
+		return fmt.Errorf("couldn't unmarshal routes from Lagoon API, is it actually JSON that has been base64 encoded?: %v", err)
+	}
+
+	// handle routes from the .lagoon.yml and the API specifically
+	*mainRoutes, err = generateAndMerge(*apiRoutes, envVars, lYAML, values)
+	if err != nil {
+		return fmt.Errorf("couldn't generate and merge routes: %v", err)
+	}
+	return nil
 }
 
 // IngressTemplateGeneration .
@@ -31,25 +40,16 @@ func IngressTemplateGeneration(debug bool) error {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML)
+	autogenRoutes := &lagoon.RoutesV2{}
+	mainRoutes := &lagoon.RoutesV2{}
+	activeStandbyRoutes := &lagoon.RoutesV2{}
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
 	if err != nil {
 		return err
 	}
 
-	// read the routes from the API
-	apiRoutes, err := getRoutesFromAPIEnvVar(lagoonEnvVars, debug)
-	if err != nil {
-		return fmt.Errorf("couldn't unmarshal routes from Lagoon API, is it actually JSON that has been base64 encoded?: %v", err)
-	}
-
-	// handle routes from the .lagoon.yml and the API specifically
-	finalRoutes, err := generateAndMerge(*apiRoutes, lagoonEnvVars, lYAML, lagoonValues)
-	if err != nil {
-		return fmt.Errorf("couldn't generate and merge routes: %v", err)
-	}
-
 	// generate the templates
-	for _, route := range finalRoutes.Routes {
+	for _, route := range mainRoutes.Routes {
 		if debug {
 			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 		}
@@ -64,9 +64,8 @@ func IngressTemplateGeneration(debug bool) error {
 		// generate the templates for these independently of any previously generated routes,
 		// this WILL overwrite previously created templates ensuring that anything defined in the `production_routes`
 		// section are created correctly ensuring active/standby will work
-		activeStanbyRoutes := generateActiveStandby(activeEnv, standbyEnv, lagoonEnvVars, lYAML)
 		// generate the templates for active/standby routes separately to normal routes
-		for _, route := range activeStanbyRoutes.Routes {
+		for _, route := range activeStandbyRoutes.Routes {
 			if debug {
 				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			}

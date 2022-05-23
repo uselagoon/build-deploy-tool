@@ -30,7 +30,10 @@ func IdentifyFeatureFlag(name string, debug bool) (string, error) {
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	lagoonValues := lagoon.BuildValues{}
 	lYAML := lagoon.YAML{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML)
+	autogenRoutes := &lagoon.RoutesV2{}
+	mainRoutes := &lagoon.RoutesV2{}
+	activeStanbyRoutes := &lagoon.RoutesV2{}
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStanbyRoutes)
 	if err != nil {
 		return "", err
 	}

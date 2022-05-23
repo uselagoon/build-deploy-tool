@@ -25,7 +25,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test1 check LAGOON_FASTLY_SERVICE_ID no secret",
 			args: args{
-				projectVars:  `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"global"}]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"global"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "",
@@ -41,7 +41,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret",
 			args: args{
-				projectVars:  `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true","scope":"global"}]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true","scope":"global"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "",
@@ -57,7 +57,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test3 check LAGOON_FASTLY_SERVICE_ID with secret",
 			args: args{
-				projectVars:  `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true:secret","scope":"global"}]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true:secret","scope":"global"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "",
@@ -73,7 +73,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test4 check LAGOON_FASTLY_SERVICE_IDS with secret",
 			args: args{
-				projectVars:  `[{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:secret","scope":"global"}]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:secret","scope":"global"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "",
@@ -89,7 +89,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test5 check no LAGOON_FASTLY_SERVICE_ID with service id found from ROUTE_FASTLY_SERVICE_ID",
 			args: args{
-				projectVars:  `[]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
@@ -104,7 +104,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		{
 			name: "test6 check LAGOON_FASTLY_SERVICE_ID with service id found from ROUTE_FASTLY_SERVICE_ID (should use one from LAGOON_FASTLY_SERVICE_ID)",
 			args: args{
-				projectVars:  `[{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"global"}]`,
+				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"global"}]`,
 				envVars:      `[]`,
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
