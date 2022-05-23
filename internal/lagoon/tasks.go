@@ -146,11 +146,6 @@ func ExecPod(
 		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
 	}
 
-	if len(deployments.Items) > 1 {
-		fmt.Println("!!!!MULTIPLE DEPLOYMENTS FOUND!!!")
-		fmt.Println(deployments.Items)
-	}
-
 	deployment := &deployments.Items[0]
 
 	// we want to scale the replicas here to 1, at least, before attempting the exec
