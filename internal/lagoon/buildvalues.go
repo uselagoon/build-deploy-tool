@@ -6,7 +6,7 @@ type BuildValues struct {
 	Environment                string `json:"environment"`
 	EnvironmentType            string `json:"environmentType"`
 	Namespace                  string `json:"namespace"`
-	GitSha                     int    `json:"gitSha"`
+	GitSha                     string `json:"gitSha"`
 	BuildType                  string `json:"buildType"`
 	RoutesAutogenerateInsecure string `json:"routesAutogenerateInsecure"`
 	RoutesAutogenerateEnabled  string `json:"routesAutogenerateEnabled"`

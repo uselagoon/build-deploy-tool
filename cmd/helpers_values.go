@@ -227,11 +227,11 @@ func composeToServiceValues(lYAML *lagoon.YAML, lagoonValues *lagoon.BuildValues
 func collectBuildVariables(lagoonValues lagoon.BuildValues) []lagoon.EnvironmentVariable {
 	vars := []lagoon.EnvironmentVariable{}
 	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PROJECT", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: lagoonValues.Project, Scope: "runtime"}) //deprecated???
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT", Value: lagoonValues.Environment, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: lagoonValues.EnvironmentType, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: lagoonValues.GitSha, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: lagoonValues.Kubernetes, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: lagoonValues.Environment, Scope: "runtime"}) //deprecated??? (https://github.com/uselagoon/lagoon/blob/1053965321495213591f4c9110f90a9d9dcfc946/images/kubectl-build-deploy-dind/build-deploy-docker-compose.sh#L748)
 	if lagoonValues.BuildType == "branch" {
 		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_BRANCH", Value: lagoonValues.Branch, Scope: "runtime"})
 	}
