@@ -23,11 +23,22 @@ type Environment struct {
 // Environments .
 type Environments map[string]Environment
 
+// Tasks
+type TaskRun struct {
+	Run Task `json:"run"`
+}
+
+type Tasks struct {
+	Prerollout  []TaskRun `json:"pre-rollout"`
+	Postrollout []TaskRun `json:"post-rollout"`
+}
+
 // YAML represents the .lagoon.yml file.
 type YAML struct {
 	DockerComposeYAML string            `json:"docker-compose-yaml"`
 	Environments      Environments      `json:"environments"`
 	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
+	Tasks             Tasks             `json:"tasks"`
 	Routes            Routes            `json:"routes"`
 }
 

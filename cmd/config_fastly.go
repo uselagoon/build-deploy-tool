@@ -60,5 +60,4 @@ func init() {
 	configCmd.AddCommand(fastlyConfigGeneration)
 	fastlyConfigGeneration.Flags().StringVarP(&domainName, "domain", "D", "",
 		"The .lagoon.yml file to read")
-
 }

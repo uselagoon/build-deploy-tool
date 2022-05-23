@@ -1,0 +1,22 @@
+version: '2'
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: nginx.dockerfile
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/web/sites/default/files/
+
+  php:
+    build:
+      context: .
+      dockerfile: php.dockerfile
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.name: nginx
+      lagoon.persistent: /app/web/sites/default/files/
+
+networks:
+  amazeeio-network:
+    external: true
