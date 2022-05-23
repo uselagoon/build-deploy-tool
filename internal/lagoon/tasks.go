@@ -5,8 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"io/ioutil"
+	"time"
+
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -14,11 +16,11 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/tools/remotecommand"
-	"time"
 )
 
 var debug bool
 
+// Task .
 type Task struct {
 	Name      string `json:"name"`
 	Command   string `json:"command"`
@@ -29,6 +31,7 @@ type Task struct {
 	When      string `json:"when"`
 }
 
+// NewTask .
 func NewTask() Task {
 	return Task{
 		Command:   "",
@@ -42,6 +45,7 @@ func (t Task) String() string {
 	return fmt.Sprintf("{command: '%v', ns: '%v', service: '%v', shell:'%v'}", t.Command, t.Namespace, t.Service, t.Shell)
 }
 
+// GetK8sClient .
 func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 	// create the clientset
 	clientset, err := kubernetes.NewForConfig(config)
@@ -82,6 +86,7 @@ func getConfig() (*rest.Config, error) {
 	return config, err
 }
 
+// ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
 	if debug {
 		fmt.Println("Executing task :", task.Command)
@@ -108,6 +113,7 @@ func ExecuteTaskInEnvironment(task Task) error {
 	return err
 }
 
+// ExecPod .
 func ExecPod(
 	podName, namespace string,
 	command []string,
