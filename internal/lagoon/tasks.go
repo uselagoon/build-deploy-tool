@@ -146,6 +146,11 @@ func ExecPod(
 		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
 	}
 
+	if len(deployments.Items) > 1 {
+		fmt.Println("!!!!MULTIPLE DEPLOYMENTS FOUND!!!")
+		fmt.Println(deployments.Items)
+	}
+
 	deployment := &deployments.Items[0]
 
 	// we want to scale the replicas here to 1, at least, before attempting the exec
@@ -156,15 +161,18 @@ func ExecPod(
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			if debug {
-				fmt.Println("No ready replicas found, scaling up")
-			}
+			fmt.Println("No ready replicas found, scaling up")
+
 			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
 			}
-			scale.Spec.Replicas = 1
-			depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
+
+			if scale.Spec.Replicas == 0 {
+				scale.Spec.Replicas = 1
+				depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
+			}
+
 			time.Sleep(3 * time.Second)
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
@@ -189,7 +197,7 @@ func ExecPod(
 	var pod corev1.Pod
 	foundRunningPod := false
 	for _, i2 := range clientList.Items {
-		if i2.Status.Phase == "Running" {
+		if i2.Status.Phase == "Running" && i2.ObjectMeta.DeletionTimestamp == nil {
 			if container != "" {
 				//is this container contained herein?
 				for _, c := range i2.Spec.Containers {
