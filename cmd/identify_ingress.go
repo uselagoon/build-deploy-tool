@@ -91,9 +91,10 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 			autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
 			if i == 0 {
 				primary = fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain)
-			} else {
-				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
+				// } else {
+				// 	remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
 			}
+			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].Domain))
 			for a := 0; a < len(autogenRoutes.Routes[i].AlternativeNames); a++ {
 				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].AlternativeNames[a]))
 				autogen = append(autogen, fmt.Sprintf("%s%s", prefix, autogenRoutes.Routes[i].AlternativeNames[a]))
@@ -109,15 +110,16 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 
 	// get the first route from the list of routes, replace the previous one if necessary
 	if len(mainRoutes.Routes) > 0 {
-		if primary != "" {
-			remainders = append(remainders, primary)
-		}
+		// if primary != "" {
+		// 	remainders = append(remainders, primary)
+		// }
 		for i := 0; i < len(mainRoutes.Routes); i++ {
 			if i == 0 {
 				primary = fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain)
-			} else {
-				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
+				// } else {
+				// 	remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
 			}
+			remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].Domain))
 			for a := 0; a < len(mainRoutes.Routes[i].AlternativeNames); a++ {
 				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, mainRoutes.Routes[i].AlternativeNames[a]))
 			}
@@ -132,15 +134,17 @@ func generateRoutes(lagoonEnvVars []lagoon.EnvironmentVariable,
 		*activeStanbyRoutes = generateActiveStandby(activeEnv, standbyEnv, lagoonEnvVars, lYAML)
 		// get the first route from the list of routes, replace the previous one if necessary
 		if len(activeStanbyRoutes.Routes) > 0 {
-			if primary != "" {
-				remainders = append(remainders, primary)
-			}
+			// if primary != "" {
+			// 	remainders = append(remainders, primary)
+			// }
 			for i := 0; i < len(activeStanbyRoutes.Routes); i++ {
 				if i == 0 {
 					primary = fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain)
-				} else {
-					remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
+					// } else {
+					// 	remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
 				}
+				remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
+				// remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].Domain))
 				for a := 0; a < len(activeStanbyRoutes.Routes[i].AlternativeNames); a++ {
 					remainders = append(remainders, fmt.Sprintf("%s%s", prefix, activeStanbyRoutes.Routes[i].AlternativeNames[a]))
 				}
