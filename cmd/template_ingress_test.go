@@ -241,7 +241,7 @@ func TestTemplateRoutes(t *testing.T) {
 				standbyEnvironment: "main2",
 				lagoonVersion:      "v2.7.x",
 				branch:             "main",
-				projectVars:        `[]`,
+				projectVars:        `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:            `[]`,
 				secretPrefix:       "fastly-api-",
 				lagoonYAML:         "test-resources/template-ingress/altnames-lagoon.yml",
