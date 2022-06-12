@@ -15,14 +15,14 @@ var (
 
 var validateDockerCompose = &cobra.Command{
 	Use:     "docker-compose",
-	Aliases: []string{"compose", "docker", "dc"},
+	Aliases: []string{"compose", "dc"},
 	Short:   "Verify docker-compose file for compatability with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// @TODO: ignoreNonStringKeyErrors is `true` by default because Lagoon doesn't enforce
 		// docker-compose compliance yet
 		err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors)
 		if err != nil {
-			fmt.Println(fmt.Sprintf("There is an issue with the docker-compose file, see errors below\n%s", err.Error()))
+			fmt.Println(err.Error())
 			os.Exit(1)
 		}
 	},
