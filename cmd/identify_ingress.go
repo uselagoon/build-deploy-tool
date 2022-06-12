@@ -59,7 +59,7 @@ func IdentifyPrimaryIngress(debug bool) (string, []string, []string, error) {
 	autogenRoutes := &lagoon.RoutesV2{}
 	mainRoutes := &lagoon.RoutesV2{}
 	activeStanbyRoutes := &lagoon.RoutesV2{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStanbyRoutes)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStanbyRoutes, ignoreNonStringKeyErrors)
 	if err != nil {
 		return "", []string{}, []string{}, err
 	}

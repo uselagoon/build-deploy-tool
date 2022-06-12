@@ -3,12 +3,13 @@ package cmd
 import (
 	"errors"
 	"fmt"
-	"github.com/spf13/cobra"
-	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 	"io/ioutil"
 	"os"
 	"strings"
+
+	"github.com/spf13/cobra"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
@@ -67,7 +68,7 @@ func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
 	mainRoutes := new(lagoon.RoutesV2)
 	activeStandbyRoutes := new(lagoon.RoutesV2)
 
-	err := collectBuildValues(false, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
+	err := collectBuildValues(false, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes, ignoreNonStringKeyErrors)
 	if err != nil {
 		return lagoon.YAML{}, nil, err
 	}

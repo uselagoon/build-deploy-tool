@@ -55,8 +55,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			want: "enabled",
 		},
@@ -75,8 +75,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			want: "enabled",
 		},
@@ -95,8 +95,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			vars: []struct {
 				name  string
@@ -124,8 +124,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			vars: []struct {
 				name  string
@@ -157,8 +157,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			vars: []struct {
 				name  string
@@ -190,8 +190,8 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
 				secretPrefix:    "fastly-api-",
-				lagoonYAML:      "test-resources/template-ingress/single-lagoon.yml",
-				templatePath:    "test-resources/template-ingress/output",
+				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
+				templatePath:    "../test-resources/output",
 			},
 			vars: []struct {
 				name  string
