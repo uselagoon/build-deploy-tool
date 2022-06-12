@@ -43,7 +43,7 @@ func IngressTemplateGeneration(debug bool) error {
 	autogenRoutes := &lagoon.RoutesV2{}
 	mainRoutes := &lagoon.RoutesV2{}
 	activeStandbyRoutes := &lagoon.RoutesV2{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes)
+	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes, ignoreNonStringKeyErrors)
 	if err != nil {
 		return err
 	}
