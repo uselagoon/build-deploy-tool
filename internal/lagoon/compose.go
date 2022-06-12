@@ -1,21 +1,28 @@
 package lagoon
 
 import (
-	"fmt"
-	"os"
-
-	"sigs.k8s.io/yaml"
+	"github.com/compose-spec/compose-go/cli"
+	"github.com/compose-spec/compose-go/loader"
+	composetypes "github.com/compose-spec/compose-go/types"
 )
 
 // UnmarshaDockerComposeYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
-func UnmarshaDockerComposeYAML(file string, l *Compose) error {
-	rawYAML, err := os.ReadFile(file)
+func UnmarshaDockerComposeYAML(file string, ignoreErrors bool, envvars map[string]string) (*composetypes.Project, error) {
+	options, err := cli.NewProjectOptions([]string{file},
+		cli.WithResolvedPaths(false),
+		cli.WithLoadOptions(
+			loader.WithSkipValidation,
+			func(o *loader.Options) {
+				o.IgnoreNonStringKeyErrors = ignoreErrors
+			},
+		),
+	)
+	options.Environment = envvars
+	l, err := cli.ProjectFromOptions(options)
 	if err != nil {
-		return fmt.Errorf("couldn't read %v: %v", file, err)
+		return nil, err
 	}
-	// docker-compose.yml
-	yaml.Unmarshal(rawYAML, l)
-	return nil
+	return l, nil
 }
 
 // CheckServiceLagoonLabel checks the labels in a compose service to see if the requested label exists, and returns the value if so
