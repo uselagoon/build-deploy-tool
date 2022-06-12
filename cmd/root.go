@@ -52,6 +52,13 @@ var identifyCmd = &cobra.Command{
 	Long:    `Identify resources for Lagoon builds`,
 }
 
+var validateCmd = &cobra.Command{
+	Use:     "validate",
+	Aliases: []string{"valid", "v"},
+	Short:   "Validate resources",
+	Long:    `Validate resources for Lagoon builds`,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -68,6 +75,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(identifyCmd)
+	rootCmd.AddCommand(validateCmd)
 
 	rootCmd.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
@@ -107,7 +115,8 @@ func init() {
 		"The fastly service ID to use")
 	rootCmd.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
-
+	rootCmd.Flags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
+		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
 }
 
 // initConfig reads in config file and ENV variables if set.
