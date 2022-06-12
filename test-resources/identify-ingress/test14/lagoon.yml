@@ -1,0 +1,5 @@
+docker-compose-yaml: ../test-resources/identify-ingress/test14/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
