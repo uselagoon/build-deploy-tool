@@ -32,11 +32,14 @@ func GetMD5HashWithNewLine(text string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+// GetSha256Hash gets the sha256 hash of a string.
 func GetSha256Hash(text string) []byte {
 	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", text)))
 	return hash[:]
 }
 
+// GetBase32EncodedLowercase gets a lowercase version of some data in base32 encoding.
+// Lagoon does this currently, so replicating behaviour.
 func GetBase32EncodedLowercase(data []byte) string {
 	return strings.ToLower(base32.StdEncoding.EncodeToString(data)[:])
 }

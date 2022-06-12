@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
+	"testing"
+
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
-	"testing"
 )
 
 func Test_evaluateWhenConditionsForTaskInEnvironment(t *testing.T) {
@@ -81,7 +82,7 @@ func Test_runTasks(t *testing.T) {
 		{
 			name: "Basic test",
 			args: args{
-				taskType: PRE_ROLLOUT_TASKS,
+				taskType: preRolloutTasks,
 				lYAML: lagoon.YAML{
 					Tasks: lagoon.Tasks{
 						Prerollout: []lagoon.TaskRun{
@@ -98,11 +99,11 @@ func Test_runTasks(t *testing.T) {
 				lagoonConditionalEvaluationEnvironment: tasklib.TaskEnvironment{
 					"KEY1": "KEY2",
 				},
-				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (error, bool) {
+				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 					if _, ok := lagoonConditionalEvaluationEnvironment["KEY1"]; !ok {
-						return fmt.Errorf("Unable to find Key 1"), false
+						return false, fmt.Errorf("Unable to find Key 1")
 					}
-					return nil, true
+					return true, nil
 				},
 			},
 			wantErr: false,
@@ -110,7 +111,7 @@ func Test_runTasks(t *testing.T) {
 		{
 			name: "Condition should fail",
 			args: args{
-				taskType: PRE_ROLLOUT_TASKS,
+				taskType: preRolloutTasks,
 				lYAML: lagoon.YAML{
 					Tasks: lagoon.Tasks{
 						Prerollout: []lagoon.TaskRun{
@@ -127,14 +128,14 @@ func Test_runTasks(t *testing.T) {
 				lagoonConditionalEvaluationEnvironment: tasklib.TaskEnvironment{
 					"KEY1": "KEY2",
 				},
-				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (error, bool) {
+				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 					for _, task := range tasks {
 						_, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
 						if err != nil {
-							return err, true
+							return true, err
 						}
 					}
-					return nil, false
+					return false, nil
 				},
 			},
 			wantErr: true,
