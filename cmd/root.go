@@ -116,7 +116,7 @@ func init() {
 		"The fastly service ID to use")
 	rootCmd.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
-	rootCmd.Flags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
+	rootCmd.PersistentFlags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
 }
 
