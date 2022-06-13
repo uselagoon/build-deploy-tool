@@ -54,6 +54,7 @@ type Autogenerate struct {
 	AllowPullRequests *bool    `json:"allowPullRequests"`
 	Insecure          string   `json:"insecure"`
 	Prefixes          []string `json:"prefixes"`
+	TLSAcme           *bool    `json:"tls-acme,omitempty"`
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
