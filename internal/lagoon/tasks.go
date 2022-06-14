@@ -41,6 +41,22 @@ func NewTask() Task {
 	}
 }
 
+type DeploymentMissingError struct {
+	ErrorText string
+}
+
+func (e *DeploymentMissingError) Error() string {
+	return e.ErrorText
+}
+
+type PodScalingError struct {
+	ErrorText string
+}
+
+func (e *PodScalingError) Error() string {
+	return e.ErrorText
+}
+
 func (t Task) String() string {
 	return fmt.Sprintf("{command: '%v', ns: '%v', service: '%v', shell:'%v'}", t.Command, t.Namespace, t.Service, t.Shell)
 }
@@ -143,7 +159,7 @@ func ExecPod(
 	}
 
 	if len(deployments.Items) == 0 {
-		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
+		return "", "", &DeploymentMissingError{ErrorText: "No deployments found matching label: " + lagoonServiceLabel}
 	}
 
 	deployment := &deployments.Items[0]
@@ -207,7 +223,9 @@ func ExecPod(
 		}
 	}
 	if !foundRunningPod {
-		return "", "", errors.New("Unable to find running Pod for namespace: " + namespace)
+		return "", "", &PodScalingError{
+			ErrorText: "Unable to find running Pod for namespace: " + namespace,
+		}
 	}
 	if debug {
 		fmt.Println("Going to exec into ", pod.Name)

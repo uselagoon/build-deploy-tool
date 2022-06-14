@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"strings"
 
@@ -37,7 +38,23 @@ var tasksPreRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return runTasks(preRolloutTasks, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(preRolloutTasks, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
+
+		//Here we check the error return type:
+		// on DeploymentMissingError or PodScalingError we assume this is first deployment and don't fail
+		if err != nil {
+			switch e := err.(type) {
+			case *lagoon.PodScalingError:
+				log.Println(e.Error())
+				log.Println("Skipping pre-rollout tasks ...")
+				return nil
+			case *lagoon.DeploymentMissingError:
+				log.Println(e.Error())
+				log.Println("Skipping pre-rollout tasks ...")
+				return nil
+			}
+		}
+		return err
 	},
 }
 
