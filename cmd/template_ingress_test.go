@@ -230,7 +230,7 @@ func TestTemplateRoutes(t *testing.T) {
 			want: "../test-resources/template-ingress/test10-results",
 		},
 		{
-			name: "test10 standby no values",
+			name: "test11 standby no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -247,6 +247,26 @@ func TestTemplateRoutes(t *testing.T) {
 				templatePath:    "../test-resources/template-ingress/output",
 			},
 			want: "../test-resources/template-ingress/test11-results",
+		},
+		{
+			name: "test12 alternative names",
+			args: args{
+				alertContact:       "alertcontact",
+				statusPageID:       "statuspageid",
+				projectName:        "example-project",
+				environmentName:    "main",
+				environmentType:    "production",
+				buildType:          "branch",
+				standbyEnvironment: "main2",
+				lagoonVersion:      "v2.7.x",
+				branch:             "main",
+				projectVars:        `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:            `[]`,
+				secretPrefix:       "fastly-api-",
+				lagoonYAML:         "../test-resources/template-ingress/test12/lagoon.yml",
+				templatePath:       "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test12-results",
 		},
 	}
 	for _, tt := range tests {
