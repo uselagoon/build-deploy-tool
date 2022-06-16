@@ -23,11 +23,12 @@ type Environment struct {
 // Environments .
 type Environments map[string]Environment
 
-// Tasks
+// TaskRun .
 type TaskRun struct {
 	Run Task `json:"run"`
 }
 
+// Tasks .
 type Tasks struct {
 	Prerollout  []TaskRun `json:"pre-rollout"`
 	Postrollout []TaskRun `json:"post-rollout"`
@@ -42,15 +43,18 @@ type YAML struct {
 	Routes            Routes            `json:"routes"`
 }
 
+// Routes .
 type Routes struct {
 	Autogenerate Autogenerate `json:"autogenerate"`
 }
 
+// Autogenerate .
 type Autogenerate struct {
 	Enabled           *bool    `json:"enabled"`
 	AllowPullRequests *bool    `json:"allowPullRequests"`
 	Insecure          string   `json:"insecure"`
 	Prefixes          []string `json:"prefixes"`
+	TLSAcme           *bool    `json:"tls-acme,omitempty"`
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.

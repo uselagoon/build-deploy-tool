@@ -1,3 +1,5 @@
+package cmd
+
 /*
 Copyright © 2022 NAME HERE <EMAIL ADDRESS>
 
@@ -13,7 +15,6 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-package cmd
 
 import (
 	"fmt"
@@ -52,6 +53,13 @@ var identifyCmd = &cobra.Command{
 	Long:    `Identify resources for Lagoon builds`,
 }
 
+var validateCmd = &cobra.Command{
+	Use:     "validate",
+	Aliases: []string{"valid", "v"},
+	Short:   "Validate resources",
+	Long:    `Validate resources for Lagoon builds`,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -68,6 +76,7 @@ func init() {
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(identifyCmd)
+	rootCmd.AddCommand(validateCmd)
 
 	rootCmd.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
@@ -107,7 +116,10 @@ func init() {
 		"The fastly service ID to use")
 	rootCmd.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
-
+	rootCmd.PersistentFlags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
+		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
+	rootCmd.PersistentFlags().BoolVarP(&ignoreMissingEnvFiles, "ignore-missing-env-files", "", true,
+		"Ignore missing env_file files (true by default, subject to change).")
 }
 
 // initConfig reads in config file and ENV variables if set.
