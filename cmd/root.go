@@ -118,6 +118,8 @@ func init() {
 		"The fastly secret prefix to use")
 	rootCmd.PersistentFlags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
+	rootCmd.PersistentFlags().BoolVarP(&ignoreMissingEnvFiles, "ignore-missing-env-files", "", true,
+		"Ignore missing env_file files (true by default, subject to change).")
 }
 
 // initConfig reads in config file and ENV variables if set.

@@ -60,6 +60,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )
 
-replace github.com/compose-spec/compose-go v1.2.7 => github.com/shreddedbacon/compose-go v0.0.0-20220610063019-17f447c8c1aa
+replace github.com/compose-spec/compose-go v1.2.7 => github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1
 
 // replace github.com/compose-spec/compose-go v1.2.7 => ../../compose-spec/compose-go

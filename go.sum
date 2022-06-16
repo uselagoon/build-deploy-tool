@@ -296,8 +296,8 @@ github.com/prometheus/procfs v0.0.3/go.mod h1:4A/X28fw3Fc593LaREMrKMqOKvUAntwMDa
 github.com/rogpeppe/go-internal v1.3.0/go.mod h1:M8bDsm7K2OlrFYOpmOWEs/qY81heoFRclV5y23lUDJ4=
 github.com/russross/blackfriday/v2 v2.1.0/go.mod h1:+Rmxgy9KzJVeS9/2gXHxylqXiyQDYRxCVz55jmeOWTM=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
-github.com/shreddedbacon/compose-go v0.0.0-20220610063019-17f447c8c1aa h1:vVqWIv8lPg7H3GgSYAqOfVLT5MzFVr/WPxeXRWAGqbk=
-github.com/shreddedbacon/compose-go v0.0.0-20220610063019-17f447c8c1aa/go.mod h1:Jl9L8zJrt4aGY1XAz03DvHAu8V3/f00TK+uJL4BayDU=
+github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1 h1:/OYATO27ywKZ506enKV8Fd8gjLYFU9uQqCMmcVOUpW0=
+github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1/go.mod h1:Jl9L8zJrt4aGY1XAz03DvHAu8V3/f00TK+uJL4BayDU=
 github.com/sirupsen/logrus v1.2.0/go.mod h1:LxeOpSwHxABJmUn/MG1IvRgCAasNZTLOkJPxbbu5VWo=
 github.com/sirupsen/logrus v1.6.0/go.mod h1:7uNnSEd1DgxDLC74fIahvMZmmYsHGZGEOFrfsX/uA88=
 github.com/sirupsen/logrus v1.8.1 h1:dJKuHgqk1NNQlqoA6BTlM1Wf9DOH3NBjQyu0h9+AZZE=

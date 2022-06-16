@@ -11,6 +11,7 @@ import (
 var (
 	dockerComposeFile        string
 	ignoreNonStringKeyErrors bool
+	ignoreMissingEnvFiles    bool
 )
 
 var validateDockerCompose = &cobra.Command{
@@ -20,7 +21,7 @@ var validateDockerCompose = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// @TODO: ignoreNonStringKeyErrors is `true` by default because Lagoon doesn't enforce
 		// docker-compose compliance yet
-		err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors)
+		err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
@@ -29,8 +30,8 @@ var validateDockerCompose = &cobra.Command{
 }
 
 // ValidateDockerCompose validate a docker-compose file
-func ValidateDockerCompose(file string, ignoreErrors bool) error {
-	_, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreNonStringKeyErrors, map[string]string{})
+func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) error {
+	_, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
 	if err != nil {
 		return err
 	}
