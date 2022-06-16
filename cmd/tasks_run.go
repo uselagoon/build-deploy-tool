@@ -154,7 +154,6 @@ func iterateTaskGenerator(allowDeployMissingErrors bool) iterateTaskFuncType {
 					default:
 						return true, e
 					}
-					return true, err
 				}
 			} else {
 				fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
