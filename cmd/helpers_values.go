@@ -135,7 +135,7 @@ func collectBuildValues(debug bool, activeEnv, standbyEnv *bool,
 
 	// lCompose := composetypes.Project{}
 	// unmarshal the docker-compose.yml file
-	lCompose, err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, ignoreNonStringKeyErrors, composeVars)
+	lCompose, err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, composeVars)
 	if err != nil {
 		return err
 	}
