@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -38,8 +37,13 @@ var tasksPreRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		err = runTasks(preRolloutTasks, iterateTaskGenerator(true), lYAML, lagoonConditionalEvaluationEnvironment)
-		return err
+		fmt.Println("Executing Pre-rollout Tasks")
+		err = runTasks(iterateTaskGenerator(true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Pre-rollout Tasks Complete")
+		return nil
 	},
 }
 
@@ -54,7 +58,13 @@ var tasksPostRun = &cobra.Command{
 			return err
 		}
 
-		return runTasks(postRolloutTasks, iterateTaskGenerator(false), lYAML, lagoonConditionalEvaluationEnvironment)
+		fmt.Println("Executing Post-rollout Tasks")
+		err = runTasks(iterateTaskGenerator(false), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Post-rollout Tasks Complete")
+		return nil
 	},
 }
 
@@ -84,7 +94,7 @@ func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
 	return lYAML, lagoonConditionalEvaluationEnvironment, nil
 }
 
-func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
+func runTasks(taskRunner iterateTaskFuncType, tasks []lagoon.TaskRun, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
 
 	if namespace == "" {
 		//Try load from file
@@ -99,28 +109,11 @@ func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, l
 		namespace = strings.Trim(string(nsb), "\n ")
 	}
 
-	if taskType == preRolloutTasks {
-		fmt.Println("Executing Pre-rollout Tasks")
-		done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
-		if done {
-			return err
-		}
-		fmt.Println("Pre-rollout Tasks Complete")
-	} else {
-		fmt.Println("Skipping pre-rollout tasks")
+	done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(tasks))
+	if done {
+		return err
 	}
 
-	if taskType == postRolloutTasks {
-		fmt.Println("Executing Post-rollout Tasks")
-		fmt.Println(lYAML.Tasks.Postrollout)
-		done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
-		if done {
-			return err
-		}
-		fmt.Println("Post-rollout Tasks Complete")
-	} else {
-		fmt.Println("Skipping post-rollout tasks")
-	}
 	return nil
 }
 
@@ -147,7 +140,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool) iterateTaskFuncType {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
 						if allowDeployMissingErrors {
-							log.Println("Got a DeploymentMissingError - allowed in this context, passing over to next task")
+							fmt.Println("No running deployment found, skipping")
 						} else {
 							return true, e
 						}

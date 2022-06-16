@@ -105,7 +105,7 @@ func getConfig() (*rest.Config, error) {
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
 	if debug {
-		fmt.Println("Executing task :", task.Command)
+		fmt.Printf("Executing task '%v':'%v'", task.Name, task.Command)
 	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
