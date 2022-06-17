@@ -4,7 +4,7 @@ FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
 FROM golang:1.17-alpine3.16 as golang
 
 RUN apk add --no-cache git
-RUN go get github.com/a8m/envsubst/cmd/envsubst
+RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.2.0
 
 WORKDIR /app
 
