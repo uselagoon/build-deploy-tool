@@ -1,5 +1,6 @@
 ARG IMAGE_REPO
-FROM ${IMAGE_REPO:-lagoon}/kubectl
+ARG UPSTREAM_TAG
+FROM ${IMAGE_REPO:-lagoon}/kubectl:${UPSTREAM_TAG:-legacy}
 
 ENV LAGOON=kubectl-build-deploy-dind
 
