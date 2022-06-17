@@ -38,7 +38,7 @@ var tasksPreRun = &cobra.Command{
 			return err
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
-		err = runTasks(iterateTaskGenerator(true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			return err
 		}
@@ -59,7 +59,7 @@ var tasksPostRun = &cobra.Command{
 		}
 
 		fmt.Println("Executing Post-rollout Tasks")
-		err = runTasks(iterateTaskGenerator(false), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			return err
 		}
@@ -127,7 +127,7 @@ func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 
 type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, error)
 
-func iterateTaskGenerator(allowDeployMissingErrors bool) iterateTaskFuncType {
+func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType) iterateTaskFuncType {
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
@@ -135,7 +135,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool) iterateTaskFuncType {
 				return true, err
 			}
 			if runTask {
-				err := runCleanTaskInEnvironment(task)
+				err := taskRunner(task)
 				if err != nil {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
@@ -176,6 +176,9 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	return retBool, nil
 }
 
+type runTaskInEnvironmentFuncType func(incoming lagoon.Task) error
+
+// implements runTaskInEnvironmentFuncType
 func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 	task := lagoon.NewTask()
 	task.Command = incoming.Command
