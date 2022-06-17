@@ -7,13 +7,15 @@ import (
 )
 
 // UnmarshaDockerComposeYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
-func UnmarshaDockerComposeYAML(file string, ignoreErrors bool, envvars map[string]string) (*composetypes.Project, error) {
+func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles bool, envvars map[string]string) (*composetypes.Project, error) {
 	options, err := cli.NewProjectOptions([]string{file},
 		cli.WithResolvedPaths(false),
 		cli.WithLoadOptions(
 			loader.WithSkipValidation,
+			loader.WithDiscardEnvFiles,
 			func(o *loader.Options) {
 				o.IgnoreNonStringKeyErrors = ignoreErrors
+				o.IgnoreMissingEnvFileCheck = ignoreMissingEnvFiles
 			},
 		),
 	)

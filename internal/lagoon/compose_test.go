@@ -2,6 +2,7 @@ package lagoon
 
 import (
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -9,8 +10,9 @@ import (
 
 func TestUnmarshaDockerComposeYAML(t *testing.T) {
 	type args struct {
-		file         string
-		ignoreErrors bool
+		file                     string
+		ignoreNonStringKeyErrors bool
+		ignoreMissingEnvFiles    bool
 	}
 	tests := []struct {
 		name       string
@@ -64,8 +66,8 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 		{
 			name: "test7 check an invalid docker-compose with ignoring non-string key errors",
 			args: args{
-				file:         "../../test-resources/docker-compose/test7/docker-compose.yml",
-				ignoreErrors: true,
+				file:                     "../../test-resources/docker-compose/test7/docker-compose.yml",
+				ignoreNonStringKeyErrors: true,
 			},
 			want: `{"name":"test7","services":{"cli":{"build":{"context":".","dockerfile":".lagoon/cli.dockerfile","args":{"DOCKER_CLI_IMAGE_URI":"","ENVIRONMENT_TYPE_ID":""}},"container_name":"_cli","environment":{"ENVIRONMENT_TYPE_ID":"","LAGOON_ENVIRONMENT_TYPE":"","LAGOON_PROJECT":"","LAGOON_ROUTE":"http://","PHP_MEMORY_LIMIT":"768M","XDEBUG_ENABLE":""},"labels":{"lagoon.persistent":"/app/docroot/sites/default/files/","lagoon.persistent.name":"nginx","lagoon.type":"cli-persistent"},"networks":{"default":null},"user":"root","volumes":[{"type":"bind","source":"./.lagoon/scripts/bash_prompts.rc","target":"/home/.bashrc","bind":{"create_host_path":true}},{"type":"bind","source":"./.lagoon/scripts/color_grid.sh","target":"/home/color_grid.sh","bind":{"create_host_path":true}}],"volumes_from":["container:amazeeio-ssh-agent"]},"mariadb":{"container_name":"_db","environment":{"ENVIRONMENT_TYPE_ID":"","LAGOON_ENVIRONMENT_TYPE":"","LAGOON_PROJECT":"","LAGOON_ROUTE":"http://","PHP_MEMORY_LIMIT":"768M","XDEBUG_ENABLE":""},"image":"amazeeio/mariadb-drupal","labels":{"lagoon.type":"mariadb"},"networks":{"default":null},"ports":[{"mode":"ingress","target":3306,"protocol":"tcp"}],"volumes":[{"type":"volume","source":"mysql","target":"/var/lib/mysql","volume":{}}]},"nginx":{"build":{"context":".","dockerfile":".lagoon/nginx.dockerfile","args":{"CLI_IMAGE":"","DOCKER_NGINX_IMAGE_URI":"","LAGOON_GIT_BRANCH":null}},"container_name":"_nginx","depends_on":{"cli":{"condition":"service_started"}},"environment":{"ENVIRONMENT_TYPE_ID":"","LAGOON_ENVIRONMENT_TYPE":"","LAGOON_LOCALDEV_URL":"http://","LAGOON_PROJECT":"","LAGOON_ROUTE":"http://","PHP_MEMORY_LIMIT":"768M","XDEBUG_ENABLE":""},"labels":{"lagoon.name":"nginx","lagoon.persistent":"/app/docroot/sites/default/files/","lagoon.type":"nginx-php-persistent"},"networks":{"amazeeio-network":null,"default":null},"volumes":[{"type":"bind","source":"./.lagoon/nginx/nginx-http.conf","target":"/etc/nginx/conf.d/000-nginx-http.conf","bind":{"create_host_path":true}},{"type":"bind","source":"./.lagoon/nginx/app.conf","target":"/etc/nginx/conf.d/app.conf","bind":{"create_host_path":true}}]},"php":{"build":{"context":".","dockerfile":".lagoon/php.dockerfile","args":{"CLI_IMAGE":"","DOCKER_PHP_IMAGE_URI":""}},"container_name":"_php","depends_on":{"cli":{"condition":"service_started"}},"environment":{"ENVIRONMENT_TYPE_ID":"","LAGOON_ENVIRONMENT_TYPE":"","LAGOON_PROJECT":"","LAGOON_ROUTE":"http://","PHP_MEMORY_LIMIT":"768M","XDEBUG_ENABLE":""},"labels":{"lagoon.deployment.servicetype":"php","lagoon.name":"nginx","lagoon.persistent":"/app/docroot/sites/default/files","lagoon.type":"nginx-php-persistent"},"networks":{"default":null}}},"networks":{"amazeeio-network":{"name":"amazeeio-network","ipam":{},"external":true},"default":{"name":"test7_default","ipam":{},"external":false}},"volumes":{"app":{"name":"test7_app","external":false},"mysql":{"name":"test7_mysql","external":false},"solr7":{"name":"test7_solr7","external":false}}}`,
 		},
@@ -77,15 +79,32 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 			wantErr:    true,
 			wantErrMsg: "Non-string key in x-site-branch: <nil>",
 		},
+		{
+			name: "test9 check an valid docker-compose with missing env_files",
+			args: args{
+				file:                     "../../test-resources/docker-compose/test9/docker-compose.yml",
+				ignoreNonStringKeyErrors: true,
+				ignoreMissingEnvFiles:    true,
+			},
+			want: `{"name":"test9","services":{"cli":{"build":{"context":".","dockerfile":"lagoon/cli.dockerfile"},"container_name":"-cli","environment":{"DRUSH_OPTIONS_URI":"https://","LAGOON_PROJECT":"","LAGOON_ROUTE":"https://","SIMPLETEST_BASE_URL":"http://nginx:8080","SIMPLETEST_DB":"mysql://drupal:drupal@mariadb:3306/drupal","SSMTP_MAILHUB":"host.docker.internal:1025"},"labels":{"lagoon.persistent":"/app/public/sites/default/files/","lagoon.persistent.name":"nginx","lagoon.type":"cli-persistent"},"networks":{"default":null},"volumes":[{"type":"bind","source":".","target":"/app","bind":{"create_host_path":true}},{"type":"volume","source":"ssh","target":"/tmp/amazeeio_ssh-agent","volume":{}}]},"mariadb":{"container_name":"-db","environment":{"LAGOON_PROJECT":"","LAGOON_ROUTE":"https://","SSMTP_MAILHUB":"host.docker.internal:1025"},"image":"uselagoon/mariadb-drupal:latest","labels":{"lagoon.type":"mariadb"},"networks":{"default":null},"ports":[{"mode":"ingress","target":3306,"protocol":"tcp"}]},"nginx":{"build":{"context":".","dockerfile":"lagoon/nginx.dockerfile","args":{"CLI_IMAGE":""}},"container_name":"-nginx","depends_on":{"cli":{"condition":"service_started"}},"environment":{"LAGOON_LOCALDEV_URL":"","LAGOON_PROJECT":"","LAGOON_ROUTE":"https://","SSMTP_MAILHUB":"host.docker.internal:1025"},"labels":{"lagoon.persistent":"/app/public/sites/default/files/","lagoon.type":"nginx-php-persistent"},"networks":{"default":null,"stonehenge-network":null},"volumes":[{"type":"bind","source":".","target":"/app","bind":{"create_host_path":true}}]},"php":{"build":{"context":".","dockerfile":"lagoon/php.dockerfile","args":{"CLI_IMAGE":""}},"container_name":"-php","depends_on":{"cli":{"condition":"service_started"}},"environment":{"LAGOON_PROJECT":"","LAGOON_ROUTE":"https://","SSMTP_MAILHUB":"host.docker.internal:1025"},"labels":{"lagoon.name":"nginx","lagoon.persistent":"/app/public/sites/default/files/","lagoon.type":"nginx-php-persistent"},"networks":{"default":null},"volumes":[{"type":"bind","source":".","target":"/app","bind":{"create_host_path":true}}]},"pma":{"container_name":"-pma","environment":{"PMA_HOST":"mariadb","PMA_PASSWORD":"drupal","PMA_USER":"drupal","UPLOAD_LIMIT":"1G"},"image":"phpmyadmin/phpmyadmin","labels":{"lagoon.type":"none"},"networks":{"default":null,"stonehenge-network":null}}},"networks":{"default":{"name":"test9_default","ipam":{},"external":false},"stonehenge-network":{"name":"stonehenge-network","ipam":{},"external":true}},"volumes":{"es_data":{"name":"test9_es_data","external":false},"ssh":{"name":"stonehenge-ssh","external":true}}}`,
+		},
+		{
+			name: "test10 check an valid docker-compose with missing env_files (same as test9 but not ignoring the errors)",
+			args: args{
+				file: "../../test-resources/docker-compose/test10/docker-compose.yml",
+			},
+			wantErr:    true,
+			wantErrMsg: "no such file or directory",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			l, err := UnmarshaDockerComposeYAML(tt.args.file, tt.args.ignoreErrors, map[string]string{})
+			l, err := UnmarshaDockerComposeYAML(tt.args.file, tt.args.ignoreNonStringKeyErrors, tt.args.ignoreMissingEnvFiles, map[string]string{})
 			if err != nil && !tt.wantErr {
 				t.Errorf("UnmarshaDockerComposeYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
-				if err.Error() != tt.wantErrMsg {
+				if !strings.Contains(err.Error(), tt.wantErrMsg) {
 					t.Errorf("UnmarshaDockerComposeYAML() error = %v, wantErrMsg %v", err.Error(), tt.wantErrMsg)
 				}
 			} else {
