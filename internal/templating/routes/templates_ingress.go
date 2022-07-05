@@ -2,7 +2,6 @@ package routes
 
 import (
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -229,13 +228,4 @@ func GenerateIngressTemplate(
 	separator := []byte("---\n")
 	result := append(separator[:], ingressBytes[:]...)
 	return result, nil
-}
-
-// WriteTemplateFile writes the template to a file.
-func WriteTemplateFile(templateOutputFile string, data []byte) {
-	err := os.WriteFile(templateOutputFile, data, 0644)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
 }
