@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	routeTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/routes"
 )
@@ -57,7 +58,7 @@ func IngressTemplateGeneration(debug bool) error {
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 	}
 	if activeEnv || standbyEnv {
 		// active/standby routes should not be changed by any environment defined routes.
@@ -73,7 +74,7 @@ func IngressTemplateGeneration(debug bool) error {
 			if err != nil {
 				return fmt.Errorf("couldn't generate template: %v", err)
 			}
-			routeTemplater.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
+			helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain), templateYAML)
 		}
 	}
 	return nil
