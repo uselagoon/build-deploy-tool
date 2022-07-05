@@ -41,6 +41,23 @@ type YAML struct {
 	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
 	Tasks             Tasks             `json:"tasks"`
 	Routes            Routes            `json:"routes"`
+	BackupRetention   BackupRetention   `json:"backup-retention"`
+	BackupSchedule    BackupSchedule    `json:"backup-schedule"`
+}
+
+type BackupRetention struct {
+	Production Retention `json:"production"`
+}
+
+type BackupSchedule struct {
+	Production string `json:"production"`
+}
+
+type Retention struct {
+	Hourly  *int `json:"hourly"`
+	Daily   *int `json:"daily"`
+	Weekly  *int `json:"weekly"`
+	Monthly *int `json:"monthly"`
 }
 
 // Routes .
