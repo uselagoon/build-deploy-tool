@@ -146,11 +146,87 @@ func Test_runTasks(t *testing.T) {
 	namespace = "default"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := runTasks(tt.args.taskType, tt.args.taskRunner, tt.args.lYAML, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
+			if err := runTasks(tt.args.taskRunner, tt.args.lYAML.Tasks.Prerollout, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
 				t.Errorf("runTasks() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 		})
 	}
 	namespace = oldNamespace
+}
+
+func Test_iterateTaskGenerator(t *testing.T) {
+	type args struct {
+		allowDeployMissingErrors bool
+		taskRunner               runTaskInEnvironmentFuncType
+		tasks                    []lagoon.Task
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantError bool
+	}{
+		{name: "Runs with no errors",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return nil
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: false,
+		},
+		{name: "Allows deploy missing errors and keeps rolling (pre rollout case)",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.DeploymentMissingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: false,
+		},
+		{name: "Does not allow deploy missing errors and stops with error (post rollout)",
+			args: args{
+				allowDeployMissingErrors: false,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.DeploymentMissingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: true,
+		},
+		{name: "Allows deploy missing errors but stops with any other error (pre rollout)",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.PodScalingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner)
+			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
+
+			if tt.wantError && err == nil {
+				t.Errorf("Expected error")
+			}
+
+			if !tt.wantError && err != nil {
+				t.Errorf("No error expected")
+			}
+		})
+	}
 }

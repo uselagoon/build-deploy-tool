@@ -37,7 +37,13 @@ var tasksPreRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return runTasks(preRolloutTasks, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
+		fmt.Println("Executing Pre-rollout Tasks")
+		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Pre-rollout Tasks Complete")
+		return nil
 	},
 }
 
@@ -52,7 +58,13 @@ var tasksPostRun = &cobra.Command{
 			return err
 		}
 
-		return runTasks(postRolloutTasks, iterateTasks, lYAML, lagoonConditionalEvaluationEnvironment)
+		fmt.Println("Executing Post-rollout Tasks")
+		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		if err != nil {
+			return err
+		}
+		fmt.Println("Post-rollout Tasks Complete")
+		return nil
 	},
 }
 
@@ -82,7 +94,7 @@ func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
 	return lYAML, lagoonConditionalEvaluationEnvironment, nil
 }
 
-func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
+func runTasks(taskRunner iterateTaskFuncType, tasks []lagoon.TaskRun, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
 
 	if namespace == "" {
 		//Try load from file
@@ -97,28 +109,11 @@ func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, l
 		namespace = strings.Trim(string(nsb), "\n ")
 	}
 
-	if taskType == preRolloutTasks {
-		fmt.Println("Executing Pre-rollout Tasks")
-		done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Prerollout))
-		if done {
-			return err
-		}
-		fmt.Println("Pre-rollout Tasks Complete")
-	} else {
-		fmt.Println("Skipping pre-rollout tasks")
+	done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(tasks))
+	if done {
+		return err
 	}
 
-	if taskType == postRolloutTasks {
-		fmt.Println("Executing Post-rollout Tasks")
-		fmt.Println(lYAML.Tasks.Postrollout)
-		done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(lYAML.Tasks.Postrollout))
-		if done {
-			return err
-		}
-		fmt.Println("Post-rollout Tasks Complete")
-	} else {
-		fmt.Println("Skipping post-rollout tasks")
-	}
 	return nil
 }
 
@@ -132,25 +127,33 @@ func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 
 type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, error)
 
-func iterateTasks(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
-	for _, task := range tasks {
-		runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
-		if err != nil {
-			return true, err
-		}
-		if runTask {
-			err := runCleanTaskInEnvironment(task)
+func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType) iterateTaskFuncType {
+	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
+		for _, task := range tasks {
+			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
 			if err != nil {
 				return true, err
 			}
-			if err != nil {
-				return true, err
+			if runTask {
+				err := taskRunner(task)
+				if err != nil {
+					switch e := err.(type) {
+					case *lagoon.DeploymentMissingError:
+						if allowDeployMissingErrors {
+							fmt.Println("No running deployment found, skipping")
+						} else {
+							return true, e
+						}
+					default:
+						return true, e
+					}
+				}
+			} else {
+				fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
 			}
-		} else {
-			fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
 		}
+		return false, nil
 	}
-	return false, nil
 }
 
 func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task) (bool, error) {
@@ -173,6 +176,9 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	return retBool, nil
 }
 
+type runTaskInEnvironmentFuncType func(incoming lagoon.Task) error
+
+// implements runTaskInEnvironmentFuncType
 func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 	task := lagoon.NewTask()
 	task.Command = incoming.Command
