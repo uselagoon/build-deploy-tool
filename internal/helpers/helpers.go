@@ -22,6 +22,11 @@ func BoolPtr(b bool) *bool {
 	return &v
 }
 
+// IntPTr
+func IntPtr(i int) *int {
+	return &i
+}
+
 // GetMD5HashWithNewLine .
 // in Lagoon this bash is used to generated the hash, but the `echo "${ROUTE_DOMAIN}"` adds a new line at the end, so the generated
 // sum has this in it, we need to replicate this here
@@ -47,10 +52,12 @@ func GetBase32EncodedLowercase(data []byte) string {
 // GetEnv gets an environment variable
 func GetEnv(key, fallback string, debug bool) string {
 	if value, ok := os.LookupEnv(key); ok {
-		if debug {
-			fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+		if value != "" {
+			if debug {
+				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+			}
+			return value
 		}
-		return value
 	}
 	return fallback
 }
@@ -64,4 +71,13 @@ func Contains(s []string, str string) bool {
 	}
 
 	return false
+}
+
+// WriteTemplateFile writes the template to a file.
+func WriteTemplateFile(templateOutputFile string, data []byte) {
+	err := os.WriteFile(templateOutputFile, data, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 }
