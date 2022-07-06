@@ -3,6 +3,8 @@ package cmd
 import (
 	"os"
 	"testing"
+
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 func TestIdentifyFeatureFlag(t *testing.T) {
@@ -31,12 +33,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 		templatePath       string
 	}
 	tests := []struct {
-		name string
-		args args
-		vars []struct {
-			name  string
-			value string
-		}
+		name    string
+		args    args
+		vars    []helpers.EnvironmentVariable
 		want    string
 		wantErr bool
 	}{
@@ -98,13 +97,10 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "enabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "enabled",
 				},
 			},
 			want: "enabled",
@@ -127,17 +123,14 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "enabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "enabled",
 				},
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "enabled",
@@ -160,17 +153,14 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "disabled",
@@ -193,13 +183,10 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "enabled",
@@ -280,7 +267,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			fastlyServiceID = tt.args.serviceID
 
 			for _, envVar := range tt.vars {
-				err = os.Setenv(envVar.name, envVar.value)
+				err = os.Setenv(envVar.Name, envVar.Value)
 				if err != nil {
 					t.Errorf("%v", err)
 				}
@@ -295,7 +282,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				t.Errorf("IdentifyFeatureFlag() = %v, want %v", got, tt.want)
 			}
 			t.Cleanup(func() {
-				unsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(tt.vars)
 			})
 		})
 	}

@@ -223,6 +223,41 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-backup-retention",
+			args: args{
+				file: "../../test-resources/lagoon-yaml/test4/lagoon.yml",
+				l:    &YAML{},
+				p:    &map[string]interface{}{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				BackupRetention: BackupRetention{
+					Production: Retention{
+						Hourly:  helpers.IntPtr(0),
+						Daily:   helpers.IntPtr(10),
+						Weekly:  helpers.IntPtr(6),
+						Monthly: helpers.IntPtr(2),
+					},
+				},
+				BackupSchedule: BackupSchedule{
+					Production: "M/15 5 * * 0",
+				},
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
