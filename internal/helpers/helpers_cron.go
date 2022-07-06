@@ -115,7 +115,7 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 					}
 				}
 				if isInCSVRange(val, 0, 23) {
-					days = val
+					hours = val
 					continue
 				}
 				if isInRange(val, 0, 23) {
