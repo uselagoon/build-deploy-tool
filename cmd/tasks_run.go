@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
+	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
@@ -33,7 +34,7 @@ var tasksPreRun = &cobra.Command{
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo()
+		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo(true)
 		if err != nil {
 			return err
 		}
@@ -47,7 +48,7 @@ var tasksPostRun = &cobra.Command{
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
 
-		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo()
+		lYAML, lagoonConditionalEvaluationEnvironment, err := getEnvironmentInfo(true)
 		if err != nil {
 			return err
 		}
@@ -56,30 +57,49 @@ var tasksPostRun = &cobra.Command{
 	},
 }
 
-func getEnvironmentInfo() (lagoon.YAML, tasklib.TaskEnvironment, error) {
+func getEnvironmentInfo(debug bool) (lagoon.YAML, tasklib.TaskEnvironment, error) {
 	// read the .lagoon.yml file
-	activeEnv := false
-	standbyEnv := false
-
-	lagoonEnvVars := []lagoon.EnvironmentVariable{}
-	lagoonValues := lagoon.BuildValues{}
-	lYAML := lagoon.YAML{}
-	autogenRoutes := new(lagoon.RoutesV2)
-	mainRoutes := new(lagoon.RoutesV2)
-	activeStandbyRoutes := new(lagoon.RoutesV2)
-
-	err := collectBuildValues(false, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStandbyRoutes, ignoreNonStringKeyErrors)
+	lagoonBuild, err := generator.NewGenerator(
+		lagoonYml,
+		projectVariables,
+		environmentVariables,
+		projectName,
+		environmentName,
+		environmentType,
+		activeEnvironment,
+		standbyEnvironment,
+		buildType,
+		branch,
+		prNumber,
+		prTitle,
+		prHeadBranch,
+		prBaseBranch,
+		lagoonVersion,
+		defaultBackupSchedule,
+		hourlyDefaultBackupRetention,
+		dailyDefaultBackupRetention,
+		weeklyDefaultBackupRetention,
+		monthlyDefaultBackupRetention,
+		monitoringContact,
+		monitoringStatusPageID,
+		fastlyCacheNoCahce,
+		fastlyAPISecretPrefix,
+		fastlyServiceID,
+		ignoreNonStringKeyErrors,
+		ignoreMissingEnvFiles,
+		debug,
+	)
 	if err != nil {
 		return lagoon.YAML{}, nil, err
 	}
 
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
-	if len(lagoonEnvVars) > 0 {
-		for _, envVar := range lagoonEnvVars {
+	if len(*lagoonBuild.LagoonEnvironmentVariables) > 0 {
+		for _, envVar := range *lagoonBuild.LagoonEnvironmentVariables {
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
-	return lYAML, lagoonConditionalEvaluationEnvironment, nil
+	return *lagoonBuild.LagoonYAML, lagoonConditionalEvaluationEnvironment, nil
 }
 
 func runTasks(taskType int, taskRunner iterateTaskFuncType, lYAML lagoon.YAML, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
