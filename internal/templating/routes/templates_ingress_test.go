@@ -5,18 +5,16 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
 func TestGenerateKubeTemplate(t *testing.T) {
 	type args struct {
-		route                  lagoon.RouteV2
-		values                 lagoon.BuildValues
-		monitoringContact      string
-		monitoringStatusPageID string
-		monitoringEnabled      bool
-		activeStandby          bool
+		route         lagoon.RouteV2
+		values        generator.BuildValues
+		activeStandby bool
 	}
 	tests := []struct {
 		name string
@@ -40,7 +38,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 				},
-				values: lagoon.BuildValues{
+				values: generator.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
 					EnvironmentType: "production",
@@ -49,11 +47,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "lagoon.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
 				},
-				monitoringContact:      "abcdefg",
-				monitoringStatusPageID: "12345",
-				monitoringEnabled:      true,
-				activeStandby:          true,
+				activeStandby: true,
 			},
 			want: "test-resources/result-active-standby1.yaml",
 		},
@@ -74,7 +74,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 				},
-				values: lagoon.BuildValues{
+				values: generator.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
 					EnvironmentType: "production",
@@ -83,11 +83,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "lagoon.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
 				},
-				monitoringContact:      "abcdefg",
-				monitoringStatusPageID: "12345",
-				monitoringEnabled:      true,
-				activeStandby:          false,
+				activeStandby: false,
 			},
 			want: "test-resources/result-custom-ingress1.yaml",
 		},
@@ -108,7 +110,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 				},
-				values: lagoon.BuildValues{
+				values: generator.BuildValues{
 					Project:         "example-project",
 					Environment:     "environment-with-really-really-reall-3fdb",
 					EnvironmentType: "development",
@@ -117,18 +119,20 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "lagoon.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
 				},
-				monitoringContact:      "abcdefg",
-				monitoringStatusPageID: "12345",
-				monitoringEnabled:      true,
-				activeStandby:          false,
+				activeStandby: false,
 			},
 			want: "test-resources/result-custom-ingress2.yaml",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := GenerateIngressTemplate(tt.args.route, tt.args.values, tt.args.monitoringContact, tt.args.monitoringStatusPageID, tt.args.monitoringEnabled)
+			got, err := GenerateIngressTemplate(tt.args.route, tt.args.values)
 			if err != nil {
 				t.Errorf("couldn't generate template %v: %v", tt.want, err)
 			}
