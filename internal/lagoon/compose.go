@@ -36,22 +36,3 @@ func CheckServiceLagoonLabel(labels map[string]string, label string) string {
 	}
 	return ""
 }
-
-// Compose .
-type Compose struct {
-	Services map[string]Service `json:"services"`
-}
-
-// Service .
-type Service struct {
-	Build  ServiceBuild      `json:"build"`
-	Labels map[string]string `json:"labels"`
-	// Image  string            `json:"image"` //@TODO: is this used by lagoon builds?
-}
-
-// ServiceBuild .
-type ServiceBuild struct {
-	Context    string `json:"context"`
-	Dockerfile string `json:"dockerfile"`
-	// Args       map[string]string `json:"args"` //@TODO: is this used by lagoon builds?
-}
