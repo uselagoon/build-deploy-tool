@@ -47,10 +47,6 @@ func generateServicesFromDockerCompose(
 
 	// create the services map
 	lagoonValues.Services = make(map[string]ServiceValues)
-	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
-	lagoonValues.ServiceTypeOverrides = lagoonServiceTypes
-	lagoonDBaaSEnvironmentTypes, _ := lagoon.GetLagoonVariable("LAGOON_DBAAS_ENVIRONMENT_TYPES", nil, lagoonEnvVars)
-	lagoonValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
 
 	// unmarshal the docker-compose.yml file
 	lCompose, err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, composeVars)
@@ -181,15 +177,20 @@ func composeToServiceValues(
 			lagoonType = val
 		}
 
-		// handle dbaas checks here
+		// handle dbaas operator checks here
 		dbaasEnvironment := lagoonValues.EnvironmentType
 		if lagoonType == "mariadb" || lagoonType == "postgres" || lagoonType == "mongodb" {
 			err := helpers.CheckDBaaSHealth(lagoonValues.DBaaSOperatorEndpoint)
 			if err != nil {
+				// @TODO eventually this error should be handled and fail a build, with a flag to override https://github.com/uselagoon/build-deploy-tool/issues/56
+				// if !lagoonValues.DBaaSFallbackSingle {
+				// 	return ServiceValues{}, fmt.Errorf("Unable to check the DBaaS endpoint %s: %v", lagoonValues.DBaaSOperatorEndpoint, err)
+				// }
 				if debug {
 					fmt.Println(fmt.Sprintf("Unable to check the DBaaS endpoint %s, falling back to %s-single: %v", lagoonValues.DBaaSOperatorEndpoint, lagoonType, err))
 				}
 				// normally we would fall back to doing a cluster capability check, this is phased out in the build tool, it isn't reliable
+				// and noone should be doing checks that way any more
 				lagoonType = fmt.Sprintf("%s-single", lagoonType)
 			} else {
 				// if there is a `lagoon.name` label on this service, this should be used as an override name
@@ -206,7 +207,17 @@ func composeToServiceValues(
 
 				// if there are overrides defined in the lagoon API `LAGOON_DBAAS_ENVIRONMENT_TYPES`
 				// handle those here
-				exists := getDBaasEnvironment(lagoonValues, &dbaasEnvironment, lagoonOverrideName, lagoonType, debug)
+				exists, err := getDBaasEnvironment(lagoonValues, &dbaasEnvironment, lagoonOverrideName, lagoonType, debug)
+				if err != nil {
+					// @TODO eventually this error should be handled and fail a build, with a flag to override https://github.com/uselagoon/build-deploy-tool/issues/56
+					// if !lagoonValues.DBaaSFallbackSingle {
+					// 	return ServiceValues{}, err
+					// }
+					if debug {
+						fmt.Println(fmt.Sprintf("There was an error checking DBaaS endpoint %s, falling back to %s-single: %v", lagoonValues.DBaaSOperatorEndpoint, lagoonType, err))
+					}
+				}
+
 				if exists {
 					lagoonType = fmt.Sprintf("%s-dbaas", lagoonType)
 				} else {
@@ -233,11 +244,11 @@ func composeToServiceValues(
 		return cService, nil
 	}
 	// service is not destined for Lagoon, return null
-	return ServiceValues{}, nil //fmt.Errorf("Service %s has no `lagoon.type` label in the docker-compose.yml file", composeService)
+	return ServiceValues{}, nil
 }
 
 // getDBaasEnvironment will check the dbaas provider to see if an environment exists or not
-func getDBaasEnvironment(lagoonValues *BuildValues, dbaasEnvironment *string, lagoonOverrideName, lagoonType string, debug bool) bool {
+func getDBaasEnvironment(lagoonValues *BuildValues, dbaasEnvironment *string, lagoonOverrideName, lagoonType string, debug bool) (bool, error) {
 	if lagoonValues.DBaaSEnvironmentTypeOverrides != nil {
 		dbaasEnvironmentTypeSplit := strings.Split(lagoonValues.DBaaSEnvironmentTypeOverrides.Value, ",")
 		for _, sType := range dbaasEnvironmentTypeSplit {
@@ -249,9 +260,7 @@ func getDBaasEnvironment(lagoonValues *BuildValues, dbaasEnvironment *string, la
 	}
 	exists, err := helpers.CheckDBaaSProvider(lagoonValues.DBaaSOperatorEndpoint, lagoonType, *dbaasEnvironment)
 	if err != nil {
-		if debug {
-			fmt.Println(fmt.Sprintf("There was an error checking DBaaS endpoint %s, falling back to mariadb-single: %v", lagoonValues.DBaaSOperatorEndpoint, err))
-		}
+		return exists, fmt.Errorf("There was an error checking DBaaS endpoint %s: %v", lagoonValues.DBaaSOperatorEndpoint, err)
 	}
-	return exists
+	return exists, nil
 }

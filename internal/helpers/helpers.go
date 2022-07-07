@@ -131,6 +131,14 @@ func EGetEnvBool(key string, fallback bool, debug bool) (bool, error) {
 	return fallback, nil
 }
 
+func StrToBool(value string) bool {
+	rVal, e := strconv.ParseBool(value)
+	if e != nil {
+		return false
+	}
+	return rVal
+}
+
 // Contains checks if a string slice contains a specific string.
 func Contains(s []string, str string) bool {
 	for _, v := range s {

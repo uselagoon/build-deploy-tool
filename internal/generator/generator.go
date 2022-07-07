@@ -164,6 +164,17 @@ func NewGenerator(
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
+	// get any variables from the API here
+	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
+	lagoonValues.ServiceTypeOverrides = lagoonServiceTypes
+
+	lagoonDBaaSEnvironmentTypes, _ := lagoon.GetLagoonVariable("LAGOON_DBAAS_ENVIRONMENT_TYPES", nil, lagoonEnvVars)
+	lagoonValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
+
+	// @TODO: eventually fail builds if this is not set https://github.com/uselagoon/build-deploy-tool/issues/56
+	// lagoonDBaaSFallbackSingle, _ := lagoon.GetLagoonVariable("LAGOON_FEATURE_FLAG_DBAAS_FALLBACK_SINGLE", nil, lagoonEnvVars)
+	// lagoonValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
+
 	/* start backups configuration */
 	err := generateBackupValues(&lagoonValues, lYAML, lagoonEnvVars, debug)
 	if err != nil {

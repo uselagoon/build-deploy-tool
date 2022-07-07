@@ -45,6 +45,7 @@ type BuildValues struct {
 	DBaaSOperatorEndpoint         string                      `json:"dbaasOperatorEndpoint"`
 	ServiceTypeOverrides          *lagoon.EnvironmentVariable `json:"serviceTypeOverrides"`
 	DBaaSEnvironmentTypeOverrides *lagoon.EnvironmentVariable `json:"dbaasEnvironmentTypeOverrides"`
+	DBaaSFallbackSingle           bool                        `json:"dbaasFallbackSingle"`
 }
 
 type MonitoringConfig struct {
