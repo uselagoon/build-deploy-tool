@@ -38,6 +38,10 @@ func GenerateBackupSchedule(
 	}
 	// create the schedule
 	schedule := &k8upv1alpha1.Schedule{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Schedule",
+			APIVersion: k8upv1alpha1.GroupVersion.String(),
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: "k8up-lagoon-backup-schedule",
 		},

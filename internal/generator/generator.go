@@ -129,6 +129,9 @@ func NewGenerator(
 		}
 	}
 
+	// get the dbaas operator http endpoint or fall back to the default
+	lagoonValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "dbaas.lagoon.svc:5000", debug)
+
 	// get the project and environment variables
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
 	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, debug)
@@ -160,6 +163,17 @@ func NewGenerator(
 	// add the calculated build runtime variables into the existing variable slice
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
+
+	// get any variables from the API here
+	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
+	lagoonValues.ServiceTypeOverrides = lagoonServiceTypes
+
+	lagoonDBaaSEnvironmentTypes, _ := lagoon.GetLagoonVariable("LAGOON_DBAAS_ENVIRONMENT_TYPES", nil, lagoonEnvVars)
+	lagoonValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
+
+	// @TODO: eventually fail builds if this is not set https://github.com/uselagoon/build-deploy-tool/issues/56
+	// lagoonDBaaSFallbackSingle, _ := lagoon.GetLagoonVariable("LAGOON_FEATURE_FLAG_DBAAS_FALLBACK_SINGLE", nil, lagoonEnvVars)
+	// lagoonValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
 	err := generateBackupValues(&lagoonValues, lYAML, lagoonEnvVars, debug)
@@ -199,7 +213,6 @@ func NewGenerator(
 	// // add the calculated build runtime variables into the existing variable slice
 	// // this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	// lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
-
 	return &Generator{
 		BuildValues:                &lagoonValues,
 		LagoonYAML:                 lYAML,

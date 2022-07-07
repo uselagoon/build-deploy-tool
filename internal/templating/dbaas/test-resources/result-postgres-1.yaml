@@ -1,0 +1,26 @@
+---
+apiVersion: postgres.amazee.io/v1
+kind: PostgreSQLConsumer
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: postgres-dbaas
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: postgres
+    lagoon.sh/service-type: postgres-dbaas
+    lagoon.sh/template: postgres-dbaas-0.1.0
+  name: postgres
+spec:
+  consumer:
+    services: {}
+  environment: development
+  provider: {}
+status: {}
