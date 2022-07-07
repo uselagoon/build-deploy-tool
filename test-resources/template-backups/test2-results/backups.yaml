@@ -1,4 +1,6 @@
 ---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: Schedule
 metadata:
   annotations:
     lagoon.sh/branch: main
