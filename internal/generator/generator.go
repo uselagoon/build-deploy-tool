@@ -129,6 +129,9 @@ func NewGenerator(
 		}
 	}
 
+	// get the dbaas operator http endpoint or fall back to the default
+	lagoonValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "dbaas.lagoon.svc:5000", debug)
+
 	// get the project and environment variables
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
 	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, debug)
@@ -199,7 +202,6 @@ func NewGenerator(
 	// // add the calculated build runtime variables into the existing variable slice
 	// // this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	// lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
-
 	return &Generator{
 		BuildValues:                &lagoonValues,
 		LagoonYAML:                 lYAML,
