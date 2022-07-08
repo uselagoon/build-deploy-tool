@@ -12,7 +12,7 @@ import (
 
 func Test_generateBackupValues(t *testing.T) {
 	type args struct {
-		lagoonValues    *BuildValues
+		buildValues     *BuildValues
 		lYAML           *lagoon.YAML
 		mergedVariables []lagoon.EnvironmentVariable
 		debug           bool
@@ -27,7 +27,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -55,7 +55,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test2 - dev schedule from lagoon api variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -85,7 +85,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test3 - dev schedule from build pod variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -116,7 +116,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test4- pr schedule from lagoon api variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "pullrequest",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -146,7 +146,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test5 - pr schedule from build pod variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "pullrequest",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -177,7 +177,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test6 - pr env with dev schedule from lagoon api variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "pullrequest",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -207,7 +207,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test7 - pr env with dev schedule from build pod variable",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "pullrequest",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -238,7 +238,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test8 - production with lagoon yaml overrides",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "production",
 					Namespace:       "example-com-main",
@@ -278,7 +278,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test9 - custom backup configuration",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -314,7 +314,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test10 - custom backup configuration with endpoint and bucket",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -354,7 +354,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test11 - custom restore configuration",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -389,7 +389,7 @@ func Test_generateBackupValues(t *testing.T) {
 		{
 			name: "test11 - custom restore and backup configuration with endpoint and bucket",
 			args: args{
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					BuildType:       "branch",
 					EnvironmentType: "development",
 					Namespace:       "example-com-main",
@@ -439,10 +439,10 @@ func Test_generateBackupValues(t *testing.T) {
 					t.Errorf("%v", err)
 				}
 			}
-			if err := generateBackupValues(tt.args.lagoonValues, tt.args.lYAML, tt.args.mergedVariables, tt.args.debug); (err != nil) != tt.wantErr {
+			if err := generateBackupValues(tt.args.buildValues, tt.args.lYAML, tt.args.mergedVariables, tt.args.debug); (err != nil) != tt.wantErr {
 				t.Errorf("generateBackupValues() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			lValues, _ := json.Marshal(tt.args.lagoonValues)
+			lValues, _ := json.Marshal(tt.args.buildValues)
 			wValues, _ := json.Marshal(tt.want)
 			if !reflect.DeepEqual(string(lValues), string(wValues)) {
 				t.Errorf("GenerateBackupSchedule() = %v, want %v", string(lValues), string(wValues))

@@ -6,13 +6,13 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	backupTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/backups"
+	backuptemplate "github.com/uselagoon/build-deploy-tool/internal/templating/backups"
 )
 
 var backupGeneration = &cobra.Command{
-	Use:     "backup",
-	Aliases: []string{"b"},
-	Short:   "Generate the ingress templates for a Lagoon build",
+	Use:     "backup-schedule",
+	Aliases: []string{"schedule", "bs"},
+	Short:   "Generate the backup schedule templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return BackupTemplateGeneration(true)
 	},
@@ -55,7 +55,7 @@ func BackupTemplateGeneration(debug bool,
 		return err
 	}
 
-	templateYAML, err := backupTemplater.GenerateBackupSchedule(*lagoonBuild.BuildValues)
+	templateYAML, err := backuptemplate.GenerateBackupSchedule(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}

@@ -13,7 +13,7 @@ import (
 func Test_composeToServiceValues(t *testing.T) {
 	type args struct {
 		lYAML                *lagoon.YAML
-		lagoonValues         *BuildValues
+		buildValues          *BuildValues
 		composeService       string
 		composeServiceValues composetypes.ServiceConfig
 	}
@@ -31,7 +31,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"main": lagoon.Environment{},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -60,7 +60,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"main": lagoon.Environment{},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -94,7 +94,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -123,7 +123,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"main": lagoon.Environment{},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment: "main",
 					Branch:      "main",
 					BuildType:   "branch",
@@ -155,7 +155,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"main": lagoon.Environment{},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -193,7 +193,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -230,7 +230,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "pr-123",
 					Branch:               "pr-123",
 					BuildType:            "pullrequest",
@@ -267,7 +267,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "pr-123",
 					Branch:               "pr-123",
 					BuildType:            "pullrequest",
@@ -294,7 +294,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "pr-123",
 					Branch:               "pr-123",
 					BuildType:            "pullrequest",
@@ -325,7 +325,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -364,7 +364,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -406,7 +406,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -436,7 +436,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"main": lagoon.Environment{},
 					},
 				},
-				lagoonValues: &BuildValues{
+				buildValues: &BuildValues{
 					Environment:          "main",
 					Branch:               "main",
 					BuildType:            "branch",
@@ -462,8 +462,8 @@ func Test_composeToServiceValues(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ts := helpers.TestDBaaSHTTPServer()
 			defer ts.Close()
-			tt.args.lagoonValues.DBaaSOperatorEndpoint = ts.URL
-			got, err := composeToServiceValues(tt.args.lagoonValues, tt.args.lYAML, tt.args.composeService, tt.args.composeServiceValues, false)
+			tt.args.buildValues.DBaaSOperatorEndpoint = ts.URL
+			got, err := composeToServiceValues(tt.args.buildValues, tt.args.lYAML, tt.args.composeService, tt.args.composeServiceValues, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("composeToServiceValues() error = %v, wantErr %v", err, tt.wantErr)
 				return
