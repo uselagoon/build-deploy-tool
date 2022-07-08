@@ -60,10 +60,10 @@ func Test_getRoutesFromAPIEnvVar(t *testing.T) {
 
 func Test_generateAndMerge(t *testing.T) {
 	type args struct {
-		api          lagoon.RoutesV2
-		envVars      []lagoon.EnvironmentVariable
-		lagoonYAML   lagoon.YAML
-		lagoonValues BuildValues
+		api         lagoon.RoutesV2
+		envVars     []lagoon.EnvironmentVariable
+		lagoonYAML  lagoon.YAML
+		buildValues BuildValues
 	}
 	tests := []struct {
 		name    string
@@ -74,7 +74,7 @@ func Test_generateAndMerge(t *testing.T) {
 		{
 			name: "test1 - generate routes from lagoon yaml and merge ones from api onto them",
 			args: args{
-				lagoonValues: BuildValues{
+				buildValues: BuildValues{
 					Branch: "main",
 				},
 				lagoonYAML: lagoon.YAML{
@@ -159,7 +159,7 @@ func Test_generateAndMerge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := generateAndMerge(tt.args.api, tt.args.envVars, tt.args.lagoonYAML, tt.args.lagoonValues)
+			got, err := generateAndMerge(tt.args.api, tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateAndMerge() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -175,11 +175,9 @@ func Test_generateAndMerge(t *testing.T) {
 
 func Test_generateActiveStandbyRoutes(t *testing.T) {
 	type args struct {
-		active       bool
-		standby      bool
-		envVars      []lagoon.EnvironmentVariable
-		lagoonYAML   lagoon.YAML
-		lagoonValues BuildValues
+		envVars     []lagoon.EnvironmentVariable
+		lagoonYAML  lagoon.YAML
+		buildValues BuildValues
 	}
 	tests := []struct {
 		name string
@@ -189,8 +187,9 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
-				active:       true,
-				lagoonValues: BuildValues{},
+				buildValues: BuildValues{
+					IsActiveEnvironment: true,
+				},
 				lagoonYAML: lagoon.YAML{
 					ProductionRoutes: &lagoon.ProductionRoutes{
 						Active: &lagoon.Environment{
@@ -225,7 +224,7 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateActiveStandbyRoutes(tt.args.active, tt.args.standby, tt.args.envVars, tt.args.lagoonYAML, tt.args.lagoonValues)
+			got := generateActiveStandbyRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
 			lValues, _ := json.Marshal(got)
 			wValues, _ := json.Marshal(tt.want)
 			if !reflect.DeepEqual(string(lValues), string(wValues)) {
@@ -288,7 +287,7 @@ func Test_generateAutogenRoutes(t *testing.T) {
 	type args struct {
 		envVars       []lagoon.EnvironmentVariable
 		lagoonYAML    *lagoon.YAML
-		lagoonValues  *BuildValues
+		buildValues   *BuildValues
 		autogenRoutes *lagoon.RoutesV2
 	}
 	tests := []struct {
@@ -300,7 +299,7 @@ func Test_generateAutogenRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := generateAutogenRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.lagoonValues, tt.args.autogenRoutes); (err != nil) != tt.wantErr {
+			if err := generateAutogenRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues, tt.args.autogenRoutes); (err != nil) != tt.wantErr {
 				t.Errorf("generateAutogenRoutes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
@@ -310,13 +309,11 @@ func Test_generateAutogenRoutes(t *testing.T) {
 func Test_generateRoutes(t *testing.T) {
 	type args struct {
 		lagoonEnvVars      []lagoon.EnvironmentVariable
-		lagoonValues       BuildValues
+		buildValues        BuildValues
 		lYAML              lagoon.YAML
 		autogenRoutes      *lagoon.RoutesV2
 		mainRoutes         *lagoon.RoutesV2
 		activeStanbyRoutes *lagoon.RoutesV2
-		activeEnv          bool
-		standbyEnv         bool
 		debug              bool
 	}
 	tests := []struct {
@@ -331,7 +328,7 @@ func Test_generateRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := generateRoutes(tt.args.lagoonEnvVars, tt.args.lagoonValues, tt.args.lYAML, tt.args.autogenRoutes, tt.args.mainRoutes, tt.args.activeStanbyRoutes, tt.args.activeEnv, tt.args.standbyEnv, tt.args.debug)
+			got, got1, got2, err := generateRoutes(tt.args.lagoonEnvVars, tt.args.buildValues, tt.args.lYAML, tt.args.autogenRoutes, tt.args.mainRoutes, tt.args.activeStanbyRoutes, tt.args.debug)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateRoutes() error = %v, wantErr %v", err, tt.wantErr)
 				return

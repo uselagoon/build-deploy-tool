@@ -11,8 +11,8 @@ import (
 
 var dbaasGeneration = &cobra.Command{
 	Use:     "dbaas",
-	Aliases: []string{"b"},
-	Short:   "Generate the ingress templates for a Lagoon build",
+	Aliases: []string{"db"},
+	Short:   "Generate the DBaaS templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return DBaaSTemplateGeneration(true)
 	},

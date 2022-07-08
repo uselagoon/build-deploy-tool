@@ -49,13 +49,15 @@ func NewGenerator(
 	fastlyServiceID string,
 	ignoreNonStringKeyErrors, ignoreMissingEnvFiles, debug bool,
 ) (*Generator, error) {
-	lagoonValues := BuildValues{}
+
+	// create some initial variables to be passed through the generators
+	buildValues := BuildValues{}
 	lYAML := &lagoon.YAML{}
-	var activeEnv, standbyEnv bool
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	autogenRoutes := &lagoon.RoutesV2{}
 	mainRoutes := &lagoon.RoutesV2{}
 	activeStandbyRoutes := &lagoon.RoutesV2{}
+
 	// environment variables will override what is provided by flags
 	// the following variables have been identified as used by custom-ingress objects
 	// these are available within a lagoon build as standard
@@ -91,30 +93,33 @@ func NewGenerator(
 	}
 
 	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	// this is done so that all other generators only need to know how to interact with one type of environment
 	if _, ok := lPolysite[projectName]; ok {
 		s, _ := yaml.Marshal(lPolysite[projectName])
 		_ = yaml.Unmarshal(s, &lYAML)
 	}
 
-	lagoonValues.Project = projectName
-	lagoonValues.Environment = environmentName
-	lagoonValues.EnvironmentType = environmentType
-	lagoonValues.BuildType = buildType
-	lagoonValues.LagoonVersion = lagoonVersion
-	lagoonValues.ActiveEnvironment = activeEnvironment
-	lagoonValues.StandbyEnvironment = standbyEnvironment
-	lagoonValues.FastlyCacheNoCache = fastlyCacheNoCahce
-	lagoonValues.FastlyAPISecretPrefix = fastlyAPISecretPrefix
+	// start saving values into the build values variable
+	buildValues.Project = projectName
+	buildValues.Environment = environmentName
+	buildValues.EnvironmentType = environmentType
+	buildValues.BuildType = buildType
+	buildValues.LagoonVersion = lagoonVersion
+	buildValues.ActiveEnvironment = activeEnvironment
+	buildValues.StandbyEnvironment = standbyEnvironment
+	buildValues.FastlyCacheNoCache = fastlyCacheNoCahce
+	buildValues.FastlyAPISecretPrefix = fastlyAPISecretPrefix
 	switch buildType {
 	case "branch", "promote":
-		lagoonValues.Branch = branch
+		buildValues.Branch = branch
 	case "pullrequest":
-		lagoonValues.PRNumber = prNumber
-		lagoonValues.PRTitle = prTitle
-		lagoonValues.PRHeadBranch = prHeadBranch
-		lagoonValues.PRBaseBranch = prBaseBranch
+		buildValues.PRNumber = prNumber
+		buildValues.PRTitle = prTitle
+		buildValues.PRHeadBranch = prHeadBranch
+		buildValues.PRBaseBranch = prBaseBranch
 	}
 
+	// break out of the generator if these requirements are missing
 	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
 		return nil, fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
 	}
@@ -130,25 +135,25 @@ func NewGenerator(
 	}
 
 	// get the dbaas operator http endpoint or fall back to the default
-	lagoonValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "dbaas.lagoon.svc:5000", debug)
+	buildValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "dbaas.lagoon.svc:5000", debug)
 
 	// get the project and environment variables
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
 	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, debug)
 
 	// by default, environment routes are not monitored
-	lagoonValues.Monitoring.Enabled = false
+	buildValues.Monitoring.Enabled = false
 	if environmentType == "production" {
 		// if this is a production environment, monitoring IS enabled
-		lagoonValues.Monitoring.Enabled = true
-		lagoonValues.Monitoring.AlertContact = monitoringContact
-		lagoonValues.Monitoring.StatusPageID = monitoringStatusPageID
+		buildValues.Monitoring.Enabled = true
+		buildValues.Monitoring.AlertContact = monitoringContact
+		buildValues.Monitoring.StatusPageID = monitoringStatusPageID
 		// check if the environment is active or standby
 		if environmentName == activeEnvironment {
-			activeEnv = true
+			buildValues.IsActiveEnvironment = true
 		}
 		if environmentName == standbyEnvironment {
-			standbyEnv = true
+			buildValues.IsStandbyEnvironment = true
 		}
 	}
 
@@ -159,31 +164,31 @@ func NewGenerator(
 	json.Unmarshal([]byte(environmentVariables), &envVars)
 	mergedVariables := lagoon.MergeVariables(projectVars, envVars)
 	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
-	configVars := collectBuildVariables(lagoonValues)
+	configVars := collectBuildVariables(buildValues)
 	// add the calculated build runtime variables into the existing variable slice
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
 	// get any variables from the API here
 	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
-	lagoonValues.ServiceTypeOverrides = lagoonServiceTypes
+	buildValues.ServiceTypeOverrides = lagoonServiceTypes
 
 	lagoonDBaaSEnvironmentTypes, _ := lagoon.GetLagoonVariable("LAGOON_DBAAS_ENVIRONMENT_TYPES", nil, lagoonEnvVars)
-	lagoonValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
+	buildValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
 
 	// @TODO: eventually fail builds if this is not set https://github.com/uselagoon/build-deploy-tool/issues/56
 	// lagoonDBaaSFallbackSingle, _ := lagoon.GetLagoonVariable("LAGOON_FEATURE_FLAG_DBAAS_FALLBACK_SINGLE", nil, lagoonEnvVars)
-	// lagoonValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
+	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&lagoonValues, lYAML, lagoonEnvVars, debug)
+	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, debug)
 	if err != nil {
 		return nil, err
 	}
 	/* end backups configuration */
 
 	/* start compose->service configuration */
-	err = generateServicesFromDockerCompose(&lagoonValues, lYAML, lagoonEnvVars, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, debug)
+	err = generateServicesFromDockerCompose(&buildValues, lYAML, lagoonEnvVars, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, debug)
 	if err != nil {
 		return nil, err
 	}
@@ -192,15 +197,13 @@ func NewGenerator(
 	/* start route generation */
 	// create all the routes for this environment and store the primary and secondary routes into values
 	// populate the autogenRoutes, mainRoutes and activeStandbyRoutes here and load them
-	lagoonValues.Route, lagoonValues.Routes, lagoonValues.AutogeneratedRoutes, err = generateRoutes(
+	buildValues.Route, buildValues.Routes, buildValues.AutogeneratedRoutes, err = generateRoutes(
 		lagoonEnvVars,
-		lagoonValues,
+		buildValues,
 		*lYAML,
 		autogenRoutes,
 		mainRoutes,
 		activeStandbyRoutes,
-		activeEnv,
-		standbyEnv,
 		debug,
 	)
 	if err != nil {
@@ -208,48 +211,45 @@ func NewGenerator(
 	}
 	/* end route generation configuration */
 
-	// // collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
-	// configVars = collectBuildVariables(lagoonValues)
-	// // add the calculated build runtime variables into the existing variable slice
-	// // this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
-	// lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
+	// finally return the generator values
 	return &Generator{
-		BuildValues:                &lagoonValues,
+		BuildValues:                &buildValues,
 		LagoonYAML:                 lYAML,
 		LagoonEnvironmentVariables: &lagoonEnvVars,
-		ActiveEnvironment:          &activeEnv,
-		StandbyEnvironment:         &standbyEnv,
+		ActiveEnvironment:          &buildValues.IsActiveEnvironment,
+		StandbyEnvironment:         &buildValues.IsStandbyEnvironment,
 		AutogeneratedRoutes:        autogenRoutes,
 		MainRoutes:                 mainRoutes,
 		ActiveStandbyRoutes:        activeStandbyRoutes,
 	}, nil
 }
 
-func collectBuildVariables(lagoonValues BuildValues) []lagoon.EnvironmentVariable {
+// this creates a bunch of standard environment variables that are injected into the `lagoon-env` configmap normally
+func collectBuildVariables(buildValues BuildValues) []lagoon.EnvironmentVariable {
 	vars := []lagoon.EnvironmentVariable{}
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PROJECT", Value: lagoonValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT", Value: lagoonValues.Environment, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: lagoonValues.EnvironmentType, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: lagoonValues.GitSha, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: lagoonValues.Kubernetes, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: lagoonValues.Environment, Scope: "runtime"}) //deprecated??? (https://github.com/uselagoon/lagoon/blob/1053965321495213591f4c9110f90a9d9dcfc946/images/kubectl-build-deploy-dind/build-deploy-docker-compose.sh#L748)
-	if lagoonValues.BuildType == "branch" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_BRANCH", Value: lagoonValues.Branch, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PROJECT", Value: buildValues.Project, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT", Value: buildValues.Environment, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: buildValues.EnvironmentType, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: buildValues.GitSha, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: buildValues.Kubernetes, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: buildValues.Environment, Scope: "runtime"}) //deprecated??? (https://github.com/uselagoon/lagoon/blob/1053965321495213591f4c9110f90a9d9dcfc946/images/kubectl-build-deploy-dind/build-deploy-docker-compose.sh#L748)
+	if buildValues.BuildType == "branch" {
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_BRANCH", Value: buildValues.Branch, Scope: "runtime"})
 	}
-	if lagoonValues.BuildType == "pullrequest" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_HEAD_BRANCH", Value: lagoonValues.PRHeadBranch, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_BASE_BRANCH", Value: lagoonValues.PRBaseBranch, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_TITLE", Value: lagoonValues.PRTitle, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_NUMBER", Value: lagoonValues.PRNumber, Scope: "runtime"})
+	if buildValues.BuildType == "pullrequest" {
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_HEAD_BRANCH", Value: buildValues.PRHeadBranch, Scope: "runtime"})
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_BASE_BRANCH", Value: buildValues.PRBaseBranch, Scope: "runtime"})
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_TITLE", Value: buildValues.PRTitle, Scope: "runtime"})
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_NUMBER", Value: buildValues.PRNumber, Scope: "runtime"})
 	}
-	if lagoonValues.ActiveEnvironment != "" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ACTIVE_ENVIRONMENT", Value: lagoonValues.ActiveEnvironment, Scope: "runtime"})
+	if buildValues.ActiveEnvironment != "" {
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ACTIVE_ENVIRONMENT", Value: buildValues.ActiveEnvironment, Scope: "runtime"})
 	}
-	if lagoonValues.StandbyEnvironment != "" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_STANDBY_ENVIRONMENT", Value: lagoonValues.StandbyEnvironment, Scope: "runtime"})
+	if buildValues.StandbyEnvironment != "" {
+		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_STANDBY_ENVIRONMENT", Value: buildValues.StandbyEnvironment, Scope: "runtime"})
 	}
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTE", Value: lagoonValues.Route, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTES", Value: strings.Join(lagoonValues.Routes, ","), Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_AUTOGENERATED_ROUTES", Value: strings.Join(lagoonValues.AutogeneratedRoutes, ","), Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTE", Value: buildValues.Route, Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTES", Value: strings.Join(buildValues.Routes, ","), Scope: "runtime"})
+	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_AUTOGENERATED_ROUTES", Value: strings.Join(buildValues.AutogeneratedRoutes, ","), Scope: "runtime"})
 	return vars
 }

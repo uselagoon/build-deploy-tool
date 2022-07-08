@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	routeTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/routes"
+	ingresstemplate "github.com/uselagoon/build-deploy-tool/internal/templating/ingress"
 )
 
 var routeGeneration = &cobra.Command{
@@ -59,7 +59,7 @@ func IngressTemplateGeneration(debug bool) error {
 		if debug {
 			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 		}
-		templateYAML, err := routeTemplater.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
+		templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
@@ -75,7 +75,7 @@ func IngressTemplateGeneration(debug bool) error {
 			if debug {
 				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			}
-			templateYAML, err := routeTemplater.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
+			templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
 			if err != nil {
 				return fmt.Errorf("couldn't generate template: %v", err)
 			}
