@@ -69,7 +69,7 @@ func generateBackupValues(
 	if flagCheckSchedule == "enabled" {
 		buildValues.Backup.CheckSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.CheckSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, flagCheckSchedule)
+		buildValues.Backup.CheckSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, defaultCheckSchedule)
 		if err != nil {
 			return fmt.Errorf("Unable to convert crontab for default check schedule: %v", err)
 		}
@@ -78,7 +78,7 @@ func generateBackupValues(
 	if flagPruneSchedule == "enabled" {
 		buildValues.Backup.PruneSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.PruneSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, flagPruneSchedule)
+		buildValues.Backup.PruneSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, defaultPruneSchedule)
 		if err != nil {
 			return fmt.Errorf("Unable to convert crontab for default prune schedule: %v", err)
 		}
