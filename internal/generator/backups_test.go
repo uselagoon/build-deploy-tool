@@ -387,7 +387,7 @@ func Test_generateBackupValues(t *testing.T) {
 			},
 		},
 		{
-			name: "test11 - custom restore and backup configuration with endpoint and bucket",
+			name: "test12 - custom restore and backup configuration with endpoint and bucket",
 			args: args{
 				buildValues: &BuildValues{
 					BuildType:       "branch",
@@ -418,6 +418,68 @@ func Test_generateBackupValues(t *testing.T) {
 						RestoreLocationAccessKey: "abcdefg",
 						RestoreLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 4 * * 0",
+					PruneSchedule:  "31 4 * * 0",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test13 - K8UP_WEEKLY_RANDOM_FEATURE_FLAG enabled",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Namespace:       "example-com-main",
+				},
+				lYAML:           &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{},
+			},
+			vars: []helpers.EnvironmentVariable{
+				{Name: "K8UP_WEEKLY_RANDOM_FEATURE_FLAG", Value: "enabled"},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "@weekly-random",
+					PruneSchedule:  "@weekly-random",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test14 - K8UP_WEEKLY_RANDOM_FEATURE_FLAG set but not enabled/valid",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Namespace:       "example-com-main",
+				},
+				lYAML:           &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{},
+			},
+			vars: []helpers.EnvironmentVariable{
+				{Name: "K8UP_WEEKLY_RANDOM_FEATURE_FLAG", Value: "jkhk"},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
 					CheckSchedule:  "31 4 * * 0",
 					PruneSchedule:  "31 4 * * 0",
