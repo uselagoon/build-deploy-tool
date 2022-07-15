@@ -108,3 +108,43 @@ func TestCheckDBaaSHealth(t *testing.T) {
 		})
 	}
 }
+
+func Test_addProtocol(t *testing.T) {
+	type args struct {
+		url string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "test1",
+			args: args{
+				url: "dbaas.local.svc:5000",
+			},
+			want: "http://dbaas.local.svc:5000",
+		},
+		{
+			name: "test2",
+			args: args{
+				url: "https://dbaas.local.svc:5000",
+			},
+			want: "https://dbaas.local.svc:5000",
+		},
+		{
+			name: "test3",
+			args: args{
+				url: "http://dbaas.local.svc:5000",
+			},
+			want: "http://dbaas.local.svc:5000",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := addProtocol(tt.args.url); got != tt.want {
+				t.Errorf("addProtocol() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
