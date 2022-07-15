@@ -135,7 +135,7 @@ func NewGenerator(
 	}
 
 	// get the dbaas operator http endpoint or fall back to the default
-	buildValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "dbaas.lagoon.svc:5000", debug)
+	buildValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "http://dbaas.lagoon.svc:5000", debug)
 
 	// get the project and environment variables
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)

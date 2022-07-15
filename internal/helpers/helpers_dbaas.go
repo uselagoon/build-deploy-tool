@@ -5,13 +5,24 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"time"
 )
 
 var httpClient = &http.Client{Timeout: 10 * time.Second}
 
+func addProtocol(url string) string {
+	if !strings.Contains(url, "https://") {
+		if !strings.Contains(url, "http://") {
+			return fmt.Sprintf("http://%s", url)
+		}
+	}
+	return url
+}
+
 func CheckDBaaSHealth(dbaasEndpoint string) error {
 	// curl --write-out "%{http_code}\n" --silent --output /dev/null "http://dbaas/healthz"
+	dbaasEndpoint = addProtocol(dbaasEndpoint)
 	resp, err := httpClient.Get(fmt.Sprintf("%s/healthz", dbaasEndpoint))
 	if err != nil {
 		return err
@@ -30,6 +41,7 @@ type DBaaSProviderResponse struct {
 // check the dbaas provider exists, will return true or false without error if it can talk to the dbaas-operator
 // will return error if there an issue with the dbaas-operator or the specified endpoint
 func CheckDBaaSProvider(dbaasEndpoint, dbaasType, dbaasEnvironment string) (bool, error) {
+	dbaasEndpoint = addProtocol(dbaasEndpoint)
 	// curl --silent "http://dbaas/type/env"
 	resp, err := httpClient.Get(fmt.Sprintf("%s/%s/%s", dbaasEndpoint, dbaasType, dbaasEnvironment))
 	if err != nil {
