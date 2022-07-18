@@ -41,7 +41,8 @@ var tasksPreRun = &cobra.Command{
 		fmt.Println("Executing Pre-rollout Tasks")
 		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			return err
+			fmt.Println("Pre-rollout Tasks Failed with the following error: " + err.Error())
+			os.Exit(1)
 		}
 		fmt.Println("Pre-rollout Tasks Complete")
 		return nil
@@ -62,7 +63,8 @@ var tasksPostRun = &cobra.Command{
 		fmt.Println("Executing Post-rollout Tasks")
 		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			return err
+			fmt.Println("Post-rollout Tasks Failed with the following error: " + err.Error())
+			os.Exit(1)
 		}
 		fmt.Println("Post-rollout Tasks Complete")
 		return nil
@@ -206,6 +208,7 @@ func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 	task.Service = incoming.Service
 	task.Shell = incoming.Shell
 	task.Container = incoming.Container
+	task.Name = incoming.Name
 	err := lagoon.ExecuteTaskInEnvironment(task)
 	return err
 }
