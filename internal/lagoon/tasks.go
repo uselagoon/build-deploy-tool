@@ -118,14 +118,18 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, task.Command)
 
 	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container)
-	if err == nil {
-		if len(stdout) > 0 {
-			fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
-		}
-		if len(stderr) > 0 {
-			fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
-		}
+
+	if err != nil {
+		fmt.Printf("*** Task '%v' failed - STDOUT and STDERR follows ***\n", task.Name)
 	}
+
+	if len(stdout) > 0 {
+		fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
+	}
+	if len(stderr) > 0 {
+		fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
+	}
+
 	return err
 }
 
@@ -266,7 +270,7 @@ func ExecPod(
 		Tty:    tty,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("error in Stream: %v", err)
+		return stdout.String(), stderr.String(), fmt.Errorf("Error returned: %v", err)
 	}
 
 	return stdout.String(), stderr.String(), nil
