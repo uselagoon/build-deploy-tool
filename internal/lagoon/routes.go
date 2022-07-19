@@ -171,25 +171,24 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []Environme
 	}
 	// add any that exist in the api only to the final routes list
 	for _, aRoute := range apiRoutes.Routes {
-		add := RouteV2{}
+		add := aRoute
+		add.Fastly = aRoute.Fastly
+		if aRoute.TLSAcme != nil {
+			add.TLSAcme = aRoute.TLSAcme
+		} else {
+			add.TLSAcme = helpers.BoolPtr(true)
+		}
+		if aRoute.Insecure != nil {
+			add.Insecure = aRoute.Insecure
+		} else {
+			add.Insecure = helpers.StrPtr("Redirect")
+		}
+		if aRoute.Annotations != nil {
+			add.Annotations = aRoute.Annotations
+		} else {
+			add.Annotations = map[string]string{}
+		}
 		for _, route := range finalRoutes.Routes {
-			add = aRoute
-			add.Fastly = aRoute.Fastly
-			if aRoute.TLSAcme != nil {
-				add.TLSAcme = aRoute.TLSAcme
-			} else {
-				add.TLSAcme = helpers.BoolPtr(true)
-			}
-			if aRoute.Insecure != nil {
-				add.Insecure = aRoute.Insecure
-			} else {
-				add.Insecure = helpers.StrPtr("Redirect")
-			}
-			if aRoute.Annotations != nil {
-				add.Annotations = aRoute.Annotations
-			} else {
-				add.Annotations = map[string]string{}
-			}
 			if aRoute.Domain == route.Domain {
 				existsInAPI = true
 			}
