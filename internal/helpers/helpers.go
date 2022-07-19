@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -20,6 +21,11 @@ func StrPtr(str string) *string {
 func BoolPtr(b bool) *bool {
 	v := b
 	return &v
+}
+
+// IntPTr
+func IntPtr(i int) *int {
+	return &i
 }
 
 // GetMD5HashWithNewLine .
@@ -47,12 +53,90 @@ func GetBase32EncodedLowercase(data []byte) string {
 // GetEnv gets an environment variable
 func GetEnv(key, fallback string, debug bool) string {
 	if value, ok := os.LookupEnv(key); ok {
-		if debug {
-			fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+		if value != "" {
+			if debug {
+				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+			}
+			return value
 		}
-		return value
 	}
 	return fallback
+}
+
+// GetEnvInt get environment variable as int, assume failed conversion is not existing
+func GetEnvInt(key string, fallback int, debug bool) int {
+	if value, ok := os.LookupEnv(key); ok {
+		if value != "" {
+			valueInt, e := strconv.Atoi(value)
+			if e == nil {
+				if debug {
+					fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+				}
+				return valueInt
+			}
+		}
+	}
+	return fallback
+}
+
+// EGetEnvInt get environment variable as int, return error if the value can't be converted
+func EGetEnvInt(key string, fallback int, debug bool) (int, error) {
+	if value, ok := os.LookupEnv(key); ok {
+		if value != "" {
+			valueInt, e := strconv.Atoi(value)
+			if e != nil {
+				return 0, fmt.Errorf("Unable to convert value %s to integer: %v", value, e)
+			}
+			if debug {
+				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+			}
+			return valueInt, nil
+		}
+	}
+	return fallback, nil
+}
+
+// GetEnvBool get environment variable as bool
+// accepts fallback values 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False
+// anything else is false.
+func GetEnvBool(key string, fallback bool, debug bool) bool {
+	if value, ok := os.LookupEnv(key); ok {
+		if value != "" {
+			rVal, _ := strconv.ParseBool(value)
+			if debug {
+				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+			}
+			return rVal
+		}
+	}
+	return fallback
+}
+
+// EGetEnvBool get environment variable as bool, return error if the value can't be converted
+// accepts fallback values 1, t, T, TRUE, true, True, 0, f, F, FALSE, false, False
+// anything else is false.
+func EGetEnvBool(key string, fallback bool, debug bool) (bool, error) {
+	if value, ok := os.LookupEnv(key); ok {
+		if value != "" {
+			rVal, e := strconv.ParseBool(value)
+			if e != nil {
+				return false, fmt.Errorf("Unable to convert value %s to bool: %v", value, e)
+			}
+			if debug {
+				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+			}
+			return rVal, nil
+		}
+	}
+	return fallback, nil
+}
+
+func StrToBool(value string) bool {
+	rVal, e := strconv.ParseBool(value)
+	if e != nil {
+		return false
+	}
+	return rVal
 }
 
 // Contains checks if a string slice contains a specific string.
@@ -64,4 +148,50 @@ func Contains(s []string, str string) bool {
 	}
 
 	return false
+}
+
+// WriteTemplateFile writes the template to a file.
+func WriteTemplateFile(templateOutputFile string, data []byte) {
+	err := os.WriteFile(templateOutputFile, data, 0644)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+}
+
+type EnvironmentVariable struct {
+	Name  string
+	Value string
+}
+
+func UnsetEnvVars(localVars []EnvironmentVariable) {
+	varNames := []string{
+		"MONITORING_ALERTCONTACT",
+		"MONITORING_STATUSPAGEID",
+		"PROJECT",
+		"ENVIRONMENT",
+		"BRANCH",
+		"PR_NUMBER",
+		"PR_HEAD_BRANCH",
+		"PR_BASE_BRANCH",
+		"ENVIRONMENT_TYPE",
+		"BUILD_TYPE",
+		"ACTIVE_ENVIRONMENT",
+		"STANDBY_ENVIRONMENT",
+		"LAGOON_FASTLY_NOCACHE_SERVICE_ID",
+		"LAGOON_PROJECT_VARIABLES",
+		"LAGOON_ENVIRONMENT_VARIABLES",
+		"LAGOON_VERSION",
+		"ROUTE_FASTLY_SERVICE_ID",
+		"FASTLY_API_SECRET_PREFIX",
+		"LAGOON_FEATURE_BACKUP_DEV_SCHEDULE",
+		"LAGOON_FEATURE_BACKUP_PR_SCHEDULE",
+		"LAGOON_GIT_BRANCH",
+	}
+	for _, varName := range varNames {
+		os.Unsetenv(varName)
+	}
+	for _, varName := range localVars {
+		os.Unsetenv(varName.Name)
+	}
 }

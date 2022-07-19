@@ -41,6 +41,22 @@ func NewTask() Task {
 	}
 }
 
+type DeploymentMissingError struct {
+	ErrorText string
+}
+
+func (e *DeploymentMissingError) Error() string {
+	return e.ErrorText
+}
+
+type PodScalingError struct {
+	ErrorText string
+}
+
+func (e *PodScalingError) Error() string {
+	return e.ErrorText
+}
+
 func (t Task) String() string {
 	return fmt.Sprintf("{command: '%v', ns: '%v', service: '%v', shell:'%v'}", t.Command, t.Namespace, t.Service, t.Shell)
 }
@@ -89,7 +105,7 @@ func getConfig() (*rest.Config, error) {
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
 	if debug {
-		fmt.Println("Executing task :", task.Command)
+		fmt.Printf("Executing task '%v':'%v'\n", task.Name, task.Command)
 	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
@@ -102,14 +118,18 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, task.Command)
 
 	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container)
-	if err == nil {
-		if len(stdout) > 0 {
-			fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
-		}
-		if len(stderr) > 0 {
-			fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
-		}
+
+	if err != nil {
+		fmt.Printf("*** Task '%v' failed - STDOUT and STDERR follows ***\n", task.Name)
 	}
+
+	if len(stdout) > 0 {
+		fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
+	}
+	if len(stderr) > 0 {
+		fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
+	}
+
 	return err
 }
 
@@ -143,7 +163,7 @@ func ExecPod(
 	}
 
 	if len(deployments.Items) == 0 {
-		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
+		return "", "", &DeploymentMissingError{ErrorText: "No deployments found matching label: " + lagoonServiceLabel}
 	}
 
 	deployment := &deployments.Items[0]
@@ -207,7 +227,9 @@ func ExecPod(
 		}
 	}
 	if !foundRunningPod {
-		return "", "", errors.New("Unable to find running Pod for namespace: " + namespace)
+		return "", "", &PodScalingError{
+			ErrorText: "Unable to find running Pod for namespace: " + namespace,
+		}
 	}
 	if debug {
 		fmt.Println("Going to exec into ", pod.Name)
@@ -248,7 +270,7 @@ func ExecPod(
 		Tty:    tty,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("error in Stream: %v", err)
+		return stdout.String(), stderr.String(), fmt.Errorf("Error returned: %v", err)
 	}
 
 	return stdout.String(), stderr.String(), nil

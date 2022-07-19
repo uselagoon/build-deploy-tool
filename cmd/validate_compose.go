@@ -40,6 +40,6 @@ func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) er
 
 func init() {
 	validateCmd.AddCommand(validateDockerCompose)
-	validateDockerCompose.Flags().StringVarP(&dockerComposeFile, "docker-compose", "d", "docker-compose.yml",
+	validateDockerCompose.Flags().StringVarP(&dockerComposeFile, "docker-compose", "", "docker-compose.yml",
 		"The docker-compose.yml file to read.")
 }

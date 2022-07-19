@@ -78,48 +78,59 @@ func init() {
 	rootCmd.AddCommand(identifyCmd)
 	rootCmd.AddCommand(validateCmd)
 
-	rootCmd.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+	rootCmd.PersistentFlags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
-	rootCmd.Flags().StringVarP(&projectName, "project-name", "p", "",
+	rootCmd.PersistentFlags().StringVarP(&projectName, "project-name", "p", "",
 		"The project name")
-	rootCmd.Flags().StringVarP(&environmentName, "environment-name", "e", "",
+	rootCmd.PersistentFlags().StringVarP(&environmentName, "environment-name", "e", "",
 		"The environment name to check")
-	rootCmd.Flags().StringVarP(&environmentType, "environment-type", "E", "",
+	rootCmd.PersistentFlags().StringVarP(&environmentType, "environment-type", "E", "",
 		"The type of environment (development or production)")
-	rootCmd.Flags().StringVarP(&buildType, "build-type", "d", "",
+	rootCmd.PersistentFlags().StringVarP(&buildType, "build-type", "d", "",
 		"The type of build (branch, pullrequest, promote)")
-	rootCmd.Flags().StringVarP(&branch, "branch", "b", "",
+	rootCmd.PersistentFlags().StringVarP(&branch, "branch", "b", "",
 		"The name of the branch")
-	rootCmd.Flags().StringVarP(&prNumber, "pullrequest-number", "P", "",
+	rootCmd.PersistentFlags().StringVarP(&prNumber, "pullrequest-number", "P", "",
 		"The pullrequest number")
-	rootCmd.Flags().StringVarP(&prHeadBranch, "pullrequest-head-branch", "H", "",
+	rootCmd.PersistentFlags().StringVarP(&prHeadBranch, "pullrequest-head-branch", "H", "",
 		"The pullrequest head branch")
-	rootCmd.Flags().StringVarP(&prBaseBranch, "pullrequest-base-branch", "B", "",
+	rootCmd.PersistentFlags().StringVarP(&prBaseBranch, "pullrequest-base-branch", "B", "",
 		"The pullrequest base branch")
-	rootCmd.Flags().StringVarP(&lagoonVersion, "lagoon-version", "L", "",
+	rootCmd.PersistentFlags().StringVarP(&lagoonVersion, "lagoon-version", "L", "",
 		"The lagoon version")
-	rootCmd.Flags().StringVarP(&activeEnvironment, "active-environment", "a", "",
+	rootCmd.PersistentFlags().StringVarP(&activeEnvironment, "active-environment", "a", "",
 		"Name of the active environment if known")
-	rootCmd.Flags().StringVarP(&standbyEnvironment, "standby-environment", "s", "",
+	rootCmd.PersistentFlags().StringVarP(&standbyEnvironment, "standby-environment", "s", "",
 		"Name of the standby environment if known")
-	rootCmd.Flags().StringVarP(&templateValues, "template-path", "t", "/kubectl-build-deploy/",
+	rootCmd.PersistentFlags().StringVarP(&templateValues, "template-path", "t", "/kubectl-build-deploy/",
 		"Path to the template on disk")
-	rootCmd.Flags().StringVarP(&savedTemplates, "saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
+	rootCmd.PersistentFlags().StringVarP(&savedTemplates, "saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
 		"Path to where the resulting templates are saved")
-	rootCmd.Flags().StringVarP(&monitoringContact, "monitoring-config", "M", "",
+	rootCmd.PersistentFlags().StringVarP(&monitoringContact, "monitoring-config", "M", "",
 		"The monitoring contact config if known")
-	rootCmd.Flags().StringVarP(&monitoringStatusPageID, "monitoring-status-page-id", "m", "",
+	rootCmd.PersistentFlags().StringVarP(&monitoringStatusPageID, "monitoring-status-page-id", "m", "",
 		"The monitoring status page ID if known")
-	rootCmd.Flags().StringVarP(&fastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
+	rootCmd.PersistentFlags().StringVarP(&fastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
 		"The fastly cache no cache service ID to use")
-	rootCmd.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
+	rootCmd.PersistentFlags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
 		"The fastly service ID to use")
-	rootCmd.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
+	rootCmd.PersistentFlags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
 	rootCmd.PersistentFlags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
 	rootCmd.PersistentFlags().BoolVarP(&ignoreMissingEnvFiles, "ignore-missing-env-files", "", true,
 		"Ignore missing env_file files (true by default, subject to change).")
+	// backup related flags with defaults
+	rootCmd.PersistentFlags().StringVarP(&defaultBackupSchedule, "default-backup-schedule", "", "M H(22-2) * * *",
+		"The default backup schedule")
+	rootCmd.PersistentFlags().StringVarP(&hourlyDefaultBackupRetention, "hourly-default-backup-retention", "", "0",
+		"The default hourly backup retention")
+	rootCmd.PersistentFlags().StringVarP(&dailyDefaultBackupRetention, "daily-default-backup-retention", "", "7",
+		"The default daily backup retention")
+	rootCmd.PersistentFlags().StringVarP(&weeklyDefaultBackupRetention, "weekly-default-backup-retention", "", "6",
+		"The default weekly backup retention")
+	rootCmd.PersistentFlags().StringVarP(&monthlyDefaultBackupRetention, "monthly-default-backup-retention", "", "1",
+		"The default monthly backup retention")
 }
 
 // initConfig reads in config file and ENV variables if set.

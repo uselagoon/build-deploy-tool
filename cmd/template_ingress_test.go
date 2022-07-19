@@ -6,6 +6,8 @@ import (
 	"os"
 	"reflect"
 	"testing"
+
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 func TestTemplateRoutes(t *testing.T) {
@@ -383,7 +385,7 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				unsetEnvVars(nil)
+				helpers.UnsetEnvVars(nil)
 			})
 		})
 	}
