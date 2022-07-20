@@ -2,7 +2,7 @@ builds:
 - dir: .
   ldflags:
   - >
-    -s -w -X main.date={{.Date}} -X "main.goVersion={{.Env.GOVERSION}}"
-    -X main.shortCommit={{.ShortCommit}} -X main.version={{.Version}}
+    -s -w -X github.com/uselagoon/build-deploy-tool/cmd.bdtBuild={{.Date}} -X "github.com/uselagoon/build-deploy-tool/cmd.goVersion={{.Env.GOVERSION}}"
+    -X github.com/uselagoon/build-deploy-tool/cmd.shortCommit={{.ShortCommit}} -X github.com/uselagoon/build-deploy-tool/cmd.bdtVersion={{.Version}}
   env:
   - CGO_ENABLED=0
