@@ -16,7 +16,8 @@ type RoutesV2 struct {
 // RouteV2 is the new route definition
 type RouteV2 struct {
 	Domain            string            `json:"domain"`
-	Service           string            `json:"service"`
+	LagoonService     string            `json:"service"`
+	ComposeService    string            `json:"composeService"` // the
 	TLSAcme           *bool             `json:"tls-acme"`
 	Migrate           *bool             `json:"migrate,omitempty"`
 	Insecure          *string           `json:"insecure,omitempty"`
@@ -103,7 +104,7 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 				// update them from the defaults in this case
 				for iName, ingress := range lagoonRoute.Ingresses {
 					newRoute.Domain = iName
-					newRoute.Service = rName
+					newRoute.LagoonService = rName
 					newRoute.Fastly = ingress.Fastly
 					if ingress.Annotations != nil {
 						newRoute.Annotations = ingress.Annotations
@@ -119,7 +120,7 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 				// this route is just a domain
 				// keep the defaults, just set the name and service
 				newRoute.Domain = lagoonRoute.Name
-				newRoute.Service = rName
+				newRoute.LagoonService = rName
 			}
 			// generate the fastly configuration for this route
 			err := GenerateFastlyConfiguration(&newRoute.Fastly, "", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)

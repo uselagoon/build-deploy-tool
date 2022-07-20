@@ -26,7 +26,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
-					Service:        "nginx",
+					LagoonService:  "nginx",
 					MonitoringPath: "/",
 					Insecure:       helpers.StrPtr("Redirect"),
 					TLSAcme:        helpers.BoolPtr(true),
@@ -62,7 +62,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
-					Service:        "nginx",
+					LagoonService:  "nginx",
 					MonitoringPath: "/",
 					Insecure:       helpers.StrPtr("Redirect"),
 					TLSAcme:        helpers.BoolPtr(true),
@@ -98,7 +98,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
-					Service:        "nginx",
+					LagoonService:  "nginx",
 					MonitoringPath: "/",
 					Insecure:       helpers.StrPtr("Redirect"),
 					TLSAcme:        helpers.BoolPtr(true),
