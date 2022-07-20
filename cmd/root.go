@@ -69,9 +69,32 @@ func Execute() {
 	}
 }
 
+// version/build information (populated at build time by make file)
+var (
+	bdtName     = "build-deploy-tool"
+	bdtVersion  = "0.x.x"
+	bdtBuild    = ""
+	goVersion   = ""
+	shortCommit = ""
+)
+
+// version/build information command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		displayVersionInfo()
+	},
+}
+
+func displayVersionInfo() {
+	fmt.Println(fmt.Sprintf("%s %s %s (built: %s / %s)", bdtName, bdtVersion, goVersion, bdtBuild, shortCommit))
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(taskCmd)
