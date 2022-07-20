@@ -43,7 +43,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 				Routes: []RouteV2{
 					{
 						Domain:         "example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -54,7 +54,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 					},
 					{
 						Domain:         "www.example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -95,7 +95,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 				Routes: []RouteV2{
 					{
 						Domain:         "example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -106,7 +106,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 					},
 					{
 						Domain:         "www.example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -152,7 +152,7 @@ func TestMergeRouteStructures(t *testing.T) {
 					Routes: []RouteV2{
 						{
 							Domain:         "example.com",
-							Service:        "nginx",
+							LagoonService:  "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
 							TLSAcme:        helpers.BoolPtr(true),
@@ -165,7 +165,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 						{
 							Domain:         "www.example.com",
-							Service:        "nginx",
+							LagoonService:  "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
 							TLSAcme:        helpers.BoolPtr(true),
@@ -177,7 +177,7 @@ func TestMergeRouteStructures(t *testing.T) {
 					Routes: []RouteV2{
 						{
 							Domain:         "www.example.com",
-							Service:        "nginx",
+							LagoonService:  "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
 							TLSAcme:        helpers.BoolPtr(true),
@@ -187,7 +187,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 						{
 							Domain:         "another.example.com",
-							Service:        "nginx",
+							LagoonService:  "nginx",
 							MonitoringPath: "/",
 							Insecure:       helpers.StrPtr("Redirect"),
 							TLSAcme:        helpers.BoolPtr(true),
@@ -201,7 +201,7 @@ func TestMergeRouteStructures(t *testing.T) {
 				Routes: []RouteV2{
 					{
 						Domain:         "example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -214,7 +214,7 @@ func TestMergeRouteStructures(t *testing.T) {
 					},
 					{
 						Domain:         "www.example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
@@ -224,7 +224,7 @@ func TestMergeRouteStructures(t *testing.T) {
 					},
 					{
 						Domain:         "another.example.com",
-						Service:        "nginx",
+						LagoonService:  "nginx",
 						MonitoringPath: "/",
 						Insecure:       helpers.StrPtr("Redirect"),
 						TLSAcme:        helpers.BoolPtr(true),
