@@ -72,6 +72,7 @@ type Autogenerate struct {
 	Insecure          string   `json:"insecure"`
 	Prefixes          []string `json:"prefixes"`
 	TLSAcme           *bool    `json:"tls-acme,omitempty"`
+	IngressClass      string   `json:"ingressClass"`
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.

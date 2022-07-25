@@ -9,7 +9,7 @@ metadata:
     lagoon.sh/branch: production
     lagoon.sh/version: v2.7.x
     monitor.stakater.com/enabled: "true"
-    monitor.stakater.com/overridePath: /
+    monitor.stakater.com/overridePath: /api/v1
     nginx.ingress.kubernetes.io/ssl-redirect: "false"
     uptimerobot.monitor.stakater.com/alert-contacts: alertcontact
     uptimerobot.monitor.stakater.com/interval: "60"
