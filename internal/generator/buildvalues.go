@@ -48,7 +48,7 @@ type BuildValues struct {
 	ServiceTypeOverrides          *lagoon.EnvironmentVariable `json:"serviceTypeOverrides"`
 	DBaaSEnvironmentTypeOverrides *lagoon.EnvironmentVariable `json:"dbaasEnvironmentTypeOverrides"`
 	DBaaSFallbackSingle           bool                        `json:"dbaasFallbackSingle"`
-	DefaultIngressClass           string                      `json:"defaultIngressClass"`
+	IngressClass                  string                      `json:"ingressClass"`
 }
 
 type MonitoringConfig struct {

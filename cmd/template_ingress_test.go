@@ -27,6 +27,7 @@ func TestTemplateRoutes(t *testing.T) {
 		cacheNoCache       string
 		serviceID          string
 		secretPrefix       string
+		ingressClass       string
 		projectVars        string
 		envVars            string
 		lagoonVersion      string
@@ -269,6 +270,45 @@ func TestTemplateRoutes(t *testing.T) {
 			},
 			want: "../test-resources/template-ingress/test12-results",
 		},
+		{
+			name: "test13 ingress class from default flag",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				ingressClass:    "nginx",
+				lagoonYAML:      "../test-resources/template-ingress/test13/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test13-results",
+		},
+		{
+			name: "test14 ingress class from lagoon.yml",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "../test-resources/template-ingress/test14/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test14-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -334,6 +374,10 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			err = os.Setenv("LAGOON_VERSION", tt.args.lagoonVersion)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			err = os.Setenv("LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS", tt.args.ingressClass)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -404,7 +448,7 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS"}})
 			})
 		})
 	}

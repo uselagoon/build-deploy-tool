@@ -165,7 +165,7 @@ func generateAutogenRoutes(
 				if lagoonYAML.Routes.Autogenerate.Insecure != "" {
 					insecure = lagoonYAML.Routes.Autogenerate.Insecure
 				}
-				ingressClass := buildValues.DefaultIngressClass
+				ingressClass := buildValues.IngressClass
 				if lagoonYAML.Routes.Autogenerate.IngressClass != "" {
 					ingressClass = lagoonYAML.Routes.Autogenerate.IngressClass
 				}
@@ -253,7 +253,7 @@ func generateActiveStandbyRoutes(
 			if lagoonYAML.ProductionRoutes.Active != nil {
 				if lagoonYAML.ProductionRoutes.Active.Routes != nil {
 					for _, routeMap := range lagoonYAML.ProductionRoutes.Active.Routes {
-						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.DefaultIngressClass, buildValues.FastlyAPISecretPrefix, true)
+						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
 					}
 				}
 			}
@@ -262,7 +262,7 @@ func generateActiveStandbyRoutes(
 			if lagoonYAML.ProductionRoutes.Standby != nil {
 				if lagoonYAML.ProductionRoutes.Standby.Routes != nil {
 					for _, routeMap := range lagoonYAML.ProductionRoutes.Standby.Routes {
-						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.DefaultIngressClass, buildValues.FastlyAPISecretPrefix, true)
+						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
 					}
 				}
 			}
@@ -307,9 +307,9 @@ func generateAndMerge(
 
 	// otherwise it just uses the default environment name
 	for _, routeMap := range lagoonYAML.Environments[buildValues.Branch].Routes {
-		lagoon.GenerateRoutesV2(n, routeMap, envVars, buildValues.DefaultIngressClass, buildValues.FastlyAPISecretPrefix, false)
+		lagoon.GenerateRoutesV2(n, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, false)
 	}
 	// merge routes from the API on top of the routes from the `.lagoon.yml`
-	mainRoutes := lagoon.MergeRoutesV2(*n, api, envVars, buildValues.DefaultIngressClass, buildValues.FastlyAPISecretPrefix)
+	mainRoutes := lagoon.MergeRoutesV2(*n, api, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix)
 	return mainRoutes, nil
 }
