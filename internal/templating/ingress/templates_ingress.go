@@ -114,6 +114,13 @@ func GenerateIngressTemplate(
 		additionalAnnotations["nginx.ingress.kubernetes.io/server-snippet"] = "add_header X-Robots-Tag \"noindex, nofollow\";\n"
 	}
 
+	// add ingressclass support to ingress template generation
+	if route.IngressClass != "" {
+		ingress.Spec.IngressClassName = &route.IngressClass
+		// add the certmanager ingressclass annotation
+		additionalAnnotations["acme.cert-manager.io/http01-ingress-class"] = route.IngressClass
+	}
+
 	// add any additional labels
 	for key, value := range additionalLabels {
 		ingress.ObjectMeta.Labels[key] = value
