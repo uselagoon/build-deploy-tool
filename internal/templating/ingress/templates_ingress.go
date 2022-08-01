@@ -138,6 +138,12 @@ func GenerateIngressTemplate(
 		ingress.ObjectMeta.Labels[key] = value
 	}
 
+	// check length of labels
+	err := helpers.CheckLabelLength(ingress.ObjectMeta.Labels)
+	if err != nil {
+		return nil, err
+	}
+
 	// set up the secretname for tls
 	ingress.Spec.TLS = []networkv1.IngressTLS{
 		{
