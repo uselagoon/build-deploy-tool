@@ -54,7 +54,6 @@ func GenerateDBaaSTemplate(
 	for _, serviceValues := range lValues.Services {
 		if helpers.Contains(dbaasTypes, serviceValues.Type) {
 			var consumerBytes []byte
-			var err error
 			additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
 			additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
 			additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceValues.Type, "0.1.0")
@@ -84,6 +83,12 @@ func GenerateDBaaSTemplate(
 					for key, value := range additionalAnnotations {
 						mariaDBConsumer.ObjectMeta.Annotations[key] = value
 					}
+
+					// check length of labels
+					err := helpers.CheckLabelLength(mariaDBConsumer.ObjectMeta.Labels)
+					if err != nil {
+						return nil, err
+					}
 					consumerBytes, err = yaml.Marshal(mariaDBConsumer)
 					if err != nil {
 						return nil, err
@@ -112,6 +117,12 @@ func GenerateDBaaSTemplate(
 					for key, value := range additionalAnnotations {
 						mongodbConsumer.ObjectMeta.Annotations[key] = value
 					}
+
+					// check length of labels
+					err := helpers.CheckLabelLength(mongodbConsumer.ObjectMeta.Labels)
+					if err != nil {
+						return nil, err
+					}
 					consumerBytes, err = yaml.Marshal(mongodbConsumer)
 					if err != nil {
 						return nil, err
@@ -139,6 +150,12 @@ func GenerateDBaaSTemplate(
 					// add any additional annotations
 					for key, value := range additionalAnnotations {
 						postgresqlConsumer.ObjectMeta.Annotations[key] = value
+					}
+
+					// check length of labels
+					err := helpers.CheckLabelLength(postgresqlConsumer.ObjectMeta.Labels)
+					if err != nil {
+						return nil, err
 					}
 					consumerBytes, err = yaml.Marshal(postgresqlConsumer)
 					if err != nil {

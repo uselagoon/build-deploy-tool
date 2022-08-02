@@ -195,3 +195,12 @@ func UnsetEnvVars(localVars []EnvironmentVariable) {
 		os.Unsetenv(varName.Name)
 	}
 }
+
+func CheckLabelLength(labels map[string]string) error {
+	for k, v := range labels {
+		if len(v) > 63 {
+			return fmt.Errorf("label: '%s', value: '%s' is longer than 63 characters", k, v)
+		}
+	}
+	return nil
+}
