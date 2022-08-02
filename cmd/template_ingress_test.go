@@ -27,6 +27,7 @@ func TestTemplateRoutes(t *testing.T) {
 		cacheNoCache       string
 		serviceID          string
 		secretPrefix       string
+		ingressClass       string
 		projectVars        string
 		envVars            string
 		lagoonVersion      string
@@ -232,7 +233,7 @@ func TestTemplateRoutes(t *testing.T) {
 			want: "../test-resources/template-ingress/test10-results",
 		},
 		{
-			name: "test10 standby no values",
+			name: "test11 standby no values",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -249,6 +250,105 @@ func TestTemplateRoutes(t *testing.T) {
 				templatePath:    "../test-resources/template-ingress/output",
 			},
 			want: "../test-resources/template-ingress/test11-results",
+		},
+		{
+			name: "test12 check LAGOON_ROUTES_JSON generates ingress",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_ROUTES_JSON","value":"eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "../test-resources/template-ingress/test12/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test12-results",
+		},
+		{
+			name: "test13 ingress class from default flag",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				ingressClass:    "nginx",
+				lagoonYAML:      "../test-resources/template-ingress/test13/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test13-results",
+		},
+		{
+			name: "test14 ingress class from lagoon.yml should overwrite default and featureflag variable",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				ingressClass:    "nginx",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"nginx","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "../test-resources/template-ingress/test14/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test14-results",
+		},
+		{
+			name: "test15a ingress class from lagoon api project scope",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				ingressClass:    "nginx",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test15-results",
+		},
+		{
+			name: "test15b ingress class from lagoon api environment scope",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				ingressClass:    "nginx",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"project-custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"}]`,
+				secretPrefix:    "fastly-api-",
+				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test15-results",
 		},
 	}
 	for _, tt := range tests {
@@ -315,6 +415,10 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			err = os.Setenv("LAGOON_VERSION", tt.args.lagoonVersion)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			err = os.Setenv("LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS", tt.args.ingressClass)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -385,7 +489,7 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS"}})
 			})
 		})
 	}
