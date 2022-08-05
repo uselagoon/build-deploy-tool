@@ -30,8 +30,8 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: map[string]generator.ServiceValues{
-						"mariadb": {
+					Services: []generator.ServiceValues{
+						{
 							Name:             "mariadb",
 							OverrideName:     "mariadb",
 							Type:             "mariadb-dbaas",
@@ -54,8 +54,8 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: map[string]generator.ServiceValues{
-						"mongodb": {
+					Services: []generator.ServiceValues{
+						{
 							Name:             "mongodb",
 							OverrideName:     "mongodb",
 							Type:             "mongodb-dbaas",
@@ -78,8 +78,8 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: map[string]generator.ServiceValues{
-						"postgres": {
+					Services: []generator.ServiceValues{
+						{
 							Name:             "postgres",
 							OverrideName:     "postgres",
 							Type:             "postgres-dbaas",
