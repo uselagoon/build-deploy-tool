@@ -10,8 +10,21 @@ WORKDIR /app
 
 COPY . ./
 
-RUN go mod download
-RUN go build -o /app/build-deploy-tool
+ARG ldflags
+
+RUN --mount=type=cache,target=/go/pkg/mod \
+    go mod download
+
+# Do not force rebuild of up-to-date packages (do not use -a) and use the compiler cache folder
+RUN --mount=type=cache,target=/root/.cache/go-build \
+    --mount=type=cache,target=/go/pkg/mod \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} \
+    go build -ldflags "${ldflags} -extldflags '-static'" \
+    -o /app/build-deploy-tool .
+
+
+# RUN go mod download
+# RUN go build -o /app/build-deploy-tool
 
 FROM docker:20.10.14
 
