@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -116,6 +117,12 @@ func GenerateBackupSchedule(
 	// add any additional annotations
 	for key, value := range additionalAnnotations {
 		schedule.ObjectMeta.Annotations[key] = value
+	}
+
+	// check length of labels
+	err := helpers.CheckLabelLength(schedule.ObjectMeta.Labels)
+	if err != nil {
+		return nil, err
 	}
 	// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
 	// marshal the resulting ingress

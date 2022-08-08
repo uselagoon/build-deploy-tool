@@ -47,21 +47,26 @@ func generateServicesFromDockerCompose(
 	}
 
 	// create the services map
-	buildValues.Services = make(map[string]ServiceValues)
+	buildValues.Services = []ServiceValues{}
 
 	// unmarshal the docker-compose.yml file
-	lCompose, err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, composeVars)
+	lCompose, lComposeOrder, err := lagoon.UnmarshaDockerComposeYAML(lYAML.DockerComposeYAML, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, composeVars)
 	if err != nil {
 		return err
 	}
 
-	// convert docker-compose services to servicevalues
-	for _, composeServiceValues := range lCompose.Services {
-		cService, err := composeToServiceValues(buildValues, lYAML, composeServiceValues.Name, composeServiceValues, debug)
-		if err != nil {
-			return err
+	// convert docker-compose services to servicevalues,
+	// range over the original order of the docker-compose file when setting services
+	for _, service := range lComposeOrder {
+		for _, composeServiceValues := range lCompose.Services {
+			if service.Name == composeServiceValues.Name {
+				cService, err := composeToServiceValues(buildValues, lYAML, composeServiceValues.Name, composeServiceValues, debug)
+				if err != nil {
+					return err
+				}
+				buildValues.Services = append(buildValues.Services, cService)
+			}
 		}
-		buildValues.Services[composeServiceValues.Name] = cService
 	}
 	return nil
 }
