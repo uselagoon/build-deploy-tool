@@ -2,9 +2,10 @@ package lagoon
 
 import (
 	"fmt"
+	"github.com/imdario/mergo"
 	"os"
-
 	"sigs.k8s.io/yaml"
+	"sort"
 )
 
 // ProductionRoutes represents an active/standby configuration.
@@ -85,5 +86,43 @@ func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error 
 	yaml.Unmarshal(rawYAML, l)
 	// polysite
 	yaml.Unmarshal(rawYAML, p)
+	return nil
+}
+
+func MergeLagoonYAMLs(destination *YAML, source *YAML) error {
+	if err := mergeLagoonYAMLTasks(&destination.Tasks.Prerollout, &source.Tasks.Prerollout); err != nil {
+		return err
+	}
+	if err := mergeLagoonYAMLTasks(&destination.Tasks.Postrollout, &source.Tasks.Postrollout); err != nil {
+		return err
+	}
+	sortLagoonYamlTasksByWeight(destination.Tasks.Postrollout)
+	return nil
+}
+
+func sortLagoonYamlTasksByWeight(tasks []TaskRun) {
+	sort.Slice(tasks, func(i int, j int) bool {
+		return tasks[i].Run.Weight < tasks[j].Run.Weight
+	})
+}
+
+func mergeLagoonYAMLTasks(left *[]TaskRun, right *[]TaskRun) error {
+	for i, rightTask := range *right {
+		appendToLeft := true
+		for j, leftTask := range *left {
+			if leftTask.Run.Name != "" && leftTask.Run.Name == rightTask.Run.Name {
+				//here we merge the two, rather than appending
+				fmt.Println(i, " ", j)
+				appendToLeft = false
+				if err := mergo.Merge(&(*left)[j].Run, &(*right)[i].Run, mergo.WithOverride); err != nil {
+					return err
+				}
+
+			}
+		}
+		if appendToLeft {
+			*left = append(*left, rightTask)
+		}
+	}
 	return nil
 }
