@@ -1,7 +1,8 @@
 ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
+ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
-FROM golang:1.17-alpine3.16 as golang
+FROM golang:${GO_VER:-1.17}-alpine3.16 as golang
 
 RUN apk add --no-cache git
 RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.2.0
@@ -10,7 +11,12 @@ WORKDIR /app
 
 COPY . ./
 
-ARG ldflags
+ARG BUILD
+ARG GO_VER
+ARG VERSION 
+ENV BUILD=${BUILD} \
+    GO_VER=${GO_VER} \
+    VERSION=${VERSION}
 
 RUN --mount=type=cache,target=/go/pkg/mod \
     go mod download
@@ -18,10 +24,13 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Do not force rebuild of up-to-date packages (do not use -a) and use the compiler cache folder
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} \
-    go build -ldflags "${ldflags} -extldflags '-static'" \
+    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build \
+    -ldflags="-s -w \
+    -X github.com/uselagoon/build-deploy-tool/cmd.bdtBuild=${BUILD} \
+    -X github.com/uselagoon/build-deploy-tool/cmd.goVersion=${GO_VER} \
+    -X github.com/uselagoon/build-deploy-tool/cmd.bdtVersion=${VERSION} \
+    -extldflags '-static'" \
     -o /app/build-deploy-tool .
-
 
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool

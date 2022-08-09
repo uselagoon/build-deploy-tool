@@ -75,7 +75,6 @@ var (
 	bdtVersion  = "0.x.x"
 	bdtBuild    = ""
 	goVersion   = ""
-	shortCommit = ""
 )
 
 // version/build information command
@@ -88,7 +87,7 @@ var versionCmd = &cobra.Command{
 }
 
 func displayVersionInfo() {
-	fmt.Println(fmt.Sprintf("%s %s %s (built: %s / %s)", bdtName, bdtVersion, goVersion, bdtBuild, shortCommit))
+	fmt.Println(fmt.Sprintf("%s %s (built: %s / go %s)", bdtName, bdtVersion, bdtBuild, goVersion))
 }
 
 func init() {
