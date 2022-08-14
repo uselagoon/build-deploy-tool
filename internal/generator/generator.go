@@ -246,7 +246,7 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 	// First we load the primary file
 	lPolysite := make(map[string]interface{})
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
-		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
+		return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYml, err)
 	}
 
 	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
@@ -261,7 +261,7 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 		overLagoonYaml := &lagoon.YAML{}
 		overLEnvLagoonPolysite := make(map[string]interface{})
 		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, &overLEnvLagoonPolysite); err != nil {
-			return fmt.Errorf("couldn't read file %v: %v", overLagoonYaml, err)
+			return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYmlOverride, err)
 		}
 		if _, ok := overLEnvLagoonPolysite[projectName]; ok {
 			s, _ := yaml.Marshal(overLEnvLagoonPolysite[projectName])
@@ -282,9 +282,15 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 		}
 		envLagoonYaml := &lagoon.YAML{}
 		lEnvLagoonPolysite := make(map[string]interface{})
-		
-		yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
-		yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
+
+		err = yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
+		if err != nil {
+			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+		}
+		err = yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
+		if err != nil {
+			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+		}
 
 		if _, ok := lEnvLagoonPolysite[projectName]; ok {
 			s, _ := yaml.Marshal(lEnvLagoonPolysite[projectName])

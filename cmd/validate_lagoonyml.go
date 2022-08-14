@@ -6,7 +6,10 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"os"
+	"sigs.k8s.io/yaml"
 )
+
+var printOutput bool
 
 var validateLagoonYml = &cobra.Command{
 	Use:   "lagoon-yml",
@@ -20,6 +23,15 @@ var validateLagoonYml = &cobra.Command{
 			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
 			os.Exit(1)
 		}
+
+		if printOutput {
+			resultingBS, err := yaml.Marshal(lYAML)
+			if err != nil {
+				fmt.Println("Unable to unmarshall resulting yml for printing: ", err)
+				os.Exit(1)
+			}
+			fmt.Println(string(resultingBS))
+		}
 	},
 }
 
@@ -31,5 +43,7 @@ func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvV
 }
 
 func init() {
+	validateCmd.PersistentFlags().BoolVarP(&printOutput, "print-resulting-lagoonyml", "", false,
+		"Display the resulting, post merging, lagoon.yml file.")
 	validateCmd.AddCommand(validateLagoonYml)
 }

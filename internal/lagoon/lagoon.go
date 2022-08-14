@@ -83,9 +83,15 @@ func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error 
 		return fmt.Errorf("couldn't read %v: %v", file, err)
 	}
 	// lagoon.yml
-	yaml.Unmarshal(rawYAML, l)
+	err = yaml.Unmarshal(rawYAML, l)
+	if err != nil {
+		return err
+	}
 	// polysite
-	yaml.Unmarshal(rawYAML, p)
+	err = yaml.Unmarshal(rawYAML, p)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 

@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"encoding/base64"
+	"fmt"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"os"
 	"reflect"
@@ -84,6 +85,28 @@ func TestValidateLagoonYml(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "test 6 - Invalid lagoon override should fail",
+			args: args{
+				lagoonYml:         "../test-resources/validate-lagoon-yml/test6/lagoon.yml",
+				lagoonOverrideYml: "../test-resources/validate-lagoon-yml/test6/lagoon-override.yml",
+				lYAML:             &lagoon.YAML{},
+				projectName:       "",
+				debug:             false,
+			},
+			wantErr: true,
+		},
+		{
+			name: "test 7 - Invalid lagoon override env var should fail",
+			args: args{
+				lagoonYml:                "../test-resources/validate-lagoon-yml/test6/lagoon.yml",
+				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/test6/lagoon-override.yml",
+				lYAML:                    &lagoon.YAML{},
+				projectName:              "",
+				debug:                    false,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -99,8 +122,16 @@ func TestValidateLagoonYml(t *testing.T) {
 				os.Setenv(testEnvVar, lagoonOverrideEnvVarFileContentsB64)
 			}
 
-			if err := ValidateLagoonYml(tt.args.lagoonYml, tt.args.lagoonOverrideYml, testEnvVar, tt.args.lYAML, tt.args.projectName, tt.args.debug); (err != nil) != tt.wantErr {
-				t.Errorf("ValidateLagoonYml() error = %v, wantErr %v", err, tt.wantErr)
+			if err := ValidateLagoonYml(tt.args.lagoonYml, tt.args.lagoonOverrideYml, testEnvVar, tt.args.lYAML, tt.args.projectName, tt.args.debug); err != nil {
+				// if we expect a validation error, that's good, we get out of here.
+				if tt.wantErr {
+					if tt.args.debug {
+						fmt.Printf("Test '%v' failed with error: %v", tt.name, err)
+					}
+					return
+				} else {
+					t.Errorf("ValidateLagoonYml() error = %v, wantErr %v", err, tt.wantErr)
+				}
 			}
 
 			wantsLYAMLString, err := os.ReadFile(tt.args.wantLagoonYml)
