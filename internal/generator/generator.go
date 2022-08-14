@@ -282,9 +282,10 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 		}
 		envLagoonYaml := &lagoon.YAML{}
 		lEnvLagoonPolysite := make(map[string]interface{})
-		if err := lagoon.UnmarshalLagoonYAML(string(envLagoonYamlString), envLagoonYaml, &lEnvLagoonPolysite); err != nil {
-			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
-		}
+		
+		yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
+		yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
+
 		if _, ok := lEnvLagoonPolysite[projectName]; ok {
 			s, _ := yaml.Marshal(lEnvLagoonPolysite[projectName])
 			_ = yaml.Unmarshal(s, &envLagoonYaml)
