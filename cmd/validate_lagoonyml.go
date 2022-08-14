@@ -15,7 +15,7 @@ var validateLagoonYml = &cobra.Command{
 		var err error
 
 		lYAML := &lagoon.YAML{}
-		err = ValidateLagoonYml(lagoonYml, lYAML, projectName, false)
+		err = ValidateLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, false)
 		if err != nil {
 			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
 			os.Exit(1)
@@ -23,7 +23,7 @@ var validateLagoonYml = &cobra.Command{
 	},
 }
 
-func ValidateLagoonYml(lagoonYml string, lYAML *lagoon.YAML, projectName string, debug bool) error {
+func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvVar string, lYAML *lagoon.YAML, projectName string, debug bool) error {
 	if err := generator.LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
 		return err
 	}

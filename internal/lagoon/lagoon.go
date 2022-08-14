@@ -96,6 +96,7 @@ func MergeLagoonYAMLs(destination *YAML, source *YAML) error {
 	if err := mergeLagoonYAMLTasks(&destination.Tasks.Postrollout, &source.Tasks.Postrollout); err != nil {
 		return err
 	}
+	sortLagoonYamlTasksByWeight(destination.Tasks.Prerollout)
 	sortLagoonYamlTasksByWeight(destination.Tasks.Postrollout)
 	return nil
 }

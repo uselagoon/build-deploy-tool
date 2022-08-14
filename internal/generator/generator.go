@@ -242,6 +242,8 @@ func NewGenerator(
 }
 
 func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
+
+	// First we load the primary file
 	lPolysite := make(map[string]interface{})
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
 		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
@@ -254,14 +256,29 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 		_ = yaml.Unmarshal(s, &lYAML)
 	}
 
-	// Here we try and merge in any additional .lagoon.yml files passed in via an Env Var
+	// Here we try and merge in .lagoon.yml override
+	if _, err := os.Stat(lagoonYmlOverride); err == nil {
+		overLagoonYaml := &lagoon.YAML{}
+		overLEnvLagoonPolysite := make(map[string]interface{})
+		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, &overLEnvLagoonPolysite); err != nil {
+			return fmt.Errorf("couldn't read file %v: %v", overLagoonYaml, err)
+		}
+		if _, ok := overLEnvLagoonPolysite[projectName]; ok {
+			s, _ := yaml.Marshal(overLEnvLagoonPolysite[projectName])
+			_ = yaml.Unmarshal(s, &overLagoonYaml)
+		}
+		//now we merge
+		if err := lagoon.MergeLagoonYAMLs(lYAML, overLagoonYaml); err != nil {
+			return fmt.Errorf("unable to merge %v over %v: %v", lagoonYmlOverride, lagoonYml, err)
+		}
+	}
+	// Now we see if there are any environment vars set for .lagoon.yml overrides
 	envLagoonYamlStringBase64 := helpers.GetEnv(lagoonYmlOverrideEnvVarName, "", debug)
 	if envLagoonYamlStringBase64 != "" {
-
 		//Decode it
 		envLagoonYamlString, err := base64.StdEncoding.DecodeString(envLagoonYamlStringBase64)
 		if err != nil {
-			return fmt.Errorf("Unable to decode LAGOON_YAML_OVERRIDE - is it base64 encoded?")
+			return fmt.Errorf("Unable to decode %v - is it base64 encoded?", lagoonYmlOverrideEnvVarName)
 		}
 		envLagoonYaml := &lagoon.YAML{}
 		lEnvLagoonPolysite := make(map[string]interface{})

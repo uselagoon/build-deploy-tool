@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"os"
 	"reflect"
@@ -11,11 +10,12 @@ import (
 
 func TestValidateLagoonYml(t *testing.T) {
 	type args struct {
-		lagoonYml     string
-		wantLagoonYml string
-		lYAML         *lagoon.YAML
-		projectName   string
-		debug         bool
+		lagoonYml         string
+		lagoonOverrideYml string
+		wantLagoonYml     string
+		lYAML             *lagoon.YAML
+		projectName       string
+		debug             bool
 	}
 	tests := []struct {
 		name    string
@@ -33,10 +33,22 @@ func TestValidateLagoonYml(t *testing.T) {
 			},
 			wantErr: false,
 		},
+		{
+			name: "test 2 - Merging files",
+			args: args{
+				lagoonYml:         "../test-resources/validate-lagoon-yml/test2/lagoon.yml",
+				lagoonOverrideYml: "../test-resources/validate-lagoon-yml/test2/lagoon-override.yml",
+				wantLagoonYml:     "../test-resources/validate-lagoon-yml/test2/lagoon-final.yml",
+				lYAML:             &lagoon.YAML{},
+				projectName:       "",
+				debug:             false,
+			},
+			wantErr: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateLagoonYml(tt.args.lagoonYml, tt.args.lYAML, tt.args.projectName, tt.args.debug); (err != nil) != tt.wantErr {
+			if err := ValidateLagoonYml(tt.args.lagoonYml, tt.args.lagoonOverrideYml, "", tt.args.lYAML, tt.args.projectName, tt.args.debug); (err != nil) != tt.wantErr {
 				t.Errorf("ValidateLagoonYml() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			wantsLYAMLString, err := os.ReadFile(tt.args.wantLagoonYml)
@@ -52,11 +64,6 @@ func TestValidateLagoonYml(t *testing.T) {
 				t.Errorf(err.Error())
 				return
 			}
-
-			fmt.Println("Wants:")
-			fmt.Println(wantsLYAML)
-			fmt.Println("Got:")
-			fmt.Println(tt.args.lYAML)
 
 			if !reflect.DeepEqual(tt.args.lYAML, wantsLYAML) {
 				t.Errorf("not equal")
