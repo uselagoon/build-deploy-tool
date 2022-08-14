@@ -23,6 +23,8 @@ func BackupTemplateGeneration(debug bool,
 ) error {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		"",
+		"",
 		projectVariables,
 		environmentVariables,
 		projectName,

@@ -75,6 +75,8 @@ func getEnvironmentInfo(debug bool) (lagoon.YAML, tasklib.TaskEnvironment, error
 	// read the .lagoon.yml file
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		"",
+		"",
 		projectVariables,
 		environmentVariables,
 		projectName,

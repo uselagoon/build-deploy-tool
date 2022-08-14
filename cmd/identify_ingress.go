@@ -52,6 +52,8 @@ var ingressIdentify = &cobra.Command{
 func IdentifyPrimaryIngress(debug bool) (string, []string, []string, error) {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		"",
+		"",
 		projectVariables,
 		environmentVariables,
 		projectName,

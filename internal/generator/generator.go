@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +25,8 @@ type Generator struct {
 
 func NewGenerator(
 	lagoonYml,
+	lagoonYmlOverride,
+	lagoonYmlEnvVar,
 	projectVariables,
 	environmentVariables,
 	projectName,
@@ -88,7 +91,7 @@ func NewGenerator(
 	monthlyDefaultBackupRetention = helpers.GetEnv("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
 
 	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
-	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lYAML, projectName, debug); err != nil {
+	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
 		return nil, err
 	}
 
@@ -238,7 +241,7 @@ func NewGenerator(
 	}, nil
 }
 
-func LoadAndUnmarshallLagoonYml(lagoonYml string, lYAML *lagoon.YAML, projectName string, debug bool) error {
+func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
 	lPolysite := make(map[string]interface{})
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
 		return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
@@ -252,11 +255,17 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lYAML *lagoon.YAML, projectNam
 	}
 
 	// Here we try and merge in any additional .lagoon.yml files passed in via an Env Var
-	envLagoonYamlString := helpers.GetEnv("LAGOON_YAML_OVERRIDE", "", debug)
-	if envLagoonYamlString != "" {
+	envLagoonYamlStringBase64 := helpers.GetEnv(lagoonYmlOverrideEnvVarName, "", debug)
+	if envLagoonYamlStringBase64 != "" {
+
+		//Decode it
+		envLagoonYamlString, err := base64.StdEncoding.DecodeString(envLagoonYamlStringBase64)
+		if err != nil {
+			return fmt.Errorf("Unable to decode LAGOON_YAML_OVERRIDE - is it base64 encoded?")
+		}
 		envLagoonYaml := &lagoon.YAML{}
 		lEnvLagoonPolysite := make(map[string]interface{})
-		if err := lagoon.UnmarshalLagoonYAML(envLagoonYamlString, envLagoonYaml, &lEnvLagoonPolysite); err != nil {
+		if err := lagoon.UnmarshalLagoonYAML(string(envLagoonYamlString), envLagoonYaml, &lEnvLagoonPolysite); err != nil {
 			return fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
 		}
 		if _, ok := lEnvLagoonPolysite[projectName]; ok {
