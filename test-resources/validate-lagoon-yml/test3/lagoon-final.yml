@@ -23,7 +23,7 @@ production_routes:
 tasks:
   pre-rollout:
     - run:
-        name: file pre-rollout task1
+        name: envvar pre-rollout task1
         command: echo "task 1"
         service: cli
         weight: -1
@@ -33,7 +33,7 @@ tasks:
         service: cli
   post-rollout:
     - run:
-        name: file post-rollout task1
+        name: envvar post-rollout task1
         command: echo "task 1"
         service: cli
         shell: bash
@@ -49,7 +49,7 @@ tasks:
         service: cli
         shell: bash
     - run:
-        name: file post-rollout task2
+        name: envvar post-rollout task2
         command: echo "task 2"
         service: cli
         shell: bash

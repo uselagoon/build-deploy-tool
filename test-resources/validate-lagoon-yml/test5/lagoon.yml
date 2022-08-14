@@ -20,37 +20,18 @@ production_routes:
           - "standby.example.com":
               tls-acme: "false"
               insecure: Redirect
+
+
 tasks:
   pre-rollout:
-    - run:
-        name: file pre-rollout task1
-        command: echo "task 1"
-        service: cli
-        weight: -1
-    - run:
-        name: lagoon.yml pre-rollout task1
-        command: echo "task 1"
-        service: cli
   post-rollout:
-    - run:
-        name: file post-rollout task1
-        command: echo "task 1"
-        service: cli
-        shell: bash
-        weight: -1
     - run:
         name: lagoon.yml post-rollout task1
         command: echo "task 1"
         service: cli
         shell: bash
     - run:
-        name: lagoon.yml post-rollout task2
-        command: echo "task 2"
+        name: override me
+        command: echo "should be overridden"
         service: cli
         shell: bash
-    - run:
-        name: file post-rollout task2
-        command: echo "task 2"
-        service: cli
-        shell: bash
-        weight: 1

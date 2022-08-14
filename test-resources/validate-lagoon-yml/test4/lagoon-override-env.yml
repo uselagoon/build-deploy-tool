@@ -1,19 +1,19 @@
 tasks:
   pre-rollout:
     - run:
-        name: file pre-rollout task1
+        name: envvar pre-rollout task1
         command: echo "task 1"
         service: cli
         weight: -1
   post-rollout:
     - run:
-        name: file post-rollout task1
+        name: envvar post-rollout task1
         command: echo "task 1"
         service: cli
         shell: bash
         weight: -1
     - run:
-        name: file post-rollout task2
+        name: envvar post-rollout task2
         command: echo "task 2"
         service: cli
         shell: bash
