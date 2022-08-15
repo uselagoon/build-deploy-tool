@@ -29,6 +29,7 @@ type Task struct {
 	Shell     string `json:"shell"`
 	Container string `json:"container"`
 	When      string `json:"when"`
+	Weight    int    `json:"weight"`
 }
 
 // NewTask .

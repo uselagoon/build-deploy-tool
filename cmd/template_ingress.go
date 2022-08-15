@@ -22,6 +22,7 @@ var routeGeneration = &cobra.Command{
 func IngressTemplateGeneration(debug bool) error {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		lagoonYmlOverride,
 		projectVariables,
 		environmentVariables,
 		projectName,

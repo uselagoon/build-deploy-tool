@@ -103,6 +103,8 @@ func init() {
 
 	rootCmd.PersistentFlags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
+	rootCmd.PersistentFlags().StringVarP(&lagoonYmlOverride, "lagoon-yml-override", "", ".lagoon.override.yml",
+		"The .lagoon.yml override file to read for merging values into target lagoon.yml")
 	rootCmd.PersistentFlags().StringVarP(&projectName, "project-name", "p", "",
 		"The project name")
 	rootCmd.PersistentFlags().StringVarP(&environmentName, "environment-name", "e", "",

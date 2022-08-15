@@ -27,6 +27,7 @@ var featureFlagIdentify = &cobra.Command{
 func IdentifyFeatureFlag(name string, debug bool) (string, error) {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		lagoonYmlOverride,
 		projectVariables,
 		environmentVariables,
 		projectName,

@@ -23,6 +23,7 @@ func DBaaSTemplateGeneration(debug bool,
 ) error {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
+		lagoonYmlOverride,
 		projectVariables,
 		environmentVariables,
 		projectName,

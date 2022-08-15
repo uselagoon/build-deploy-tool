@@ -1,0 +1,8 @@
+tasks:
+  pre-rollout:
+  post-rollout:
+    - run:
+        name: override me
+        command: echo "overridden"
+        service: cli
+        shell: bash

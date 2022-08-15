@@ -270,3 +270,114 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeLagoonYAMLs(t *testing.T) {
+	type args struct {
+		left  *YAML
+		right *YAML
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    *YAML
+		wantErr bool
+	}{
+		{
+			name: "Simple append of tasks",
+			args: args{
+				left: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Command: "left postrollout 1"}},
+							{Run: Task{Command: "left postrollout 2"}},
+						}},
+				},
+				right: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Command: "right postrollout 1"}},
+						}},
+				},
+			},
+			want: &YAML{
+				Tasks: Tasks{
+					Postrollout: []TaskRun{
+						{Run: Task{Command: "left postrollout 1"}},
+						{Run: Task{Command: "left postrollout 2"}},
+						{Run: Task{Command: "right postrollout 1"}},
+					},
+				},
+			},
+		},
+		{
+			name: "Merging tasks with the same name",
+			args: args{
+				left: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Name: "Override me", Command: "left postrollout 1", Container: "should not be overwritten"}},
+							{Run: Task{Command: "left postrollout 2"}},
+						}},
+				},
+				right: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Name: "Override me", Command: "right postrollout 1"}},
+						}},
+				},
+			},
+			want: &YAML{
+				Tasks: Tasks{
+					Postrollout: []TaskRun{
+						{Run: Task{Name: "Override me", Command: "right postrollout 1", Container: "should not be overwritten"}},
+						{Run: Task{Command: "left postrollout 2"}},
+					},
+				},
+			},
+		},
+		{
+			name: "Merging tasks with weight",
+			args: args{
+				left: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Command: "left postrollout 1", Weight: 0}},
+							{Run: Task{Command: "left postrollout 2", Weight: 0}},
+						}},
+				},
+				right: &YAML{
+					Tasks: Tasks{
+						Postrollout: []TaskRun{
+							{Run: Task{Command: "Right comes before", Weight: -1}},
+							{Run: Task{Command: "Right comes after", Weight: 1}},
+						}},
+				},
+			},
+			want: &YAML{
+				Tasks: Tasks{
+					Postrollout: []TaskRun{
+						{Run: Task{Command: "Right comes before", Weight: -1}},
+						{Run: Task{Command: "left postrollout 1", Weight: 0}},
+						{Run: Task{Command: "left postrollout 2", Weight: 0}},
+						{Run: Task{Command: "Right comes after", Weight: 1}},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			//fmt.Println(tt.args.left)
+			//fmt.Println(tt.args.right)
+			err := MergeLagoonYAMLs(tt.args.left, tt.args.right)
+			got := tt.args.left
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MergeLagoonYAMLs() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MergeLagoonYAMLs() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
