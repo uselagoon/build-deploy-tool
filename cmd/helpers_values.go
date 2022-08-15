@@ -1,6 +1,6 @@
 package cmd
 
-var lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, environmentName, projectName, activeEnvironment, standbyEnvironment, environmentType string
+var lagoonYml, lagoonYmlOverride, environmentName, projectName, activeEnvironment, standbyEnvironment, environmentType string
 var buildType, lagoonVersion, branch, prTitle, prNumber, prHeadBranch, prBaseBranch string
 var projectVariables, environmentVariables, monitoringStatusPageID, monitoringContact string
 var templateValues, savedTemplates, fastlyCacheNoCahce, fastlyServiceID, fastlyAPISecretPrefix string

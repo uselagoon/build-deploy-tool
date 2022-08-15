@@ -24,7 +24,6 @@ func BackupTemplateGeneration(debug bool,
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
 		lagoonYmlOverride,
-		lagoonYmlEnvVar,
 		projectVariables,
 		environmentVariables,
 		projectName,

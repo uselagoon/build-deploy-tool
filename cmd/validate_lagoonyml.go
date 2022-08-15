@@ -18,7 +18,7 @@ var validateLagoonYml = &cobra.Command{
 		var err error
 
 		lYAML := &lagoon.YAML{}
-		err = ValidateLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, false)
+		err = ValidateLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
 		if err != nil {
 			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
 			os.Exit(1)

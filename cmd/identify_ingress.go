@@ -53,7 +53,6 @@ func IdentifyPrimaryIngress(debug bool) (string, []string, []string, error) {
 	lagoonBuild, err := generator.NewGenerator(
 		lagoonYml,
 		lagoonYmlOverride,
-		lagoonYmlEnvVar,
 		projectVariables,
 		environmentVariables,
 		projectName,

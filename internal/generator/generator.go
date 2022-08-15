@@ -26,7 +26,6 @@ type Generator struct {
 func NewGenerator(
 	lagoonYml,
 	lagoonYmlOverride,
-	lagoonYmlEnvVar,
 	projectVariables,
 	environmentVariables,
 	projectName,
@@ -91,7 +90,7 @@ func NewGenerator(
 	monthlyDefaultBackupRetention = helpers.GetEnv("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
 
 	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
-	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
+	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, debug); err != nil {
 		return nil, err
 	}
 
