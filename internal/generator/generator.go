@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -24,6 +25,7 @@ type Generator struct {
 
 func NewGenerator(
 	lagoonYml,
+	lagoonYmlOverride,
 	projectVariables,
 	environmentVariables,
 	projectName,
@@ -87,18 +89,16 @@ func NewGenerator(
 	weeklyDefaultBackupRetention = helpers.GetEnv("WEEKLY_BACKUP_DEFAULT_RETENTION", weeklyDefaultBackupRetention, debug)
 	monthlyDefaultBackupRetention = helpers.GetEnv("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
 
-	// read the .lagoon.yml file
-	lPolysite := make(map[string]interface{})
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
-		return nil, fmt.Errorf("couldn't read file %v: %v", lagoonYml, err)
+	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
+	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, debug); err != nil {
+		return nil, err
 	}
 
-	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
-	// this is done so that all other generators only need to know how to interact with one type of environment
-	if _, ok := lPolysite[projectName]; ok {
-		s, _ := yaml.Marshal(lPolysite[projectName])
-		_ = yaml.Unmarshal(s, &lYAML)
-	}
+	// set the task scale iterations/wait times
+	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
+	// set these on their `remote-controller` deployments to be injected to builds.
+	buildValues.TaskScaleMaxIterations = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_MAX_ITERATIONS", 30, debug)
+	buildValues.TaskScaleWaitTime = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_WAIT_TIME", 10, debug)
 
 	// start saving values into the build values variable
 	buildValues.Project = projectName
@@ -244,6 +244,69 @@ func NewGenerator(
 		MainRoutes:                 mainRoutes,
 		ActiveStandbyRoutes:        activeStandbyRoutes,
 	}, nil
+}
+
+func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
+
+	// First we load the primary file
+	lPolysite := make(map[string]interface{})
+	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
+		return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYml, err)
+	}
+
+	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	// this is done so that all other generators only need to know how to interact with one type of environment
+	if _, ok := lPolysite[projectName]; ok {
+		s, _ := yaml.Marshal(lPolysite[projectName])
+		_ = yaml.Unmarshal(s, &lYAML)
+	}
+
+	// Here we try and merge in .lagoon.yml override
+	if _, err := os.Stat(lagoonYmlOverride); err == nil {
+		overLagoonYaml := &lagoon.YAML{}
+		overLEnvLagoonPolysite := make(map[string]interface{})
+		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, &overLEnvLagoonPolysite); err != nil {
+			return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYmlOverride, err)
+		}
+		if _, ok := overLEnvLagoonPolysite[projectName]; ok {
+			s, _ := yaml.Marshal(overLEnvLagoonPolysite[projectName])
+			_ = yaml.Unmarshal(s, &overLagoonYaml)
+		}
+		//now we merge
+		if err := lagoon.MergeLagoonYAMLs(lYAML, overLagoonYaml); err != nil {
+			return fmt.Errorf("unable to merge %v over %v: %v", lagoonYmlOverride, lagoonYml, err)
+		}
+	}
+	// Now we see if there are any environment vars set for .lagoon.yml overrides
+	envLagoonYamlStringBase64 := helpers.GetEnv(lagoonYmlOverrideEnvVarName, "", debug)
+	if envLagoonYamlStringBase64 != "" {
+		//Decode it
+		envLagoonYamlString, err := base64.StdEncoding.DecodeString(envLagoonYamlStringBase64)
+		if err != nil {
+			return fmt.Errorf("Unable to decode %v - is it base64 encoded?", lagoonYmlOverrideEnvVarName)
+		}
+		envLagoonYaml := &lagoon.YAML{}
+		lEnvLagoonPolysite := make(map[string]interface{})
+
+		err = yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
+		if err != nil {
+			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+		}
+		err = yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
+		if err != nil {
+			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+		}
+
+		if _, ok := lEnvLagoonPolysite[projectName]; ok {
+			s, _ := yaml.Marshal(lEnvLagoonPolysite[projectName])
+			_ = yaml.Unmarshal(s, &envLagoonYaml)
+		}
+		//now we merge
+		if err := lagoon.MergeLagoonYAMLs(lYAML, envLagoonYaml); err != nil {
+			return fmt.Errorf("unable to merge LAGOON_YAML_OVERRIDE over %v: %v", lagoonYml, err)
+		}
+	}
+	return nil
 }
 
 // this creates a bunch of standard environment variables that are injected into the `lagoon-env` configmap normally

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
@@ -160,6 +161,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 		allowDeployMissingErrors bool
 		taskRunner               runTaskInEnvironmentFuncType
 		tasks                    []lagoon.Task
+		buildValues              generator.BuildValues
 	}
 	tests := []struct {
 		name      string
@@ -217,7 +219,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner)
+			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues)
 			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
 
 			if tt.wantError && err == nil {
