@@ -94,6 +94,10 @@ func NewGenerator(
 		return nil, err
 	}
 
+	// set the task scale iterations/wait times
+	buildValues.TaskScaleMaxIterations = helpers.GetEnvInt("LAGOON_TASK_SCALE_MAX_ITERATIONS", 30, debug)
+	buildValues.TaskScaleWaitTime = helpers.GetEnvInt("LAGOON_TASK_SCALE_WAIT_TIME", 10, debug)
+
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName
