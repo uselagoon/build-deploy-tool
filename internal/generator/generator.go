@@ -94,6 +94,12 @@ func NewGenerator(
 		return nil, err
 	}
 
+	// set the task scale iterations/wait times
+	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
+	// set these on their `remote-controller` deployments to be injected to builds.
+	buildValues.TaskScaleMaxIterations = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_MAX_ITERATIONS", 30, debug)
+	buildValues.TaskScaleWaitTime = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_WAIT_TIME", 10, debug)
+
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName

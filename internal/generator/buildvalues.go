@@ -50,6 +50,8 @@ type BuildValues struct {
 	DBaaSEnvironmentTypeOverrides *lagoon.EnvironmentVariable `json:"dbaasEnvironmentTypeOverrides"`
 	DBaaSFallbackSingle           bool                        `json:"dbaasFallbackSingle"`
 	IngressClass                  string                      `json:"ingressClass"`
+	TaskScaleMaxIterations        int                         `json:"taskScaleMaxIterations"`
+	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
 }
 
 type MonitoringConfig struct {
