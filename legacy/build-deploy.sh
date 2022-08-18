@@ -3,12 +3,11 @@ set -x
 set -eo pipefail
 set -o noglob
 
-set +x # reduce noise in build logs
 # print out the build-deploy-tool version information
 echo "##############################################"
 build-deploy-tool version
 echo "##############################################"
-set -x
+
 
 REGISTRY=$REGISTRY
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
