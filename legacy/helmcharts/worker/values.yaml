@@ -40,6 +40,8 @@ nodeSelector: {}
 
 tolerations: []
 
+cronjobTolerations: []
+
 affinity: {}
 
 inPodCronjobs: ""
@@ -47,3 +49,7 @@ inPodCronjobs: ""
 nativeinPodCronjobs: ""
 
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false
