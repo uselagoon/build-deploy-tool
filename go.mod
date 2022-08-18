@@ -8,8 +8,10 @@ require (
 	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
 	github.com/google/go-cmp v0.5.7
+	github.com/imdario/mergo v0.3.13
 	github.com/spf13/cobra v1.4.0
 	github.com/vshn/k8up v1.99.99
+	golang.org/x/mod v0.4.2
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.6
 	k8s.io/apimachinery v0.23.6
@@ -27,7 +29,6 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect

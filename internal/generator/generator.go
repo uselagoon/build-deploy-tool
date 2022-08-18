@@ -174,6 +174,12 @@ func NewGenerator(
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, debug)
 	buildValues.IngressClass = ingressClass
 
+	// get the lagoon core version from the project variables internal_system scope
+	lagoonCoreVersion, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_CORE_VERSION", []string{"internal_system"}, lagoonEnvVars)
+	if lagoonCoreVersion != nil {
+		buildValues.LagoonCoreVersion = lagoonCoreVersion.Value
+	}
+
 	// get any variables from the API here
 	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
 	buildValues.ServiceTypeOverrides = lagoonServiceTypes

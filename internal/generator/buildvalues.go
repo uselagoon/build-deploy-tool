@@ -11,7 +11,8 @@ type BuildValues struct {
 	GitSha               string `json:"gitSha"`
 	BuildType            string `json:"buildType"`
 	Kubernetes           string `json:"kubernetes"`
-	LagoonVersion        string `json:"lagoonVersion"`
+	LagoonVersion        string `json:"lagoonVersion"`     // this is the version that is bundled in images, probably stop using this?
+	LagoonCoreVersion    string `json:"lagoonCoreVersion"` // this is the version that will come from lagoon-core
 	ActiveEnvironment    string `json:"activeEnvironment"`
 	StandbyEnvironment   string `json:"standbyEnvironment"`
 	IsActiveEnvironment  bool   `json:"isActiveEnvironment"`
