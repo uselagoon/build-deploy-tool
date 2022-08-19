@@ -71,10 +71,10 @@ func Execute() {
 
 // version/build information (populated at build time by make file)
 var (
-	bdtName     = "build-deploy-tool"
-	bdtVersion  = "0.x.x"
-	bdtBuild    = ""
-	goVersion   = ""
+	bdtName    = "build-deploy-tool"
+	bdtVersion = "0.x.x"
+	bdtBuild   = ""
+	goVersion  = ""
 )
 
 // version/build information command
