@@ -8,7 +8,9 @@ import (
 	postgresv1 "github.com/amazeeio/dbaas-operator/apis/postgres/v1"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"sigs.k8s.io/yaml"
 )
 
@@ -83,6 +85,18 @@ func GenerateDBaaSTemplate(
 					for key, value := range additionalAnnotations {
 						mariaDBConsumer.ObjectMeta.Annotations[key] = value
 					}
+					// validate any annotations
+					if err := apivalidation.ValidateAnnotations(mariaDBConsumer.ObjectMeta.Annotations, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+						}
+					}
+					// validate any labels
+					if err := metavalidation.ValidateLabels(mariaDBConsumer.ObjectMeta.Labels, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+						}
+					}
 
 					// check length of labels
 					err := helpers.CheckLabelLength(mariaDBConsumer.ObjectMeta.Labels)
@@ -117,7 +131,18 @@ func GenerateDBaaSTemplate(
 					for key, value := range additionalAnnotations {
 						mongodbConsumer.ObjectMeta.Annotations[key] = value
 					}
-
+					// validate any annotations
+					if err := apivalidation.ValidateAnnotations(mongodbConsumer.ObjectMeta.Annotations, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+						}
+					}
+					// validate any labels
+					if err := metavalidation.ValidateLabels(mongodbConsumer.ObjectMeta.Labels, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+						}
+					}
 					// check length of labels
 					err := helpers.CheckLabelLength(mongodbConsumer.ObjectMeta.Labels)
 					if err != nil {
@@ -150,6 +175,18 @@ func GenerateDBaaSTemplate(
 					// add any additional annotations
 					for key, value := range additionalAnnotations {
 						postgresqlConsumer.ObjectMeta.Annotations[key] = value
+					}
+					// validate any annotations
+					if err := apivalidation.ValidateAnnotations(postgresqlConsumer.ObjectMeta.Annotations, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+						}
+					}
+					// validate any labels
+					if err := metavalidation.ValidateLabels(postgresqlConsumer.ObjectMeta.Labels, nil); err != nil {
+						if len(err) != 0 {
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+						}
 					}
 
 					// check length of labels
