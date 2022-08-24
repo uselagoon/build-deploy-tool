@@ -57,6 +57,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 	if err := json.Unmarshal(data, &r.Ingresses); err != nil {
+		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
 		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
 		// but types are more strict, so this unmarshaler attempts to change between the two types
 		// that can be bool or string
