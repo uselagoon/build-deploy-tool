@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"os"
 	"sigs.k8s.io/yaml"
 )
 
@@ -27,7 +28,7 @@ var validateLagoonYml = &cobra.Command{
 		if printOutput {
 			resultingBS, err := yaml.Marshal(lYAML)
 			if err != nil {
-				fmt.Println("Unable to unmarshall resulting yml for printing: ", err)
+				fmt.Println("Unable to unmarshal resulting yml for printing: ", err)
 				os.Exit(1)
 			}
 			fmt.Println(string(resultingBS))
@@ -36,7 +37,7 @@ var validateLagoonYml = &cobra.Command{
 }
 
 func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvVar string, lYAML *lagoon.YAML, projectName string, debug bool) error {
-	if err := generator.LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
+	if err := generator.LoadAndUnmarshalLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
 		return err
 	}
 	return nil
