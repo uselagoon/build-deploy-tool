@@ -41,9 +41,11 @@ if [[ "$(featureFlag SPOT_INSTANCE_PRODUCTION)" = enabled && "${ENVIRONMENT_TYPE
         echo -e "\
 tolerations:
 - key: lagoon.sh/spot
+  operator: Exists
   effect: NoSchedule
-  operator: Equal
-  value: \"true\"
+- key: lagoon.sh/spot
+  operator: Exists
+  effect: PreferNoSchedule
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
     fi
 
@@ -54,9 +56,11 @@ tolerations:
         echo -e "\
 cronjobTolerations:
 - key: lagoon.sh/spot
+  operator: Exists
   effect: NoSchedule
-  operator: Equal
-  value: \"true\"
+- key: lagoon.sh/spot
+  operator: Exists
+  effect: PreferNoSchedule
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
     fi
 fi
