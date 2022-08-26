@@ -1,11 +1,15 @@
 package lagoon
 
 import (
+	"encoding/json"
 	"fmt"
-	"github.com/imdario/mergo"
 	"os"
-	"sigs.k8s.io/yaml"
+	"reflect"
 	"sort"
+	"strconv"
+
+	"github.com/imdario/mergo"
+	"sigs.k8s.io/yaml"
 )
 
 // ProductionRoutes represents an active/standby configuration.
@@ -74,6 +78,45 @@ type Autogenerate struct {
 	Prefixes          []string `json:"prefixes"`
 	TLSAcme           *bool    `json:"tls-acme,omitempty"`
 	IngressClass      string   `json:"ingressClass"`
+}
+
+//
+func (a *Routes) UnmarshalJSON(data []byte) error {
+	tmpMap := map[string]interface{}{}
+	json.Unmarshal(data, &tmpMap)
+	if value, ok := tmpMap["autogenerate"]; ok {
+		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
+		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
+		// but types are more strict, so this unmarshaler attempts to change between the two types
+		// that can be bool or string
+		if _, ok := value.(map[string]interface{})["tls-acme"]; ok {
+			if reflect.TypeOf(value.(map[string]interface{})["tls-acme"]).Kind() == reflect.String {
+				vBool, err := strconv.ParseBool(value.(map[string]interface{})["tls-acme"].(string))
+				if err == nil {
+					value.(map[string]interface{})["tls-acme"] = vBool
+				}
+			}
+		}
+		if _, ok := value.(map[string]interface{})["enabled"]; ok {
+			if reflect.TypeOf(value.(map[string]interface{})["enabled"]).Kind() == reflect.String {
+				vBool, err := strconv.ParseBool(value.(map[string]interface{})["enabled"].(string))
+				if err == nil {
+					value.(map[string]interface{})["enabled"] = vBool
+				}
+			}
+		}
+		if _, ok := value.(map[string]interface{})["allowPullRequests"]; ok {
+			if reflect.TypeOf(value.(map[string]interface{})["allowPullRequests"]).Kind() == reflect.String {
+				vBool, err := strconv.ParseBool(value.(map[string]interface{})["allowPullRequests"].(string))
+				if err == nil {
+					value.(map[string]interface{})["allowPullRequests"] = vBool
+				}
+			}
+		}
+		newData, _ := json.Marshal(value)
+		return json.Unmarshal(newData, &a.Autogenerate)
+	}
+	return nil
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
