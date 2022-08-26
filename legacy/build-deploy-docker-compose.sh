@@ -143,7 +143,7 @@ function patchBuildStep() {
 
 set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
-beginBuildStep "Build Preparation"
+beginBuildStep "Initial Environment Setup"
 echo "STEP: Preparation started ${buildStartTime}"
 set -x
 
@@ -215,7 +215,6 @@ You can run docker compose config locally to check that your docker-compose file
 ##############################################"
   exit 1
 fi
-beginBuildStep "Initial Environment Setup"
 set -ex
 # validate .lagoon.yml
 if ! lagoon-linter; then
