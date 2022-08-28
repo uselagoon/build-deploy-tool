@@ -166,6 +166,87 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			},
 			want: "test-resources/result-custom-ingress3.yaml",
 		},
+		{
+			name: "test4 - custom ingress with ingress class and hsts",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass: "nginx",
+					HSTSEnabled:  helpers.BoolPtr(true),
+					HSTSMaxAge:   3153600,
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress4.yaml",
+		},
+		{
+			name: "test6 - custom ingress with ingress class and hsts and existing config snippet",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+						"nginx.ingress.kubernetes.io/configuration-snippet": "more_set_headers \"MyCustomHeader: Value\";",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass:          "nginx",
+					HSTSEnabled:           helpers.BoolPtr(true),
+					HSTSMaxAge:            3153600,
+					HSTSIncludeSubdomains: helpers.BoolPtr(true),
+					HSTSPreload:           helpers.BoolPtr(true),
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress5.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
