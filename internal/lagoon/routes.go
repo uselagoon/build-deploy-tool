@@ -59,6 +59,8 @@ type Route struct {
 	Ingresses map[string]Ingress
 }
 
+var defaultHSTSMaxAge = 3153600
+
 // UnmarshalJSON implements json.Unmarshaler.
 func (r *Route) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &r.Name); err == nil {
@@ -149,7 +151,7 @@ func GenerateRoutesV2(genRoutes *RoutesV2, routeMap map[string][]Route, variable
 						newRoute.HSTSMaxAge = ingress.HSTSMaxAge
 					} else {
 						if newRoute.HSTSEnabled != nil && *newRoute.HSTSEnabled {
-							newRoute.HSTSMaxAge = 3153600 // set default hsts value if one not provided
+							newRoute.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
 						}
 					}
 					// hsts end
@@ -219,7 +221,7 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []Environme
 					add.HSTSMaxAge = aRoute.HSTSMaxAge
 				} else {
 					if add.HSTSEnabled != nil && *add.HSTSEnabled {
-						add.HSTSMaxAge = 3153600 // set default hsts value if one not provided
+						add.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
 					}
 				}
 				// hsts end
@@ -271,7 +273,7 @@ func MergeRoutesV2(genRoutes RoutesV2, apiRoutes RoutesV2, variables []Environme
 			add.HSTSMaxAge = aRoute.HSTSMaxAge
 		} else {
 			if add.HSTSEnabled != nil && *add.HSTSEnabled {
-				add.HSTSMaxAge = 3153600 // set default hsts value if one not provided
+				add.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
 			}
 		}
 		// hsts end
