@@ -90,7 +90,7 @@ func NewGenerator(
 	monthlyDefaultBackupRetention = helpers.GetEnv("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
 
 	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
-	if err := LoadAndUnmarshallLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, debug); err != nil {
+	if err := LoadAndUnmarshalLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, debug); err != nil {
 		return nil, err
 	}
 
@@ -246,12 +246,12 @@ func NewGenerator(
 	}, nil
 }
 
-func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
+func LoadAndUnmarshalLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
 
 	// First we load the primary file
 	lPolysite := make(map[string]interface{})
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
-		return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYml, err)
+		return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYml, err)
 	}
 
 	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
@@ -266,7 +266,7 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 		overLagoonYaml := &lagoon.YAML{}
 		overLEnvLagoonPolysite := make(map[string]interface{})
 		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, &overLEnvLagoonPolysite); err != nil {
-			return fmt.Errorf("couldn't unmarshall file %v: %v", lagoonYmlOverride, err)
+			return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYmlOverride, err)
 		}
 		if _, ok := overLEnvLagoonPolysite[projectName]; ok {
 			s, _ := yaml.Marshal(overLEnvLagoonPolysite[projectName])
@@ -290,11 +290,11 @@ func LoadAndUnmarshallLagoonYml(lagoonYml string, lagoonYmlOverride string, lago
 
 		err = yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
 		if err != nil {
-			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
 		}
 		err = yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
 		if err != nil {
-			return fmt.Errorf("Unable to unmarshall env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
 		}
 
 		if _, ok := lEnvLagoonPolysite[projectName]; ok {

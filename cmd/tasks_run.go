@@ -153,6 +153,9 @@ type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, err
 func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues) iterateTaskFuncType {
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
+			// set the iterations and wait times here
+			task.ScaleMaxIterations = buildValues.TaskScaleMaxIterations
+			task.ScaleWaitTime = buildValues.TaskScaleWaitTime
 			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
 			if err != nil {
 				return true, err
