@@ -100,9 +100,7 @@ set -x
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
 
-  echo "##############################################"
-  echo "BEGIN ${1}"
-  echo "##############################################"
+  echo -e "##############################################\nBEGIN ${1}\n##############################################"
 
 }
 
@@ -124,14 +122,12 @@ function patchBuildStep() {
   diffTotalSeconds="$(($endTime-$totalStartTime))"
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
-  echo "##############################################"
-  echo "STEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}"
-  echo "##############################################"
+  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
 
   # patch the buildpod with the buildstep
   if [ "${SCC_CHECK}" == false ]; then
     kubectl patch -n ${4} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}"
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}" &> /dev/null
 
     # tiny sleep to allow patch to complete before logs roll again
     sleep 0.5s
