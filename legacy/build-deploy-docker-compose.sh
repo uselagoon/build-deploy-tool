@@ -219,7 +219,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables"
-set -x
 
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
