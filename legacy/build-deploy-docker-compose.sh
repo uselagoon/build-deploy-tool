@@ -98,9 +98,8 @@ SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
 
-  echo "##############################################"
-  echo "BEGIN ${1}"
-  echo "##############################################"
+  echo -e "##############################################\nBEGIN ${1}\n##############################################"
+  sleep 0.5s
 
 }
 
@@ -122,9 +121,7 @@ function patchBuildStep() {
   diffTotalSeconds="$(($endTime-$totalStartTime))"
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
-  echo "##############################################"
-  echo "STEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}"
-  echo "##############################################"
+  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
 
   # patch the buildpod with the buildstep
   if [ "${SCC_CHECK}" == false ]; then
