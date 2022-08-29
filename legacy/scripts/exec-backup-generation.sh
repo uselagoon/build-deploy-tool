@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set +x
 ##############################################
 #   it is possible to override the retention using a variable defined in the api
 #
@@ -135,7 +134,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     HOURLY_BACKUP_RETENTION=${HOURLY_BACKUP_DEFAULT_RETENTION}
   fi
 
-  set +x
   ##############################################
   # check if the feature for custom backup configuration is enabled LAGOON_FEATURE_FLAG(_FORCE|_DEFAULT)_CUSTOM_BACKUP_CONFIG=enabled
   # this feature is experimental and may cause issues with your backups if incorrectly used, talk to your lagoon administrators before you use this
@@ -219,7 +217,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
             echo "${BUILD_TYPE} not implemented"; exit 1;
     esac
   fi
-  set -x
 
   MONTHLY_BACKUP_RETENTION=${MONTHLY_BACKUP_DEFAULT_RETENTION}
   WEEKLY_BACKUP_RETENTION=${WEEKLY_BACKUP_DEFAULT_RETENTION}
@@ -237,7 +234,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     fi
   fi
 
-  set +x
   if [ "$(featureFlag CUSTOM_BACKUP_CONFIG)" = enabled ]; then
   # check if a specific override has been defined in the api
     case "$BUILD_TYPE" in
@@ -275,7 +271,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
             echo "${BUILD_TYPE} not implemented"; exit 1;
     esac
   fi
-  set -x
 
   # Implement global default value for backup schedule
   if [ -z "$DEFAULT_BACKUP_SCHEDULE" ]

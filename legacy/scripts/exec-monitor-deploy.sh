@@ -4,7 +4,6 @@
 # in case this rollout fails, we show the logs of the new containers to the user as they might contain information about why
 # the rollout has failed
 stream_logs_deployment() {
-  # set +x
   # load the version of the new pods
   LATEST_POD_TEMPLATE_HASH=$(kubectl get replicaset -l app.kubernetes.io/instance=${SERVICE_NAME} --sort-by=.metadata.creationTimestamp -o=json | jq -r '.items[-1].metadata.labels."pod-template-hash"')
   mkdir -p /tmp/kubectl-build-deploy/logs/container/${SERVICE_NAME}
@@ -25,7 +24,6 @@ stream_logs_deployment() {
 
     # If we are here, this means the pods have all stopped (probably because they failed), we just restart
   done
-  # set -x
 }
 
 # start background logs streaming
