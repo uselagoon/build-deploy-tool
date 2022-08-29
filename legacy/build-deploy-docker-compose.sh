@@ -101,6 +101,7 @@ function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
 
   echo -e "##############################################\nBEGIN ${1}\n##############################################"
+  sleep 0.5s
 
 }
 
