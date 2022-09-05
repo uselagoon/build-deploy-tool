@@ -7,7 +7,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 
 	"sigs.k8s.io/yaml"
 )
@@ -117,6 +119,18 @@ func GenerateBackupSchedule(
 	// add any additional annotations
 	for key, value := range additionalAnnotations {
 		schedule.ObjectMeta.Annotations[key] = value
+	}
+	// validate any annotations
+	if err := apivalidation.ValidateAnnotations(schedule.ObjectMeta.Annotations, nil); err != nil {
+		if len(err) != 0 {
+			return nil, fmt.Errorf("the annotations for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
+		}
+	}
+	// validate any labels
+	if err := metavalidation.ValidateLabels(schedule.ObjectMeta.Labels, nil); err != nil {
+		if len(err) != 0 {
+			return nil, fmt.Errorf("the labels for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
+		}
 	}
 
 	// check length of labels
