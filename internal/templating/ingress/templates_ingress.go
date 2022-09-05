@@ -13,6 +13,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/validation"
+	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 
 	"sigs.k8s.io/yaml"
 )
@@ -32,7 +33,11 @@ func GenerateIngressTemplate(
 	// truncate the route for use in labels and secretname
 	truncatedRouteDomain := routeDomain
 	if len(truncatedRouteDomain) >= 53 {
-		truncatedRouteDomain = fmt.Sprintf("%s-%s", strings.Split(truncatedRouteDomain, ".")[0], helpers.GetMD5HashWithNewLine(truncatedRouteDomain)[:5])
+		subdomain := strings.Split(truncatedRouteDomain, ".")[0]
+		if errs := utilvalidation.IsValidLabelValue(subdomain); errs != nil {
+			subdomain = subdomain[:53]
+		}
+		truncatedRouteDomain = fmt.Sprintf("%s-%s", strings.Split(subdomain, ".")[0], helpers.GetMD5HashWithNewLine(routeDomain)[:5])
 	}
 
 	// create the ingress object for templating
@@ -155,12 +160,6 @@ func GenerateIngressTemplate(
 		if len(err) != 0 {
 			return nil, fmt.Errorf("the labels for %s are not valid: %v", routeDomain, err)
 		}
-	}
-
-	// check length of labels
-	err := helpers.CheckLabelLength(ingress.ObjectMeta.Labels)
-	if err != nil {
-		return nil, err
 	}
 
 	// set up the secretname for tls
