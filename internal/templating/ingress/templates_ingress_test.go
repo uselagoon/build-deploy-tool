@@ -319,6 +319,43 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "test8 - custom ingress with exceptionally log subdomain",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass: "nginx",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress4.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
