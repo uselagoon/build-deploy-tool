@@ -10,14 +10,12 @@ metadata:
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: environment-with-really-really-reall-3fdb
     lagoon.sh/version: v2.x.x
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: max-age=3153600";
     nginx.ingress.kubernetes.io/server-snippet: |
       add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: extra-long-name-f6c8a
+    app.kubernetes.io/instance: hmm-this-is-a-really-long-branch-name-designed-to-tes-0eda7
     app.kubernetes.io/managed-by: Helm
     app.kubernetes.io/name: custom-ingress
     helm.sh/chart: custom-ingress-0.1.0
@@ -26,13 +24,13 @@ metadata:
     lagoon.sh/environment: environment-with-really-really-reall-3fdb
     lagoon.sh/environmentType: development
     lagoon.sh/project: example-project
-    lagoon.sh/service: extra-long-name-f6c8a
+    lagoon.sh/service: hmm-this-is-a-really-long-branch-name-designed-to-tes-0eda7
     lagoon.sh/service-type: custom-ingress
-  name: extra-long-name.a-really-long-name-that-should-truncate.www.example.com
+  name: hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com
 spec:
   ingressClassName: nginx
   rules:
-  - host: extra-long-name.a-really-long-name-that-should-truncate.www.example.com
+  - host: hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com
     http:
       paths:
       - backend:
@@ -44,7 +42,7 @@ spec:
         pathType: Prefix
   tls:
   - hosts:
-    - extra-long-name.a-really-long-name-that-should-truncate.www.example.com
-    secretName: extra-long-name-f6c8a-tls
+    - hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com
+    secretName: hmm-this-is-a-really-long-branch-name-designed-to-tes-0eda7-tls
 status:
   loadBalancer: {}

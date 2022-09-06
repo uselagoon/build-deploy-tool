@@ -57,6 +57,27 @@ func Test_getRoutesFromAPIEnvVar(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test3 - check that route in API is converted to RoutesV2 with ingress class name and hsts",
+			args: args{
+				envVars: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_ROUTES_JSON", Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwiaW5ncmVzc0NsYXNzIjoiY3VzdG9tLW5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIiwiaHN0c0VuYWJsZWQiOnRydWUsImhzdHNNYXhBZ2UiOjM2MDAwfV19", Scope: "build"},
+				},
+			},
+			want: &lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
+					{
+						Domain:         "test1.example.com",
+						LagoonService:  "nginx",
+						TLSAcme:        helpers.BoolPtr(false),
+						MonitoringPath: "/bypass-cache",
+						IngressClass:   "custom-nginx",
+						HSTSEnabled:    helpers.BoolPtr(true),
+						HSTSMaxAge:     36000,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -306,6 +327,61 @@ func Test_generateAndMerge(t *testing.T) {
 						Insecure:       helpers.StrPtr("Redirect"),
 						Annotations:    map[string]string{},
 						IngressClass:   "nginx",
+					},
+				},
+			},
+		},
+		{
+			name: "test3 - generate routes from lagoon yaml and merge ones from api with hsts",
+			args: args{
+				buildValues: BuildValues{
+					Branch:       "main",
+					IngressClass: "nginx",
+				},
+				lagoonYAML: lagoon.YAML{
+					Environments: lagoon.Environments{
+						"main": lagoon.Environment{
+							Routes: []map[string][]lagoon.Route{
+								{
+									"nginx": {
+										{
+											Ingresses: map[string]lagoon.Ingress{
+												"a.example.com": {
+													TLSAcme: helpers.BoolPtr(true),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				api: lagoon.RoutesV2{
+					Routes: []lagoon.RouteV2{
+						{
+							Domain:         "a.example.com",
+							LagoonService:  "nginx",
+							TLSAcme:        helpers.BoolPtr(false),
+							MonitoringPath: "/bypass-cache",
+							HSTSEnabled:    helpers.BoolPtr(true),
+							HSTSMaxAge:     36000,
+						},
+					},
+				},
+			},
+			want: lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
+					{
+						Domain:         "a.example.com",
+						LagoonService:  "nginx",
+						TLSAcme:        helpers.BoolPtr(false),
+						Annotations:    map[string]string{},
+						Insecure:       helpers.StrPtr("Redirect"),
+						MonitoringPath: "/bypass-cache",
+						IngressClass:   "nginx",
+						HSTSEnabled:    helpers.BoolPtr(true),
+						HSTSMaxAge:     36000,
 					},
 				},
 			},

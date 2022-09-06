@@ -126,6 +126,33 @@ func GenerateIngressTemplate(
 		additionalAnnotations["nginx.ingress.kubernetes.io/server-snippet"] = "add_header X-Robots-Tag \"noindex, nofollow\";\n"
 	}
 
+	// check if a user has defined hsts configuration
+	if route.HSTSEnabled != nil && *route.HSTSEnabled {
+		hstsHeader := fmt.Sprintf("more_set_headers \"Strict-Transport-Security: max-age=%d", route.HSTSMaxAge)
+		if route.HSTSIncludeSubdomains != nil && *route.HSTSIncludeSubdomains {
+			hstsHeader = fmt.Sprintf("%s%s", hstsHeader, ";includeSubDomains")
+		}
+		if route.HSTSPreload != nil && *route.HSTSPreload {
+			hstsHeader = fmt.Sprintf("%s%s", hstsHeader, ";preload")
+		}
+		hstsHeader = fmt.Sprintf("%s\"", hstsHeader)
+		// if someone has already set a configuration-snippet annotation, then add the hsts header
+		// to the top of the existing annotation before it is added to the ingress object
+		if value, ok := route.Annotations["nginx.ingress.kubernetes.io/configuration-snippet"]; ok {
+			route.Annotations["nginx.ingress.kubernetes.io/configuration-snippet"] = fmt.Sprintf(
+				"%s;\n%s",
+				hstsHeader,
+				value,
+			)
+		} else {
+			// otherwise create a new one in the additional annotations
+			additionalAnnotations["nginx.ingress.kubernetes.io/configuration-snippet"] = fmt.Sprintf(
+				"%s;\n",
+				hstsHeader,
+			)
+		}
+	}
+
 	// add ingressclass support to ingress template generation
 	if route.IngressClass != "" {
 		ingress.Spec.IngressClassName = &route.IngressClass

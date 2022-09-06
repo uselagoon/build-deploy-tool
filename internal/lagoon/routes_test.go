@@ -226,6 +226,64 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test5 - hsts",
+			args: args{
+				genRoutes: &RoutesV2{},
+				routeMap: map[string][]Route{
+					"nginx": {
+						{
+							Name: "example.com",
+						},
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									Fastly: Fastly{
+										APISecretName: "annotationscom",
+										Watch:         true,
+										ServiceID:     "12345",
+									},
+									HSTSEnabled: helpers.BoolPtr(true),
+									HSTSMaxAge:  10000,
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:         "example.com",
+						LagoonService:  "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							Watch: false,
+						},
+					},
+					{
+						Domain:         "www.example.com",
+						LagoonService:  "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						Fastly: Fastly{
+							APISecretName: "fastly-api-annotationscom",
+							Watch:         true,
+							ServiceID:     "12345",
+						},
+						HSTSEnabled: helpers.BoolPtr(true),
+						HSTSMaxAge:  10000,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -278,6 +336,16 @@ func TestMergeRouteStructures(t *testing.T) {
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 						},
+						{
+							Domain:         "hsts.example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							HSTSEnabled:    helpers.BoolPtr(true),
+							HSTSMaxAge:     20000,
+						},
 					},
 				},
 				apiRoutes: RoutesV2{
@@ -299,6 +367,16 @@ func TestMergeRouteStructures(t *testing.T) {
 							Insecure:       helpers.StrPtr("Redirect"),
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
+						},
+						{
+							Domain:         "hsts.example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							HSTSEnabled:    helpers.BoolPtr(true),
+							HSTSMaxAge:     10000,
 						},
 					},
 				},
@@ -328,6 +406,16 @@ func TestMergeRouteStructures(t *testing.T) {
 						Annotations: map[string]string{
 							"nginx": "nginx",
 						},
+					},
+					{
+						Domain:         "hsts.example.com",
+						LagoonService:  "nginx",
+						MonitoringPath: "/",
+						Insecure:       helpers.StrPtr("Redirect"),
+						TLSAcme:        helpers.BoolPtr(true),
+						Annotations:    map[string]string{},
+						HSTSEnabled:    helpers.BoolPtr(true),
+						HSTSMaxAge:     10000,
 					},
 					{
 						Domain:         "another.example.com",
