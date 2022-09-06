@@ -20,8 +20,16 @@ jobs:
         - 1.17
     steps:
       -
-        name: Checkout
+        name: Checkout PR
         uses: actions/checkout@v2
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          fetch-depth: "0"
+          ref: ${{ github.event.pull_request.head.sha }}
+      -
+        name: Checkout Branch or Tag
+        uses: actions/checkout@v2
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           fetch-depth: "0"
       -
