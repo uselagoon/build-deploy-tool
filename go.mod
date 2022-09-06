@@ -11,6 +11,7 @@ require (
 	github.com/imdario/mergo v0.3.13
 	github.com/spf13/cobra v1.4.0
 	github.com/vshn/k8up v1.99.99
+	golang.org/x/mod v0.4.2
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.6
 	k8s.io/apimachinery v0.23.6
