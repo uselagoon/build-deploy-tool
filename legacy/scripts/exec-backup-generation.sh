@@ -73,9 +73,7 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
       HELM_CUSTOM_BAAS_BACKUP_ACCESS_KEY=${BAAS_CUSTOM_BACKUP_ACCESS_KEY}
       HELM_CUSTOM_BAAS_BACKUP_SECRET_KEY=${BAAS_CUSTOM_BACKUP_SECRET_KEY}
     else
-      set +x
       kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete secret baas-custom-backup-credentials --ignore-not-found
-      set -x
     fi
   fi
 
@@ -90,22 +88,17 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
       HELM_CUSTOM_BAAS_RESTORE_ACCESS_KEY=${BAAS_CUSTOM_RESTORE_ACCESS_KEY}
       HELM_CUSTOM_BAAS_RESTORE_SECRET_KEY=${BAAS_CUSTOM_RESTORE_SECRET_KEY}
     else
-      set +x
       kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete secret baas-custom-restore-credentials --ignore-not-found
-      set -x
     fi
   fi
 
   if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
     # Create baas-repo-pw secret based on the project secret
-    set +x
     kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "$PROJECT_SECRET-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
-    set -x
   fi
 
   TEMPLATE_PARAMETERS=()
 
-  set +x # reduce noise in build logs
   # Check for custom baas bucket name
   if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
     BAAS_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_BAAS_BUCKET_NAME") | "\(.value)"')
@@ -113,7 +106,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
   if [ -z $BAAS_BUCKET_NAME ]; then
     BAAS_BUCKET_NAME=baas-${PROJECT}
   fi
-  set -x
 
   # Pull in .lagoon.yml variables
   PRODUCTION_MONTHLY_BACKUP_RETENTION=$(cat .lagoon.yml | shyaml get-value backup-retention.production.monthly "")
@@ -143,7 +135,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     HOURLY_BACKUP_RETENTION=${HOURLY_BACKUP_DEFAULT_RETENTION}
   fi
 
-  set +x
   ##############################################
   # check if the feature for custom backup configuration is enabled LAGOON_FEATURE_FLAG(_FORCE|_DEFAULT)_CUSTOM_BACKUP_CONFIG=enabled
   # this feature is experimental and may cause issues with your backups if incorrectly used, talk to your lagoon administrators before you use this
@@ -227,7 +218,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
             echo "${BUILD_TYPE} not implemented"; exit 1;
     esac
   fi
-  set -x
 
   MONTHLY_BACKUP_RETENTION=${MONTHLY_BACKUP_DEFAULT_RETENTION}
   WEEKLY_BACKUP_RETENTION=${WEEKLY_BACKUP_DEFAULT_RETENTION}
@@ -245,7 +235,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     fi
   fi
 
-  set +x
   if [ "$(featureFlag CUSTOM_BACKUP_CONFIG)" = enabled ]; then
   # check if a specific override has been defined in the api
     case "$BUILD_TYPE" in
@@ -283,7 +272,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
             echo "${BUILD_TYPE} not implemented"; exit 1;
     esac
   fi
-  set -x
 
   # Implement global default value for backup schedule
   if [ -z "$DEFAULT_BACKUP_SCHEDULE" ]
@@ -338,3 +326,5 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     --set customBackupLocation.accessKey="${BAAS_CUSTOM_BACKUP_ACCESS_KEY}" \
     --set customBackupLocation.secretKey="${BAAS_CUSTOM_BACKUP_SECRET_KEY}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/k8up-lagoon-backup-schedule.yaml
 fi
+
+set -x
