@@ -63,7 +63,7 @@ jobs:
           # list of Docker images to use as base name for tags
           images: |
             ${{ github.repository_owner }}/build-deploy-image
-            ghcr.io/${{ github.repository_owner }}/build-deploy-image
+#             ghcr.io/${{ github.repository_owner }}/build-deploy-image
           tags: |
             # set edge tag for default branch
             type=edge,enable={{is_default_branch}}
@@ -89,13 +89,13 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-      -
-        name: Login to GHCR
-        uses: docker/login-action@v2
-        with:
-          registry: ghcr.io
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+#       -
+#         name: Login to GHCR
+#         uses: docker/login-action@v2
+#         with:
+#           registry: ghcr.io
+#           username: ${{ github.repository_owner }}
+#           password: ${{ secrets.GITHUB_TOKEN }}
       -
         name: Build and push
         uses: docker/build-push-action@v2
