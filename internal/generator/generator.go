@@ -44,6 +44,7 @@ type GeneratorInput struct {
 	MonitoringStatusPageID   string
 	FastlyCacheNoCahce       string
 	FastlyAPISecretPrefix    string
+	SavedTemplatesPath       string
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
