@@ -259,12 +259,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
-
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
+			generator := generatorInput(false)
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
 
 			for _, envVar := range tt.vars {
 				err = os.Setenv(envVar.Name, envVar.Value)
@@ -272,7 +269,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					t.Errorf("%v", err)
 				}
 			}
-			got, err := IdentifyFeatureFlag(generatorInput(false), tt.args.name)
+			got, err := IdentifyFeatureFlag(generator, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IdentifyFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return

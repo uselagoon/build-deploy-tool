@@ -501,14 +501,11 @@ func TestIdentifyRoute(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
+			generator := generatorInput(false)
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
 
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
-
-			primary, remainders, autogen, err := IdentifyPrimaryIngress(generatorInput(false))
+			primary, remainders, autogen, err := IdentifyPrimaryIngress(generator)
 			if err != nil {
 				t.Errorf("%v", err)
 			}

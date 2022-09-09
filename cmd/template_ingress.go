@@ -26,6 +26,7 @@ func IngressTemplateGeneration(g generator.GeneratorInput) error {
 	if err != nil {
 		return err
 	}
+	savedTemplates := g.SavedTemplatesPath
 
 	// generate the templates
 	for _, route := range lagoonBuild.MainRoutes.Routes {

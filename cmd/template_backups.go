@@ -27,6 +27,7 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 	if err != nil {
 		return err
 	}
+	savedTemplates := g.SavedTemplatesPath
 
 	templateYAML, err := backuptemplate.GenerateBackupSchedule(*lagoonBuild.BuildValues)
 	if err != nil {

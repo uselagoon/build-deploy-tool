@@ -241,19 +241,21 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
+			generator := generatorInput(false)
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
+			generator.SavedTemplatesPath = tt.args.templatePath
 
-			lagoonYml = tt.args.lagoonYAML
-
+			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
-			savedTemplates = tt.args.templatePath
 			defer os.RemoveAll(savedTemplates)
 
 			defer os.RemoveAll(savedTemplates)
 
-			if err := BackupTemplateGeneration(generatorInput(false)); (err != nil) != tt.wantErr {
+			if err := BackupTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("BackupTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			files, err := ioutil.ReadDir(savedTemplates)

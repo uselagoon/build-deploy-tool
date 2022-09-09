@@ -10,16 +10,19 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var printOutput bool
-
 var validateLagoonYml = &cobra.Command{
 	Use:   "lagoon-yml",
 	Short: "Verify .lagoon.yml and environment for compatability with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		var err error
 
+		lagoonYAML, _ := rootCmd.PersistentFlags().GetString("lagoon-yml")
+		lagoonYAMLOverride, _ := rootCmd.PersistentFlags().GetString("lagoon-yml-override")
+		projectName, _ := rootCmd.PersistentFlags().GetString("project-name")
+		printOutput, _ := cmd.Flags().GetBool("print-resulting-lagoonyml")
+
 		lYAML := &lagoon.YAML{}
-		err = ValidateLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
+		err = ValidateLagoonYml(lagoonYAML, lagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
 		if err != nil {
 			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
 			os.Exit(1)
@@ -44,7 +47,7 @@ func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvV
 }
 
 func init() {
-	validateCmd.PersistentFlags().BoolVarP(&printOutput, "print-resulting-lagoonyml", "", false,
+	validateCmd.PersistentFlags().BoolP("print-resulting-lagoonyml", "", false,
 		"Display the resulting, post merging, lagoon.yml file.")
 	validateCmd.AddCommand(validateLagoonYml)
 }

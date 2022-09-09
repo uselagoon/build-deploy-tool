@@ -8,12 +8,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var (
-	dockerComposeFile        string
-	ignoreNonStringKeyErrors bool
-	ignoreMissingEnvFiles    bool
-)
-
 var validateDockerCompose = &cobra.Command{
 	Use:     "docker-compose",
 	Aliases: []string{"compose", "dc"},
@@ -21,6 +15,10 @@ var validateDockerCompose = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// @TODO: ignoreNonStringKeyErrors is `true` by default because Lagoon doesn't enforce
 		// docker-compose compliance yet
+		ignoreMissingEnvFiles, _ := rootCmd.PersistentFlags().GetBool("ignore-missing-env-files")
+		ignoreNonStringKeyErrors, _ := rootCmd.PersistentFlags().GetBool("ignore-non-string-key-errors")
+		dockerComposeFile, _ := cmd.Flags().GetString("docker-compose")
+
 		err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -40,6 +38,6 @@ func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) er
 
 func init() {
 	validateCmd.AddCommand(validateDockerCompose)
-	validateDockerCompose.Flags().StringVarP(&dockerComposeFile, "docker-compose", "", "docker-compose.yml",
+	validateDockerCompose.Flags().StringP("docker-compose", "", "docker-compose.yml",
 		"The docker-compose.yml file to read.")
 }

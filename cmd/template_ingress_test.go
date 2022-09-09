@@ -460,20 +460,20 @@ func TestTemplateRoutes(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
+			generator := generatorInput(false)
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
+			generator.SavedTemplatesPath = tt.args.templatePath
 
+			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
 
 			defer os.RemoveAll(savedTemplates)
 
-			err = IngressTemplateGeneration(generatorInput(false))
+			err = IngressTemplateGeneration(generator)
 			if err != nil {
 				t.Errorf("%v", err)
 			}

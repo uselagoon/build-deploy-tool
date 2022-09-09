@@ -140,14 +140,16 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
+			generator := generatorInput(false)
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
+			generator.SavedTemplatesPath = tt.args.templatePath
 
-			lagoonYml = tt.args.lagoonYAML
-
+			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
-			savedTemplates = tt.args.templatePath
 			defer os.RemoveAll(savedTemplates)
 
 			ts := helpers.TestDBaaSHTTPServer()
@@ -158,7 +160,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			}
 			defer os.RemoveAll(savedTemplates)
 
-			if err := DBaaSTemplateGeneration(generatorInput(false)); (err != nil) != tt.wantErr {
+			if err := DBaaSTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("DBaaSTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			files, err := ioutil.ReadDir(savedTemplates)

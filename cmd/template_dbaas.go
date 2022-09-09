@@ -27,6 +27,7 @@ func DBaaSTemplateGeneration(g generator.GeneratorInput,
 	if err != nil {
 		return err
 	}
+	savedTemplates := g.SavedTemplatesPath
 
 	templateYAML, err := dbaasTemplater.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
 	if err != nil {

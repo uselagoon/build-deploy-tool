@@ -202,15 +202,11 @@ func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 func init() {
 	taskCmd.AddCommand(tasksPreRun)
 	taskCmd.AddCommand(tasksPostRun)
-	//tasksPreRun.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-	//	"The .lagoon.yml file to read")
 
 	addArgs := func(command *cobra.Command) {
 		command.Flags().StringVarP(&namespace, "namespace", "n", "",
 			"The environments environment variables JSON payload")
 		//	"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
-		command.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-			"The .lagoon.yml file to read")
 	}
 	addArgs(tasksPreRun)
 	addArgs(tasksPostRun)
