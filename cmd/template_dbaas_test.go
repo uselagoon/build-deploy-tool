@@ -54,7 +54,6 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-dbaas/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-dbaas/output",
 			},
@@ -142,7 +141,6 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			}
 			generator := generatorInput(false)
 			generator.LagoonYAML = tt.args.lagoonYAML
-			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
 			generator.SavedTemplatesPath = tt.args.templatePath
 
 			savedTemplates := tt.args.templatePath

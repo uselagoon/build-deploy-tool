@@ -54,7 +54,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -73,7 +72,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test2/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -92,7 +90,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test3/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -114,7 +111,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test4/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -136,7 +132,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test5/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -155,7 +150,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-backups/test6/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
 			},
@@ -243,7 +237,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			}
 			generator := generatorInput(false)
 			generator.LagoonYAML = tt.args.lagoonYAML
-			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
 			generator.SavedTemplatesPath = tt.args.templatePath
 
 			savedTemplates := tt.args.templatePath

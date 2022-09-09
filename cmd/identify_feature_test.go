@@ -53,7 +53,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -73,7 +72,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -93,7 +91,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -119,7 +116,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -149,7 +145,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -179,7 +174,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -261,7 +255,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			}
 			generator := generatorInput(false)
 			generator.LagoonYAML = tt.args.lagoonYAML
-			generator.FastlyAPISecretPrefix = tt.args.secretPrefix
 
 			for _, envVar := range tt.vars {
 				err = os.Setenv(envVar.Name, envVar.Value)
