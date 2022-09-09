@@ -23,34 +23,34 @@ type Generator struct {
 	ActiveStandbyRoutes        *lagoon.RoutesV2
 }
 
+type GeneratorInput struct {
+	LagoonYAML               string
+	LagoonYAMLOverride       string
+	LagoonVersion            string
+	ProjectName              string
+	EnvironmentName          string
+	EnvironmentType          string
+	ActiveEnvironment        string
+	StandbyEnvironment       string
+	ProjectVariables         string
+	EnvironmentVariables     string
+	BuildType                string
+	Branch                   string
+	PRNumber                 string
+	PRTitle                  string
+	PRHeadBranch             string
+	PRBaseBranch             string
+	MonitoringContact        string
+	MonitoringStatusPageID   string
+	FastlyCacheNoCahce       string
+	FastlyAPISecretPrefix    string
+	IgnoreNonStringKeyErrors bool
+	IgnoreMissingEnvFiles    bool
+	Debug                    bool
+}
+
 func NewGenerator(
-	lagoonYml,
-	lagoonYmlOverride,
-	projectVariables,
-	environmentVariables,
-	projectName,
-	environmentName,
-	environmentType,
-	activeEnvironment,
-	standbyEnvironment,
-	buildType,
-	branch,
-	prNumber,
-	prTitle,
-	prHeadBranch,
-	prBaseBranch,
-	lagoonVersion,
-	defaultBackupSchedule,
-	hourlyDefaultBackupRetention,
-	dailyDefaultBackupRetention,
-	weeklyDefaultBackupRetention,
-	monthlyDefaultBackupRetention,
-	monitoringContact,
-	monitoringStatusPageID,
-	fastlyCacheNoCahce,
-	fastlyAPISecretPrefix,
-	fastlyServiceID string,
-	ignoreNonStringKeyErrors, ignoreMissingEnvFiles, debug bool,
+	generator GeneratorInput,
 ) (*Generator, error) {
 
 	// create some initial variables to be passed through the generators
@@ -64,41 +64,37 @@ func NewGenerator(
 	// environment variables will override what is provided by flags
 	// the following variables have been identified as used by custom-ingress objects
 	// these are available within a lagoon build as standard
-	monitoringContact = helpers.GetEnv("MONITORING_ALERTCONTACT", monitoringContact, debug)
-	monitoringStatusPageID = helpers.GetEnv("MONITORING_STATUSPAGEID", monitoringStatusPageID, debug)
-	projectName = helpers.GetEnv("PROJECT", projectName, debug)
-	environmentName = helpers.GetEnv("ENVIRONMENT", environmentName, debug)
-	branch = helpers.GetEnv("BRANCH", branch, debug)
-	prNumber = helpers.GetEnv("PR_NUMBER", prNumber, debug)
-	prTitle = helpers.GetEnv("PR_NUMBER", prTitle, debug)
-	prHeadBranch = helpers.GetEnv("PR_HEAD_BRANCH", prHeadBranch, debug)
-	prBaseBranch = helpers.GetEnv("PR_BASE_BRANCH", prBaseBranch, debug)
-	environmentType = helpers.GetEnv("ENVIRONMENT_TYPE", environmentType, debug)
-	buildType = helpers.GetEnv("BUILD_TYPE", buildType, debug)
-	activeEnvironment = helpers.GetEnv("ACTIVE_ENVIRONMENT", activeEnvironment, debug)
-	standbyEnvironment = helpers.GetEnv("STANDBY_ENVIRONMENT", standbyEnvironment, debug)
-	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
-	fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
-	fastlyAPISecretPrefix = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyAPISecretPrefix, debug)
-	lagoonVersion = helpers.GetEnv("LAGOON_VERSION", lagoonVersion, debug)
+	monitoringContact := helpers.GetEnv("MONITORING_ALERTCONTACT", generator.MonitoringContact, generator.Debug)
+	monitoringStatusPageID := helpers.GetEnv("MONITORING_STATUSPAGEID", generator.MonitoringStatusPageID, generator.Debug)
+	projectName := helpers.GetEnv("PROJECT", generator.ProjectName, generator.Debug)
+	environmentName := helpers.GetEnv("ENVIRONMENT", generator.EnvironmentName, generator.Debug)
+	branch := helpers.GetEnv("BRANCH", generator.Branch, generator.Debug)
+	prNumber := helpers.GetEnv("PR_NUMBER", generator.PRNumber, generator.Debug)
+	prTitle := helpers.GetEnv("PR_NUMBER", generator.PRTitle, generator.Debug)
+	prHeadBranch := helpers.GetEnv("PR_HEAD_BRANCH", generator.PRHeadBranch, generator.Debug)
+	prBaseBranch := helpers.GetEnv("PR_BASE_BRANCH", generator.PRBaseBranch, generator.Debug)
+	environmentType := helpers.GetEnv("ENVIRONMENT_TYPE", generator.EnvironmentType, generator.Debug)
+	buildType := helpers.GetEnv("BUILD_TYPE", generator.BuildType, generator.Debug)
+	activeEnvironment := helpers.GetEnv("ACTIVE_ENVIRONMENT", generator.ActiveEnvironment, generator.Debug)
+	standbyEnvironment := helpers.GetEnv("STANDBY_ENVIRONMENT", generator.StandbyEnvironment, generator.Debug)
+	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
+	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
+	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 
-	// the following variables are used for backup and schedule configurations
-	defaultBackupSchedule = helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", defaultBackupSchedule, debug)
-	hourlyDefaultBackupRetention = helpers.GetEnv("HOURLY_BACKUP_DEFAULT_RETENTION", hourlyDefaultBackupRetention, debug)
-	dailyDefaultBackupRetention = helpers.GetEnv("DAILY_BACKUP_DEFAULT_RETENTION", dailyDefaultBackupRetention, debug)
-	weeklyDefaultBackupRetention = helpers.GetEnv("WEEKLY_BACKUP_DEFAULT_RETENTION", weeklyDefaultBackupRetention, debug)
-	monthlyDefaultBackupRetention = helpers.GetEnv("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
+	// get the project and environment variables
+	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
+	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", generator.EnvironmentVariables, generator.Debug)
 
 	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
-	if err := LoadAndUnmarshalLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, debug); err != nil {
+	if err := LoadAndUnmarshalLagoonYml(generator.LagoonYAML, generator.LagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, generator.Debug); err != nil {
 		return nil, err
 	}
 
 	// set the task scale iterations/wait times
 	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
 	// set these on their `remote-controller` deployments to be injected to builds.
-	buildValues.TaskScaleMaxIterations = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_MAX_ITERATIONS", 30, debug)
-	buildValues.TaskScaleWaitTime = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_WAIT_TIME", 10, debug)
+	buildValues.TaskScaleMaxIterations = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_MAX_ITERATIONS", 30, generator.Debug)
+	buildValues.TaskScaleWaitTime = helpers.GetEnvInt("LAGOON_FEATURE_FLAG_TASK_SCALE_WAIT_TIME", 10, generator.Debug)
 
 	// start saving values into the build values variable
 	buildValues.Project = projectName
@@ -136,11 +132,7 @@ func NewGenerator(
 	}
 
 	// get the dbaas operator http endpoint or fall back to the default
-	buildValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "http://dbaas.lagoon.svc:5000", debug)
-
-	// get the project and environment variables
-	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
-	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, debug)
+	buildValues.DBaaSOperatorEndpoint = helpers.GetEnv("DBAAS_OPERATOR_HTTP", "http://dbaas.lagoon.svc:5000", generator.Debug)
 
 	// by default, environment routes are not monitored
 	buildValues.Monitoring.Enabled = false
@@ -171,7 +163,7 @@ func NewGenerator(
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
-	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, debug)
+	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, generator.Debug)
 	buildValues.IngressClass = ingressClass
 
 	// get any variables from the API here
@@ -182,7 +174,7 @@ func NewGenerator(
 	buildValues.DBaaSEnvironmentTypeOverrides = lagoonDBaaSEnvironmentTypes
 
 	// check autogenerated routes for fastly `LAGOON_FEATURE_FLAG(_FORCE|_DEFAULT)_FASTLY_AUTOGENERATED` using feature flags
-	autogeneratedRoutesFastly := CheckFeatureFlag("FASTLY_AUTOGENERATED", lagoonEnvVars, debug)
+	autogeneratedRoutesFastly := CheckFeatureFlag("FASTLY_AUTOGENERATED", lagoonEnvVars, generator.Debug)
 	if autogeneratedRoutesFastly == "enabled" {
 		buildValues.AutogeneratedRoutesFastly = true
 	} else {
@@ -203,14 +195,14 @@ func NewGenerator(
 	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, debug)
+	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
 	if err != nil {
 		return nil, err
 	}
 	/* end backups configuration */
 
 	/* start compose->service configuration */
-	err = generateServicesFromDockerCompose(&buildValues, lYAML, lagoonEnvVars, ignoreNonStringKeyErrors, ignoreMissingEnvFiles, debug)
+	err = generateServicesFromDockerCompose(&buildValues, lYAML, lagoonEnvVars, generator.IgnoreNonStringKeyErrors, generator.IgnoreMissingEnvFiles, generator.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +218,7 @@ func NewGenerator(
 		autogenRoutes,
 		mainRoutes,
 		activeStandbyRoutes,
-		debug,
+		generator.Debug,
 	)
 	if err != nil {
 		return nil, err
