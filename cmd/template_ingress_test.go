@@ -473,7 +473,7 @@ func TestTemplateRoutes(t *testing.T) {
 
 			defer os.RemoveAll(savedTemplates)
 
-			err = IngressTemplateGeneration(false)
+			err = IngressTemplateGeneration(generatorInput(false))
 			if err != nil {
 				t.Errorf("%v", err)
 			}

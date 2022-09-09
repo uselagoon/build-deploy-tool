@@ -252,7 +252,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			defer os.RemoveAll(savedTemplates)
 
 			defer os.RemoveAll(savedTemplates)
-			if err := BackupTemplateGeneration(false); (err != nil) != tt.wantErr {
+
+			if err := BackupTemplateGeneration(generatorInput(false)); (err != nil) != tt.wantErr {
 				t.Errorf("BackupTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			files, err := ioutil.ReadDir(savedTemplates)

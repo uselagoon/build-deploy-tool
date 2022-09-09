@@ -14,7 +14,7 @@ var featureFlagIdentify = &cobra.Command{
 	Aliases: []string{"f"},
 	Short:   "Identify if a feature flag has been enabled",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flagValue, err := IdentifyFeatureFlag("", false)
+		flagValue, err := IdentifyFeatureFlag(generatorInput(true), "")
 		if err != nil {
 			return err
 		}
@@ -24,43 +24,15 @@ var featureFlagIdentify = &cobra.Command{
 }
 
 // IdentifyFeatureFlag checks if a feature flag of given name has been set or not in a build
-func IdentifyFeatureFlag(name string, debug bool) (string, error) {
+func IdentifyFeatureFlag(g generator.GeneratorInput, name string) (string, error) {
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return "", err
 	}
 
-	forceFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_FORCE_", name), "", debug)
+	forceFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_FORCE_", name), "", g.Debug)
 	if forceFlagVar != "" {
 		return forceFlagVar, nil
 	}
@@ -68,7 +40,7 @@ func IdentifyFeatureFlag(name string, debug bool) (string, error) {
 	if featureFlagVar != nil {
 		return featureFlagVar.Value, nil
 	}
-	defaultFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_DEFAULT_", name), "", debug)
+	defaultFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_DEFAULT_", name), "", g.Debug)
 	return defaultFlagVar, nil
 }
 

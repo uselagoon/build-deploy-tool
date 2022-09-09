@@ -157,7 +157,8 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			defer os.RemoveAll(savedTemplates)
-			if err := DBaaSTemplateGeneration(false); (err != nil) != tt.wantErr {
+
+			if err := DBaaSTemplateGeneration(generatorInput(false)); (err != nil) != tt.wantErr {
 				t.Errorf("DBaaSTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			files, err := ioutil.ReadDir(savedTemplates)

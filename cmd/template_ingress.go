@@ -14,42 +14,14 @@ var routeGeneration = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Generate the ingress templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return IngressTemplateGeneration(true)
+		return IngressTemplateGeneration(generatorInput(true))
 	},
 }
 
 // IngressTemplateGeneration .
-func IngressTemplateGeneration(debug bool) error {
+func IngressTemplateGeneration(g generator.GeneratorInput) error {
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return err
@@ -57,7 +29,7 @@ func IngressTemplateGeneration(debug bool) error {
 
 	// generate the templates
 	for _, route := range lagoonBuild.MainRoutes.Routes {
-		if debug {
+		if g.Debug {
 			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 		}
 		templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
@@ -73,7 +45,7 @@ func IngressTemplateGeneration(debug bool) error {
 		// section are created correctly ensuring active/standby will work
 		// generate the templates for active/standby routes separately to normal routes
 		for _, route := range lagoonBuild.ActiveStandbyRoutes.Routes {
-			if debug {
+			if g.Debug {
 				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
 			}
 			templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)

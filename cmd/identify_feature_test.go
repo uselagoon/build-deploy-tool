@@ -272,8 +272,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					t.Errorf("%v", err)
 				}
 			}
-
-			got, err := IdentifyFeatureFlag(tt.args.name, false)
+			got, err := IdentifyFeatureFlag(generatorInput(false), tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IdentifyFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return

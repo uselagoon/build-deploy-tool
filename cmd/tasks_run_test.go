@@ -56,7 +56,7 @@ func Test_evaluateWhenConditionsForTaskInEnvironment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := evaluateWhenConditionsForTaskInEnvironment(tt.args.environment, tt.args.task)
+			got, err := evaluateWhenConditionsForTaskInEnvironment(tt.args.environment, tt.args.task, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("evaluateWhenConditionsForTaskInEnvironment() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -131,7 +131,7 @@ func Test_runTasks(t *testing.T) {
 				},
 				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 					for _, task := range tasks {
-						_, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
+						_, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task, false)
 						if err != nil {
 							return true, err
 						}
@@ -165,6 +165,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 	}
 	tests := []struct {
 		name      string
+		debug     bool
 		args      args
 		wantError bool
 	}{
@@ -219,7 +220,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues)
+			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.debug)
 			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
 
 			if tt.wantError && err == nil {

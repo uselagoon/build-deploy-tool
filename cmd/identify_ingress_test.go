@@ -508,7 +508,7 @@ func TestIdentifyRoute(t *testing.T) {
 			fastlyAPISecretPrefix = tt.args.secretPrefix
 			fastlyServiceID = tt.args.serviceID
 
-			primary, remainders, autogen, err := IdentifyPrimaryIngress(false)
+			primary, remainders, autogen, err := IdentifyPrimaryIngress(generatorInput(false))
 			if err != nil {
 				t.Errorf("%v", err)
 			}
