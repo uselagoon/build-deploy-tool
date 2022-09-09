@@ -144,17 +144,6 @@ func init() {
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
 	rootCmd.PersistentFlags().BoolVarP(&ignoreMissingEnvFiles, "ignore-missing-env-files", "", true,
 		"Ignore missing env_file files (true by default, subject to change).")
-	// backup related flags with defaults
-	rootCmd.PersistentFlags().StringVarP(&defaultBackupSchedule, "default-backup-schedule", "", "M H(22-2) * * *",
-		"The default backup schedule")
-	rootCmd.PersistentFlags().StringVarP(&hourlyDefaultBackupRetention, "hourly-default-backup-retention", "", "0",
-		"The default hourly backup retention")
-	rootCmd.PersistentFlags().StringVarP(&dailyDefaultBackupRetention, "daily-default-backup-retention", "", "7",
-		"The default daily backup retention")
-	rootCmd.PersistentFlags().StringVarP(&weeklyDefaultBackupRetention, "weekly-default-backup-retention", "", "6",
-		"The default weekly backup retention")
-	rootCmd.PersistentFlags().StringVarP(&monthlyDefaultBackupRetention, "monthly-default-backup-retention", "", "1",
-		"The default monthly backup retention")
 }
 
 // initConfig reads in config file and ENV variables if set.
