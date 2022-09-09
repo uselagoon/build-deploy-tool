@@ -14,7 +14,11 @@ var routeGeneration = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Generate the ingress templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return IngressTemplateGeneration(generatorInput(true))
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		return IngressTemplateGeneration(generator)
 	},
 }
 

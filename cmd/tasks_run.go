@@ -33,14 +33,18 @@ var tasksPreRun = &cobra.Command{
 	Aliases: []string{"pre"},
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generatorInput(true))
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
 		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			fmt.Println("Pre-rollout Tasks Failed with the following error: " + err.Error())
+			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
 		fmt.Println("Pre-rollout Tasks Complete")
@@ -53,7 +57,11 @@ var tasksPostRun = &cobra.Command{
 	Aliases: []string{"post"},
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generatorInput(true))
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
@@ -61,7 +69,7 @@ var tasksPostRun = &cobra.Command{
 		fmt.Println("Executing Post-rollout Tasks")
 		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			fmt.Println("Post-rollout Tasks Failed with the following error: " + err.Error())
+			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
 		fmt.Println("Post-rollout Tasks Complete")

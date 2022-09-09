@@ -14,7 +14,11 @@ var dbaasGeneration = &cobra.Command{
 	Aliases: []string{"db"},
 	Short:   "Generate the DBaaS templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return DBaaSTemplateGeneration(generatorInput(true))
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		return DBaaSTemplateGeneration(generator)
 	},
 }
 

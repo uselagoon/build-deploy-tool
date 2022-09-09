@@ -14,7 +14,11 @@ var backupGeneration = &cobra.Command{
 	Aliases: []string{"schedule", "bs"},
 	Short:   "Generate the backup schedule templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return BackupTemplateGeneration(generatorInput(true))
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		return BackupTemplateGeneration(generator)
 	},
 }
 

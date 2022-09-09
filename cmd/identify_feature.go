@@ -14,7 +14,11 @@ var featureFlagIdentify = &cobra.Command{
 	Aliases: []string{"f"},
 	Short:   "Identify if a feature flag has been enabled",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flagValue, err := IdentifyFeatureFlag(generatorInput(true), "")
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		flagValue, err := IdentifyFeatureFlag(generator, "")
 		if err != nil {
 			return err
 		}

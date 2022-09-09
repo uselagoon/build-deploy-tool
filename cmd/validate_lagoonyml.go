@@ -14,12 +14,26 @@ var validateLagoonYml = &cobra.Command{
 	Use:   "lagoon-yml",
 	Short: "Verify .lagoon.yml and environment for compatability with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
-
-		lagoonYAML, _ := rootCmd.PersistentFlags().GetString("lagoon-yml")
-		lagoonYAMLOverride, _ := rootCmd.PersistentFlags().GetString("lagoon-yml-override")
-		projectName, _ := rootCmd.PersistentFlags().GetString("project-name")
-		printOutput, _ := cmd.Flags().GetBool("print-resulting-lagoonyml")
+		lagoonYAML, err := rootCmd.PersistentFlags().GetString("lagoon-yml")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading lagoon-yml flag: %v", err))
+			os.Exit(1)
+		}
+		lagoonYAMLOverride, err := rootCmd.PersistentFlags().GetString("lagoon-yml-override")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading lagoon-yml-override flag: %v", err))
+			os.Exit(1)
+		}
+		projectName, err := rootCmd.PersistentFlags().GetString("project-name")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading project-name flag: %v", err))
+			os.Exit(1)
+		}
+		printOutput, err := cmd.Flags().GetBool("print-resulting-lagoonyml")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading print-resulting-lagoonyml flag: %v", err))
+			os.Exit(1)
+		}
 
 		lYAML := &lagoon.YAML{}
 		err = ValidateLagoonYml(lagoonYAML, lagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)

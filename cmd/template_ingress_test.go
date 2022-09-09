@@ -444,7 +444,10 @@ func TestTemplateRoutes(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			generator := generatorInput(false)
+			generator, err := generatorInput(false)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 			generator.LagoonYAML = tt.args.lagoonYAML
 			generator.SavedTemplatesPath = tt.args.templatePath
 

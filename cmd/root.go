@@ -116,12 +116,18 @@ func init() {
 		"The name of the branch")
 	rootCmd.PersistentFlags().StringP("pullrequest-number", "P", "",
 		"The pullrequest number")
+	rootCmd.PersistentFlags().StringP("pullrequest-title", "", "",
+		"The pullrequest title")
 	rootCmd.PersistentFlags().StringP("pullrequest-head-branch", "H", "",
 		"The pullrequest head branch")
 	rootCmd.PersistentFlags().StringP("pullrequest-base-branch", "B", "",
 		"The pullrequest base branch")
 	rootCmd.PersistentFlags().StringP("lagoon-version", "L", "",
 		"The lagoon version")
+	rootCmd.PersistentFlags().StringP("project-variables", "", "",
+		"The JSON payload for project scope variables")
+	rootCmd.PersistentFlags().StringP("environment-variables", "", "",
+		"The JSON payload for environment scope variables")
 	rootCmd.PersistentFlags().StringP("active-environment", "a", "",
 		"Name of the active environment if known")
 	rootCmd.PersistentFlags().StringP("standby-environment", "s", "",
