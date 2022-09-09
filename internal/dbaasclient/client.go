@@ -1,4 +1,4 @@
-package helpers
+package dbaasclient
 
 import (
 	"encoding/json"
@@ -7,9 +7,37 @@ import (
 	"net/http/httptest"
 	"strings"
 	"time"
+
+	retryablehttp "github.com/hashicorp/go-retryablehttp"
 )
 
-var httpClient = &http.Client{Timeout: 10 * time.Second}
+var httpClient = retryablehttp.NewClient()
+
+var retryWaitMin = 1000
+var retryWaitMax = 5000
+
+type Client struct {
+	RetryMax     int
+	RetryWaitMin time.Duration
+	RetryWaitMax time.Duration
+	Timeout      time.Duration
+}
+
+func NewClient(c Client) *Client {
+	if c.RetryMax == 0 {
+		c.RetryMax = 5
+	}
+	if c.RetryWaitMin == 0 {
+		c.RetryWaitMin = time.Duration(1) * time.Second
+	}
+	if c.RetryWaitMax == 0 {
+		c.RetryWaitMax = time.Duration(5) * time.Second
+	}
+	if c.Timeout == 0 {
+		c.Timeout = time.Duration(1) * time.Second
+	}
+	return &c
+}
 
 func addProtocol(url string) string {
 	if !strings.Contains(url, "https://") {
@@ -20,9 +48,14 @@ func addProtocol(url string) string {
 	return url
 }
 
-func CheckDBaaSHealth(dbaasEndpoint string) error {
+func (c *Client) CheckDBaaSHealth(dbaasEndpoint string) error {
 	// curl --write-out "%{http_code}\n" --silent --output /dev/null "http://dbaas/healthz"
 	dbaasEndpoint = addProtocol(dbaasEndpoint)
+	httpClient.RetryMax = c.RetryMax
+	httpClient.RetryWaitMin = c.RetryWaitMin
+	httpClient.RetryWaitMax = c.RetryWaitMin
+	httpClient.HTTPClient.Timeout = c.Timeout
+	httpClient.Logger = nil
 	resp, err := httpClient.Get(fmt.Sprintf("%s/healthz", dbaasEndpoint))
 	if err != nil {
 		return err
@@ -31,7 +64,7 @@ func CheckDBaaSHealth(dbaasEndpoint string) error {
 	return nil
 }
 
-type DBaaSProviderResponse struct {
+type providerResponse struct {
 	Result struct {
 		Found bool `json:"found"`
 	} `json:"result"`
@@ -40,14 +73,19 @@ type DBaaSProviderResponse struct {
 
 // check the dbaas provider exists, will return true or false without error if it can talk to the dbaas-operator
 // will return error if there an issue with the dbaas-operator or the specified endpoint
-func CheckDBaaSProvider(dbaasEndpoint, dbaasType, dbaasEnvironment string) (bool, error) {
+func (c *Client) CheckDBaaSProvider(dbaasEndpoint, dbaasType, dbaasEnvironment string) (bool, error) {
 	dbaasEndpoint = addProtocol(dbaasEndpoint)
 	// curl --silent "http://dbaas/type/env"
+	httpClient.RetryMax = c.RetryMax
+	httpClient.RetryWaitMin = c.RetryWaitMin
+	httpClient.RetryWaitMax = c.RetryWaitMin
+	httpClient.HTTPClient.Timeout = c.Timeout
+	httpClient.Logger = nil
 	resp, err := httpClient.Get(fmt.Sprintf("%s/%s/%s", dbaasEndpoint, dbaasType, dbaasEnvironment))
 	if err != nil {
 		return false, err
 	}
-	response := new(DBaaSProviderResponse)
+	response := new(providerResponse)
 	defer resp.Body.Close()
 	err = json.NewDecoder(resp.Body).Decode(response)
 	if err != nil {
