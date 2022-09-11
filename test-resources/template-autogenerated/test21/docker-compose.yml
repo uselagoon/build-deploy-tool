@@ -76,15 +76,15 @@ services:
     env_file:
       - .env.local
 
-  # mariadb:
-  #   container_name: "${COMPOSE_PROJECT_NAME}-db"
-  #   image: uselagoon/mariadb-drupal:latest
-  #   labels:
-  #     lagoon.type: mariadb
-  #   ports:
-  #     - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
-  #   environment:
-  #     << : *default-environment
+  mariadb:
+    container_name: "${COMPOSE_PROJECT_NAME}-db"
+    image: uselagoon/mariadb-drupal:latest
+    labels:
+      lagoon.type: mariadb
+    ports:
+      - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
+    environment:
+      << : *default-environment
 
   pma:
     image: phpmyadmin/phpmyadmin

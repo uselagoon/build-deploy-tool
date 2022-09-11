@@ -102,20 +102,20 @@ services:
     environment:
       << : *default-environment # loads the defined environment variables from the top
 
-  # mariadb:
-  #   image: amazeeio/mariadb-drupal
-  #   container_name: ${PROJECT_NAME}_db
-  #   labels:
-  #     lagoon.type: mariadb
-  #   ports:
-  #     - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
-  #   << : *default-user # uses the defined user from top
-  #   environment:
-  #     << : *default-environment
-  #   volumes:
-  #     # - .lagoon/mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
-  #     # - /path/to/mariadb/data/on/host:/var/lib/mysql # Use bind mount
-  #     - mysql:/var/lib/mysql
+  mariadb:
+    image: amazeeio/mariadb-drupal
+    container_name: ${PROJECT_NAME}_db
+    labels:
+      lagoon.type: mariadb
+    ports:
+      - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
+    << : *default-user # uses the defined user from top
+    environment:
+      << : *default-environment
+    volumes:
+      # - .lagoon/mariadb-init:/docker-entrypoint-initdb.d # Place init .sql file(s) here.
+      # - /path/to/mariadb/data/on/host:/var/lib/mysql # Use bind mount
+      - mysql:/var/lib/mysql
 
   # redis:
   #   image: amazeeio/redis
