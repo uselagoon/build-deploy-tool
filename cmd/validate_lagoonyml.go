@@ -10,16 +10,33 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-var printOutput bool
-
 var validateLagoonYml = &cobra.Command{
 	Use:   "lagoon-yml",
 	Short: "Verify .lagoon.yml and environment for compatability with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
-		var err error
+		lagoonYAML, err := rootCmd.PersistentFlags().GetString("lagoon-yml")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading lagoon-yml flag: %v", err))
+			os.Exit(1)
+		}
+		lagoonYAMLOverride, err := rootCmd.PersistentFlags().GetString("lagoon-yml-override")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading lagoon-yml-override flag: %v", err))
+			os.Exit(1)
+		}
+		projectName, err := rootCmd.PersistentFlags().GetString("project-name")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading project-name flag: %v", err))
+			os.Exit(1)
+		}
+		printOutput, err := cmd.Flags().GetBool("print-resulting-lagoonyml")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading print-resulting-lagoonyml flag: %v", err))
+			os.Exit(1)
+		}
 
 		lYAML := &lagoon.YAML{}
-		err = ValidateLagoonYml(lagoonYml, lagoonYmlOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
+		err = ValidateLagoonYml(lagoonYAML, lagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
 		if err != nil {
 			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
 			os.Exit(1)
@@ -44,7 +61,7 @@ func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvV
 }
 
 func init() {
-	validateCmd.PersistentFlags().BoolVarP(&printOutput, "print-resulting-lagoonyml", "", false,
+	validateCmd.PersistentFlags().BoolP("print-resulting-lagoonyml", "", false,
 		"Display the resulting, post merging, lagoon.yml file.")
 	validateCmd.AddCommand(validateLagoonYml)
 }

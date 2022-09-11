@@ -53,7 +53,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -72,7 +71,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test2/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -91,7 +89,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test3/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -110,7 +107,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test4/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -129,7 +125,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "multiproject",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test5/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -148,7 +143,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "multiproject",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test6/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -167,7 +161,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test7/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -186,7 +179,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "branch/routes",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test8/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -245,7 +237,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "production",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${environment}.${project}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test11/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -264,7 +255,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_ROUTES_JSON","value":"eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test12/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -283,7 +273,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				ingressClass:    "nginx",
 				lagoonYAML:      "../test-resources/template-ingress/test13/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
@@ -304,7 +293,6 @@ func TestTemplateRoutes(t *testing.T) {
 				ingressClass:    "nginx",
 				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"nginx","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test14/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -324,7 +312,6 @@ func TestTemplateRoutes(t *testing.T) {
 				ingressClass:    "nginx",
 				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -344,7 +331,6 @@ func TestTemplateRoutes(t *testing.T) {
 				ingressClass:    "nginx",
 				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"project-custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"}]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -363,7 +349,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test16/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -382,7 +367,6 @@ func TestTemplateRoutes(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-ingress/test17/lagoon.yml",
 				templatePath:    "../test-resources/template-ingress/output",
 			},
@@ -460,20 +444,22 @@ func TestTemplateRoutes(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
+			generator, err := generatorInput(false)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.SavedTemplatesPath = tt.args.templatePath
 
+			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
 
 			defer os.RemoveAll(savedTemplates)
 
-			err = IngressTemplateGeneration(false)
+			err = IngressTemplateGeneration(generator)
 			if err != nil {
 				t.Errorf("%v", err)
 			}

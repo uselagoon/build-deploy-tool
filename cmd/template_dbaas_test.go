@@ -55,7 +55,6 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/template-dbaas/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-dbaas/output",
 			},
@@ -141,14 +140,18 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
+			generator, err := generatorInput(false)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			generator.LagoonYAML = tt.args.lagoonYAML
+			generator.SavedTemplatesPath = tt.args.templatePath
 
-			lagoonYml = tt.args.lagoonYAML
-
+			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}
-			savedTemplates = tt.args.templatePath
 			defer os.RemoveAll(savedTemplates)
 
 			ts := dbaasclient.TestDBaaSHTTPServer()
@@ -158,7 +161,8 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			defer os.RemoveAll(savedTemplates)
-			if err := DBaaSTemplateGeneration(false); (err != nil) != tt.wantErr {
+
+			if err := DBaaSTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("DBaaSTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			files, err := ioutil.ReadDir(savedTemplates)
