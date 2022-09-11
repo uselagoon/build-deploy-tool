@@ -33,15 +33,18 @@ var tasksPreRun = &cobra.Command{
 	Aliases: []string{"pre"},
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(true)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
-		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment, buildValues), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			fmt.Println("Pre-rollout Tasks Failed with the following error: " + err.Error())
+			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
 		fmt.Println("Pre-rollout Tasks Complete")
@@ -54,16 +57,19 @@ var tasksPostRun = &cobra.Command{
 	Aliases: []string{"post"},
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(true)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
 
 		fmt.Println("Executing Post-rollout Tasks")
-		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
-			fmt.Println("Post-rollout Tasks Failed with the following error: " + err.Error())
+			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
 		fmt.Println("Post-rollout Tasks Complete")
@@ -71,38 +77,10 @@ var tasksPostRun = &cobra.Command{
 	},
 }
 
-func getEnvironmentInfo(debug bool) (lagoon.YAML, tasklib.TaskEnvironment, generator.BuildValues, error) {
+func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEnvironment, generator.BuildValues, error) {
 	// read the .lagoon.yml file
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return lagoon.YAML{}, nil, generator.BuildValues{}, err
@@ -150,13 +128,13 @@ func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 
 type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, error)
 
-func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues) iterateTaskFuncType {
+func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) iterateTaskFuncType {
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			// set the iterations and wait times here
 			task.ScaleMaxIterations = buildValues.TaskScaleMaxIterations
 			task.ScaleWaitTime = buildValues.TaskScaleWaitTime
-			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
+			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task, debug)
 			if err != nil {
 				return true, err
 			}
@@ -166,7 +144,9 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
 						if allowDeployMissingErrors {
-							fmt.Println("No running deployment found, skipping")
+							if debug {
+								fmt.Println("No running deployment found, skipping")
+							}
 						} else {
 							return true, e
 						}
@@ -175,28 +155,36 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 					}
 				}
 			} else {
-				fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
+				if debug {
+					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
+				}
 			}
 		}
 		return false, nil
 	}
 }
 
-func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task) (bool, error) {
+func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task, debug bool) (bool, error) {
 
 	if len(task.When) == 0 { //no condition, so we run ...
 		return true, nil
 	}
-	fmt.Println("Evaluating task condition - ", task.When)
+	if debug {
+		fmt.Println("Evaluating task condition - ", task.When)
+	}
 	ret, err := tasklib.EvaluateExpressionsInTaskEnvironment(task.When, environment)
 	if err != nil {
-		fmt.Println("Error evaluating condition: ", err.Error())
+		if debug {
+			fmt.Println("Error evaluating condition: ", err.Error())
+		}
 		return false, err
 	}
 	retBool, okay := ret.(bool)
 	if !okay {
 		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
-		fmt.Println(err.Error())
+		if debug {
+			fmt.Println(err.Error())
+		}
 		return false, err
 	}
 	return retBool, nil
@@ -222,15 +210,11 @@ func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 func init() {
 	taskCmd.AddCommand(tasksPreRun)
 	taskCmd.AddCommand(tasksPostRun)
-	//tasksPreRun.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-	//	"The .lagoon.yml file to read")
 
 	addArgs := func(command *cobra.Command) {
 		command.Flags().StringVarP(&namespace, "namespace", "n", "",
 			"The environments environment variables JSON payload")
 		//	"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
-		command.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
-			"The .lagoon.yml file to read")
 	}
 	addArgs(tasksPreRun)
 	addArgs(tasksPostRun)

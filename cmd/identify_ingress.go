@@ -19,7 +19,11 @@ var primaryIngressIdentify = &cobra.Command{
 	Aliases: []string{"pi"},
 	Short:   "Identify the primary ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		primary, _, _, err := IdentifyPrimaryIngress(false)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		primary, _, _, err := IdentifyPrimaryIngress(generator)
 		if err != nil {
 			return err
 		}
@@ -33,7 +37,11 @@ var ingressIdentify = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Identify all ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		primary, secondary, autogen, err := IdentifyPrimaryIngress(false)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		primary, secondary, autogen, err := IdentifyPrimaryIngress(generator)
 		if err != nil {
 			return err
 		}
@@ -49,37 +57,9 @@ var ingressIdentify = &cobra.Command{
 }
 
 // IdentifyPrimaryIngress .
-func IdentifyPrimaryIngress(debug bool) (string, []string, []string, error) {
+func IdentifyPrimaryIngress(g generator.GeneratorInput) (string, []string, []string, error) {
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return "", nil, nil, err

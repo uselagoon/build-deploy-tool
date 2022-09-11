@@ -65,6 +65,8 @@ func generateBackupValues(
 	if err != nil {
 		return fmt.Errorf("Unable to convert crontab for default backup schedule: %v", err)
 	}
+
+	// start: get variables from the build pod that may have been added by the controller
 	flagCheckSchedule := helpers.GetEnv("K8UP_WEEKLY_RANDOM_FEATURE_FLAG", defaultCheckSchedule, debug)
 	if flagCheckSchedule == "enabled" {
 		buildValues.Backup.CheckSchedule = "@weekly-random"
@@ -100,6 +102,7 @@ func generateBackupValues(
 	if err != nil {
 		return fmt.Errorf("Unable to convert monthly retention provided in the environment variable to integer")
 	}
+	// :end
 
 	if lYAML.BackupRetention.Production.Hourly != nil && buildValues.EnvironmentType == "production" {
 		buildValues.Backup.PruneRetention.Hourly = *lYAML.BackupRetention.Production.Hourly
@@ -119,7 +122,7 @@ func generateBackupValues(
 			return fmt.Errorf("Unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}
 	}
-	// check for custom baas backup variables
+	// check for custom baas backup variables in the API
 	lagoonBaaSCustomBackupEndpoint, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_ENDPOINT", []string{"build", "global"}, mergedVariables)
 	if lagoonBaaSCustomBackupEndpoint != nil {
 		buildValues.Backup.S3Endpoint = lagoonBaaSCustomBackupEndpoint.Value
