@@ -3,7 +3,9 @@ package cmd
 import (
 	"os"
 	"testing"
+	"time"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
@@ -258,6 +260,12 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			generator.LagoonYAML = tt.args.lagoonYAML
+			// add dbaasclient overrides for tests
+			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 
 			for _, envVar := range tt.vars {
 				err = os.Setenv(envVar.Name, envVar.Value)

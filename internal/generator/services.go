@@ -192,7 +192,7 @@ func composeToServiceValues(
 		// handle dbaas operator checks here
 		dbaasEnvironment := buildValues.EnvironmentType
 		if lagoonType == "mariadb" || lagoonType == "postgres" || lagoonType == "mongodb" {
-			err := buildValues.DBaaSClient.CheckDBaaSHealth(buildValues.DBaaSOperatorEndpoint)
+			err := buildValues.DBaaSClient.CheckHealth(buildValues.DBaaSOperatorEndpoint)
 			if err != nil {
 				// @TODO eventually this error should be handled and fail a build, with a flag to override https://github.com/uselagoon/build-deploy-tool/issues/56
 				// if !buildValues.DBaaSFallbackSingle {
@@ -283,7 +283,7 @@ func getDBaasEnvironment(
 			}
 		}
 	}
-	exists, err := buildValues.DBaaSClient.CheckDBaaSProvider(buildValues.DBaaSOperatorEndpoint, lagoonType, *dbaasEnvironment)
+	exists, err := buildValues.DBaaSClient.CheckProvider(buildValues.DBaaSOperatorEndpoint, lagoonType, *dbaasEnvironment)
 	if err != nil {
 		return exists, fmt.Errorf("There was an error checking DBaaS endpoint %s: %v", buildValues.DBaaSOperatorEndpoint, err)
 	}

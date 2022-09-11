@@ -5,6 +5,9 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 )
 
 func TestIdentifyRoute(t *testing.T) {
@@ -493,6 +496,12 @@ func TestIdentifyRoute(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			generator.LagoonYAML = tt.args.lagoonYAML
+			// add dbaasclient overrides for tests
+			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 
 			primary, remainders, autogen, err := IdentifyPrimaryIngress(generator)
 			if err != nil {
