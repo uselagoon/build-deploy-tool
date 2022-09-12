@@ -19,7 +19,7 @@ var primaryIngressIdentify = &cobra.Command{
 	Aliases: []string{"pi"},
 	Short:   "Identify the primary ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generatorInput(false)
 		if err != nil {
 			return err
 		}
