@@ -14,7 +14,7 @@ var dbaasIdentify = &cobra.Command{
 	Aliases: []string{"db", "d"},
 	Short:   "Identify if any dbaas consumers are created",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generatorInput(false)
 		if err != nil {
 			return err
 		}
