@@ -45,6 +45,8 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
 
 cronjobTolerations: []

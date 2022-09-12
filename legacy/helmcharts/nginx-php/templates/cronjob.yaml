@@ -75,7 +75,7 @@ spec:
                   name: lagoon-sshkey
                   readOnly: true
           restartPolicy: Never
-          {{- with $.Values.nodeSelector }}
+          {{- with $.Values.cronjobNodeSelector }}
           nodeSelector:
             {{- toYaml $ | nindent 12 }}
           {{- end }}

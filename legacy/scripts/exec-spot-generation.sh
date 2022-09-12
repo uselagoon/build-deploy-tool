@@ -46,6 +46,8 @@ tolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+nodeSelector:
+  lagoon.sh/spot: 'true'
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
     fi
 
@@ -61,6 +63,8 @@ cronjobTolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+cronjobNodeSelector:
+  lagoon.sh/spot: 'true'
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
     fi
 fi
