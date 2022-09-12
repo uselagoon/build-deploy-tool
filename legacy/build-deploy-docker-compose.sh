@@ -233,9 +233,6 @@ DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.d
 # Load all Services that are defined
 COMPOSE_SERVICES=($(cat $DOCKER_COMPOSE_YAML | shyaml keys services))
 
-# Default shared mariadb service broker
-MARIADB_SHARED_DEFAULT_CLASS="lagoon-dbaas-mariadb-apb"
-MONGODB_SHARED_DEFAULT_CLASS="lagoon-maas-mongodb-apb"
 
 # Figure out which services should we handle
 SERVICE_TYPES=()
