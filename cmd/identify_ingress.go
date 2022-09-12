@@ -37,7 +37,7 @@ var ingressIdentify = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Identify all ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generatorInput(false)
 		if err != nil {
 			return err
 		}
