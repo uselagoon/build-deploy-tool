@@ -71,4 +71,5 @@ func IdentifyPrimaryIngress(g generator.GeneratorInput) (string, []string, []str
 func init() {
 	identifyCmd.AddCommand(primaryIngressIdentify)
 	identifyCmd.AddCommand(ingressIdentify)
+	identifyCmd.AddCommand(dbaasIdentify)
 }
