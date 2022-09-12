@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"reflect"
 	"testing"
+	"time"
 
 	composetypes "github.com/compose-spec/compose-go/types"
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
@@ -460,9 +462,14 @@ func Test_composeToServiceValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ts := helpers.TestDBaaSHTTPServer()
+			ts := dbaasclient.TestDBaaSHTTPServer()
 			defer ts.Close()
 			tt.args.buildValues.DBaaSOperatorEndpoint = ts.URL
+			tt.args.buildValues.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 			got, err := composeToServiceValues(tt.args.buildValues, tt.args.lYAML, tt.args.composeService, tt.args.composeServiceValues, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("composeToServiceValues() error = %v, wantErr %v", err, tt.wantErr)
