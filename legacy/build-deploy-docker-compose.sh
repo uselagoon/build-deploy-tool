@@ -1257,6 +1257,17 @@ do
     SERVICE_ROLLOUT_TYPE=$ENVIRONMENT_SERVICE_ROLLOUT_TYPE
   fi
 
+  # check if this service is a dbaas service and transform the service_type accordingly
+  for DBAAS_ENTRY in "${DBAAS[@]}"
+  do
+    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
+    DB_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
+    DB_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+    if [ $SERVICE_NAME == $DB_SERVICE_NAME ]; then
+      SERVICE_TYPE=$DB_SERVICE_TYPE
+    fi
+  done
+
   if [ $SERVICE_TYPE == "mariadb-dbaas" ]; then
 
     echo "nothing to monitor for $SERVICE_TYPE"
