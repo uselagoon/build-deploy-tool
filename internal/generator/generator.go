@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"sigs.k8s.io/yaml"
@@ -48,6 +49,7 @@ type GeneratorInput struct {
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
+	DBaaSClient              *dbaasclient.Client
 }
 
 func NewGenerator(
@@ -90,6 +92,9 @@ func NewGenerator(
 	if err := LoadAndUnmarshalLagoonYml(generator.LagoonYAML, generator.LagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, generator.Debug); err != nil {
 		return nil, err
 	}
+
+	//add the dbaas client to build values too
+	buildValues.DBaaSClient = generator.DBaaSClient
 
 	// set the task scale iterations/wait times
 	// these are not user modifiable flags, but are injectable by the controller so individual clusters can

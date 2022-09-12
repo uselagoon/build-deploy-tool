@@ -6,7 +6,9 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
@@ -145,6 +147,12 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			}
 			generator.LagoonYAML = tt.args.lagoonYAML
 			generator.SavedTemplatesPath = tt.args.templatePath
+			// add dbaasclient overrides for tests
+			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 
 			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
@@ -153,7 +161,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			}
 			defer os.RemoveAll(savedTemplates)
 
-			ts := helpers.TestDBaaSHTTPServer()
+			ts := dbaasclient.TestDBaaSHTTPServer()
 			defer ts.Close()
 			err = os.Setenv("DBAAS_OPERATOR_HTTP", ts.URL)
 			if err != nil {

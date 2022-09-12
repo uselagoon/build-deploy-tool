@@ -4,7 +4,9 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
@@ -93,6 +95,12 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// add dbaasclient overrides for tests
+			tt.args.lValues.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 			got, err := GenerateDBaaSTemplate(tt.args.lValues)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateDBaaSTemplate() error = %v, wantErr %v", err, tt.wantErr)

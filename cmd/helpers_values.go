@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
@@ -99,6 +100,8 @@ func generatorInput(debug bool) (generator.GeneratorInput, error) {
 	if err != nil {
 		return generator.GeneratorInput{}, fmt.Errorf("error reading saved-templates-path flag: %v", err)
 	}
+	// create a dbaas client with the default configuration
+	dbaas := dbaasclient.NewClient(dbaasclient.Client{})
 	return generator.GeneratorInput{
 		Debug:                    debug,
 		LagoonYAML:               lagoonYAML,
@@ -124,5 +127,6 @@ func generatorInput(debug bool) (generator.GeneratorInput, error) {
 		SavedTemplatesPath:       savedTemplates,
 		IgnoreMissingEnvFiles:    ignoreMissingEnvFiles,
 		IgnoreNonStringKeyErrors: ignoreNonStringKeyErrors,
+		DBaaSClient:              dbaas,
 	}, nil
 }
