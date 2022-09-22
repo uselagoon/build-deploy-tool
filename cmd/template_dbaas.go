@@ -14,47 +14,24 @@ var dbaasGeneration = &cobra.Command{
 	Aliases: []string{"db"},
 	Short:   "Generate the DBaaS templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return DBaaSTemplateGeneration(true)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		return DBaaSTemplateGeneration(generator)
 	},
 }
 
 // DBaaSTemplateGeneration .
-func DBaaSTemplateGeneration(debug bool,
+func DBaaSTemplateGeneration(g generator.GeneratorInput,
 ) error {
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return err
 	}
+	savedTemplates := g.SavedTemplatesPath
 
 	templateYAML, err := dbaasTemplater.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
 	if err != nil {

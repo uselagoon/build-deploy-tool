@@ -4,7 +4,9 @@ import (
 	"os"
 	"reflect"
 	"testing"
+	"time"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -53,6 +55,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: true,
 			},
@@ -89,6 +92,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
@@ -125,6 +129,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
@@ -162,6 +167,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
@@ -201,6 +207,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
@@ -243,6 +250,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
@@ -401,7 +409,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test10 - custom ingress with exceptionally log subdomain",
+			name: "test10 - custom ingress with exceptionally long subdomain",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
@@ -440,6 +448,12 @@ func TestGenerateKubeTemplate(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// add dbaasclient overrides for tests
+			tt.args.values.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 			got, err := GenerateIngressTemplate(tt.args.route, tt.args.values)
 			if err != nil {
 				if !tt.wantErr {

@@ -763,6 +763,9 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'gitSha' $LAGOON_GIT_SHA
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'buildType' $BUILD_TYPE
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'kubernetes' $KUBERNETES
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSION
+if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT" ]; then
+  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.memory' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT"
+fi
 # check for ROOTLESS_WORKLOAD feature flag, disabled by default
 
 if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then

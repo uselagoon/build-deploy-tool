@@ -1,7 +1,8 @@
-package helpers
+package dbaasclient
 
 import (
 	"testing"
+	"time"
 )
 
 func TestCheckDBaaSProvider(t *testing.T) {
@@ -61,7 +62,12 @@ func TestCheckDBaaSProvider(t *testing.T) {
 			if tt.args.dbaasEndpoint != "" {
 				testURL = tt.args.dbaasEndpoint
 			}
-			got, err := CheckDBaaSProvider(testURL, tt.args.dbaasType, tt.args.dbaasEnvironment)
+			d := NewClient(Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
+			got, err := d.CheckProvider(testURL, tt.args.dbaasType, tt.args.dbaasEnvironment)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("CheckDBaaSProvider() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -102,7 +108,12 @@ func TestCheckDBaaSHealth(t *testing.T) {
 			if tt.args.dbaasEndpoint != "" {
 				testURL = tt.args.dbaasEndpoint
 			}
-			if err := CheckDBaaSHealth(testURL); (err != nil) != tt.wantErr {
+			d := NewClient(Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
+			if err := d.CheckHealth(testURL); (err != nil) != tt.wantErr {
 				t.Errorf("CheckDBaaSHealth() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})

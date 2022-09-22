@@ -162,7 +162,6 @@ func mergeLagoonYAMLTasks(left *[]TaskRun, right *[]TaskRun) error {
 		for j, leftTask := range *left {
 			if leftTask.Run.Name != "" && leftTask.Run.Name == rightTask.Run.Name {
 				//here we merge the two, rather than appending
-				fmt.Println(i, " ", j)
 				appendToLeft = false
 				if err := mergo.Merge(&(*left)[j].Run, &(*right)[i].Run, mergo.WithOverride); err != nil {
 					return err

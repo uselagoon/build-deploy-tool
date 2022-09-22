@@ -14,47 +14,24 @@ var backupGeneration = &cobra.Command{
 	Aliases: []string{"schedule", "bs"},
 	Short:   "Generate the backup schedule templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return BackupTemplateGeneration(true)
+		generator, err := generatorInput(true)
+		if err != nil {
+			return err
+		}
+		return BackupTemplateGeneration(generator)
 	},
 }
 
 // BackupTemplateGeneration .
-func BackupTemplateGeneration(debug bool,
+func BackupTemplateGeneration(g generator.GeneratorInput,
 ) error {
 	lagoonBuild, err := generator.NewGenerator(
-		lagoonYml,
-		lagoonYmlOverride,
-		projectVariables,
-		environmentVariables,
-		projectName,
-		environmentName,
-		environmentType,
-		activeEnvironment,
-		standbyEnvironment,
-		buildType,
-		branch,
-		prNumber,
-		prTitle,
-		prHeadBranch,
-		prBaseBranch,
-		lagoonVersion,
-		defaultBackupSchedule,
-		hourlyDefaultBackupRetention,
-		dailyDefaultBackupRetention,
-		weeklyDefaultBackupRetention,
-		monthlyDefaultBackupRetention,
-		monitoringContact,
-		monitoringStatusPageID,
-		fastlyCacheNoCahce,
-		fastlyAPISecretPrefix,
-		fastlyServiceID,
-		ignoreNonStringKeyErrors,
-		ignoreMissingEnvFiles,
-		debug,
+		g,
 	)
 	if err != nil {
 		return err
 	}
+	savedTemplates := g.SavedTemplatesPath
 
 	templateYAML, err := backuptemplate.GenerateBackupSchedule(*lagoonBuild.BuildValues)
 	if err != nil {

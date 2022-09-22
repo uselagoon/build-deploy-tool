@@ -3,7 +3,9 @@ package cmd
 import (
 	"os"
 	"testing"
+	"time"
 
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
@@ -53,7 +55,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -73,7 +74,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -93,7 +93,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -119,7 +118,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -149,7 +147,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -179,7 +176,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -259,12 +255,17 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
-
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
+			generator, err := generatorInput(false)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			generator.LagoonYAML = tt.args.lagoonYAML
+			// add dbaasclient overrides for tests
+			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 
 			for _, envVar := range tt.vars {
 				err = os.Setenv(envVar.Name, envVar.Value)
@@ -272,8 +273,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					t.Errorf("%v", err)
 				}
 			}
-
-			got, err := IdentifyFeatureFlag(tt.args.name, false)
+			got, err := IdentifyFeatureFlag(generator, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IdentifyFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return
