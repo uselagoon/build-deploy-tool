@@ -560,8 +560,14 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
     fi
     if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-      LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+      TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+      TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+      if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+        LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
+      fi
+      if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+        LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
+      fi
     fi
   set -x
 
