@@ -1037,7 +1037,10 @@ set -x
 
 
 # Run the backup generation script
-. /kubectl-build-deploy/scripts/exec-backup-generation.sh
+# build-tool doesn't do any capability checks yet, so do this for now
+if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
+  build-deploy-tool template backup-schedule
+fi
 
 # check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
 set +x
