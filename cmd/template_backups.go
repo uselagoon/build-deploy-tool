@@ -37,7 +37,7 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "backups"), templateYAML)
+	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "k8up-lagoon-backup-schedule"), templateYAML)
 	return nil
 }
 
