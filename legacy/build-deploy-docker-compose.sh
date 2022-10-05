@@ -1039,6 +1039,10 @@ set -x
 # Run the backup generation script
 # build-tool doesn't do any capability checks yet, so do this for now
 if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
+  if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+    # Create baas-repo-pw secret based on the project secret
+    kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+  fi
   build-deploy-tool template backup-schedule
 fi
 
