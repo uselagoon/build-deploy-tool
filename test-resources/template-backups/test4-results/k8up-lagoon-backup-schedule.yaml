@@ -29,6 +29,7 @@ spec:
       accessKeyIDSecretRef:
         key: access-key
         name: lagoon-baas-custom-backup-credentials
+      bucket: baas-example-project
       secretAccessKeySecretRef:
         key: secret-key
         name: lagoon-baas-custom-backup-credentials

@@ -66,6 +66,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 						BackupSchedule: "50 5 * * 6",
 						CheckSchedule:  "50 5 * * 6",
 						PruneSchedule:  "50 5 * * 6",
+						S3BucketName:   "baas-example-project",
 						PruneRetention: generator.PruneRetention{
 							Hourly:  0,
 							Daily:   7,
