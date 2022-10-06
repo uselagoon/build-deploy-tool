@@ -40,6 +40,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
+		vars    []helpers.EnvironmentVariable
 		want    string
 		wantErr bool
 	}{
@@ -157,6 +158,27 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			},
 			want: "../test-resources/template-backups/test6-results",
 		},
+		{
+			name: "test7",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:         `[]`,
+				lagoonYAML:      "../test-resources/template-backups/test7/lagoon.yml",
+				templatePath:    "../test-resources/template-backups/output",
+			},
+			vars: []helpers.EnvironmentVariable{
+				{Name: "BACKUP_EXISTING_BUCKET", Value: "baas-existing-bucket"},
+			},
+			want: "../test-resources/template-backups/test7-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -257,7 +279,12 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			}
 			defer os.RemoveAll(savedTemplates)
 
-			defer os.RemoveAll(savedTemplates)
+			for _, envVar := range tt.vars {
+				err = os.Setenv(envVar.Name, envVar.Value)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+			}
 
 			if err := BackupTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("BackupTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)

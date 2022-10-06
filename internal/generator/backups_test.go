@@ -541,6 +541,43 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test15 - existing bucket name",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Project:         "example-project",
+					Namespace:       "example-com-main",
+				},
+				lYAML:           &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{},
+			},
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "BACKUP_EXISTING_BUCKET",
+					Value: "baas-existing-example-project",
+				},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Project:         "example-project",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 4 * * 0",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-existing-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

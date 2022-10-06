@@ -157,11 +157,15 @@ func generateBackupValues(
 	}
 
 	// work out the bucket name
+	// if a bucket override has been provided, use it, otherwise check the existing bucket or create a new named one
 	lagoonBaaSBackupBucket, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_BUCKET_NAME", []string{"build", "global"}, mergedVariables)
 	if lagoonBaaSBackupBucket != nil {
 		buildValues.Backup.S3BucketName = lagoonBaaSBackupBucket.Value
 	} else {
-		buildValues.Backup.S3BucketName = fmt.Sprintf("%s-%s", baasBucketPrefix, buildValues.Project)
+		// if an existing bucket has not already been provided (currently provided by envvar in build-deploy-docker-compose.sh)
+		// then set the new bucket to the default prefix and projectname
+		bucketName := helpers.GetEnv("BACKUP_EXISTING_BUCKET", fmt.Sprintf("%s-%s", baasBucketPrefix, buildValues.Project), debug)
+		buildValues.Backup.S3BucketName = bucketName
 	}
 
 	// check for custom baas backup variables in the API

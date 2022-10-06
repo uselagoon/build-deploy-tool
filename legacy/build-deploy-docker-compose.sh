@@ -1043,6 +1043,8 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     # Create baas-repo-pw secret based on the project secret
     kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
   fi
+  # if there is an existing bucket, export the name so the build-deploy-tool can consume it
+  export BACKUP_EXISTING_BUCKET=$(kubectl --insecure-skip-tls-verify -n "$NAMESPACE" get schedule.backup.appuio.ch k8up-lagoon-backup-schedule --output 'jsonpath={.spec.backend.s3.bucket}' 2> /dev/null || true)
   build-deploy-tool template backup-schedule
 fi
 
