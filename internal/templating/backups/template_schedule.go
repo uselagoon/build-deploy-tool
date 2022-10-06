@@ -150,6 +150,10 @@ func GenerateBackupSchedule(
 	result := append(separator[:], scheduleBytes[:]...)
 	if lValues.Backup.CustomLocation.BackupLocationAccessKey != "" && lValues.Backup.CustomLocation.BackupLocationSecretKey != "" {
 		backupSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: corev1.SchemeGroupVersion.Version,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "lagoon-baas-custom-backup-credentials",
 			},
@@ -167,6 +171,10 @@ func GenerateBackupSchedule(
 	}
 	if lValues.Backup.CustomLocation.RestoreLocationAccessKey != "" && lValues.Backup.CustomLocation.RestoreLocationSecretKey != "" {
 		restoreSecret := &corev1.Secret{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Secret",
+				APIVersion: corev1.SchemeGroupVersion.Version,
+			},
 			ObjectMeta: metav1.ObjectMeta{
 				Name: "lagoon-baas-custom-restore-credentials",
 			},
