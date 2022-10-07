@@ -31,6 +31,7 @@ if [[ "$(featureFlag SPOT_INSTANCE_PRODUCTION)" = enabled && "${ENVIRONMENT_TYPE
 
     # set deployment spot configurations
     if [[ ${SPOT_SERVICE_TYPES} =~ (^|,)"${SERVICE_TYPE}"(,|$) ]]; then
+        FORCE_NODESELECTOR=${BASH_REMATCH[2]}
         HELM_SET_VALUES+=(--set "useSpot=true")
         # spot on production gets 2 replicas if the service type is in the supported SPOT_REPLICA_TYPES list
         if [ "${ENVIRONMENT_TYPE}" == "production" ]; then
@@ -46,13 +47,18 @@ tolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+" >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
+        if [ "$FORCE_NODESELECTOR" == ":force" ]; then
+          echo -e "\
 nodeSelector:
   lagoon.sh/spot: 'true'
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
+        fi
     fi
 
     # set cronjob spot configurations
     if [[ ${SPOT_SERVICE_CRONJOB_TYPES} =~ (^|,)"${SERVICE_TYPE}"(,|$) ]]; then
+        FORCE_NODESELECTOR=${BASH_REMATCH[2]}
         HELM_SET_VALUES+=(--set "cronjobUseSpot=true")
         # spot on production gets 2 replicas if the service type is in the supported SPOT_REPLICA_TYPES list
         echo -e "\
@@ -63,8 +69,12 @@ cronjobTolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+" >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
+        if [ "$FORCE_NODESELECTOR" == ":force" ]; then
+          echo -e "\
 cronjobNodeSelector:
   lagoon.sh/spot: 'true'
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
+        fi
     fi
 fi
