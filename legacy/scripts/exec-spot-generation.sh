@@ -47,6 +47,14 @@ tolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+affinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: lagoon.sh/spot
+          operator: Exists
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
         if [ "$FORCE_NODESELECTOR" == ":force" ]; then
           echo -e "\
@@ -69,6 +77,14 @@ cronjobTolerations:
 - key: lagoon.sh/spot
   operator: Exists
   effect: PreferNoSchedule
+cronjobAffinity:
+  nodeAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 1
+      preference:
+        matchExpressions:
+        - key: lagoon.sh/spot
+          operator: Exists
 " >> /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
         if [ "$FORCE_NODESELECTOR" == ":force" ]; then
           echo -e "\

@@ -73,6 +73,8 @@ cronjobTolerations: []
 
 affinity: {}
 
+cronjobAffinity: {}
+
 inPodCronjobs: ""
 
 tls_acme: false

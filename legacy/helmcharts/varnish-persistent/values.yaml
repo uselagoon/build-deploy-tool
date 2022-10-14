@@ -77,6 +77,8 @@ cronjobTolerations: []
 
 affinity: {}
 
+cronjobAffinity: {}
+
 configMapSha: ""
 
 useSpot: false

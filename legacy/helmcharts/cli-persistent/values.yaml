@@ -48,6 +48,8 @@ cronjobTolerations: []
 
 affinity: {}
 
+cronjobAffinity: {}
+
 inPodCronjobs: ""
 
 nativeinPodCronjobs: ""

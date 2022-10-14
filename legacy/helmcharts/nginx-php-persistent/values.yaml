@@ -66,6 +66,8 @@ cronjobTolerations: []
 
 affinity: {}
 
+cronjobAffinity: {}
+
 inPodCronjobs: ""
 
 configMapSha: ""
