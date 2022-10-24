@@ -95,7 +95,7 @@ fi
 ##############################################
 # we want to be able to support private container registries
 # grab all the container-registries that are defined in the `.lagoon.yml` file
-PRIVATE_CONTAINER_REGISTRIES=($(cat .lagoon.yml | shyaml keys container-registries 2> /dev/null))
+PRIVATE_CONTAINER_REGISTRIES=($(cat .lagoon.yml | shyaml keys container-registries 2> /dev/null || echo ""))
 if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
   echo -e "##############################################\nBEGIN Custom Container Registries Setup\n##############################################"
   sleep 0.5s
