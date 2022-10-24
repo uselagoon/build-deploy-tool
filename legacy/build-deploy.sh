@@ -122,29 +122,35 @@ do
     PRIVATE_REGISTRY_CREDENTIAL=""
     # check if we have a password defined anywhere in the api first
     if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-      PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
+        PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API project variable $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
+      fi
     fi
     if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
       TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
       if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
         PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API environment variable $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
       fi
     fi
 
     # check if we have an override password defined anywhere in the api
-
     PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY="${PRIVATE_CONTAINER_REGISTRY}_PASSWORD"
 
     if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
       TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY'") | "\(.value)"'))
       if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
         PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API project variable $PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY"
       fi
     fi
     if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
       TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY'") | "\(.value)"'))
       if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
         PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API environment variable $PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY"
       fi
     fi
 
@@ -152,8 +158,6 @@ do
       #if no password defined in the lagoon api, pass the one in `.lagoon.yml` as a password
       PRIVATE_REGISTRY_CREDENTIAL=$PRIVATE_CONTAINER_REGISTRY_PASSWORD
       PRIVATE_REGISTRY_CREDENTIAL_SOURCE=".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)"
-    else
-      PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API variable $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
     fi
     if [ -z "$PRIVATE_REGISTRY_CREDENTIAL" ]; then
       echo -e "A private container registry was defined in the .lagoon.yml file, but no password could be found in either the .lagoon.yml or in the Lagoon API\n\nPlease check if the password has been set correctly."
