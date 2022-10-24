@@ -160,6 +160,11 @@ do
     fi
   fi
 done
+if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
+  echo -e "##############################################\nEND Custom Container Registries Setup\n##############################################"
+  sleep 0.5s
+fi
 set -x
 
+  echo -e "##############################################\nStart Build Process\n##############################################"
 .  /kubectl-build-deploy/build-deploy-docker-compose.sh
