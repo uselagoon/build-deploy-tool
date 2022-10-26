@@ -1322,6 +1322,9 @@ do
     fi
   fi
 
+  # handle spot configurations
+  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
+
 # TODO: we don't need this anymore
   # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)
   # if [ ! $DEPLOYMENT_STRATEGY == "false" ]; then
