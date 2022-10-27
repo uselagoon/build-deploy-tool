@@ -69,8 +69,18 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
+
+cronjobTolerations: []
 
 affinity: {}
 
+cronjobAffinity: {}
+
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false

@@ -682,6 +682,9 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
       BUILD_CONTEXT=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.context .)
 
+      # Check to see if this service uses a build target
+      BUILD_TARGET=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.target false)
+
       # allow to overwrite build context for this environment and service
       ENVIRONMENT_BUILD_CONTEXT_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.context false)
       if [ ! $ENVIRONMENT_BUILD_CONTEXT_OVERRIDE == "false" ]; then
@@ -1321,6 +1324,9 @@ do
       HELM_SET_VALUES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
     fi
   fi
+
+  # handle spot configurations
+  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
 
 # TODO: we don't need this anymore
   # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)
