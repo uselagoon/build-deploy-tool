@@ -58,10 +58,20 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
 
+cronjobTolerations: []
+
 affinity: {}
+
+cronjobAffinity: {}
 
 inPodCronjobs: ""
 
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false
