@@ -137,7 +137,7 @@ do
     fi
 
     # check if we have an override password defined anywhere in the api
-    PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY="${PRIVATE_CONTAINER_REGISTRY}_PASSWORD"
+    PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY="REGISTRY_${PRIVATE_CONTAINER_REGISTRY}_PASSWORD"
 
     if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
       TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY'") | "\(.value)"'))
