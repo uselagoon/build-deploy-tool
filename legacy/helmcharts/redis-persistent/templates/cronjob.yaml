@@ -47,9 +47,9 @@ spec:
           securityContext:
             {{- toYaml $.Values.podSecurityContext | nindent 12 }}
           volumes:
-        - name: {{ $.Values.persistentStorage.name }}
-          persistentVolumeClaim:
-            claimName: {{ $.Values.persistentStorage.name }}
+            - name: {{ $.Values.persistentStorage.name }}
+              persistentVolumeClaim:
+                claimName: {{ $.Values.persistentStorage.name }}
           containers:
             - image: {{ $.Values.image | quote }}
               name: cronjob-{{ $.Release.Name }}-{{ $cronjobName }}
@@ -70,9 +70,6 @@ spec:
               resources:
                 {{- toYaml $.Values.resources | nindent 16 }}
               volumeMounts:
-                - mountPath: /var/run/secrets/lagoon/sshkey/
-                  name: lagoon-sshkey
-                  readOnly: true
                 - name: {{ $.Values.persistentStorage.name }}
                   mountPath: {{ $.Values.persistentStorage.path | quote }}
           restartPolicy: Never
