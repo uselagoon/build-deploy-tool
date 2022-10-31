@@ -628,10 +628,8 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg LAGOON_PR_NUMBER="${PR_NUMBER}")
   fi
 
-  # Add in random number as per https://github.com/uselagoon/lagoon/issues/2246
-
-  RANDOM_BUILD_ARG=$(echo $RANDOM | md5sum -z | head -c 32)
-  BUILD_ARGS+=(--build-arg LAGOON_RANDOMIZER="${RANDOM_BUILD_ARG}")
+  # Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
+  BUILD_ARGS+=(--build-arg LAGOON_BUILD_NAME="${LAGOON_BUILD_NAME}")
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
