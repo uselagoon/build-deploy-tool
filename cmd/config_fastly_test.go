@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
@@ -150,7 +151,7 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				t.Errorf("fastlyConfigGeneration() = %v, want %v", got, tt.want)
 			}
 			t.Cleanup(func() {
-				unsetEnvVars(nil)
+				helpers.UnsetEnvVars(nil)
 			})
 		})
 	}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
+	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
@@ -13,7 +14,11 @@ var featureFlagIdentify = &cobra.Command{
 	Aliases: []string{"f"},
 	Short:   "Identify if a feature flag has been enabled",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		flagValue, err := IdentifyFeatureFlag("", false)
+		generator, err := generatorInput(false)
+		if err != nil {
+			return err
+		}
+		flagValue, err := IdentifyFeatureFlag(generator, "")
 		if err != nil {
 			return err
 		}
@@ -23,30 +28,23 @@ var featureFlagIdentify = &cobra.Command{
 }
 
 // IdentifyFeatureFlag checks if a feature flag of given name has been set or not in a build
-func IdentifyFeatureFlag(name string, debug bool) (string, error) {
-	activeEnv := false
-	standbyEnv := false
-
-	lagoonEnvVars := []lagoon.EnvironmentVariable{}
-	lagoonValues := lagoon.BuildValues{}
-	lYAML := lagoon.YAML{}
-	autogenRoutes := &lagoon.RoutesV2{}
-	mainRoutes := &lagoon.RoutesV2{}
-	activeStanbyRoutes := &lagoon.RoutesV2{}
-	err := collectBuildValues(debug, &activeEnv, &standbyEnv, &lagoonEnvVars, &lagoonValues, &lYAML, autogenRoutes, mainRoutes, activeStanbyRoutes, ignoreNonStringKeyErrors)
+func IdentifyFeatureFlag(g generator.GeneratorInput, name string) (string, error) {
+	lagoonBuild, err := generator.NewGenerator(
+		g,
+	)
 	if err != nil {
 		return "", err
 	}
 
-	forceFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_FORCE_", name), "", debug)
+	forceFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_FORCE_", name), "", g.Debug)
 	if forceFlagVar != "" {
 		return forceFlagVar, nil
 	}
-	featureFlagVar, _ := lagoon.GetLagoonVariable(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_", name), []string{"build", "global"}, lagoonEnvVars)
+	featureFlagVar, _ := lagoon.GetLagoonVariable(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_", name), []string{"build", "global"}, *lagoonBuild.LagoonEnvironmentVariables)
 	if featureFlagVar != nil {
 		return featureFlagVar.Value, nil
 	}
-	defaultFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_DEFAULT_", name), "", debug)
+	defaultFlagVar := helpers.GetEnv(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_DEFAULT_", name), "", g.Debug)
 	return defaultFlagVar, nil
 }
 

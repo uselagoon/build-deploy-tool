@@ -8,12 +8,9 @@ metadata:
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: main
     lagoon.sh/version: v2.7.x
-    monitor.stakater.com/enabled: "true"
+    monitor.stakater.com/enabled: "false"
     monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    uptimerobot.monitor.stakater.com/alert-contacts: alertcontact
-    uptimerobot.monitor.stakater.com/interval: "60"
-    uptimerobot.monitor.stakater.com/status-pages: statuspageid
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: main.example.com

@@ -22,13 +22,16 @@ var debug bool
 
 // Task .
 type Task struct {
-	Name      string `json:"name"`
-	Command   string `json:"command"`
-	Namespace string `json:"namespace"`
-	Service   string `json:"service"`
-	Shell     string `json:"shell"`
-	Container string `json:"container"`
-	When      string `json:"when"`
+	Name               string `json:"name"`
+	Command            string `json:"command"`
+	Namespace          string `json:"namespace"`
+	Service            string `json:"service"`
+	Shell              string `json:"shell"`
+	Container          string `json:"container"`
+	When               string `json:"when"`
+	Weight             int    `json:"weight"`
+	ScaleWaitTime      int    `json:"scaleWaitTime"`
+	ScaleMaxIterations int    `json:"scaleMaxIterations"`
 }
 
 // NewTask .
@@ -39,6 +42,22 @@ func NewTask() Task {
 		Service:   "cli",
 		Shell:     "sh",
 	}
+}
+
+type DeploymentMissingError struct {
+	ErrorText string
+}
+
+func (e *DeploymentMissingError) Error() string {
+	return e.ErrorText
+}
+
+type PodScalingError struct {
+	ErrorText string
+}
+
+func (e *PodScalingError) Error() string {
+	return e.ErrorText
 }
 
 func (t Task) String() string {
@@ -89,7 +108,7 @@ func getConfig() (*rest.Config, error) {
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
 	if debug {
-		fmt.Println("Executing task :", task.Command)
+		fmt.Printf("Executing task '%v':'%v'\n", task.Name, task.Command)
 	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
@@ -101,15 +120,19 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, "-c")
 	command = append(command, task.Command)
 
-	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container)
-	if err == nil {
-		if len(stdout) > 0 {
-			fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
-		}
-		if len(stderr) > 0 {
-			fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
-		}
+	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
+
+	if err != nil {
+		fmt.Printf("*** Task '%v' failed - STDOUT and STDERR follows ***\n", task.Name)
 	}
+
+	if len(stdout) > 0 {
+		fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
+	}
+	if len(stderr) > 0 {
+		fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
+	}
+
 	return err
 }
 
@@ -119,6 +142,7 @@ func ExecPod(
 	command []string,
 	tty bool,
 	container string,
+	waitTime, maxIterations int,
 ) (string, string, error) {
 
 	restCfg, err := getConfig()
@@ -143,20 +167,20 @@ func ExecPod(
 	}
 
 	if len(deployments.Items) == 0 {
-		return "", "", errors.New("No deployments found matching label: " + lagoonServiceLabel)
+		return "", "", &DeploymentMissingError{ErrorText: "No deployments found matching label: " + lagoonServiceLabel}
 	}
 
 	deployment := &deployments.Items[0]
 
 	// we want to scale the replicas here to 1, at least, before attempting the exec
 	podReady := false
-	numIterations := 0
+	numIterations := 1
 	for ; !podReady; numIterations++ {
-		if numIterations > 10 { //break if there's some reason we can't scale the pod
+		if numIterations >= maxIterations { //break if there's some reason we can't scale the pod
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Println("No ready replicas found, scaling up")
+			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, maxIterations))
 
 			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
@@ -167,8 +191,7 @@ func ExecPod(
 				scale.Spec.Replicas = 1
 				depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
 			}
-
-			time.Sleep(3 * time.Second)
+			time.Sleep(time.Second * time.Duration(waitTime))
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
@@ -207,7 +230,9 @@ func ExecPod(
 		}
 	}
 	if !foundRunningPod {
-		return "", "", errors.New("Unable to find running Pod for namespace: " + namespace)
+		return "", "", &PodScalingError{
+			ErrorText: "Unable to find running Pod for namespace: " + namespace,
+		}
 	}
 	if debug {
 		fmt.Println("Going to exec into ", pod.Name)
@@ -248,7 +273,7 @@ func ExecPod(
 		Tty:    tty,
 	})
 	if err != nil {
-		return "", "", fmt.Errorf("error in Stream: %v", err)
+		return stdout.String(), stderr.String(), fmt.Errorf("Error returned: %v", err)
 	}
 
 	return stdout.String(), stderr.String(), nil

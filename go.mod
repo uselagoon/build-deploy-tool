@@ -4,9 +4,15 @@ go 1.17
 
 require (
 	github.com/PaesslerAG/gval v1.1.2
+	github.com/amazeeio/dbaas-operator v0.3.0
 	github.com/compose-spec/compose-go v1.2.7
+	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
 	github.com/google/go-cmp v0.5.7
+	github.com/hashicorp/go-retryablehttp v0.5.4
+	github.com/imdario/mergo v0.3.13
 	github.com/spf13/cobra v1.4.0
+	github.com/vshn/k8up v1.99.99
+	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.23.6
 	k8s.io/apimachinery v0.23.6
 	k8s.io/client-go v0.23.6
@@ -23,7 +29,7 @@ require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/googleapis/gnostic v0.5.5 // indirect
-	github.com/imdario/mergo v0.3.13 // indirect
+	github.com/hashicorp/go-cleanhttp v0.5.1 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect
@@ -51,11 +57,11 @@ require (
 	google.golang.org/protobuf v1.27.1 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0 // indirect
 	k8s.io/klog/v2 v2.30.0 // indirect
 	k8s.io/kube-openapi v0.0.0-20211115234752-e816edb12b65 // indirect
 	k8s.io/utils v0.0.0-20211116205334-6203023598ed // indirect
+	sigs.k8s.io/controller-runtime v0.9.6 // indirect
 	sigs.k8s.io/json v0.0.0-20211020170558-c049b76a60c6 // indirect
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.1 // indirect
 )

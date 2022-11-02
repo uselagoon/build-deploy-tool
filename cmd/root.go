@@ -69,56 +69,86 @@ func Execute() {
 	}
 }
 
+// version/build information (populated at build time by make file)
+var (
+	bdtName    = "build-deploy-tool"
+	bdtVersion = "0.x.x"
+	bdtBuild   = ""
+	goVersion  = ""
+)
+
+// version/build information command
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Version information",
+	Run: func(cmd *cobra.Command, args []string) {
+		displayVersionInfo()
+	},
+}
+
+func displayVersionInfo() {
+	fmt.Println(fmt.Sprintf("%s %s (built: %s / go %s)", bdtName, bdtVersion, bdtBuild, goVersion))
+}
+
 func init() {
 	cobra.OnInitialize(initConfig)
 	rootCmd.CompletionOptions.DisableDefaultCmd = true
+	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(templateCmd)
 	rootCmd.AddCommand(configCmd)
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(identifyCmd)
 	rootCmd.AddCommand(validateCmd)
 
-	rootCmd.Flags().StringVarP(&lagoonYml, "lagoon-yml", "l", ".lagoon.yml",
+	rootCmd.PersistentFlags().StringP("lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
-	rootCmd.Flags().StringVarP(&projectName, "project-name", "p", "",
+	rootCmd.PersistentFlags().StringP("lagoon-yml-override", "", ".lagoon.override.yml",
+		"The .lagoon.yml override file to read for merging values into target lagoon.yml")
+	rootCmd.PersistentFlags().StringP("project-name", "p", "",
 		"The project name")
-	rootCmd.Flags().StringVarP(&environmentName, "environment-name", "e", "",
+	rootCmd.PersistentFlags().StringP("environment-name", "e", "",
 		"The environment name to check")
-	rootCmd.Flags().StringVarP(&environmentType, "environment-type", "E", "",
+	rootCmd.PersistentFlags().StringP("environment-type", "E", "",
 		"The type of environment (development or production)")
-	rootCmd.Flags().StringVarP(&buildType, "build-type", "d", "",
+	rootCmd.PersistentFlags().StringP("build-type", "d", "",
 		"The type of build (branch, pullrequest, promote)")
-	rootCmd.Flags().StringVarP(&branch, "branch", "b", "",
+	rootCmd.PersistentFlags().StringP("branch", "b", "",
 		"The name of the branch")
-	rootCmd.Flags().StringVarP(&prNumber, "pullrequest-number", "P", "",
+	rootCmd.PersistentFlags().StringP("pullrequest-number", "P", "",
 		"The pullrequest number")
-	rootCmd.Flags().StringVarP(&prHeadBranch, "pullrequest-head-branch", "H", "",
+	rootCmd.PersistentFlags().StringP("pullrequest-title", "", "",
+		"The pullrequest title")
+	rootCmd.PersistentFlags().StringP("pullrequest-head-branch", "H", "",
 		"The pullrequest head branch")
-	rootCmd.Flags().StringVarP(&prBaseBranch, "pullrequest-base-branch", "B", "",
+	rootCmd.PersistentFlags().StringP("pullrequest-base-branch", "B", "",
 		"The pullrequest base branch")
-	rootCmd.Flags().StringVarP(&lagoonVersion, "lagoon-version", "L", "",
+	rootCmd.PersistentFlags().StringP("lagoon-version", "L", "",
 		"The lagoon version")
-	rootCmd.Flags().StringVarP(&activeEnvironment, "active-environment", "a", "",
+	rootCmd.PersistentFlags().StringP("project-variables", "", "",
+		"The JSON payload for project scope variables")
+	rootCmd.PersistentFlags().StringP("environment-variables", "", "",
+		"The JSON payload for environment scope variables")
+	rootCmd.PersistentFlags().StringP("active-environment", "a", "",
 		"Name of the active environment if known")
-	rootCmd.Flags().StringVarP(&standbyEnvironment, "standby-environment", "s", "",
+	rootCmd.PersistentFlags().StringP("standby-environment", "s", "",
 		"Name of the standby environment if known")
-	rootCmd.Flags().StringVarP(&templateValues, "template-path", "t", "/kubectl-build-deploy/",
+	rootCmd.PersistentFlags().StringP("template-path", "t", "/kubectl-build-deploy/",
 		"Path to the template on disk")
-	rootCmd.Flags().StringVarP(&savedTemplates, "saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
+	rootCmd.PersistentFlags().StringP("saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
 		"Path to where the resulting templates are saved")
-	rootCmd.Flags().StringVarP(&monitoringContact, "monitoring-config", "M", "",
+	rootCmd.PersistentFlags().StringP("monitoring-config", "M", "",
 		"The monitoring contact config if known")
-	rootCmd.Flags().StringVarP(&monitoringStatusPageID, "monitoring-status-page-id", "m", "",
+	rootCmd.PersistentFlags().StringP("monitoring-status-page-id", "m", "",
 		"The monitoring status page ID if known")
-	rootCmd.Flags().StringVarP(&fastlyCacheNoCahce, "fastly-cache-no-cache-id", "F", "",
+	rootCmd.PersistentFlags().StringP("fastly-cache-no-cache-id", "F", "",
 		"The fastly cache no cache service ID to use")
-	rootCmd.Flags().StringVarP(&fastlyServiceID, "fastly-service-id", "f", "",
+	rootCmd.PersistentFlags().StringP("fastly-service-id", "f", "",
 		"The fastly service ID to use")
-	rootCmd.Flags().StringVarP(&fastlyAPISecretPrefix, "fastly-api-secret-prefix", "A", "fastly-api-",
+	rootCmd.PersistentFlags().StringP("fastly-api-secret-prefix", "A", "fastly-api-",
 		"The fastly secret prefix to use")
-	rootCmd.PersistentFlags().BoolVarP(&ignoreNonStringKeyErrors, "ignore-non-string-key-errors", "", true,
+	rootCmd.PersistentFlags().BoolP("ignore-non-string-key-errors", "", true,
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
-	rootCmd.PersistentFlags().BoolVarP(&ignoreMissingEnvFiles, "ignore-missing-env-files", "", true,
+	rootCmd.PersistentFlags().BoolP("ignore-missing-env-files", "", true,
 		"Ignore missing env_file files (true by default, subject to change).")
 }
 

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
@@ -55,7 +56,7 @@ func Test_evaluateWhenConditionsForTaskInEnvironment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := evaluateWhenConditionsForTaskInEnvironment(tt.args.environment, tt.args.task)
+			got, err := evaluateWhenConditionsForTaskInEnvironment(tt.args.environment, tt.args.task, false)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("evaluateWhenConditionsForTaskInEnvironment() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -130,7 +131,7 @@ func Test_runTasks(t *testing.T) {
 				},
 				taskRunner: func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 					for _, task := range tasks {
-						_, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task)
+						_, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task, false)
 						if err != nil {
 							return true, err
 						}
@@ -146,11 +147,89 @@ func Test_runTasks(t *testing.T) {
 	namespace = "default"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := runTasks(tt.args.taskType, tt.args.taskRunner, tt.args.lYAML, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
+			if err := runTasks(tt.args.taskRunner, tt.args.lYAML.Tasks.Prerollout, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
 				t.Errorf("runTasks() error = %v, wantErr %v", err, tt.wantErr)
 			}
 
 		})
 	}
 	namespace = oldNamespace
+}
+
+func Test_iterateTaskGenerator(t *testing.T) {
+	type args struct {
+		allowDeployMissingErrors bool
+		taskRunner               runTaskInEnvironmentFuncType
+		tasks                    []lagoon.Task
+		buildValues              generator.BuildValues
+	}
+	tests := []struct {
+		name      string
+		debug     bool
+		args      args
+		wantError bool
+	}{
+		{name: "Runs with no errors",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return nil
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: false,
+		},
+		{name: "Allows deploy missing errors and keeps rolling (pre rollout case)",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.DeploymentMissingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: false,
+		},
+		{name: "Does not allow deploy missing errors and stops with error (post rollout)",
+			args: args{
+				allowDeployMissingErrors: false,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.DeploymentMissingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: true,
+		},
+		{name: "Allows deploy missing errors but stops with any other error (pre rollout)",
+			args: args{
+				allowDeployMissingErrors: true,
+				taskRunner: func(incoming lagoon.Task) error {
+					return &lagoon.PodScalingError{}
+				},
+				tasks: []lagoon.Task{
+					{},
+				},
+			},
+			wantError: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.debug)
+			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
+
+			if tt.wantError && err == nil {
+				t.Errorf("Expected error")
+			}
+
+			if !tt.wantError && err != nil {
+				t.Errorf("No error expected")
+			}
+		})
+	}
 }

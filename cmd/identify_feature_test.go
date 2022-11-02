@@ -3,6 +3,10 @@ package cmd
 import (
 	"os"
 	"testing"
+	"time"
+
+	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
 
 func TestIdentifyFeatureFlag(t *testing.T) {
@@ -31,12 +35,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 		templatePath       string
 	}
 	tests := []struct {
-		name string
-		args args
-		vars []struct {
-			name  string
-			value string
-		}
+		name    string
+		args    args
+		vars    []helpers.EnvironmentVariable
 		want    string
 		wantErr bool
 	}{
@@ -54,7 +55,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -74,7 +74,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
@@ -94,17 +93,13 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "enabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "enabled",
 				},
 			},
 			want: "enabled",
@@ -123,21 +118,17 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "enabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "enabled",
 				},
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "enabled",
@@ -156,21 +147,17 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "disabled",
@@ -189,17 +176,13 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				branch:          "main",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
 				envVars:         `[]`,
-				secretPrefix:    "fastly-api-",
 				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
 				templatePath:    "../test-resources/output",
 			},
-			vars: []struct {
-				name  string
-				value string
-			}{
+			vars: []helpers.EnvironmentVariable{
 				{
-					name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
-					value: "disabled",
+					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+					Value: "disabled",
 				},
 			},
 			want: "enabled",
@@ -272,21 +255,25 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			lagoonYml = tt.args.lagoonYAML
-			templateValues = tt.args.valuesFilePath
-
-			savedTemplates = tt.args.templatePath
-			fastlyAPISecretPrefix = tt.args.secretPrefix
-			fastlyServiceID = tt.args.serviceID
+			generator, err := generatorInput(false)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			generator.LagoonYAML = tt.args.lagoonYAML
+			// add dbaasclient overrides for tests
+			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+				RetryMax:     5,
+				RetryWaitMin: time.Duration(10) * time.Millisecond,
+				RetryWaitMax: time.Duration(50) * time.Millisecond,
+			})
 
 			for _, envVar := range tt.vars {
-				err = os.Setenv(envVar.name, envVar.value)
+				err = os.Setenv(envVar.Name, envVar.Value)
 				if err != nil {
 					t.Errorf("%v", err)
 				}
 			}
-
-			got, err := IdentifyFeatureFlag(tt.args.name, false)
+			got, err := IdentifyFeatureFlag(generator, tt.args.name)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IdentifyFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -295,7 +282,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 				t.Errorf("IdentifyFeatureFlag() = %v, want %v", got, tt.want)
 			}
 			t.Cleanup(func() {
-				unsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(tt.vars)
 			})
 		})
 	}

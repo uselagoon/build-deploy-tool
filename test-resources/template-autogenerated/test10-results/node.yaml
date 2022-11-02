@@ -11,6 +11,8 @@ metadata:
     lagoon.sh/branch: main
     lagoon.sh/version: v2.7.x
     monitor.stakater.com/enabled: "false"
+    nginx.ingress.kubernetes.io/server-snippet: |
+      add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   creationTimestamp: null
   labels:

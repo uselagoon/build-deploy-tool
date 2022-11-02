@@ -3,11 +3,8 @@ docker-compose-yaml: ../test-resources/template-ingress/test12/docker-compose.ym
 environment_variables:
   git_sha: "true"
 
-environments:
-  main:
-    routes:
-      - node:
-          - example.com:
-              alternativenames:
-                - www.example.com
-                - en.example.com
+# environments:
+#   main:
+#     routes:
+#       - node:
+#           - example.com

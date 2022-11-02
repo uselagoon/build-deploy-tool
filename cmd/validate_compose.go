@@ -8,12 +8,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var (
-	dockerComposeFile        string
-	ignoreNonStringKeyErrors bool
-	ignoreMissingEnvFiles    bool
-)
-
 var validateDockerCompose = &cobra.Command{
 	Use:     "docker-compose",
 	Aliases: []string{"compose", "dc"},
@@ -21,7 +15,23 @@ var validateDockerCompose = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		// @TODO: ignoreNonStringKeyErrors is `true` by default because Lagoon doesn't enforce
 		// docker-compose compliance yet
-		err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
+		ignoreMissingEnvFiles, err := rootCmd.PersistentFlags().GetBool("ignore-missing-env-files")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading ignore-missing-env-files flag: %v", err))
+			os.Exit(1)
+		}
+		ignoreNonStringKeyErrors, err := rootCmd.PersistentFlags().GetBool("ignore-non-string-key-errors")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading ignore-non-string-key-errors flag: %v", err))
+			os.Exit(1)
+		}
+		dockerComposeFile, err := cmd.Flags().GetString("docker-compose")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			os.Exit(1)
+		}
+
+		err = ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
@@ -31,7 +41,7 @@ var validateDockerCompose = &cobra.Command{
 
 // ValidateDockerCompose validate a docker-compose file
 func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) error {
-	_, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
+	_, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
 	if err != nil {
 		return err
 	}
@@ -40,6 +50,6 @@ func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) er
 
 func init() {
 	validateCmd.AddCommand(validateDockerCompose)
-	validateDockerCompose.Flags().StringVarP(&dockerComposeFile, "docker-compose", "d", "docker-compose.yml",
+	validateDockerCompose.Flags().StringP("docker-compose", "", "docker-compose.yml",
 		"The docker-compose.yml file to read.")
 }

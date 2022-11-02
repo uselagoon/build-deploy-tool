@@ -1,0 +1,16 @@
+docker-compose-yaml: docker-compose.yml
+backup-retention:
+  production:
+    hourly: 0
+    daily: 10
+    weekly: 6
+    monthly: 2
+
+backup-schedule:
+  production: "M/15 5 * * 0"
+
+environments:
+    main:
+        routes:
+        -   nginx:
+            - a.example.com
