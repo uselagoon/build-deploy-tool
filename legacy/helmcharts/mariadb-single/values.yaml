@@ -63,9 +63,15 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
 
+cronjobTolerations: []
+
 affinity: {}
+
+cronjobAffinity: {}
 
 inPodCronjobs: ""
 
@@ -73,3 +79,7 @@ tls_acme: false
 routesAutogenerateInsecure: Allow
 
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false

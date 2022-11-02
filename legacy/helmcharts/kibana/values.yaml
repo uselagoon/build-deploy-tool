@@ -65,9 +65,15 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
 
+cronjobTolerations: []
+
 affinity: {}
+
+cronjobAffinity: {}
 
 cronjobs: ""
 
@@ -75,3 +81,7 @@ tls_acme: false
 routesAutogenerateInsecure: Allow
 
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false
