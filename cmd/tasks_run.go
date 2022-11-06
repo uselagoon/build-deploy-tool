@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
@@ -95,6 +95,8 @@ func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEn
 	return *lagoonBuild.LagoonYAML, lagoonConditionalEvaluationEnvironment, *lagoonBuild.BuildValues, nil
 }
 
+// runTasks is essentially an interpreter. It takes in a runner function (that does the interpreting), the task list (a series of instructions)
+// and the environment in which conditional statements are going to be run (i.e. a list of variables available to "where" clauses) and runs them.
 func runTasks(taskRunner iterateTaskFuncType, tasks []lagoon.TaskRun, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
 
 	if namespace == "" {
@@ -118,6 +120,7 @@ func runTasks(taskRunner iterateTaskFuncType, tasks []lagoon.TaskRun, lagoonCond
 	return nil
 }
 
+// unwindTaskRun simply reformats a []lagoon.TaskRun structure. It gets rid of the nested "run" field so that the array is flatter.
 func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 	var tasks []lagoon.Task
 	for _, taskrun := range taskRun {
@@ -126,8 +129,14 @@ func unwindTaskRun(taskRun []lagoon.TaskRun) []lagoon.Task {
 	return tasks
 }
 
+// iterateTaskFuncType defines what a function that runs tasks looks like. There's an environment to evaluate a task,
+// as well as the task definition itself.
 type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, error)
 
+// iterateTaskGenerator is probably a little trickier than it should be, but it's essentially a factory for iterateTaskFuncTypes
+// that lets the resulting function reference values as part of the closure, thereby cleaning up the definition a bit.
+// so, the variables passed into the factor (eg. allowDeployMissingErrors, etc.) determine the way the function behaves,
+// without needing to pass those into the call to the returned function itself.
 func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) iterateTaskFuncType {
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
@@ -164,6 +173,9 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 	}
 }
 
+// evaluateWhenConditionsForTaskInEnvironment will take a task, check if it has a "when" field, and if it does, will evaluate it,
+// in the environment given. It will return 'true' if the "when" condition evaluates to "true" (false otherwise), indicating
+// that the task should be run (i.e. we execute the task in a running container).
 func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task, debug bool) (bool, error) {
 
 	if len(task.When) == 0 { //no condition, so we run ...
@@ -192,7 +204,9 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 
 type runTaskInEnvironmentFuncType func(incoming lagoon.Task) error
 
-// implements runTaskInEnvironmentFuncType
+// runCleanTaskInEnvironment implements runTaskInEnvironmentFuncType and will
+// 1. make sure the task we pass to the execution environment is free of any data we don't want (hence the new task)
+// 2. will actually execute the task in the environment.
 func runCleanTaskInEnvironment(incoming lagoon.Task) error {
 	task := lagoon.NewTask()
 	task.Command = incoming.Command
