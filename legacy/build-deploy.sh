@@ -62,7 +62,14 @@ PRIVATE_DOCKER_HUB_REGISTRY=0
 PRIVATE_EXTERNAL_REGISTRY=0
 
 set +x # reduce noise in build logs
-DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
+  DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+else
+  DEPLOYER_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+fi
+if [ -z ${DEPLOYER_TOKEN} ]; then
+  echo "No deployer token found"; exit 1;
+fi
 
 kubectl config set-credentials lagoon/kubernetes.default.svc --token="${DEPLOYER_TOKEN}"
 kubectl config set-cluster kubernetes.default.svc --server=https://kubernetes.default.svc --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt
