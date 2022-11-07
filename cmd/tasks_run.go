@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -42,7 +43,18 @@ var tasksPreRun = &cobra.Command{
 			return err
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
-		err = runTasks(iterateTaskGenerator(true, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+
+		// We actually want to unidle the namespace before running pre-rollout tasks,
+		// so we wrap the usual task runner before calling it
+		unidleThenRun := func(incoming lagoon.Task) error {
+			err := lagoon.UnidleNamespace(context.TODO(), incoming.Namespace)
+			if err != nil {
+				return err
+			}
+			return runCleanTaskInEnvironment(incoming)
+		}
+
+		err = runTasks(iterateTaskGenerator(true, unidleThenRun, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -67,6 +79,7 @@ var tasksPostRun = &cobra.Command{
 		}
 
 		fmt.Println("Executing Post-rollout Tasks")
+
 		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())

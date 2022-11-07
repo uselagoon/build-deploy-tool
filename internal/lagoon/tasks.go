@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -278,6 +280,69 @@ func ExecPod(
 
 	return stdout.String(), stderr.String(), nil
 
+}
+
+// The following two functions are shamelessly plucked from https://github.com/uselagoon/lagoon-ssh-portal/pull/104/files
+
+// unidleReplicas checks the unidle-replicas annotation for the number of
+// replicas to restore. If the label cannot be read or parsed, 1 is returned.
+// The return value is clamped to the interval [1,16].
+func unidleReplicas(deploy appsv1.Deployment) int {
+	rs, ok := deploy.Annotations["idling.amazee.io/unidle-replicas"]
+	if !ok {
+		return 1
+	}
+	r, err := strconv.Atoi(rs)
+	if err != nil || r < 1 {
+		return 1
+	}
+	if r > 16 {
+		return 16
+	}
+	return r
+}
+
+// unidleNamespace scales all deployments with the
+// "idling.amazee.io/watch=true" label up to the number of replicas in the
+// "idling.amazee.io/unidle-replicas" label.
+
+func UnidleNamespace(ctx context.Context, namespace string) error {
+	restCfg, err := getConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := GetK8sClient(restCfg)
+	if err != nil {
+		return fmt.Errorf("unable to create client: %v", err)
+	}
+
+	deploys, err := clientset.AppsV1().Deployments(namespace).List(ctx, v1.ListOptions{
+		LabelSelector: "idling.amazee.io/watch=true",
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't select deploys by label: %v", err)
+	}
+	for _, deploy := range deploys.Items {
+		// check if idled
+		s, err := clientset.AppsV1().Deployments(namespace).
+			GetScale(ctx, deploy.Name, v1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("couldn't get deployment scale: %v", err)
+		}
+		if s.Spec.Replicas > 0 {
+			continue
+		}
+		// scale up the deployment
+		sc := *s
+		sc.Spec.Replicas = int32(unidleReplicas(deploy))
+		_, err = clientset.AppsV1().Deployments(namespace).
+			UpdateScale(ctx, deploy.Name, &sc, v1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("couldn't scale deployment: %v", err)
+		}
+	}
+	return nil
 }
 
 func init() {
