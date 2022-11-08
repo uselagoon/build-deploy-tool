@@ -628,6 +628,9 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg LAGOON_PR_NUMBER="${PR_NUMBER}")
   fi
 
+  # Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
+  BUILD_ARGS+=(--build-arg LAGOON_BUILD_NAME="${LAGOON_BUILD_NAME}")
+
   for IMAGE_NAME in "${IMAGES[@]}"
   do
 
@@ -681,6 +684,9 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       TEMPORARY_IMAGE_NAME="${NAMESPACE}-${IMAGE_NAME}"
 
       BUILD_CONTEXT=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.context .)
+
+      # Check to see if this service uses a build target
+      BUILD_TARGET=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.target false)
 
       # allow to overwrite build context for this environment and service
       ENVIRONMENT_BUILD_CONTEXT_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.context false)
@@ -1321,6 +1327,9 @@ do
       HELM_SET_VALUES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
     fi
   fi
+
+  # handle spot configurations
+  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
 
 # TODO: we don't need this anymore
   # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)

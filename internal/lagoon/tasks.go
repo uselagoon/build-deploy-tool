@@ -80,13 +80,14 @@ func getConfig() (*rest.Config, error) {
 	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
 
 	if *kubeconfig == "" {
-		//return nil, fmt.Errorf("Unable to find a valid KUBECONFIG")
 		//Fall back on out of cluster
-
 		// read the deployer token.
 		token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
 		if err != nil {
-			return nil, err
+			token, err = ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+			if err != nil {
+				return nil, err
+			}
 		}
 		// generate the rest config for the client.
 		restCfg := &rest.Config{
