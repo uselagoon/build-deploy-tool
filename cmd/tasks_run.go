@@ -46,7 +46,6 @@ var tasksPreRun = &cobra.Command{
 		// We actually want to unidle the namespace before running pre-rollout tasks,
 		// so we wrap the usual task runner before calling it
 		unidleThenRun := func(namespace string, incoming lagoon.Task) error {
-			fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!I WILL BE UNIDLING THIS NAMESPACE: ", namespace)
 			err := lagoon.UnidleNamespace(context.TODO(), namespace)
 			if err != nil {
 				return err
