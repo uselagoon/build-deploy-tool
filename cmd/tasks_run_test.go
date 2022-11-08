@@ -178,6 +178,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				tasks: []lagoon.Task{
 					{},
 				},
+				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
 			wantError: false,
 		},
@@ -190,6 +191,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				tasks: []lagoon.Task{
 					{},
 				},
+				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
 			wantError: false,
 		},
@@ -202,6 +204,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				tasks: []lagoon.Task{
 					{},
 				},
+				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
 			wantError: true,
 		},
@@ -214,13 +217,14 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				tasks: []lagoon.Task{
 					{},
 				},
+				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
 			wantError: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.debug)
+			got, _ := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.debug)
 			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
 
 			if tt.wantError && err == nil {

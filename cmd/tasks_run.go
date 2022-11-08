@@ -8,7 +8,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
+	"io/ioutil"
 	"os"
+	"strings"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
@@ -44,6 +46,7 @@ var tasksPreRun = &cobra.Command{
 		// We actually want to unidle the namespace before running pre-rollout tasks,
 		// so we wrap the usual task runner before calling it
 		unidleThenRun := func(namespace string, incoming lagoon.Task) error {
+			fmt.Println("!!!!!!!!!!!!!!!!!!!!!!!I WILL BE UNIDLING THIS NAMESPACE: ", namespace)
 			err := lagoon.UnidleNamespace(context.TODO(), namespace)
 			if err != nil {
 				return err
@@ -147,8 +150,18 @@ type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, err
 // without needing to pass those into the call to the returned function itself.
 func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) (iterateTaskFuncType, error) {
 	var retErr error
-	if buildValues.Namespace == "" {
-		retErr = errors.New("buildValues.Namespace is empty, unable to determine namespace. Exiting")
+	namespace := buildValues.Namespace
+	if namespace == "" {
+		//Try load from file
+		const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
+		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
+			retErr = fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
+		}
+		nsb, err := ioutil.ReadFile(filename)
+		if err != nil {
+			retErr = err
+		}
+		namespace = strings.Trim(string(nsb), "\n ")
 	}
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
@@ -160,7 +173,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 				return true, err
 			}
 			if runTask {
-				err := taskRunner(buildValues.Namespace, task)
+				err := taskRunner(namespace, task)
 				if err != nil {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
