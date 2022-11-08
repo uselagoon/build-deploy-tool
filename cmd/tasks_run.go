@@ -53,7 +53,7 @@ var tasksPreRun = &cobra.Command{
 				case errors.Is(err, lagoon.NamespaceUnidlingTimeoutError):
 					fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
 				default:
-					return err
+					return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
 				}
 			}
 			return runCleanTaskInEnvironment(namespace, incoming)
