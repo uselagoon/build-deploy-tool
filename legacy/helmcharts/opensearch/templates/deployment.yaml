@@ -38,14 +38,21 @@ spec:
         # This init container sets the appropriate limits for mmap counts on the hosting node.
         # https://opensearch.org/docs/latest/opensearch/install/important-settings/
         - name: set-max-map-count
-          image: ubuntu:20.04
+          image: busybox:latest
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           securityContext:
             privileged: true
+            runAsUser: 0
           command:
-          - /bin/bash
-          - -c
-          - 'if [[ "$(sysctl vm.max_map_count --values)" -lt 262144 ]]; then sysctl -w vm.max_map_count=262144; fi'
+            - sh
+            - '-c'
+            - |
+              set -xe
+              DESIRED="262144"
+              CURRENT=$(sysctl -n vm.max_map_count)
+              if [ "$DESIRED" -gt "$CURRENT" ]; then
+                sysctl -w vm.max_map_count=$DESIRED
+              fi
       containers:
         - image: {{ .Values.image | quote }}
           name: {{ .Chart.Name }}
