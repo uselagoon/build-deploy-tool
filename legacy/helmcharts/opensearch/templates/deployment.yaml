@@ -1,31 +1,31 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "elasticsearch.fullname" . }}
+  name: {{ include "opensearch.fullname" . }}
   labels:
-    {{- include "elasticsearch.labels" . | nindent 4 }}
+    {{- include "opensearch.labels" . | nindent 4 }}
     {{- if .Values.useSpot }}
     lagoon.sh/spot: {{ .Values.useSpot | quote }}
     {{- end }}
   annotations:
-    {{- include "elasticsearch.annotations" . | nindent 4 }}
+    {{- include "opensearch.annotations" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
   strategy:
     type: Recreate
   selector:
     matchLabels:
-      {{- include "elasticsearch.selectorLabels" . | nindent 6 }}
+      {{- include "opensearch.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        {{- include "elasticsearch.labels" . | nindent 8 }}
-        {{- include "elasticsearch.datadogLabels" . | nindent 8 }}
+        {{- include "opensearch.labels" . | nindent 8 }}
+        {{- include "opensearch.datadogLabels" . | nindent 8 }}
         {{- if .Values.useSpot }}
         lagoon.sh/spot: {{ .Values.useSpot | quote }}
         {{- end }}
       annotations:
-        {{- include "elasticsearch.annotations" . | nindent 8 }}
+        {{- include "opensearch.annotations" . | nindent 8 }}
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
     spec:
     {{- with .Values.imagePullSecrets }}
@@ -33,16 +33,16 @@ spec:
         {{- toYaml . | nindent 8 }}
     {{- end }}
       volumes:
-        - name: {{ include "elasticsearch.persistentStorageName" . }}
+        - name: {{ include "opensearch.persistentStorageName" . }}
           persistentVolumeClaim:
-            claimName: {{ include "elasticsearch.persistentStorageName" . }}
-      priorityClassName: {{ include "elasticsearch.lagoonPriority" . }}
+            claimName: {{ include "opensearch.persistentStorageName" . }}
+      priorityClassName: {{ include "opensearch.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
         # This init container sets the appropriate limits for mmap counts on the hosting node.
-        # https://www.elastic.co/guide/en/elasticsearch/reference/current/vm-max-map-count.html
+        # https://opensearch.org/docs/latest/opensearch/install/important-settings/
         - name: set-max-map-count
           image: busybox:latest
           imagePullPolicy: {{ .Values.imagePullPolicy }}
@@ -63,6 +63,8 @@ spec:
         - image: {{ .Values.image | quote }}
           name: {{ .Chart.Name }}
           imagePullPolicy: {{ .Values.imagePullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
           ports:
             - containerPort: 9200
               protocol: TCP
@@ -83,7 +85,7 @@ spec:
             - name: CRONJOBS
               value: {{ .Values.inPodCronjobs | quote }}
           volumeMounts:
-            - name: {{ include "elasticsearch.persistentStorageName" . }}
+            - name: {{ include "opensearch.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
