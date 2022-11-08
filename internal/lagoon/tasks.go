@@ -307,7 +307,9 @@ func unidleReplicas(deploy appsv1.Deployment) int {
 // "idling.amazee.io/watch=true" label up to the number of replicas in the
 // "idling.amazee.io/unidle-replicas" label.
 
-func UnidleNamespace(ctx context.Context, namespace string) error {
+var NamespaceUnidlingTimeoutError = errors.New("Unable to scale idled deployments due to timeout")
+
+func UnidleNamespace(ctx context.Context, namespace string, retries int, waitTime int) error {
 	restCfg, err := getConfig()
 	if err != nil {
 		return err
@@ -343,6 +345,33 @@ func UnidleNamespace(ctx context.Context, namespace string) error {
 			return fmt.Errorf("couldn't scale deployment: %v", err)
 		}
 	}
+
+	// Let's wait for the various deployments to scale
+	scaled := true
+	scaledDeps := make(map[string]bool)
+	for countdown := retries; len(deploys.Items) > 0 && countdown > 0; countdown-- {
+		time.Sleep(time.Second * time.Duration(waitTime))
+		for _, deploy := range deploys.Items {
+			s, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploy.Name, v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if s.Status.ReadyReplicas > 0 {
+				scaledDeps[deploy.Name] = true
+			}
+		}
+		if len(scaledDeps) == len(deploys.Items) {
+			scaled = true
+			break
+		} else {
+			scaled = false
+		}
+	}
+
+	if !scaled {
+		return NamespaceUnidlingTimeoutError
+	}
+
 	return nil
 }
 

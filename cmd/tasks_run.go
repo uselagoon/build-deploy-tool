@@ -15,6 +15,7 @@ import (
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
 var namespace string
+var namespaceUnidleRetries, namespaceUnidleWaitInSeconds int
 
 const (
 	preRolloutTasks = iota
@@ -46,9 +47,14 @@ var tasksPreRun = &cobra.Command{
 		// We actually want to unidle the namespace before running pre-rollout tasks,
 		// so we wrap the usual task runner before calling it
 		unidleThenRun := func(namespace string, incoming lagoon.Task) error {
-			err := lagoon.UnidleNamespace(context.TODO(), namespace)
+			err := lagoon.UnidleNamespace(context.TODO(), namespace, namespaceUnidleWaitInSeconds, namespaceUnidleWaitInSeconds)
 			if err != nil {
-				return err
+				switch {
+				case errors.Is(err, lagoon.NamespaceUnidlingTimeoutError):
+					fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
+				default:
+					return err
+				}
 			}
 			return runCleanTaskInEnvironment(namespace, incoming)
 		}
@@ -255,5 +261,10 @@ func init() {
 		//	"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
 	}
 	addArgs(tasksPreRun)
+	tasksPreRun.Flags().IntVarP(&namespaceUnidleRetries, "namespace-unidle-retries", "", 3,
+		"Number of times to retry waiting for unidled namespace pods to be ready")
+	tasksPreRun.Flags().IntVarP(&namespaceUnidleWaitInSeconds, "namespace-unidle-wait-seconds", "", 10,
+		"Time, in seconds, we should wait for unidled namespace pods to be ready")
+
 	addArgs(tasksPostRun)
 }
