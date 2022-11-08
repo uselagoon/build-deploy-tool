@@ -46,12 +46,12 @@ var tasksPreRun = &cobra.Command{
 
 		// We actually want to unidle the namespace before running pre-rollout tasks,
 		// so we wrap the usual task runner before calling it
-		unidleThenRun := func(incoming lagoon.Task) error {
-			err := lagoon.UnidleNamespace(context.TODO(), incoming.Namespace)
+		unidleThenRun := func(namespace string, incoming lagoon.Task) error {
+			err := lagoon.UnidleNamespace(context.TODO(), namespace)
 			if err != nil {
 				return err
 			}
-			return runCleanTaskInEnvironment(incoming)
+			return runCleanTaskInEnvironment(namespace, incoming)
 		}
 
 		err = runTasks(iterateTaskGenerator(true, unidleThenRun, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
@@ -161,7 +161,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 				return true, err
 			}
 			if runTask {
-				err := taskRunner(task)
+				err := taskRunner(buildValues.Namespace, task)
 				if err != nil {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
@@ -215,12 +215,12 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	return retBool, nil
 }
 
-type runTaskInEnvironmentFuncType func(incoming lagoon.Task) error
+type runTaskInEnvironmentFuncType func(namespace string, incoming lagoon.Task) error
 
 // runCleanTaskInEnvironment implements runTaskInEnvironmentFuncType and will
 // 1. make sure the task we pass to the execution environment is free of any data we don't want (hence the new task)
 // 2. will actually execute the task in the environment.
-func runCleanTaskInEnvironment(incoming lagoon.Task) error {
+func runCleanTaskInEnvironment(namespace string, incoming lagoon.Task) error {
 	task := lagoon.NewTask()
 	task.Command = incoming.Command
 	task.Namespace = namespace

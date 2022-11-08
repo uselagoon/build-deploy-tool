@@ -172,7 +172,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 		{name: "Runs with no errors",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(incoming lagoon.Task) error {
+				taskRunner: func(namespace string, incoming lagoon.Task) error {
 					return nil
 				},
 				tasks: []lagoon.Task{
@@ -184,7 +184,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 		{name: "Allows deploy missing errors and keeps rolling (pre rollout case)",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(incoming lagoon.Task) error {
+				taskRunner: func(namespace string, incoming lagoon.Task) error {
 					return &lagoon.DeploymentMissingError{}
 				},
 				tasks: []lagoon.Task{
@@ -196,7 +196,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 		{name: "Does not allow deploy missing errors and stops with error (post rollout)",
 			args: args{
 				allowDeployMissingErrors: false,
-				taskRunner: func(incoming lagoon.Task) error {
+				taskRunner: func(namespace string, incoming lagoon.Task) error {
 					return &lagoon.DeploymentMissingError{}
 				},
 				tasks: []lagoon.Task{
@@ -208,7 +208,7 @@ func Test_iterateTaskGenerator(t *testing.T) {
 		{name: "Allows deploy missing errors but stops with any other error (pre rollout)",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(incoming lagoon.Task) error {
+				taskRunner: func(namespace string, incoming lagoon.Task) error {
 					return &lagoon.PodScalingError{}
 				},
 				tasks: []lagoon.Task{
