@@ -4,14 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
-	"os"
-	"strings"
-
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
+	"os"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
@@ -54,7 +51,13 @@ var tasksPreRun = &cobra.Command{
 			return runCleanTaskInEnvironment(namespace, incoming)
 		}
 
-		err = runTasks(iterateTaskGenerator(true, unidleThenRun, buildValues, true), lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		taskIterator, err := iterateTaskGenerator(true, unidleThenRun, buildValues, true)
+		if err != nil {
+			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
+			os.Exit(1)
+		}
+
+		err = runTasks(taskIterator, lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -80,7 +83,12 @@ var tasksPostRun = &cobra.Command{
 
 		fmt.Println("Executing Post-rollout Tasks")
 
-		err = runTasks(iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true), lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		taskIterator, err := iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true)
+		if err != nil {
+			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
+			os.Exit(1)
+		}
+		err = runTasks(taskIterator, lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -112,19 +120,6 @@ func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEn
 // and the environment in which conditional statements are going to be run (i.e. a list of variables available to "where" clauses) and runs them.
 func runTasks(taskRunner iterateTaskFuncType, tasks []lagoon.TaskRun, lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment) error {
 
-	if namespace == "" {
-		//Try load from file
-		const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-			return fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
-		}
-		nsb, err := ioutil.ReadFile(filename)
-		if err != nil {
-			return err
-		}
-		namespace = strings.Trim(string(nsb), "\n ")
-	}
-
 	done, err := taskRunner(lagoonConditionalEvaluationEnvironment, unwindTaskRun(tasks))
 	if done {
 		return err
@@ -150,7 +145,11 @@ type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, err
 // that lets the resulting function reference values as part of the closure, thereby cleaning up the definition a bit.
 // so, the variables passed into the factor (eg. allowDeployMissingErrors, etc.) determine the way the function behaves,
 // without needing to pass those into the call to the returned function itself.
-func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) iterateTaskFuncType {
+func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) (iterateTaskFuncType, error) {
+	var retErr error
+	if buildValues.Namespace == "" {
+		retErr = errors.New("buildValues.Namespace is empty, unable to determine namespace. Exiting")
+	}
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			// set the iterations and wait times here
@@ -183,7 +182,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 			}
 		}
 		return false, nil
-	}
+	}, retErr
 }
 
 // evaluateWhenConditionsForTaskInEnvironment will take a task, check if it has a "when" field, and if it does, will evaluate it,
