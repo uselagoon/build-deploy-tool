@@ -34,7 +34,7 @@ var taskCmd = &cobra.Command{
 // so we wrap the usual task runner before calling it.
 func unidleThenRun(namespace string, incoming lagoon.Task) error {
 	//err := lagoon.UnidleNamespace(context.TODO(), namespace, namespaceUnidleWaitInSeconds, namespaceUnidleWaitInSeconds)
-	fmt.Println("Unidling namespace with RequiresEnvironment: %v, ScaleMaxIterations:%v and ScaleWaitTime:%v", incoming.RequiresEnvironment, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
+	fmt.Printf("Unidling namespace with RequiresEnvironment: %v, ScaleMaxIterations:%v and ScaleWaitTime:%v", incoming.RequiresEnvironment, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	err := lagoon.UnidleNamespace(context.TODO(), namespace, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	if err != nil {
 		switch {
