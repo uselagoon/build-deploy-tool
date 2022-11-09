@@ -34,7 +34,7 @@ var taskCmd = &cobra.Command{
 // so we wrap the usual task runner before calling it.
 func unidleThenRun(namespace string, incoming lagoon.Task) error {
 	//err := lagoon.UnidleNamespace(context.TODO(), namespace, namespaceUnidleWaitInSeconds, namespaceUnidleWaitInSeconds)
-	fmt.Printf("Unidling namespace with RequiresEnvironment: %v, ScaleMaxIterations:%v and ScaleWaitTime:%v", incoming.RequiresEnvironment, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
+	fmt.Printf("Unidling namespace with RequiresEnvironment: %v, ScaleMaxIterations:%v and ScaleWaitTime:%v\n", incoming.RequiresEnvironment, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	err := lagoon.UnidleNamespace(context.TODO(), namespace, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	if err != nil {
 		switch {
@@ -179,8 +179,12 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			// set the iterations and wait times here
-			task.ScaleMaxIterations = buildValues.TaskScaleMaxIterations
-			task.ScaleWaitTime = buildValues.TaskScaleWaitTime
+			if task.ScaleMaxIterations == 0 {
+				task.ScaleMaxIterations = buildValues.TaskScaleMaxIterations
+			}
+			if task.ScaleWaitTime == 0 {
+				task.ScaleWaitTime = buildValues.TaskScaleWaitTime
+			}
 			runTask, err := evaluateWhenConditionsForTaskInEnvironment(lagoonConditionalEvaluationEnvironment, task, debug)
 			if err != nil {
 				return true, err
