@@ -15,7 +15,6 @@ import (
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
 var namespace string
-var namespaceUnidleRetries, namespaceUnidleWaitInSeconds int
 
 const (
 	preRolloutTasks = iota
@@ -269,13 +268,7 @@ func init() {
 	addArgs := func(command *cobra.Command) {
 		command.Flags().StringVarP(&namespace, "namespace", "n", "",
 			"The environments environment variables JSON payload")
-		//	"Will attempt to use KUBECONFIG to connect to cluster, defaults to in-cluster")
 	}
 	addArgs(tasksPreRun)
-	tasksPreRun.Flags().IntVarP(&namespaceUnidleRetries, "namespace-unidle-retries", "", 3,
-		"Number of times to retry waiting for unidled namespace pods to be ready")
-	tasksPreRun.Flags().IntVarP(&namespaceUnidleWaitInSeconds, "namespace-unidle-wait-seconds", "", 10,
-		"Time, in seconds, we should wait for unidled namespace pods to be ready")
-
 	addArgs(tasksPostRun)
 }
