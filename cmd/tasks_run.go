@@ -29,6 +29,28 @@ var taskCmd = &cobra.Command{
 	Long:    `Will run Pre/Post/etc. tasks defined in a .lagoon.yml`,
 }
 
+// unidleThenRun is a wrapper around 'runCleanTaskInEnvironment' used for pre-rollout tasks
+// We actually want to unidle the namespace before running pre-rollout tasks,
+// so we wrap the usual task runner before calling it.
+func unidleThenRun(namespace string, incoming lagoon.Task) error {
+	//err := lagoon.UnidleNamespace(context.TODO(), namespace, namespaceUnidleWaitInSeconds, namespaceUnidleWaitInSeconds)
+	err := lagoon.UnidleNamespace(context.TODO(), namespace, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
+	if err != nil {
+		switch {
+		case errors.Is(err, lagoon.NamespaceUnidlingTimeoutError):
+			if !incoming.RequiresEnvironment { // we don't have to kill this build if we can't bring the services up, so we just note the issue and continue
+				fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
+			} else {
+				return fmt.Errorf("Unable to unidle the environment for pre-rollout tasks in time (waited %v seconds, retried %v times) - exiting as the task is defined as requiring the environment to be up.",
+					incoming.ScaleWaitTime, incoming.ScaleMaxIterations)
+			}
+		default:
+			return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
+		}
+	}
+	return runCleanTaskInEnvironment(namespace, incoming)
+}
+
 var tasksPreRun = &cobra.Command{
 	Use:     "pre-rollout",
 	Aliases: []string{"pre"},
@@ -43,21 +65,6 @@ var tasksPreRun = &cobra.Command{
 			return err
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
-
-		// We actually want to unidle the namespace before running pre-rollout tasks,
-		// so we wrap the usual task runner before calling it
-		unidleThenRun := func(namespace string, incoming lagoon.Task) error {
-			err := lagoon.UnidleNamespace(context.TODO(), namespace, namespaceUnidleWaitInSeconds, namespaceUnidleWaitInSeconds)
-			if err != nil {
-				switch {
-				case errors.Is(err, lagoon.NamespaceUnidlingTimeoutError):
-					fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
-				default:
-					return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
-				}
-			}
-			return runCleanTaskInEnvironment(namespace, incoming)
-		}
 
 		taskIterator, err := iterateTaskGenerator(true, unidleThenRun, buildValues, true)
 		if err != nil {

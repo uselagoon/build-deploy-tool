@@ -24,16 +24,17 @@ var debug bool
 
 // Task .
 type Task struct {
-	Name               string `json:"name"`
-	Command            string `json:"command"`
-	Namespace          string `json:"namespace"`
-	Service            string `json:"service"`
-	Shell              string `json:"shell"`
-	Container          string `json:"container"`
-	When               string `json:"when"`
-	Weight             int    `json:"weight"`
-	ScaleWaitTime      int    `json:"scaleWaitTime"`
-	ScaleMaxIterations int    `json:"scaleMaxIterations"`
+	Name                string `json:"name"`
+	Command             string `json:"command"`
+	Namespace           string `json:"namespace"`
+	Service             string `json:"service"`
+	Shell               string `json:"shell"`
+	Container           string `json:"container"`
+	When                string `json:"when"`
+	Weight              int    `json:"weight"`
+	ScaleWaitTime       int    `json:"scaleWaitTime"`
+	ScaleMaxIterations  int    `json:"scaleMaxIterations"`
+	RequiresEnvironment bool   `json:"requiresEnvironment"`
 }
 
 // NewTask .
