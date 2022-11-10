@@ -698,6 +698,28 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
         echo "defined Dockerfile $DOCKERFILE for service $IMAGE_NAME not found"; exit 1;
       fi
 
+      set +x # reduce noise in build logs
+      # Decide whether to use BuildKit for Docker builds - disabled by default.
+      DOCKER_BUILDKIT=0
+
+      if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+        DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+      fi
+      if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+        DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+      fi
+
+      case "$DOCKER_BUILDKIT" in
+        1|t|T|true|TRUE|True)
+          DOCKER_BUILDKIT=1
+          echo "Using BuildKit for $DOCKERFILE";
+        ;;
+        *)
+          DOCKER_BUILDKIT=0
+        ;;
+      esac
+      set -x
+
       . /kubectl-build-deploy/scripts/exec-build.sh
 
       # Keep a list of the images we have built, as we need to push them to the OpenShift Registry later
