@@ -706,7 +706,10 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
         DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
       fi
       if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-        DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+        TEMP_DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+        if [ ! -z $TEMP_DOCKER_BUILDKIT ]; then
+          DOCKER_BUILDKIT=$TEMP_DOCKER_BUILDKIT
+        fi
       fi
 
       case "$DOCKER_BUILDKIT" in
