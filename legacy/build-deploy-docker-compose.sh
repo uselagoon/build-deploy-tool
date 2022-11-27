@@ -1356,6 +1356,9 @@ do
   # handle spot configurations
   . /kubectl-build-deploy/scripts/exec-spot-generation.sh
 
+  # handle dynamically added secrets
+  . /kubectl-build-deploy/scripts/exec-dynamic-secret-volumes.sh
+
 # TODO: we don't need this anymore
   # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)
   # if [ ! $DEPLOYMENT_STRATEGY == "false" ]; then
