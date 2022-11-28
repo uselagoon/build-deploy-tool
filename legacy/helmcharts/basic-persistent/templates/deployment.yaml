@@ -73,9 +73,9 @@ spec:
           volumeMounts:
             - name: {{ include "basic-persistent.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
-          {{ - if .Values.dynamicSecretMounts }}
-            {{ - toYaml .Values.dynamicSecretMounts | nindent 12 }}
-          {{ - end }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
