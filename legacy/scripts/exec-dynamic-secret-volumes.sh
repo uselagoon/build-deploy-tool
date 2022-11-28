@@ -25,7 +25,7 @@ echo "$RAW_KUBECTL_JSON_SECRET_LIST" | jq -c --raw-output '.items[] | .metadata.
     SECRET_NAME="$name"
     VOLUME_NAME="$VOLUME_NAME_PREFIX$name"
     SECRET_MOUNT_VALUES+="\
-  - name: $SECRET_NAME
+  - name: $VOLUME_NAME
     mountPath: "$MOUNT_PATH"
     readOnly: true
 "
