@@ -12,7 +12,7 @@ VOLUME_MOUNT_BASE_PATH="/var/run/secrets/lagoon/dynamic/"
 VOLUME_NAME_PREFIX="dynamic_"
 SECRET_NAME_PREFIX="dynamic_"
 
-RAW_KUBECTL_JSON_SECRET_LIST=$(kubectl --namespace deleteme get secrets -l $DYNAMIC_SECRET_LABEL -o json)
+RAW_KUBECTL_JSON_SECRET_LIST=$(kubectl --namespace ${NAMESPACE} get secrets -l $DYNAMIC_SECRET_LABEL -o json)
 
 
 SECRET_MOUNT_VALUES=$'dynamicSecretMounts:\n'
