@@ -41,7 +41,7 @@ spec:
         - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
       {{- if .Values.dynamicSecretVolumes }}
-      {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
       {{- end }}
       priorityClassName: {{ include "cli-persistent.lagoonPriority" . }}
       enableServiceLinks: false
