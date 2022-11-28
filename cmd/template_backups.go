@@ -14,10 +14,15 @@ var backupGeneration = &cobra.Command{
 	Aliases: []string{"schedule", "bs"},
 	Short:   "Generate the backup schedule templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		k8upVersion, err := cmd.Flags().GetString("version")
+		if err != nil {
+			return fmt.Errorf("error reading domain flag: %v", err)
+		}
 		generator, err := generatorInput(true)
 		if err != nil {
 			return err
 		}
+		generator.BackupConfiguration.K8upVersion = k8upVersion
 		return BackupTemplateGeneration(generator)
 	},
 }
@@ -43,4 +48,5 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 
 func init() {
 	templateCmd.AddCommand(backupGeneration)
+	backupGeneration.Flags().StringP("version", "", "v1", "The version of k8up used.")
 }

@@ -87,6 +87,7 @@ type CronjobValues struct {
 }
 
 type BackupConfiguration struct {
+	K8upVersion    string                      `json:"k8upVersion"`
 	PruneRetention PruneRetention              `json:"pruneRetention"`
 	PruneSchedule  string                      `json:"pruneSchedule"`
 	CheckSchedule  string                      `json:"checkSchedule"`

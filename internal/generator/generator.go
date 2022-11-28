@@ -46,6 +46,7 @@ type GeneratorInput struct {
 	FastlyCacheNoCahce       string
 	FastlyAPISecretPrefix    string
 	SavedTemplatesPath       string
+	BackupConfiguration      BackupConfiguration
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
@@ -83,6 +84,8 @@ func NewGenerator(
 	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
+
+	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
 	// get the project and environment variables
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
