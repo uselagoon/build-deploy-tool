@@ -38,6 +38,9 @@ spec:
         - name: {{ include "redis-persistent.persistentStorageName" . }}
           persistentVolumeClaim:
             claimName: {{ include "redis-persistent.persistentStorageName" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "redis-persistent.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -75,6 +78,9 @@ spec:
           volumeMounts:
             - name: {{ include "redis-persistent.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

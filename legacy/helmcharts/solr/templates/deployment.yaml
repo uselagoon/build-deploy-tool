@@ -38,6 +38,9 @@ spec:
         - name: {{ include "solr.persistentStorageName" . }}
           persistentVolumeClaim:
             claimName: {{ include "solr.persistentStorageName" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "solr.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -71,5 +74,8 @@ spec:
           volumeMounts:
             - name: {{ include "solr.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
