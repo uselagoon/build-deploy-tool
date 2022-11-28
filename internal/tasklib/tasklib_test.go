@@ -102,6 +102,15 @@ func TestEvaluateExpressionsInTaskEnvironment(t *testing.T) {
 			want:    false,
 			wantErr: false,
 		},
+		{
+			name: "Variable doesn't exist - will throw error",
+			args: args{
+				expression: `NON_EXISTENT_VALUE==1`,
+				env:        TaskEnvironment{},
+			},
+			want:    nil,
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
