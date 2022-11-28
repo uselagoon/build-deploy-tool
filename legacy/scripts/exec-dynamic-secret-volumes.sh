@@ -22,7 +22,7 @@ echo "$RAW_KUBECTL_JSON_SECRET_LIST" | jq -c --raw-output '.items[] | .metadata.
   while IFS=$"\n" read -r name; do
     # so we have to do two things here. Generate the volume and the mount
     MOUNT_PATH="$VOLUME_MOUNT_BASE_PATH$name"
-    SECRET_NAME="$SECRET_NAME_PREFIX$name"
+    SECRET_NAME="$name"
     VOLUME_NAME="$VOLUME_NAME_PREFIX$name"
     SECRET_MOUNT_VALUES+="\
   - name: $SECRET_NAME
