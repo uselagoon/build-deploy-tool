@@ -9,8 +9,8 @@ KBD_SERVICE_VALUES_FILE="/${KBD_SERVICE_VALUES_OUTDIR:-kubectl-build-deploy}/${S
 
 VOLUME_MOUNT_BASE_PATH="/var/run/secrets/lagoon/dynamic/"
 
-VOLUME_NAME_PREFIX="dynamic_"
-SECRET_NAME_PREFIX="dynamic_"
+VOLUME_NAME_PREFIX="dynamic-"
+SECRET_NAME_PREFIX="dynamic-"
 
 RAW_KUBECTL_JSON_SECRET_LIST=$(kubectl --namespace ${NAMESPACE} get secrets -l $DYNAMIC_SECRET_LABEL -o json)
 
