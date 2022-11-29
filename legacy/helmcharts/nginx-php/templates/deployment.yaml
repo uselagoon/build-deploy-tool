@@ -34,6 +34,10 @@ spec:
       enableServiceLinks: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- if .Values.dynamicSecretVolumes }}
+      volumes:
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+    {{- end }}
       containers:
         - image: {{ .Values.images.nginx | quote }}
           name: "nginx"
@@ -69,6 +73,10 @@ spec:
                 name: lagoon-env
           resources:
             {{- toYaml .Values.resources.nginx | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
 
         - image: {{ .Values.images.php | quote }}
           name: "php"
@@ -98,6 +106,10 @@ spec:
               value: '127.0.0.1'
           resources:
             {{- toYaml .Values.resources.php | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

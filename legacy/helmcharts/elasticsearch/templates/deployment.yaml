@@ -36,6 +36,9 @@ spec:
         - name: {{ include "elasticsearch.persistentStorageName" . }}
           persistentVolumeClaim:
             claimName: {{ include "elasticsearch.persistentStorageName" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "elasticsearch.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -85,5 +88,8 @@ spec:
           volumeMounts:
             - name: {{ include "elasticsearch.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
