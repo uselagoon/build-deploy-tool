@@ -36,6 +36,9 @@ spec:
             claimName: {{ include "nginx-php-persistent.persistentStorageName" . }}
         - name: {{ include "nginx-php-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "nginx-php-persistent.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -102,6 +105,9 @@ spec:
           volumeMounts:
             - name: {{ include "nginx-php-persistent.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources.nginx | nindent 12 }}
 
@@ -136,6 +142,9 @@ spec:
               mountPath: {{ .Values.persistentStorage.path | quote }}
             - name: {{ include "nginx-php-persistent.twig-storage.name" . | quote }}
               mountPath: {{ include "nginx-php-persistent.twig-storage.path" . | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources.php | nindent 12 }}
       {{- with .Values.nodeSelector }}

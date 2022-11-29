@@ -40,6 +40,9 @@ spec:
             claimName: {{ .Values.persistentStorage.name }}
         - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "cli-persistent.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -70,6 +73,9 @@ spec:
               mountPath: {{ .Values.persistentStorage.path | quote }}
             - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
               mountPath: {{ include "cli-persistent.twig-storage.path" . | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+          {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:

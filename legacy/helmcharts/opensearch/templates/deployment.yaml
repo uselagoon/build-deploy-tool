@@ -36,6 +36,9 @@ spec:
         - name: {{ include "opensearch.persistentStorageName" . }}
           persistentVolumeClaim:
             claimName: {{ include "opensearch.persistentStorageName" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "opensearch.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -87,5 +90,8 @@ spec:
           volumeMounts:
             - name: {{ include "opensearch.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
