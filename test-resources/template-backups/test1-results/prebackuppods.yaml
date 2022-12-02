@@ -38,7 +38,6 @@ spec:
   fileExtension: .mariadb.sql
   pod:
     metadata:
-      creationTimestamp: null
       labels:
         app.kubernetes.io/managed-by: build-deploy-tool
         lagoon.sh/buildType: branch
@@ -97,7 +96,6 @@ spec:
   fileExtension: .elasticsearch.tar
   pod:
     metadata:
-      creationTimestamp: null
       labels:
         app.kubernetes.io/managed-by: build-deploy-tool
         lagoon.sh/buildType: branch

@@ -21,7 +21,6 @@ spec:
   fileExtension: .postgres-database.tar
   pod:
     metadata:
-      creationTimestamp: null
       labels:
         app.kubernetes.io/managed-by: build-deploy-tool
         lagoon.sh/buildType: branch

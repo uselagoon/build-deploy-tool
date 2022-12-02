@@ -20,7 +20,6 @@ spec:
   fileExtension: .mongodb-database.bson
   pod:
     metadata:
-      creationTimestamp: null
       labels:
         app.kubernetes.io/managed-by: build-deploy-tool
         lagoon.sh/buildType: branch

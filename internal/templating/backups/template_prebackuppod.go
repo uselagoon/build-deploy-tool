@@ -82,8 +82,10 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
-				k8upPBPSpec.Pod.ObjectMeta.Labels = make(map[string]string)
-				k8upPBPSpec.Pod.ObjectMeta.Labels = labels
+
+				k8upPBPSpec.Pod.ObjectMeta = metav1.ObjectMeta{
+					Labels: labels,
+				}
 				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
@@ -118,9 +120,11 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
+
+				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
 				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
 				// of the current build process
-				restoreResult := append(separator[:], prebackuppodBytes[:]...)
+				restoreResult := append(separator[:], pbpBytes[:]...)
 				result = append(result, restoreResult[:]...)
 			case "v2":
 				prebackuppod := &k8upv1.PreBackupPod{
@@ -148,8 +152,10 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
-				k8upPBPSpec.Pod.ObjectMeta.Labels = make(map[string]string)
-				k8upPBPSpec.Pod.ObjectMeta.Labels = labels
+
+				k8upPBPSpec.Pod.ObjectMeta = metav1.ObjectMeta{
+					Labels: labels,
+				}
 				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
@@ -184,14 +190,26 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
+				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
 				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
 				// of the current build process
-				restoreResult := append(separator[:], prebackuppodBytes[:]...)
+				restoreResult := append(separator[:], pbpBytes[:]...)
 				result = append(result, restoreResult[:]...)
 			}
 		}
 	}
 	return result, nil
+}
+
+func RemoveYAML(a []byte) ([]byte, error) {
+	tmpMap := map[string]interface{}{}
+	yaml.Unmarshal(a, &tmpMap)
+	if _, ok := tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"]; ok {
+		delete(tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{}), "creationTimestamp")
+		b, _ := yaml.Marshal(tmpMap)
+		return b, nil
+	}
+	return a, nil
 }
 
 var funcMap = template.FuncMap{
