@@ -1,0 +1,48 @@
+---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    prebackuppod: elasticsearch
+  name: elasticsearch-prebackuppod
+spec:
+  backupCommand: /bin/sh -c "tar -cf - -C /var/storage/path ."
+  fileExtension: .elasticsearch.tar
+  pod:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/managed-by: build-deploy-tool
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-with-really-really-reall-3fdb
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        prebackuppod: elasticsearch
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: imagecache.amazeeio.cloud/library/alpine
+        imagePullPolicy: Always
+        name: elasticsearch-prebackuppod
+        resources: {}
+        volumeMounts:
+        - mountPath: /var/storage/path
+          name: elastic
+      volumes:
+      - name: elastic
+        persistentVolumeClaim:
+          claimName: elastic

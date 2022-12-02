@@ -265,7 +265,12 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			}
 			defer os.RemoveAll(savedTemplates)
 
-			defer os.RemoveAll(savedTemplates)
+			ts := dbaasclient.TestDBaaSHTTPServer()
+			defer ts.Close()
+			err = os.Setenv("DBAAS_OPERATOR_HTTP", ts.URL)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 
 			if err := BackupTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("BackupTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)

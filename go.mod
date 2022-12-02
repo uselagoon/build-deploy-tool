@@ -7,11 +7,12 @@ require (
 	github.com/amazeeio/dbaas-operator v0.3.0
 	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/go-retryablehttp v0.5.4
 	github.com/imdario/mergo v0.3.13
 	github.com/k8up-io/k8up/v2 v2.5.2
 	github.com/spf13/cobra v1.5.0
+	github.com/uselagoon/machinery v0.0.7
 	github.com/vshn/k8up v1.99.99
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.25.3

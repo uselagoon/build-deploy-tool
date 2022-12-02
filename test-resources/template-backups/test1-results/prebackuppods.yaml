@@ -1,0 +1,126 @@
+---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    prebackuppod: mariadb
+  name: mariadb-prebackuppod
+spec:
+  backupCommand: |-
+    /bin/sh -c "dump=$(mktemp)
+    && mysqldump --max-allowed-packet=500M --events --routines --quick
+    --add-locks --no-autocommit --single-transaction --no-create-db
+    --no-data --no-tablespaces
+    -h $BACKUP_DB_HOST
+    -u $BACKUP_DB_USERNAME
+    -p$BACKUP_DB_PASSWORD
+    $BACKUP_DB_DATABASE
+    > $dump
+    && mysqldump --max-allowed-packet=500M --events --routines --quick
+    --add-locks --no-autocommit --single-transaction --no-create-db
+    --ignore-table=$BACKUP_DB_DATABASE.watchdog
+    --no-create-info --no-tablespaces
+    -h $BACKUP_DB_HOST
+    -u $BACKUP_DB_USERNAME
+    -p$BACKUP_DB_PASSWORD
+    $BACKUP_DB_DATABASE
+    >> $dump
+    && cat $dump && rm $dump"
+  fileExtension: .mariadb.sql
+  pod:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/managed-by: build-deploy-tool
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        prebackuppod: mariadb
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        env:
+        - name: BACKUP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_HOST
+              name: lagoon-env
+        - name: BACKUP_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_USERNAME
+              name: lagoon-env
+        - name: BACKUP_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_PASSWORD
+              name: lagoon-env
+        - name: BACKUP_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE
+              name: lagoon-env
+        image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
+        imagePullPolicy: Always
+        name: mariadb-prebackuppod
+        resources: {}
+---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    prebackuppod: elasticsearch
+  name: elasticsearch-prebackuppod
+spec:
+  backupCommand: /bin/sh -c "tar -cf - -C /usr/share/elasticsearch/data ."
+  fileExtension: .elasticsearch.tar
+  pod:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/managed-by: build-deploy-tool
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        prebackuppod: elasticsearch
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: imagecache.amazeeio.cloud/library/alpine
+        imagePullPolicy: Always
+        name: elasticsearch-prebackuppod
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: elasticsearch
+      volumes:
+      - name: elasticsearch
+        persistentVolumeClaim:
+          claimName: elasticsearch
