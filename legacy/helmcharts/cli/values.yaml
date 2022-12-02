@@ -38,12 +38,26 @@ resources:
 
 nodeSelector: {}
 
+cronjobNodeSelector: {}
+
 tolerations: []
 
+cronjobTolerations: []
+
 affinity: {}
+
+cronjobAffinity: {}
 
 inPodCronjobs: ""
 
 nativeinPodCronjobs: ""
 
 configMapSha: ""
+
+useSpot: false
+
+cronjobUseSpot: false
+
+dynamicSecretMounts: []
+
+dynamicSecretVolumes: []

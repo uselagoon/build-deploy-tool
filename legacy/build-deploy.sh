@@ -29,6 +29,7 @@ else
   CI_OVERRIDE_IMAGE_REPO=""
 fi
 
+echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
   /kubectl-build-deploy/scripts/git-checkout-pull-merge.sh "$SOURCE_REPOSITORY" "$PR_HEAD_SHA" "$PR_BASE_SHA"
 else
@@ -51,6 +52,9 @@ else
   LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
 fi
 
+echo -e "##############################################\nBEGIN Kubernetes and Container Registry Setup\n##############################################"
+sleep 0.5s
+
 REGISTRY_SECRETS=()
 PRIVATE_REGISTRY_COUNTER=0
 PRIVATE_REGISTRY_URLS=()
@@ -58,7 +62,14 @@ PRIVATE_DOCKER_HUB_REGISTRY=0
 PRIVATE_EXTERNAL_REGISTRY=0
 
 set +x # reduce noise in build logs
-DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
+  DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+else
+  DEPLOYER_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+fi
+if [ -z ${DEPLOYER_TOKEN} ]; then
+  echo "No deployer token found"; exit 1;
+fi
 
 kubectl config set-credentials lagoon/kubernetes.default.svc --token="${DEPLOYER_TOKEN}"
 kubectl config set-cluster kubernetes.default.svc --server=https://kubernetes.default.svc --certificate-authority=/run/secrets/kubernetes.io/serviceaccount/ca.crt
@@ -91,9 +102,14 @@ fi
 ##############################################
 # we want to be able to support private container registries
 # grab all the container-registries that are defined in the `.lagoon.yml` file
-PRIVATE_CONTAINER_REGISTRIES=($(cat .lagoon.yml | shyaml keys container-registries || echo ""))
+PRIVATE_CONTAINER_REGISTRIES=($(cat .lagoon.yml | shyaml keys container-registries 2> /dev/null || echo ""))
+if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
+  echo -e "##############################################\nBEGIN Custom Container Registries Setup\n##############################################"
+  sleep 0.5s
+fi
 for PRIVATE_CONTAINER_REGISTRY in "${PRIVATE_CONTAINER_REGISTRIES[@]}"
 do
+  echo "Checking details for $PRIVATE_CONTAINER_REGISTRY";
   # check if a url is set, if none set proceed against docker hub
   PRIVATE_CONTAINER_REGISTRY_URL=$(cat .lagoon.yml | shyaml get-value container-registries.$PRIVATE_CONTAINER_REGISTRY.url false)
   if [ $PRIVATE_CONTAINER_REGISTRY_URL == "false" ]; then
@@ -113,24 +129,49 @@ do
     PRIVATE_REGISTRY_CREDENTIAL=""
     # check if we have a password defined anywhere in the api first
     if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-      PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
+        PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API project variable $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
+      fi
     fi
     if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
       TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_PASSWORD'") | "\(.value)"'))
       if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
         PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API environment variable $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
       fi
     fi
+
+    # check if we have an override password defined anywhere in the api
+    PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY="REGISTRY_${PRIVATE_CONTAINER_REGISTRY}_PASSWORD"
+
+    if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
+        PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API project variable $PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY"
+      fi
+    fi
+    if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL" ]; then
+        PRIVATE_REGISTRY_CREDENTIAL=$TEMP_PRIVATE_REGISTRY_CREDENTIAL
+        PRIVATE_REGISTRY_CREDENTIAL_SOURCE="Lagoon API environment variable $PRIVATE_CONTAINER_REGISTRY_OVERRIDE_KEY"
+      fi
+    fi
+
     if [ -z $PRIVATE_REGISTRY_CREDENTIAL ]; then
       #if no password defined in the lagoon api, pass the one in `.lagoon.yml` as a password
       PRIVATE_REGISTRY_CREDENTIAL=$PRIVATE_CONTAINER_REGISTRY_PASSWORD
+      PRIVATE_REGISTRY_CREDENTIAL_SOURCE=".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)"
     fi
     if [ -z "$PRIVATE_REGISTRY_CREDENTIAL" ]; then
       echo -e "A private container registry was defined in the .lagoon.yml file, but no password could be found in either the .lagoon.yml or in the Lagoon API\n\nPlease check if the password has been set correctly."
       exit 1
     fi
     if [ $PRIVATE_CONTAINER_REGISTRY_URL != "false" ]; then
-      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_USERNAME - $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
+      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_USERNAME; password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
       docker login --username $PRIVATE_CONTAINER_REGISTRY_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL $PRIVATE_CONTAINER_REGISTRY_URL
       kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server=$PRIVATE_CONTAINER_REGISTRY_URL --docker-username=$PRIVATE_CONTAINER_REGISTRY_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
       REGISTRY_SECRETS+=("lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret")
@@ -138,7 +179,7 @@ do
       PRIVATE_EXTERNAL_REGISTRY=1
       let ++PRIVATE_REGISTRY_COUNTER
     else
-      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_USERNAME - $PRIVATE_CONTAINER_REGISTRY_PASSWORD"
+      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_USERNAME; password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
       docker login --username $PRIVATE_CONTAINER_REGISTRY_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL
       kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server="https://index.docker.io/v1/" --docker-username=$PRIVATE_CONTAINER_REGISTRY_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
       REGISTRY_SECRETS+=("lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret")
@@ -148,6 +189,11 @@ do
     fi
   fi
 done
-set -x
+if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
+  echo -e "##############################################\nEND Custom Container Registries Setup\n##############################################"
+  sleep 0.5s
+fi
 
+echo -e "\n\n##############################################\nStart Build Process\n##############################################"
+set -x
 .  /kubectl-build-deploy/build-deploy-docker-compose.sh

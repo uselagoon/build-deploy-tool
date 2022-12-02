@@ -4,6 +4,9 @@ metadata:
   name: {{ include "nginx-php.fullname" . }}
   labels:
     {{- include "nginx-php.labels" . | nindent 4 }}
+    {{- if .Values.useSpot }}
+    lagoon.sh/spot: {{ .Values.useSpot | quote }}
+    {{- end }}
   annotations:
     {{- include "nginx-php.annotations" . | nindent 4 }}
 spec:
@@ -16,6 +19,9 @@ spec:
       labels:
         {{- include "nginx-php.labels" . | nindent 8 }}
         {{- include "nginx-php.datadogLabels" . | nindent 8 }}
+        {{- if .Values.useSpot }}
+        lagoon.sh/spot: {{ .Values.useSpot | quote }}
+        {{- end }}
       annotations:
         {{- include "nginx-php.annotations" . | nindent 8 }}
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
@@ -28,6 +34,10 @@ spec:
       enableServiceLinks: false
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- if .Values.dynamicSecretVolumes }}
+      volumes:
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+    {{- end }}
       containers:
         - image: {{ .Values.images.nginx | quote }}
           name: "nginx"
@@ -63,6 +73,10 @@ spec:
                 name: lagoon-env
           resources:
             {{- toYaml .Values.resources.nginx | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
 
         - image: {{ .Values.images.php | quote }}
           name: "php"
@@ -92,6 +106,10 @@ spec:
               value: '127.0.0.1'
           resources:
             {{- toYaml .Values.resources.php | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}
