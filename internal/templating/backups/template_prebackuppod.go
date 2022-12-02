@@ -133,7 +133,7 @@ func GeneratePreBackupPod(
 						APIVersion: k8upv1.GroupVersion.String(),
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: serviceValues.Name,
+						Name: fmt.Sprintf("%s-prebackuppod", serviceValues.Name),
 					},
 					Spec: k8upv1.PreBackupPodSpec{},
 				}
@@ -204,7 +204,7 @@ func GeneratePreBackupPod(
 func RemoveYAML(a []byte) ([]byte, error) {
 	tmpMap := map[string]interface{}{}
 	yaml.Unmarshal(a, &tmpMap)
-	if _, ok := tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"]; ok {
+	if _, ok := tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{})["creationTimestamp"]; ok {
 		delete(tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{}), "creationTimestamp")
 		b, _ := yaml.Marshal(tmpMap)
 		return b, nil

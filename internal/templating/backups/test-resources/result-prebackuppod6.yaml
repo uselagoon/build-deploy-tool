@@ -13,7 +13,7 @@ metadata:
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     prebackuppod: opensearch
-  name: opensearch
+  name: opensearch-prebackuppod
 spec:
   backupCommand: /bin/sh -c "tar -cf - -C /var/storage/path ."
   fileExtension: .opensearch.tar
