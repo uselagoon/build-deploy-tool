@@ -201,6 +201,7 @@ func GeneratePreBackupPod(
 	return result, nil
 }
 
+// helper function to remove the creationtimestamp from the prebackuppod pod spec so that kubectl will apply without validation errors
 func RemoveYAML(a []byte) ([]byte, error) {
 	tmpMap := map[string]interface{}{}
 	yaml.Unmarshal(a, &tmpMap)
