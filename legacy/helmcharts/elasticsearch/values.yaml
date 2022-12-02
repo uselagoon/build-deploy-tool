@@ -59,3 +59,7 @@ configMapSha: ""
 useSpot: false
 
 cronjobUseSpot: false
+
+dynamicSecretMounts: []
+
+dynamicSecretVolumes: []

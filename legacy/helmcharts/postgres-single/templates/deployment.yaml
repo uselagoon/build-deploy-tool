@@ -25,7 +25,7 @@ spec:
         {{- end }}
       annotations:
         {{- include "postgres-single.annotations" . | nindent 8 }}
-        k8up.syn.tools/backupcommand: /bin/sh -c "PGPASSWORD=${{ upper .Release.Name }}_PASSWORD pg_dump --host=localhost --port=${{ upper .Release.Name }}_SERVICE_PORT --dbname=${{ upper .Release.Name }}_DB --username=${{ upper .Release.Name }}_USER --format=t -w"
+        k8up.syn.tools/backupcommand: /bin/sh -c "PGPASSWORD=${{ regexReplaceAll "\\W+" .Release.Name "_" | upper }}_PASSWORD pg_dump --host=localhost --port=${{ regexReplaceAll "\\W+" .Release.Name "_" | upper }}_SERVICE_PORT --dbname=${{ regexReplaceAll "\\W+" .Release.Name "_" | upper }}_DB --username=${{ regexReplaceAll "\\W+" .Release.Name "_" | upper }}_USER --format=t -w"
         k8up.syn.tools/file-extension: .{{ include "postgres-single.fullname" . }}.tar
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
     spec:
@@ -37,6 +37,9 @@ spec:
         - name: {{ include "postgres-single.fullname" . }}
           persistentVolumeClaim:
             claimName: {{ include "postgres-single.fullname" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -69,6 +72,9 @@ spec:
           volumeMounts:
             - name: {{ include "postgres-single.fullname" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}
