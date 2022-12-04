@@ -227,26 +227,16 @@ type PreBackupPods map[string]string
 
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated
 var preBackupPodSpecs = PreBackupPods{
-	"mariadb-dbaas": `backupCommand: |-
-    /bin/sh -c "dump=$(mktemp)
-    && mysqldump --max-allowed-packet=500M --events --routines --quick
-    --add-locks --no-autocommit --single-transaction --no-create-db
-    --no-data --no-tablespaces
-    -h $BACKUP_DB_HOST
-    -u $BACKUP_DB_USERNAME
-    -p$BACKUP_DB_PASSWORD
-    $BACKUP_DB_DATABASE
-    > $dump
-    && mysqldump --max-allowed-packet=500M --events --routines --quick
-    --add-locks --no-autocommit --single-transaction --no-create-db
-    --ignore-table=$BACKUP_DB_DATABASE.watchdog
-    --no-create-info --no-tablespaces
-    -h $BACKUP_DB_HOST
-    -u $BACKUP_DB_USERNAME
-    -p$BACKUP_DB_PASSWORD
-    $BACKUP_DB_DATABASE
-    >> $dump
-    && cat $dump && rm $dump"
+	"mariadb-dbaas": `backupCommand: >-
+  /bin/sh -c "dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events
+  --routines --quick --add-locks --no-autocommit --single-transaction
+  --no-create-db --no-data -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME
+  -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE > $dump && mysqldump
+  --max-allowed-packet=500M --events --routines --quick --add-locks
+  --no-autocommit --single-transaction --no-create-db
+  --ignore-table=$BACKUP_DB_DATABASE.watchdog --no-create-info -h
+  $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD
+  $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
 fileExtension: .{{ .Name }}.sql
 pod:
   spec:
