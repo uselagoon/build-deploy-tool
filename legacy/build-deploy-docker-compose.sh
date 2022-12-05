@@ -1064,14 +1064,13 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration"
-set -x
-
 
 # Run the backup generation script
 # check if k8up v2 feature flag is enabled
 if [ "$(featureFlag K8UP_V2)" = enabled ]; then
 # build-tool doesn't do any capability checks yet, so do this for now
   if [[ "${CAPABILITIES[@]}" =~ "k8up.io/v1/Schedule" ]]; then
+  echo "Backups: generating k8up.io/v1 resources"
     if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
       # Create baas-repo-pw secret based on the project secret
       kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
@@ -1080,9 +1079,11 @@ if [ "$(featureFlag K8UP_V2)" = enabled ]; then
     # check if the existing schedule exists, and delete it
     if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
       if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get schedules.backup.appuio.ch k8up-lagoon-backup-schedule &> /dev/null; then
+        echo "Backups: removing old backup.appuio.ch/v1alpha1 schedule"
         kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete schedules.backup.appuio.ch k8up-lagoon-backup-schedule
       fi
       if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get prebackuppods.backup.appuio.ch &> /dev/null; then
+        echo "Backups: removing old backup.appuio.ch/v1alpha1 prebackuppods"
         kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch --all
       fi
     fi
@@ -1090,6 +1091,7 @@ if [ "$(featureFlag K8UP_V2)" = enabled ]; then
   fi
 fi
 if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]] && [[ "$K8UP_VERSION" != "v2" ]]; then
+  echo "Backups: generating backup.appuio.ch/v1alpha1 resources"
   if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
     # Create baas-repo-pw secret based on the project secret
     kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
@@ -1098,7 +1100,6 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]] && [[ "$K8
 fi
 
 # check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-set +x
 if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
 	# add namespace isolation network policy to deployment
 	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
