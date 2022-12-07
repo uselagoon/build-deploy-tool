@@ -112,7 +112,11 @@ func getConfig() (*rest.Config, error) {
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
 	if debug {
-		fmt.Printf("Executing task '%v':'%v'\n", task.Name, task.Command)
+		podContainerDetails := fmt.Sprintf("Service:%v", task.Service)
+		if task.Container != "" {
+			podContainerDetails = fmt.Sprintf("%v and container:%v", podContainerDetails, task.Container)
+		}
+		fmt.Printf("Preparing to execute task named '%v' with definition '%v' in %v \n", task.Name, task.Command, podContainerDetails)
 	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
