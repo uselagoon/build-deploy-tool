@@ -1,5 +1,6 @@
 ---
 apiVersion: v1
+kind: Service
 metadata:
   annotations:
     lagoon.sh/branch: environment-name
@@ -30,6 +31,7 @@ status:
   loadBalancer: {}
 ---
 apiVersion: v1
+kind: Service
 metadata:
   annotations:
     lagoon.sh/branch: environment-name

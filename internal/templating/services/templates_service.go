@@ -63,7 +63,7 @@ func GenerateServiceTemplate(
 				additionalLabels["lagoon.sh/service-type"] = serviceType.Name
 				service := &corev1.Service{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       corev1.SchemeGroupVersion.Group,
+						Kind:       "Service",
 						APIVersion: corev1.SchemeGroupVersion.Version,
 					},
 					ObjectMeta: metav1.ObjectMeta{

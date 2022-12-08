@@ -71,7 +71,7 @@ func GeneratePVCTemplate(
 
 				pvc := &corev1.PersistentVolumeClaim{
 					TypeMeta: metav1.TypeMeta{
-						Kind:       corev1.SchemeGroupVersion.Group,
+						Kind:       "PersistentVolumeClaim",
 						APIVersion: corev1.SchemeGroupVersion.Version,
 					},
 					ObjectMeta: metav1.ObjectMeta{
