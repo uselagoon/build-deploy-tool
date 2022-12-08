@@ -1,9 +1,11 @@
 package helpers
 
 import (
+	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base32"
+	"encoding/gob"
 	"encoding/hex"
 	"fmt"
 	"os"
@@ -25,6 +27,16 @@ func BoolPtr(b bool) *bool {
 
 // IntPTr
 func IntPtr(i int) *int {
+	return &i
+}
+
+// Int32PTr
+func Int32Ptr(i int32) *int32 {
+	return &i
+}
+
+// Int64PTr
+func Int64Ptr(i int64) *int64 {
 	return &i
 }
 
@@ -203,4 +215,12 @@ func CheckLabelLength(labels map[string]string) error {
 		}
 	}
 	return nil
+}
+
+func DeepCopy(src, dist interface{}) (err error) {
+	buf := bytes.Buffer{}
+	if err = gob.NewEncoder(&buf).Encode(src); err != nil {
+		return
+	}
+	return gob.NewDecoder(&buf).Decode(dist)
 }
