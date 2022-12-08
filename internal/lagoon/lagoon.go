@@ -23,6 +23,14 @@ type Environment struct {
 	AutogenerateRoutes *bool                `json:"autogenerateRoutes"`
 	Types              map[string]string    `json:"types"`
 	Routes             []map[string][]Route `json:"routes"`
+	Cronjobs           []Cronjob            `json:"cronjobs"`
+}
+
+type Cronjob struct {
+	Name     string `json:"name"`
+	Service  string `json:"service"`
+	Schedule string `json:"schedule"`
+	Command  string `json:"command"`
 }
 
 // Environments .
