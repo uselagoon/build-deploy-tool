@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
@@ -199,7 +200,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
 			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateBackupSchedule() = %v, want %v", string(got), string(r1))
+				t.Errorf("GenerateBackupSchedule() = \n%v", diff.LineDiff(string(r1), string(got)))
 			}
 		})
 	}

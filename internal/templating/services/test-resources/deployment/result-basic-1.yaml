@@ -50,6 +50,9 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+          value: |
+            M/5 * * * * drush cron
+            M/15 * * * * other cronjob
         envFrom:
         - configMapRef:
             name: lagoon-env

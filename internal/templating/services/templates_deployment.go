@@ -65,6 +65,7 @@ func GenerateDeploymentTemplate(
 			additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0")
 			additionalLabels["lagoon.sh/service"] = serviceValues.Name
 			additionalLabels["lagoon.sh/service-type"] = serviceTypeValues.Name
+			additionalAnnotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
 
 			if serviceValues.UseSpotInstances {
 				additionalLabels["lagoon.sh/spot"] = "true"
@@ -76,7 +77,9 @@ func GenerateDeploymentTemplate(
 					APIVersion: fmt.Sprintf("%s/%s", appsv1.SchemeGroupVersion.Group, appsv1.SchemeGroupVersion.Version),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name: serviceValues.Name,
+					Name:        serviceValues.Name,
+					Labels:      labels,
+					Annotations: annotations,
 				},
 			}
 			deployment.ObjectMeta.Labels = labels
@@ -108,14 +111,10 @@ func GenerateDeploymentTemplate(
 
 			// start deployment template
 			depMeta := metav1.ObjectMeta{
-				Name:        serviceValues.Name,
 				Labels:      labels,
 				Annotations: annotations,
 			}
 			deployment.Spec.Template.ObjectMeta = depMeta
-
-			deployment.Spec.Template.ObjectMeta.Annotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
-
 			deployment.Spec.Replicas = helpers.Int32Ptr(1)
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -196,6 +195,11 @@ func GenerateDeploymentTemplate(
 			// handle setting the rest of the containers specs with values from the service or build values
 			container.Container.Name = container.Name
 			container.Container.Image = serviceValues.ImageName
+
+			cronjobs := ""
+			for _, cronjob := range serviceValues.InPodCronjobs {
+				cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
+			}
 			container.Container.Env = []corev1.EnvVar{
 				{
 					Name:  "LAGOON_GIT_SHA",
@@ -203,7 +207,7 @@ func GenerateDeploymentTemplate(
 				},
 				{
 					Name:  "CRONJOBS",
-					Value: serviceValues.InPodCronjobs,
+					Value: cronjobs,
 				},
 			}
 

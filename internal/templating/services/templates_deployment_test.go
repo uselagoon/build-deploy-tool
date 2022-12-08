@@ -6,6 +6,9 @@ import (
 	"testing"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+
+	"github.com/andreyvit/diff"
 )
 
 func TestGenerateDeploymentTemplate(t *testing.T) {
@@ -44,6 +47,28 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Type:             "basic",
 							DBaaSEnvironment: "development",
 							ImageName:        "harbor.example.com/example-project/environment-with-really-really-reall-3fdb/basic@latest",
+							InPodCronjobs: []lagoon.Cronjob{
+								{
+									Name:     "cron - inpod",
+									Schedule: "M/5 * * * *",
+									Command:  "drush cron",
+									Service:  "basic",
+								},
+								{
+									Name:     "cron2 - inpod",
+									Schedule: "M/15 * * * *",
+									Command:  "other cronjob",
+									Service:  "basic",
+								},
+							},
+							NativeCronjobs: []lagoon.Cronjob{
+								{
+									Name:     "cron3 - native",
+									Schedule: "35 * * * *",
+									Command:  "drush cron",
+									Service:  "basic",
+								},
+							},
 						},
 						// {
 						// 	Name:             "myservice-po",
@@ -193,7 +218,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
 			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateDeploymentTemplate() = %v, want %v", string(got), string(r1))
+				t.Errorf("GenerateDeploymentTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
 			}
 		})
 	}

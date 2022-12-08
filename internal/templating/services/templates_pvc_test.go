@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
@@ -179,7 +180,7 @@ func TestGeneratePVCTemplate(t *testing.T) {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
 			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GeneratePVCTemplate() = %v, want %v", string(got), string(r1))
+				t.Errorf("GeneratePVCTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
 			}
 		})
 	}

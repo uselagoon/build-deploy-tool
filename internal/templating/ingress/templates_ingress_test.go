@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -469,7 +470,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					t.Errorf("couldn't read file %v: %v", tt.want, err)
 				}
 				if !reflect.DeepEqual(string(got), string(r1)) {
-					t.Errorf("GenerateIngressTemplate() = %v, want %v", string(got), string(r1))
+					t.Errorf("GenerateIngressTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
 				}
 			}
 		})
