@@ -285,6 +285,38 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-polysite",
+			args: args{
+				file:    "../../test-resources/lagoon-yaml/test6/lagoon.yml",
+				l:       &YAML{},
+				project: "multiproject1",
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/15 * * * *",
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
