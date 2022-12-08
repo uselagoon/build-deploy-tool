@@ -107,8 +107,12 @@ func GenerateDeploymentTemplate(
 			}
 
 			// start deployment template
-			deployment.Spec.Template.ObjectMeta.Labels = labels
-			deployment.Spec.Template.ObjectMeta.Annotations = annotations
+			depMeta := metav1.ObjectMeta{
+				Name:        serviceValues.Name,
+				Labels:      labels,
+				Annotations: annotations,
+			}
+			deployment.Spec.Template.ObjectMeta = depMeta
 
 			deployment.Spec.Template.ObjectMeta.Annotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
 
