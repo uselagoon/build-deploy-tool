@@ -206,7 +206,7 @@ func IsInPodCronjob(cron string) (bool, error) {
 					if err != nil {
 						return false, fmt.Errorf("cron definition '%s' is invalid, unable to determine minutes value", cron)
 					}
-					if step <= 30 {
+					if step < 30 {
 						return true, nil
 					}
 				}
