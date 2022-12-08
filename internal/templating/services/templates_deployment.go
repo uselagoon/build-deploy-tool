@@ -67,10 +67,6 @@ func GenerateDeploymentTemplate(
 			additionalLabels["lagoon.sh/service-type"] = serviceTypeValues.Name
 			additionalAnnotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
 
-			if serviceValues.UseSpotInstances {
-				additionalLabels["lagoon.sh/spot"] = "true"
-			}
-
 			deployment := &appsv1.Deployment{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Deployment",
@@ -84,6 +80,46 @@ func GenerateDeploymentTemplate(
 			}
 			deployment.ObjectMeta.Labels = labels
 			deployment.ObjectMeta.Annotations = annotations
+
+			if serviceValues.UseSpotInstances {
+				// handle spot instance label and affinity/tolerations/selectors
+				additionalLabels["lagoon.sh/spot"] = "true"
+				deployment.Spec.Template.Spec.Affinity = &corev1.Affinity{
+					NodeAffinity: &corev1.NodeAffinity{
+						PreferredDuringSchedulingIgnoredDuringExecution: []corev1.PreferredSchedulingTerm{
+							{
+								Weight: 1,
+								Preference: corev1.NodeSelectorTerm{
+									MatchExpressions: []corev1.NodeSelectorRequirement{
+										{
+											Key:      "lagoon.sh/spot",
+											Operator: corev1.NodeSelectorOpExists,
+										},
+									},
+								},
+							},
+						},
+					},
+				}
+				deployment.Spec.Template.Spec.Tolerations = []corev1.Toleration{
+					{
+						Key:      "lagoon.sh/spot",
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectNoSchedule,
+					},
+					{
+						Key:      "lagoon.sh/spot",
+						Operator: corev1.TolerationOpExists,
+						Effect:   corev1.TaintEffectPreferNoSchedule,
+					},
+				}
+				if serviceValues.ForceSpotInstances {
+					deployment.Spec.Template.Spec.NodeSelector = map[string]string{
+						"lagoon.sh/spot": "true",
+					}
+				}
+			}
+
 			for key, value := range additionalLabels {
 				deployment.ObjectMeta.Labels[key] = value
 			}
@@ -116,6 +152,9 @@ func GenerateDeploymentTemplate(
 			}
 			deployment.Spec.Template.ObjectMeta = depMeta
 			deployment.Spec.Replicas = helpers.Int32Ptr(1)
+			if serviceValues.Replicas != 0 {
+				deployment.Spec.Replicas = &serviceValues.Replicas
+			}
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name":     serviceTypeValues.Name,
@@ -163,20 +202,6 @@ func GenerateDeploymentTemplate(
 				})
 			}
 			deployment.Spec.Template.Spec.ImagePullSecrets = pullsecrets
-
-			// handle node selectors, tolerations, and affinity configuration
-			if serviceValues.NodeSelectors != nil {
-				deployment.Spec.Template.Spec.NodeSelector = *serviceValues.NodeSelectors
-			}
-			if serviceValues.Tolerations != nil {
-				deployment.Spec.Template.Spec.Tolerations = *serviceValues.Tolerations
-			}
-			deployment.Spec.Template.Spec.Affinity = serviceValues.Affinity
-			if serviceTypeValues.PodSecurityContext.HasDefault {
-				deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
-					FSGroup: &serviceTypeValues.PodSecurityContext.FSGroup,
-				}
-			}
 
 			// start working out the containers to add
 			container := serviceTypeValues.PrimaryContainer
