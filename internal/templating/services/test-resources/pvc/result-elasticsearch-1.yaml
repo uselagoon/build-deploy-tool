@@ -4,7 +4,7 @@ metadata:
   annotations:
     k8up.io/backup: "false"
     k8up.syn.tools/backup: "false"
-    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
@@ -12,7 +12,7 @@ metadata:
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: elasticsearch
     lagoon.sh/buildType: branch
-    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice
@@ -33,7 +33,7 @@ metadata:
   annotations:
     k8up.io/backup: "false"
     k8up.syn.tools/backup: "false"
-    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
@@ -41,7 +41,7 @@ metadata:
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: elasticsearch
     lagoon.sh/buildType: branch
-    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice-size

@@ -24,13 +24,13 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
+					Environment:     "environment-name",
 					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					Namespace:       "myexample-project-environment-name",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
+					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
@@ -68,13 +68,13 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
+					Environment:     "environment-name",
 					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					Namespace:       "myexample-project-environment-name",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
+					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
@@ -98,13 +98,13 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
+					Environment:     "environment-name",
 					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					Namespace:       "myexample-project-environment-name",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
+					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
 							Name:                 "myservice",
@@ -130,13 +130,13 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
+					Environment:     "environment-name",
 					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					Namespace:       "myexample-project-environment-name",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
+					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
 							Name:                 "myservice",

@@ -26,13 +26,13 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
+					Environment:     "environment-name",
 					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					Namespace:       "myexample-project-environment-name",
 					BuildType:       "branch",
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
+					Branch:          "environment-name",
 					ImagePullSecrets: []generator.ImagePullSecrets{
 						{
 							Name: "lagoon-internal-registry-secret",
@@ -46,7 +46,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							OverrideName:     "myservice",
 							Type:             "basic",
 							DBaaSEnvironment: "development",
-							ImageName:        "harbor.example.com/example-project/environment-with-really-really-reall-3fdb/basic@latest",
+							ImageName:        "harbor.example.com/example-project/environment-name/basic@latest",
 							InPodCronjobs: []lagoon.Cronjob{
 								{
 									Name:     "cron - inpod",
@@ -116,13 +116,13 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 		// 	args: args{
 		// 		buildValues: generator.BuildValues{
 		// 			Project:         "example-project",
-		// 			Environment:     "environment-with-really-really-reall-3fdb",
+		// 			Environment:     "environment-name",
 		// 			EnvironmentType: "production",
-		// 			Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+		// 			Namespace:       "myexample-project-environment-name",
 		// 			BuildType:       "branch",
 		// 			LagoonVersion:   "v2.x.x",
 		// 			Kubernetes:      "generator.local",
-		// 			Branch:          "environment-with-really-really-reall-3fdb",
+		// 			Branch:          "environment-name",
 		// 			Services: []generator.ServiceValues{
 		// 				{
 		// 					Name:             "myservice",
@@ -146,13 +146,13 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 		// 	args: args{
 		// 		buildValues: generator.BuildValues{
 		// 			Project:         "example-project",
-		// 			Environment:     "environment-with-really-really-reall-3fdb",
+		// 			Environment:     "environment-name",
 		// 			EnvironmentType: "production",
-		// 			Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+		// 			Namespace:       "myexample-project-environment-name",
 		// 			BuildType:       "branch",
 		// 			LagoonVersion:   "v2.x.x",
 		// 			Kubernetes:      "generator.local",
-		// 			Branch:          "environment-with-really-really-reall-3fdb",
+		// 			Branch:          "environment-name",
 		// 			Services: []generator.ServiceValues{
 		// 				{
 		// 					Name:                 "myservice",
@@ -178,13 +178,13 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 		// 	args: args{
 		// 		buildValues: generator.BuildValues{
 		// 			Project:         "example-project",
-		// 			Environment:     "environment-with-really-really-reall-3fdb",
+		// 			Environment:     "environment-name",
 		// 			EnvironmentType: "production",
-		// 			Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+		// 			Namespace:       "myexample-project-environment-name",
 		// 			BuildType:       "branch",
 		// 			LagoonVersion:   "v2.x.x",
 		// 			Kubernetes:      "generator.local",
-		// 			Branch:          "environment-with-really-really-reall-3fdb",
+		// 			Branch:          "environment-name",
 		// 			Services: []generator.ServiceValues{
 		// 				{
 		// 					Name:                 "myservice",
