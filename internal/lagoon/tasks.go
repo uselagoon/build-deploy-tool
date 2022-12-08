@@ -234,7 +234,7 @@ func ExecTaskInPod(
 		}
 	}
 	if debug {
-		fmt.Printf("Executing task '%v' in pod %v \n", task.Name, pod.Namespace)
+		fmt.Printf("Executing task '%v' in pod %v \n", task.Name, pod.Name)
 	}
 
 	req := clientset.CoreV1().RESTClient().Post().
