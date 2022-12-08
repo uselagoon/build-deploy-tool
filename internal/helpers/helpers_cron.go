@@ -191,6 +191,36 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 	return "", fmt.Errorf("cron definition '%s' is invalid", cron)
 }
 
+func IsInPodCronjob(cron string) (bool, error) {
+	splitCron := strings.Split(cron, " ")
+	// check the provided cron splits into 5
+	if len(splitCron) == 5 {
+		for idx, val := range splitCron {
+			if idx == 0 {
+				match1, _ := regexp.MatchString("^(M|H|\\*)/([0-5]?[0-9])$", val)
+				if match1 {
+					// A Minute like M/15 (or H/15 or */15 for backwards compatibility) is defined, create a list of minutes with a random start
+					// like 4,19,34,49 or 6,21,36,51
+					params := getCaptureBlocks("^(?P<P1>M|H|\\*)/(?P<P2>[0-5]?[0-9])$", val)
+					step, err := strconv.Atoi(params["P2"])
+					if err != nil {
+						return false, fmt.Errorf("cron definition '%s' is invalid, unable to determine minutes value", cron)
+					}
+					if step <= 30 {
+						return true, nil
+					}
+				}
+				match2, _ := regexp.MatchString("^\\*$", val)
+				if match2 {
+					// this runs every minute
+					return true, nil
+				}
+			}
+		}
+	}
+	return false, nil
+}
+
 func getCaptureBlocks(regex, val string) (captureMap map[string]string) {
 	var regexComp = regexp.MustCompile(regex)
 	match := regexComp.FindStringSubmatch(val)
