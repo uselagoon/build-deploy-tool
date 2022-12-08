@@ -128,7 +128,7 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 }
 
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
-func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error {
+func UnmarshalLagoonYAML(file string, l *YAML, project string) error {
 	rawYAML, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("couldn't read %v: %v", file, err)
@@ -138,10 +138,23 @@ func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error 
 	if err != nil {
 		return err
 	}
-	// polysite
-	err = yaml.Unmarshal(rawYAML, p)
+
+	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	// this is done so that all other generators only need to know how to interact with one type of environment
+	p := map[string]interface{}{}
+	err = yaml.Unmarshal(rawYAML, &p)
 	if err != nil {
 		return err
+	}
+	if _, ok := p[project]; ok {
+		s, err := yaml.Marshal(p[project])
+		if err != nil {
+			return err
+		}
+		err = yaml.Unmarshal(s, l)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

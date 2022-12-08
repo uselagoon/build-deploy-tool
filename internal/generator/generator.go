@@ -251,28 +251,15 @@ func NewGenerator(
 func LoadAndUnmarshalLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
 
 	// First we load the primary file
-	lPolysite := make(map[string]interface{})
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, &lPolysite); err != nil {
+	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, projectName); err != nil {
 		return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYml, err)
-	}
-
-	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
-	// this is done so that all other generators only need to know how to interact with one type of environment
-	if _, ok := lPolysite[projectName]; ok {
-		s, _ := yaml.Marshal(lPolysite[projectName])
-		_ = yaml.Unmarshal(s, &lYAML)
 	}
 
 	// Here we try and merge in .lagoon.yml override
 	if _, err := os.Stat(lagoonYmlOverride); err == nil {
 		overLagoonYaml := &lagoon.YAML{}
-		overLEnvLagoonPolysite := make(map[string]interface{})
-		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, &overLEnvLagoonPolysite); err != nil {
+		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, projectName); err != nil {
 			return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYmlOverride, err)
-		}
-		if _, ok := overLEnvLagoonPolysite[projectName]; ok {
-			s, _ := yaml.Marshal(overLEnvLagoonPolysite[projectName])
-			_ = yaml.Unmarshal(s, &overLagoonYaml)
 		}
 		//now we merge
 		if err := lagoon.MergeLagoonYAMLs(lYAML, overLagoonYaml); err != nil {

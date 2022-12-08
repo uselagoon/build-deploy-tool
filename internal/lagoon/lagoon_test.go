@@ -9,9 +9,9 @@ import (
 
 func TestUnmarshalLagoonYAML(t *testing.T) {
 	type args struct {
-		file string
-		l    *YAML
-		p    *map[string]interface{}
+		file    string
+		project string
+		l       *YAML
 	}
 	tests := []struct {
 		name    string
@@ -24,7 +24,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "../../test-resources/lagoon-yaml/test1/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -92,7 +91,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "../../test-resources/lagoon-yaml/test2/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -160,7 +158,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "../../test-resources/lagoon-yaml/test3/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -228,7 +225,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "../../test-resources/lagoon-yaml/test4/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -263,7 +259,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "../../test-resources/lagoon-yaml/test5/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -293,7 +288,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := UnmarshalLagoonYAML(tt.args.file, tt.args.l, tt.args.p); (err != nil) != tt.wantErr {
+			if err := UnmarshalLagoonYAML(tt.args.file, tt.args.l, tt.args.project); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalLagoonYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.args.l, tt.want) {
