@@ -1,6 +1,7 @@
 package lagoon
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	composetypes "github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v2"
+	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 type OriginalServiceOrder struct {
@@ -57,6 +59,9 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, erro
 		// extract the services only
 		if item.Key.(string) == "services" {
 			for idx, v := range item.Value.(goyaml.MapSlice) {
+				if err := utilvalidation.IsDNS1035Label(v.Key.(string)); err != nil {
+					return nil, errors.New("service name cannot contain '.'")
+				}
 				l = append(l, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
 			}
 		}
