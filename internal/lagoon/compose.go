@@ -60,7 +60,7 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, erro
 		if item.Key.(string) == "services" {
 			for idx, v := range item.Value.(goyaml.MapSlice) {
 				if err := utilvalidation.IsDNS1035Label(v.Key.(string)); err != nil {
-					return nil, errors.New("service name cannot contain '.'")
+					return nil, errors.New("Service name is invalid. Please refer to the documentation regarding service naming requirements")
 				}
 				l = append(l, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
 			}
