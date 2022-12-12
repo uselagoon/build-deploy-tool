@@ -154,6 +154,14 @@ func TestUnmarshaDockerComposeYAML(t *testing.T) {
 			wantErr:    true,
 			wantErrMsg: "no such file or directory",
 		},
+		{
+			name: "test11 docker-compose service name with '.'",
+			args: args{
+				file: "../../test-resources/docker-compose/test11/docker-compose.yml",
+			},
+			wantErr:    true,
+			wantErrMsg: "Service name is invalid. Please refer to the documentation regarding service naming requirements",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
