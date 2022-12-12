@@ -116,7 +116,7 @@ services:
     labels:
       lagoon.type: none
 
-  wait-dependencies:
+  wait_dependencies:
     image: dadarek/wait-for-dependencies
     depends_on:
       - cli
