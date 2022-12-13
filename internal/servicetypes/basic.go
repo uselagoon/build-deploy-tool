@@ -22,7 +22,6 @@ var basic = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-
 		Name:            "basic",
 		ImagePullPolicy: corev1.PullAlways,
 		Container: corev1.Container{

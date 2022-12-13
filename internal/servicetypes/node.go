@@ -8,7 +8,6 @@ import (
 var node = ServiceType{
 	Name: "node",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 3000,

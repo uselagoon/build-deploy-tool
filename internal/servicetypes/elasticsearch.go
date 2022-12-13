@@ -8,7 +8,6 @@ import (
 var elasticsearch = ServiceType{
 	Name: "elasticsearch",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 9200,

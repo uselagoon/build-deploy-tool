@@ -9,7 +9,6 @@ import (
 var postgresSingle = ServiceType{
 	Name: "postgres-single",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 5432,

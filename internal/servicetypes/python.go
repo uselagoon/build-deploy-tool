@@ -8,7 +8,6 @@ import (
 var python = ServiceType{
 	Name: "python",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 8800,

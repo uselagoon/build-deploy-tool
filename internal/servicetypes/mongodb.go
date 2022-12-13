@@ -8,7 +8,6 @@ import (
 var mongodbSingle = ServiceType{
 	Name: "mongodb-single",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 27017,

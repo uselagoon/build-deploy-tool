@@ -1,0 +1,126 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cli
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: cli
+    lagoon.sh/template: cli-0.1.0
+  name: myservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/name: cli
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: cli
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice
+        lagoon.sh/service-type: cli
+        lagoon.sh/template: cli-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice@latest
+        name: ""
+        resources: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cli-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist
+    lagoon.sh/service-type: cli-persistent
+    lagoon.sh/template: cli-persistent-0.1.0
+  name: myservice-persist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-persist
+      app.kubernetes.io/name: cli-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-persist
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: cli-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-persist
+        lagoon.sh/service-type: cli-persistent
+        lagoon.sh/template: cli-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persistent@latest
+        name: ""
+        resources: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+status: {}

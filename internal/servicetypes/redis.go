@@ -8,7 +8,6 @@ import (
 var redis = ServiceType{
 	Name: "redis",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 6379,

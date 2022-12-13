@@ -8,7 +8,6 @@ import (
 var opensearch = ServiceType{
 	Name: "opensearch",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 9200,

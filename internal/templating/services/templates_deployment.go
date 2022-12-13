@@ -21,51 +21,48 @@ func GenerateDeploymentTemplate(
 	separator := []byte("---\n")
 	var result []byte
 
-	// add the default labels
-	labels := map[string]string{
-		"app.kubernetes.io/managed-by": "build-deploy-tool",
-		"lagoon.sh/project":            buildValues.Project,
-		"lagoon.sh/environment":        buildValues.Environment,
-		"lagoon.sh/environmentType":    buildValues.EnvironmentType,
-		"lagoon.sh/buildType":          buildValues.BuildType,
-	}
-
-	// add the default annotations
-	annotations := map[string]string{
-		"lagoon.sh/version": buildValues.LagoonVersion,
-	}
-
-	// add any additional labels
-	additionalLabels := map[string]string{}
-	additionalAnnotations := map[string]string{}
-	if buildValues.BuildType == "branch" {
-		additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
-	} else if buildValues.BuildType == "pullrequest" {
-		additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
-		additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
-		additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
-
-	}
+	// check linked services
+	checkedServices := LinkedServiceCalculator(buildValues.Services)
 
 	// for all the services that the build values generated
 	// iterate over them and generate any kubernetes deployments
-	for _, serviceValues := range buildValues.Services {
+	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
-			// if val.Volumes.PersistentVolumeSize != "" {
-			// 	if serviceValues.PersistentVolumePath == "" {
-			// 		return nil, fmt.Errorf("no persistent volume size defined for this service")
-			// 	}
-			// }
 			serviceTypeValues := &servicetypes.ServiceType{}
 			helpers.DeepCopy(val, serviceTypeValues)
 
 			var deploymentBytes []byte
-			additionalLabels["app.kubernetes.io/name"] = serviceTypeValues.Name
-			additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
-			additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0")
-			additionalLabels["lagoon.sh/service"] = serviceValues.Name
-			additionalLabels["lagoon.sh/service-type"] = serviceTypeValues.Name
-			additionalAnnotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
+
+			// add the default labels
+			labels := map[string]string{
+				"app.kubernetes.io/managed-by": "build-deploy-tool",
+				"lagoon.sh/project":            buildValues.Project,
+				"lagoon.sh/environment":        buildValues.Environment,
+				"lagoon.sh/environmentType":    buildValues.EnvironmentType,
+				"lagoon.sh/buildType":          buildValues.BuildType,
+				"app.kubernetes.io/name":       serviceTypeValues.Name,
+				"app.kubernetes.io/instance":   serviceValues.Name,
+				"lagoon.sh/template":           fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
+				"lagoon.sh/service":            serviceValues.Name,
+				"lagoon.sh/service-type":       serviceTypeValues.Name,
+			}
+
+			// add the default annotations
+			annotations := map[string]string{
+				"lagoon.sh/version":      buildValues.LagoonVersion,
+				"lagoon.sh/configMapSha": buildValues.ConfigMapSha,
+			}
+
+			// add any additional labels
+			additionalLabels := make(map[string]string)
+			additionalAnnotations := make(map[string]string)
+			if buildValues.BuildType == "branch" {
+				additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
+			} else if buildValues.BuildType == "pullrequest" {
+				additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
+				additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
+				additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
+			}
 
 			deployment := &appsv1.Deployment{
 				TypeMeta: metav1.TypeMeta{
@@ -147,8 +144,8 @@ func GenerateDeploymentTemplate(
 
 			// start deployment template
 			depMeta := metav1.ObjectMeta{
-				Labels:      labels,
-				Annotations: annotations,
+				Labels:      deployment.ObjectMeta.Labels,
+				Annotations: deployment.ObjectMeta.Annotations,
 			}
 			deployment.Spec.Template.ObjectMeta = depMeta
 			deployment.Spec.Replicas = helpers.Int32Ptr(1)
@@ -169,7 +166,8 @@ func GenerateDeploymentTemplate(
 			// set the priority class
 			deployment.Spec.Template.Spec.PriorityClassName = fmt.Sprintf("lagoon-priority-%s", buildValues.EnvironmentType)
 
-			// set up an volumes this deployment can use
+			// start set up any volumes this deployment can use
+			// first handle any dynamic secret volumes that come from kubernetes secrets that are labeled
 			for _, dsv := range buildValues.DynamicSecretVolumes {
 				volume := corev1.Volume{
 					Name: dsv.Name,
@@ -182,6 +180,7 @@ func GenerateDeploymentTemplate(
 				}
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
+			// if there is a persistent volume attached to this service, handle adding that here
 			if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
 				volume := corev1.Volume{
 					Name: serviceValues.PersistentVolumeName,
@@ -193,6 +192,18 @@ func GenerateDeploymentTemplate(
 				}
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
+			// if there are any specific container overrides provided, handle those here
+			for _, pcv := range serviceTypeValues.PrimaryContainer.Volumes {
+				volume := corev1.Volume{}
+				helpers.TemplateThings(serviceValues, pcv, &volume)
+				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
+			}
+			for _, scv := range serviceTypeValues.SecondaryContainer.Volumes {
+				volume := corev1.Volume{}
+				helpers.TemplateThings(serviceValues, scv, &volume)
+				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
+			}
+			// end set up any volumes this deployment can use
 
 			// handle any image pull secrets
 			pullsecrets := []corev1.LocalObjectReference{}
@@ -204,6 +215,25 @@ func GenerateDeploymentTemplate(
 			deployment.Spec.Template.Spec.ImagePullSecrets = pullsecrets
 
 			// start working out the containers to add
+			// add any init containers
+			if serviceTypeValues.InitContainer.Name != "" && serviceValues.PodSecurityContext.RunAsUser == 10001 {
+				init := serviceTypeValues.InitContainer
+				for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
+					volumeMount := corev1.VolumeMount{}
+					helpers.TemplateThings(serviceValues, svm, &volumeMount)
+					init.Container.VolumeMounts = append(init.Container.VolumeMounts, volumeMount)
+				}
+				cmd := []string{}
+				for _, c := range init.Command {
+					var c2 string
+					helpers.TemplateThings(serviceValues, c, &c2)
+					cmd = append(cmd, c2)
+				}
+				init.Container.Command = cmd
+				deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, init.Container)
+			}
+
+			// handle the primary container
 			container := serviceTypeValues.PrimaryContainer
 			// if the service can change the port
 			if serviceTypeValues.Ports.CanChangePort {
@@ -221,11 +251,12 @@ func GenerateDeploymentTemplate(
 			container.Container.Name = container.Name
 			container.Container.Image = serviceValues.ImageName
 
+			// set up cronjobs if required
 			cronjobs := ""
 			for _, cronjob := range serviceValues.InPodCronjobs {
 				cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
 			}
-			container.Container.Env = []corev1.EnvVar{
+			envvars := []corev1.EnvVar{
 				{
 					Name:  "LAGOON_GIT_SHA",
 					Value: buildValues.GitSha,
@@ -233,6 +264,18 @@ func GenerateDeploymentTemplate(
 				{
 					Name:  "CRONJOBS",
 					Value: cronjobs,
+				},
+			}
+			for _, envvar := range envvars {
+				container.Container.Env = append(container.Container.Env, envvar)
+			}
+			container.Container.EnvFrom = []corev1.EnvFromSource{
+				{
+					ConfigMapRef: &corev1.ConfigMapEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "lagoon-env",
+						},
+					},
 				},
 			}
 
@@ -252,8 +295,68 @@ func GenerateDeploymentTemplate(
 				}
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+			for _, svm := range serviceTypeValues.PrimaryContainer.VolumeMounts {
+				volumeMount := corev1.VolumeMount{}
+				helpers.TemplateThings(serviceValues, svm, &volumeMount)
+				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
+			}
 			// append the final defined container to the spec
 			deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, container.Container)
+
+			// if this service has a secondary container provided (mainly will be `nginx-php`, but could be others in the future)
+			if serviceValues.LinkedService == nil && serviceTypeValues.SecondaryContainer.Name != "" {
+				// if no linked service is found from the docker-compose services, drop an error
+				return nil, fmt.Errorf("service type %s has a secondary container defined, but no linked service was found", serviceValues.Type)
+			}
+			// if a linked service is provided, and the servicetype supports it, handle that here
+			if serviceValues.LinkedService != nil && serviceTypeValues.SecondaryContainer.Name != "" {
+				linkedContainer := serviceTypeValues.SecondaryContainer
+
+				// handle setting the rest of the containers specs with values from the service or build values
+				linkedContainer.Container.Name = linkedContainer.Name
+				linkedContainer.Container.Image = serviceValues.LinkedService.ImageName
+
+				envvars := []corev1.EnvVar{
+					{
+						Name:  "LAGOON_GIT_SHA",
+						Value: buildValues.GitSha,
+					},
+				}
+				for _, envvar := range envvars {
+					linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvar)
+				}
+				linkedContainer.Container.EnvFrom = []corev1.EnvFromSource{
+					{
+						ConfigMapRef: &corev1.ConfigMapEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "lagoon-env",
+							},
+						},
+					},
+				}
+				for _, dsm := range buildValues.DynamicSecretMounts {
+					volumeMount := corev1.VolumeMount{
+						Name:      dsm.Name,
+						MountPath: dsm.MountPath,
+						ReadOnly:  dsm.ReadOnly,
+					}
+					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+				}
+				if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
+					volumeMount := corev1.VolumeMount{
+						Name:      serviceValues.PersistentVolumeName,
+						MountPath: serviceValues.PersistentVolumePath,
+					}
+					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+				}
+
+				for _, svm := range serviceTypeValues.SecondaryContainer.VolumeMounts {
+					volumeMount := corev1.VolumeMount{}
+					helpers.TemplateThings(serviceValues, svm, &volumeMount)
+					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+				}
+				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, linkedContainer.Container)
+			}
 
 			// end deployment template
 
@@ -271,4 +374,49 @@ func GenerateDeploymentTemplate(
 		}
 	}
 	return result, nil
+}
+
+// LinkedServiceCalculator checks the provided services to see if there are any linked services
+// linked services are mostly just `nginx-php` but lagoon has the possibility to support more than this in the future
+func LinkedServiceCalculator(services []generator.ServiceValues) []generator.ServiceValues {
+	linkedMap := make(map[string][]generator.ServiceValues)
+	retServices := []generator.ServiceValues{}
+	linkedOrder := []string{}
+
+	// go over the services twice to extract just the linked services (the override names will be the same in a linked service)
+	for _, s1 := range services {
+		for _, s2 := range services {
+			if s1.OverrideName == s2.OverrideName && s1.Name != s2.Name {
+				linkedMap[s1.OverrideName] = append(linkedMap[s1.OverrideName], s1)
+				linkedOrder = helpers.AppendIfMissing(linkedOrder, s1.OverrideName)
+			}
+		}
+	}
+	// go over the services again and any that are in the services that aren't in the linked map (again the override name is the key)
+	// add it as a standalone service
+	for _, s1 := range services {
+		if _, ok := linkedMap[s1.OverrideName]; !ok {
+			retServices = append(retServices, s1)
+		}
+	}
+
+	// go over the linked services and add the linkedservice to the main service
+	// example would be adding the `php` service in docker-compose to the `nginx` service as a `LinkedService` definition
+	// this allows the generated service values to carry across
+	for _, name := range linkedOrder {
+		service := generator.ServiceValues{}
+		if len(linkedMap[name]) == 2 {
+			for idx, s := range linkedMap[name] {
+				if idx == 0 {
+					service = s
+				}
+				if idx == 1 {
+					service.LinkedService = &s
+				}
+			}
+		}
+		// then add it to the slice of services to return
+		retServices = append(retServices, service)
+	}
+	return retServices
 }

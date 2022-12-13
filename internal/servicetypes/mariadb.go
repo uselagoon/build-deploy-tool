@@ -8,7 +8,6 @@ import (
 var mariadbSingle = ServiceType{
 	Name: "mariadb-single",
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 3306,

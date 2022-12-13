@@ -186,7 +186,7 @@ func composeToServiceValues(
 		if servicePersistentSize == "" {
 			// if there is no persistent size, check if the service type has a default size allocated
 			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
-				servicePersistentPath = val.Volumes.PersistentVolumeSize
+				servicePersistentSize = val.Volumes.PersistentVolumeSize
 			}
 		}
 
@@ -374,6 +374,7 @@ func composeToServiceValues(
 			Replicas:                   spotReplicas,
 			InPodCronjobs:              inpodcronjobs,
 			NativeCronjobs:             nativecronjobs,
+			PodSecurityContext:         buildValues.PodSecurityContext,
 		}
 		// check if the service has a service port override (this only applies to basic(-persistent))
 		servicePortOverride := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.service.port")

@@ -1,16 +1,18 @@
 package helpers
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base32"
-	"encoding/gob"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"html/template"
 	"os"
 	"strconv"
 	"strings"
+
+	"sigs.k8s.io/yaml"
 )
 
 // StrPtr .
@@ -218,9 +220,29 @@ func CheckLabelLength(labels map[string]string) error {
 }
 
 func DeepCopy(src, dist interface{}) (err error) {
-	buf := bytes.Buffer{}
-	if err = gob.NewEncoder(&buf).Encode(src); err != nil {
-		return
+	origJSON, err := json.Marshal(src)
+	if err != nil {
+		return err
 	}
-	return gob.NewDecoder(&buf).Decode(dist)
+	if err = json.Unmarshal(origJSON, &dist); err != nil {
+		return err
+	}
+	return nil
+}
+
+func TemplateThings(values, src, dist interface{}) {
+	yb, _ := yaml.Marshal(src)
+	tmpl, _ := template.New("").Parse(string(yb))
+	queryBuilder := strings.Builder{}
+	tmpl.Execute(&queryBuilder, values)
+	yaml.Unmarshal([]byte(queryBuilder.String()), &dist)
+}
+
+func AppendIfMissing(slice []string, i string) []string {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
 }

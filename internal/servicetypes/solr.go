@@ -8,7 +8,6 @@ import (
 var solr = ServiceType{
 	Name: "solr-php-persistent", // this has to be like this because it is used in selectors, and is unchangeable now on existing deployed solr
 	Ports: ServicePorts{
-		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
 				Port: 8983,
