@@ -4,6 +4,9 @@ metadata:
   name: {{ include "redis.fullname" . }}
   labels:
     {{- include "redis.labels" . | nindent 4 }}
+    {{- if .Values.useSpot }}
+    lagoon.sh/spot: {{ .Values.useSpot | quote }}
+    {{- end }}
   annotations:
     {{- include "redis.annotations" . | nindent 4 }}
 spec:
@@ -18,6 +21,9 @@ spec:
       labels:
         {{- include "redis.labels" . | nindent 8 }}
         {{- include "redis.datadogLabels" . | nindent 8 }}
+        {{- if .Values.useSpot }}
+        lagoon.sh/spot: {{ .Values.useSpot | quote }}
+        {{- end }}
       annotations:
         {{- include "redis.annotations" . | nindent 8 }}
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
@@ -28,6 +34,10 @@ spec:
     {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- if .Values.dynamicSecretVolumes }}
+      volumes:
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       containers:
         - image: {{ .Values.image | quote }}
           name: {{ .Chart.Name }}
@@ -58,6 +68,10 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

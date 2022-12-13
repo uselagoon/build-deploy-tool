@@ -4,6 +4,9 @@ metadata:
   name: {{ include "cli-persistent.fullname" . }}
   labels:
     {{- include "cli-persistent.labels" . | nindent 4 }}
+    {{- if .Values.useSpot }}
+    lagoon.sh/spot: {{ .Values.useSpot | quote }}
+    {{- end }}
   annotations:
     {{- include "cli-persistent.annotations" . | nindent 4 }}
 spec:
@@ -16,6 +19,9 @@ spec:
       labels:
         {{- include "cli-persistent.labels" . | nindent 8 }}
         {{- include "cli-persistent.datadogLabels" . | nindent 8 }}
+        {{- if .Values.useSpot }}
+        lagoon.sh/spot: {{ .Values.useSpot | quote }}
+        {{- end }}
       annotations:
         {{- include "cli-persistent.annotations" . | nindent 8 }}
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
@@ -34,6 +40,9 @@ spec:
             claimName: {{ .Values.persistentStorage.name }}
         - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       priorityClassName: {{ include "cli-persistent.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -64,6 +73,9 @@ spec:
               mountPath: {{ .Values.persistentStorage.path | quote }}
             - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
               mountPath: {{ include "cli-persistent.twig-storage.path" . | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+          {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           readinessProbe:

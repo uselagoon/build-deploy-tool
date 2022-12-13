@@ -4,6 +4,9 @@ metadata:
   name: {{ include "logstash.fullname" . }}
   labels:
     {{- include "logstash.labels" . | nindent 4 }}
+    {{- if .Values.useSpot }}
+    lagoon.sh/spot: {{ .Values.useSpot | quote }}
+    {{- end }}
   annotations:
     {{- include "logstash.annotations" . | nindent 4 }}
 spec:
@@ -15,6 +18,9 @@ spec:
     metadata:
       labels:
         {{- include "logstash.labels" . | nindent 8 }}
+        {{- if .Values.useSpot }}
+        lagoon.sh/spot: {{ .Values.useSpot | quote }}
+        {{- end }}
       annotations:
         {{- include "logstash.annotations" . | nindent 4 }}
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
@@ -25,6 +31,10 @@ spec:
     {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
+    {{- if .Values.dynamicSecretVolumes }}
+      volumes:
+      {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+    {{- end }}
       containers:
         - name: {{ .Chart.Name | quote }}
           securityContext:
@@ -57,6 +67,10 @@ spec:
             periodSeconds: 10
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+          {{- if .Values.dynamicSecretMounts }}
+          volumeMounts:
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

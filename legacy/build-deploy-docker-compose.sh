@@ -570,8 +570,14 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
     fi
     if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-      LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+      TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+      TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+      if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+        LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
+      fi
+      if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+        LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
+      fi
     fi
   # Add environment variables from lagoon API as build args
   if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
@@ -625,6 +631,9 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg LAGOON_PR_TITLE="${PR_TITLE}")
     BUILD_ARGS+=(--build-arg LAGOON_PR_NUMBER="${PR_NUMBER}")
   fi
+
+  # Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
+  BUILD_ARGS+=(--build-arg LAGOON_BUILD_NAME="${LAGOON_BUILD_NAME}")
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
@@ -680,6 +689,9 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
       BUILD_CONTEXT=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.context .)
 
+      # Check to see if this service uses a build target
+      BUILD_TARGET=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.target false)
+
       # allow to overwrite build context for this environment and service
       ENVIRONMENT_BUILD_CONTEXT_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.context false)
       if [ ! $ENVIRONMENT_BUILD_CONTEXT_OVERRIDE == "false" ]; then
@@ -691,6 +703,29 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       fi
       echo ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"
       echo "${IMAGE_NAME} => building image"
+      # Decide whether to use BuildKit for Docker builds - disabled by default.
+      DOCKER_BUILDKIT=0
+
+      if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+        DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+      fi
+      if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+        TEMP_DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
+        if [ ! -z $TEMP_DOCKER_BUILDKIT ]; then
+          DOCKER_BUILDKIT=$TEMP_DOCKER_BUILDKIT
+        fi
+      fi
+
+      case "$DOCKER_BUILDKIT" in
+        1|t|T|true|TRUE|True)
+          DOCKER_BUILDKIT=1
+          echo "Using BuildKit for $DOCKERFILE";
+        ;;
+        *)
+          DOCKER_BUILDKIT=0
+        ;;
+      esac
+
       . /kubectl-build-deploy/scripts/exec-build.sh
       echo "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<"
 
@@ -1291,6 +1326,12 @@ do
       echo "${SERVICE_NAME}: => Service port: ${SERVICE_PORT_NUMBER}"
     fi
   fi
+
+  # handle spot configurations
+  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
+
+  # handle dynamically added secrets
+  . /kubectl-build-deploy/scripts/exec-dynamic-secret-volumes.sh
 
 # TODO: we don't need this anymore
   # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)

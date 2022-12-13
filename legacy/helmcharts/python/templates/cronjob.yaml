@@ -6,6 +6,9 @@ metadata:
   name: cronjob-{{ $.Release.Name }}-{{ $cronjobName }}
   labels:
     {{- include "python.labels" $ | nindent 4 }}
+    {{- if $.Values.cronjobUseSpot }}
+    lagoon.sh/spot: {{ $.Values.cronjobUseSpot | quote }}
+    {{- end }}
   annotations:
     {{- include "python.annotations" $ | nindent 4 }}
 spec:
@@ -18,6 +21,9 @@ spec:
     metadata:
       labels:
         {{- include "python.labels" $ | nindent 8 }}
+        {{- if $.Values.cronjobUseSpot }}
+        lagoon.sh/spot: {{ $.Values.cronjobUseSpot | quote }}
+        {{- end }}
       annotations:
         {{- include "python.annotations" $ | nindent 8 }}
     spec:
@@ -26,6 +32,9 @@ spec:
         metadata:
           labels:
             {{- include "python.labels" $ | nindent 12 }}
+            {{- if $.Values.cronjobUseSpot }}
+            lagoon.sh/spot: {{ $.Values.cronjobUseSpot | quote }}
+            {{- end }}
           annotations:
             {{- include "python.annotations" $ | nindent 12 }}
         spec:
@@ -58,17 +67,17 @@ spec:
               resources:
                 {{- toYaml $.Values.resources | nindent 16 }}
           restartPolicy: Never
-          {{- with $.Values.nodeSelector }}
+          {{- with $.Values.cronjobNodeSelector }}
           nodeSelector:
-            {{- toYaml $ | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
-        {{- with $.Values.affinity }}
+        {{- with $.Values.cronjobAffinity }}
           affinity:
-            {{- toYaml $ | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
         {{- end }}
-        {{- with $.Values.tolerations }}
+        {{- with $.Values.cronjobTolerations }}
           tolerations:
-            {{- toYaml $ | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
         {{- end }}
           dnsConfig:
             options:

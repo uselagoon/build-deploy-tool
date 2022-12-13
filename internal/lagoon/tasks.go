@@ -6,9 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"strconv"
 	"time"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -22,16 +24,17 @@ var debug bool
 
 // Task .
 type Task struct {
-	Name               string `json:"name"`
-	Command            string `json:"command"`
-	Namespace          string `json:"namespace"`
-	Service            string `json:"service"`
-	Shell              string `json:"shell"`
-	Container          string `json:"container"`
-	When               string `json:"when"`
-	Weight             int    `json:"weight"`
-	ScaleWaitTime      int    `json:"scaleWaitTime"`
-	ScaleMaxIterations int    `json:"scaleMaxIterations"`
+	Name                string `json:"name"`
+	Command             string `json:"command"`
+	Namespace           string `json:"namespace"`
+	Service             string `json:"service"`
+	Shell               string `json:"shell"`
+	Container           string `json:"container"`
+	When                string `json:"when"`
+	Weight              int    `json:"weight"`
+	ScaleWaitTime       int    `json:"scaleWaitTime"`
+	ScaleMaxIterations  int    `json:"scaleMaxIterations"`
+	RequiresEnvironment bool   `json:"requiresEnvironment"`
 }
 
 // NewTask .
@@ -80,13 +83,14 @@ func getConfig() (*rest.Config, error) {
 	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
 
 	if *kubeconfig == "" {
-		//return nil, fmt.Errorf("Unable to find a valid KUBECONFIG")
 		//Fall back on out of cluster
-
 		// read the deployer token.
 		token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
 		if err != nil {
-			return nil, err
+			token, err = ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+			if err != nil {
+				return nil, err
+			}
 		}
 		// generate the rest config for the client.
 		restCfg := &rest.Config{
@@ -107,9 +111,6 @@ func getConfig() (*rest.Config, error) {
 
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
-	if debug {
-		fmt.Printf("Executing task '%v':'%v'\n", task.Name, task.Command)
-	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
 		command = append(command, task.Shell)
@@ -120,10 +121,10 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, "-c")
 	command = append(command, task.Command)
 
-	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
+	stdout, stderr, err := ExecTaskInPod(task, command, false) //(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
 
 	if err != nil {
-		fmt.Printf("*** Task '%v' failed - STDOUT and STDERR follows ***\n", task.Name)
+		fmt.Printf("Failed to execute task `%v` due to reason `%v`\n", task.Name, err.Error())
 	}
 
 	if len(stdout) > 0 {
@@ -136,13 +137,11 @@ func ExecuteTaskInEnvironment(task Task) error {
 	return err
 }
 
-// ExecPod .
-func ExecPod(
-	podName, namespace string,
+// ExecTaskInPod .
+func ExecTaskInPod(
+	task Task,
 	command []string,
 	tty bool,
-	container string,
-	waitTime, maxIterations int,
 ) (string, string, error) {
 
 	restCfg, err := getConfig()
@@ -155,9 +154,9 @@ func ExecPod(
 		return "", "", fmt.Errorf("unable to create client: %v", err)
 	}
 
-	depClient := clientset.AppsV1().Deployments(namespace)
+	depClient := clientset.AppsV1().Deployments(task.Namespace)
 
-	lagoonServiceLabel := "lagoon.sh/service=" + podName
+	lagoonServiceLabel := "lagoon.sh/service=" + task.Service
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
@@ -176,13 +175,13 @@ func ExecPod(
 	podReady := false
 	numIterations := 1
 	for ; !podReady; numIterations++ {
-		if numIterations >= maxIterations { //break if there's some reason we can't scale the pod
+		if numIterations >= task.ScaleMaxIterations { //break if there's some reason we can't scale the pod
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, maxIterations))
+			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, task.ScaleMaxIterations))
 
-			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
+			scale, err := clientset.AppsV1().Deployments(task.Namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
 			}
@@ -191,7 +190,7 @@ func ExecPod(
 				scale.Spec.Replicas = 1
 				depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
 			}
-			time.Sleep(time.Second * time.Duration(waitTime))
+			time.Sleep(time.Second * time.Duration(task.ScaleWaitTime))
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
@@ -203,7 +202,7 @@ func ExecPod(
 
 	//grab pod - for now we'll copy precisely what the build script does and use the labels
 
-	podClient := clientset.CoreV1().Pods(namespace)
+	podClient := clientset.CoreV1().Pods(task.Namespace)
 	clientList, err := podClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
 	})
@@ -216,10 +215,10 @@ func ExecPod(
 	foundRunningPod := false
 	for _, i2 := range clientList.Items {
 		if i2.Status.Phase == "Running" && i2.ObjectMeta.DeletionTimestamp == nil {
-			if container != "" {
+			if task.Container != "" {
 				//is this container contained herein?
 				for _, c := range i2.Spec.Containers {
-					if c.Name != container {
+					if c.Name != task.Container {
 						continue
 					}
 				}
@@ -231,16 +230,21 @@ func ExecPod(
 	}
 	if !foundRunningPod {
 		return "", "", &PodScalingError{
-			ErrorText: "Unable to find running Pod for namespace: " + namespace,
+			ErrorText: "Unable to find running Pod for namespace: " + task.Namespace,
 		}
 	}
 	if debug {
-		fmt.Println("Going to exec into ", pod.Name)
+		podName := pod.Name
+		if task.Container != "" {
+			podName = fmt.Sprintf("%v/%v", podName, task.Container)
+		}
+		fmt.Printf("Executing task '%v' in pod %v \n", task.Name, podName)
 	}
+
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod.Name).
-		Namespace(namespace).
+		Namespace(task.Namespace).
 		SubResource("exec")
 
 	scheme := runtime.NewScheme()
@@ -254,7 +258,7 @@ func ExecPod(
 
 	parameterCodec := runtime.NewParameterCodec(scheme)
 	req.VersionedParams(&corev1.PodExecOptions{
-		Container: container,
+		Container: task.Container,
 		Command:   command,
 		Stdout:    true,
 		Stderr:    true,
@@ -278,6 +282,98 @@ func ExecPod(
 
 	return stdout.String(), stderr.String(), nil
 
+}
+
+// The following two functions are shamelessly plucked from https://github.com/uselagoon/lagoon-ssh-portal/pull/104/files
+
+// unidleReplicas checks the unidle-replicas annotation for the number of
+// replicas to restore. If the label cannot be read or parsed, 1 is returned.
+// The return value is clamped to the interval [1,16].
+func unidleReplicas(deploy appsv1.Deployment) int {
+	rs, ok := deploy.Annotations["idling.amazee.io/unidle-replicas"]
+	if !ok {
+		return 1
+	}
+	r, err := strconv.Atoi(rs)
+	if err != nil || r < 1 {
+		return 1
+	}
+	if r > 16 {
+		return 16
+	}
+	return r
+}
+
+// unidleNamespace scales all deployments with the
+// "idling.amazee.io/watch=true" label up to the number of replicas in the
+// "idling.amazee.io/unidle-replicas" label.
+
+var NamespaceUnidlingTimeoutError = errors.New("Unable to scale idled deployments due to timeout")
+
+func UnidleNamespace(ctx context.Context, namespace string, retries int, waitTime int) error {
+	restCfg, err := getConfig()
+	if err != nil {
+		return err
+	}
+
+	clientset, err := GetK8sClient(restCfg)
+	if err != nil {
+		return fmt.Errorf("unable to create client: %v", err)
+	}
+
+	deploys, err := clientset.AppsV1().Deployments(namespace).List(ctx, v1.ListOptions{
+		LabelSelector: "idling.amazee.io/watch=true",
+	})
+	if err != nil {
+		return fmt.Errorf("couldn't select deploys by label: %v", err)
+	}
+	for _, deploy := range deploys.Items {
+		// check if idled
+		s, err := clientset.AppsV1().Deployments(namespace).
+			GetScale(ctx, deploy.Name, v1.GetOptions{})
+		if err != nil {
+			return fmt.Errorf("couldn't get deployment scale: %v", err)
+		}
+		if s.Spec.Replicas > 0 {
+			continue
+		}
+		// scale up the deployment
+		sc := *s
+		sc.Spec.Replicas = int32(unidleReplicas(deploy))
+		_, err = clientset.AppsV1().Deployments(namespace).
+			UpdateScale(ctx, deploy.Name, &sc, v1.UpdateOptions{})
+		if err != nil {
+			return fmt.Errorf("couldn't scale deployment: %v", err)
+		}
+	}
+
+	// Let's wait for the various deployments to scale
+	scaled := true
+	scaledDeps := make(map[string]bool)
+	for countdown := retries; len(deploys.Items) > 0 && countdown > 0; countdown-- {
+		time.Sleep(time.Second * time.Duration(waitTime))
+		for _, deploy := range deploys.Items {
+			s, err := clientset.AppsV1().Deployments(namespace).Get(ctx, deploy.Name, v1.GetOptions{})
+			if err != nil {
+				return err
+			}
+			if s.Status.ReadyReplicas > 0 {
+				scaledDeps[deploy.Name] = true
+			}
+		}
+		if len(scaledDeps) == len(deploys.Items) {
+			scaled = true
+			break
+		} else {
+			scaled = false
+		}
+	}
+
+	if !scaled {
+		return NamespaceUnidlingTimeoutError
+	}
+
+	return nil
 }
 
 func init() {

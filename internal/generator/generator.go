@@ -120,6 +120,10 @@ func NewGenerator(
 		buildValues.PRTitle = prTitle
 		buildValues.PRHeadBranch = prHeadBranch
 		buildValues.PRBaseBranch = prBaseBranch
+		// since pullrequests don't  have a branch
+		// we should set the branch to be `pr-PRNUMBER` so that it can be used for matching elsewhere where matching for `branch`
+		// using buildvalues is done
+		buildValues.Branch = fmt.Sprintf("pr-%v", prNumber)
 	}
 
 	// break out of the generator if these requirements are missing
