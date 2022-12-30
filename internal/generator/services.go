@@ -89,6 +89,9 @@ func composeToServiceValues(
 	if composeServiceValues.Labels != nil {
 		lagoonType = lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.type")
 	}
+	if lagoonType == "" {
+		return ServiceValues{}, fmt.Errorf("No Lagoon type has been set for service %s. If a Lagoon type is not required for this service, please set the Lagoon type to 'none'", composeService)
+	}
 	if lagoonType != "" {
 		// if the lagoontype is populated, even none is valid as there may be a servicetype override in an environment variable
 		autogenEnabled := true
