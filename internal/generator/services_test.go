@@ -278,7 +278,8 @@ func Test_composeToServiceValues(t *testing.T) {
 				composeService:       "nginx",
 				composeServiceValues: composetypes.ServiceConfig{},
 			},
-			want: ServiceValues{},
+			want:    ServiceValues{},
+			wantErr: true,
 		},
 		{
 			name: "test9 - type none, no service",
