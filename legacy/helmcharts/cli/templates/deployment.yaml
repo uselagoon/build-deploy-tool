@@ -39,6 +39,9 @@ spec:
           secret:
             defaultMode: 420
             secretName: lagoon-sshkey
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       containers:
         - image: {{ .Values.image | quote }}
           name: {{ include "cli.fullname" . }}
@@ -63,6 +66,9 @@ spec:
             - mountPath: /var/run/secrets/lagoon/sshkey/
               name: lagoon-sshkey
               readOnly: true
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           readinessProbe:
             initialDelaySeconds: 5
             periodSeconds: 2

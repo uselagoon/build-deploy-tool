@@ -34,6 +34,9 @@ spec:
         - name: {{ include "basic-persistent.persistentStorageName" . }}
           persistentVolumeClaim:
             claimName: {{ include "basic-persistent.persistentStorageName" . }}
+        {{- if .Values.dynamicSecretVolumes }}
+          {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+        {{- end }}
       priorityClassName: {{ include "basic-persistent.lagoonPriority" . }}
       enableServiceLinks: false
       securityContext:
@@ -70,6 +73,9 @@ spec:
           volumeMounts:
             - name: {{ include "basic-persistent.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

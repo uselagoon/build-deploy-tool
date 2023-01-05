@@ -26,6 +26,7 @@ metadata:
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-with-really-really-reall-3fdb
     lagoon.sh/environmentType: production
+    lagoon.sh/primaryIngress: "true"
     lagoon.sh/project: example-project
     lagoon.sh/service: extra-long-name-f6c8a
     lagoon.sh/service-type: custom-ingress

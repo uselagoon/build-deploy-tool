@@ -89,7 +89,9 @@ func composeToServiceValues(
 	if composeServiceValues.Labels != nil {
 		lagoonType = lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.type")
 	}
-	if lagoonType != "" {
+	if lagoonType == "" {
+		return ServiceValues{}, fmt.Errorf("No lagoon.type has been set for service %s. If a Lagoon service is not required, please set the lagoon.type to 'none' for this service in docker-compose.yaml. See the Lagoon documentation for supported service types.", composeService)
+	} else {
 		// if the lagoontype is populated, even none is valid as there may be a servicetype override in an environment variable
 		autogenEnabled := true
 		autogenTLSAcmeEnabled := true
@@ -262,8 +264,6 @@ func composeToServiceValues(
 		}
 		return cService, nil
 	}
-	// service is not destined for Lagoon, return null
-	return ServiceValues{}, nil
 }
 
 // getDBaasEnvironment will check the dbaas provider to see if an environment exists or not

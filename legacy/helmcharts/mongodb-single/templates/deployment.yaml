@@ -37,6 +37,9 @@ spec:
         - name: {{ include "mongodb-single.fullname" . }}
           persistentVolumeClaim:
             claimName: {{ include "mongodb-single.fullname" . }}
+      {{- if .Values.dynamicSecretVolumes }}
+        {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
+      {{- end }}
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
@@ -64,6 +67,9 @@ spec:
           volumeMounts:
             - name: {{ include "mongodb-single.fullname" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+          {{- if .Values.dynamicSecretMounts }}
+            {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
+          {{- end }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

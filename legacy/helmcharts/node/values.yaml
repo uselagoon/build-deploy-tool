@@ -41,7 +41,7 @@ resources:
   #   memory: 128Mi
   requests:
     cpu: 10m
-    memory: 10Mi
+    memory: 100Mi
 
 nodeSelector: {}
 
@@ -62,3 +62,7 @@ configMapSha: ""
 useSpot: false
 
 cronjobUseSpot: false
+
+dynamicSecretMounts: []
+
+dynamicSecretVolumes: []

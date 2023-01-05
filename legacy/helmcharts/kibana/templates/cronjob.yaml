@@ -77,11 +77,11 @@ spec:
           restartPolicy: Never
           {{- with $.Values.cronjobNodeSelector }}
           nodeSelector:
-            {{- toYaml $ | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
           {{- end }}
         {{- with $.Values.cronjobAffinity }}
           affinity:
-            {{- toYaml $ | nindent 12 }}
+            {{- toYaml . | nindent 12 }}
         {{- end }}
           tolerations:
             - effect: NoSchedule
