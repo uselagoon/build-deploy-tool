@@ -53,11 +53,15 @@ fi
 ##############################################
 
 
+set -x
 # Check if backups should be scheduled
   if [ "$LAGOON_BACKUPS_DISABLED" = true ]; then
     echo "Backups disabled"
     exit
   fi
+  
+env
+set +x
 
 ##############################################
 ### Backup Settings
