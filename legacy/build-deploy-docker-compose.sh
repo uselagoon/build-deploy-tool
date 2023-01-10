@@ -1068,7 +1068,14 @@ set -x
 
 
 # Run the backup generation script
-. /kubectl-build-deploy/scripts/exec-backup-generation.sh
+BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
+if [ ! "$BACKUPS_DISABLED" ]; then
+  . /kubectl-build-deploy/scripts/exec-backup-generation.sh
+else
+  set +x
+  echo "Backups disabled"
+  set -x
+fi
 
 # check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
 set +x

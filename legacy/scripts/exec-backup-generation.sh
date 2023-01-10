@@ -53,15 +53,6 @@ fi
 ##############################################
 
 
-set -x
-# Check if backups should be scheduled
-BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-if [ "$BACKUPS_DISABLED" = true ]; then
-  echo "Backups disabled"
-  exit
-fi
-set +x
-
 ##############################################
 ### Backup Settings
 ##############################################
