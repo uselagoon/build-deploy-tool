@@ -1068,8 +1068,18 @@ set -x
 
 
 # Run the backup generation script
-BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-if [ ! "$BACKUPS_DISABLED" ]; then
+BACKUPS_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
+  LAGOON_BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+fi 
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
+  TEMP_LAGOON_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+  if [ ! -z $TEMP_LAGOON_BACKUPS_DISABLED ]; then 
+    LAGOON_BACKUPS_DISABLED=$TEMP_LAGOON_BACKUPS_DISABLED 
+  fi 
+fi 
+
+if [ ! "$BACKUPS_DISABLED" == true ]; then
   . /kubectl-build-deploy/scripts/exec-backup-generation.sh
 else
   set +x
