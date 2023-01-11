@@ -1070,7 +1070,7 @@ set -x
 # Run the backup generation script
 BACKUPS_DISABLED=false
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
-  LAGOON_BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
 fi 
 if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
   TEMP_LAGOON_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
