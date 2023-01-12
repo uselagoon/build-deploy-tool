@@ -1048,7 +1048,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration"
-set -x
 
 TEMPLATE_PARAMETERS=()
 
@@ -1057,15 +1056,30 @@ TEMPLATE_PARAMETERS=()
 ##############################################
 
 # Run the route generation process
-build-deploy-tool template ingress
 
-set +x
+# start custom routes disabled
+CUSTOM_ROUTES_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+  CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
+fi
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  TEMP_CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_CUSTOM_ROUTES_DISABLED ]; then
+    CUSTOM_ROUTES_DISABLED=$TEMP_CUSTOM_ROUTES_DISABLED
+  fi
+fi
+
+if [ ! "$CRONJOBS_DISABLED" == true ]; then
+build-deploy-tool template ingress
+else
+  echo ">> Custom ingress templates disabled for this build"
+# end custom route
+fi
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration"
-set -x
-
 
 # Run the backup generation script
 BACKUPS_DISABLED=false
@@ -1073,22 +1087,19 @@ if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
 fi 
 if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
-  TEMP_LAGOON_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
-  if [ ! -z $TEMP_LAGOON_BACKUPS_DISABLED ]; then 
-    BACKUPS_DISABLED=$TEMP_LAGOON_BACKUPS_DISABLED 
+  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
+    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
   fi 
 fi 
 
 if [ ! "$BACKUPS_DISABLED" == true ]; then
   . /kubectl-build-deploy/scripts/exec-backup-generation.sh
 else
-  set +x
-  echo "Backups disabled"
-  set -x
+  echo ">> Backup configurations disabled for this build"
 fi
 
 # check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-set +x
 if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
 	# add namespace isolation network policy to deployment
 	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
@@ -1382,6 +1393,19 @@ do
   #   TEMPLATE_PARAMETERS+=(-p DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY}")
   # fi
 
+  # start cronjob disabled
+  CRONJOBS_DISABLED=false
+  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+    CRONJOBS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
+  fi
+  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+    TEMP_CRONJOBS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
+    if [ ! -z $TEMP_CRONJOBS_DISABLED ]; then
+      CRONJOBS_DISABLED=$TEMP_CRONJOBS_DISABLED
+    fi
+  fi
+
+  if [ ! "$CRONJOBS_DISABLED" == true ]; then
   CRONJOB_COUNTER=0
   CRONJOBS_ARRAY_INSIDE_POD=()   #crons run inside an existing pod more frequently than every 15 minutes
   while [ -n "$(cat .lagoon.yml | shyaml keys environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER 2> /dev/null)" ]
@@ -1431,6 +1455,11 @@ do
   else
     yq3 write -i --tag '!!str' -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' ''
   fi
+
+  else
+    echo ">> Cronjob configurations disabled for this build"
+  fi
+  # end cronjob disabled
 
   . /kubectl-build-deploy/scripts/exec-kubectl-resources-with-images.sh
 

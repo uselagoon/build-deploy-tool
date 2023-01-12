@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set +x
 ##############################################
 #   it is possible to override the retention using a variable defined in the api
 #
