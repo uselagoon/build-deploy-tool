@@ -1149,6 +1149,10 @@ ROUTE=$(build-deploy-tool identify primary-ingress)
 if [ ! -z "${ROUTE}" ]; then
   ROUTE=${ROUTE}
 fi
+# if both route generations are disabled, don't set a route
+if [[ "$CUSTOM_ROUTES_DISABLED" == true ]] && [[ "$AUTOGEN_ROUTES_DISABLED" == true ]]; then
+  ROUTE=""
+fi
 
 # Load all routes with correct schema and comma separated
 ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "acme.openshift.io/exposer!=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
