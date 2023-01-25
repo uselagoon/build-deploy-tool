@@ -369,6 +369,14 @@ do
     SERVICE_TYPE="python"
   fi
 
+  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/PreBackupPod" ]]; then
+    if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
+      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "$SERVICE_NAME" &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "$SERVICE_NAME"
+      fi
+    fi
+  fi
+
   # "mariadb" is a meta service, which allows lagoon to decide itself which of the services to use:
   # - mariadb-single (a single mariadb pod)
   # - mariadb-dbaas (use the dbaas shared operator)
