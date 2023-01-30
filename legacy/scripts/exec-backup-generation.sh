@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set +x
 ##############################################
 #   it is possible to override the retention using a variable defined in the api
 #
@@ -326,5 +325,3 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     --set customBackupLocation.accessKey="${BAAS_CUSTOM_BACKUP_ACCESS_KEY}" \
     --set customBackupLocation.secretKey="${BAAS_CUSTOM_BACKUP_SECRET_KEY}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/k8up-lagoon-backup-schedule.yaml
 fi
-
-set -x
