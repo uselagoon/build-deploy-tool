@@ -264,8 +264,6 @@ func composeToServiceValues(
 		}
 		return cService, nil
 	}
-	// service is not destined for Lagoon, return null
-	return ServiceValues{}, nil
 }
 
 // getDBaasEnvironment will check the dbaas provider to see if an environment exists or not
