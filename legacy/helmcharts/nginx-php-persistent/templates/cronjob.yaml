@@ -1,6 +1,6 @@
 {{- range $cronjobName, $cronjobConfig := .Values.nativeCronjobs }}
 ---
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: cronjob-{{ $.Release.Name }}-{{ $cronjobName }}
