@@ -75,7 +75,7 @@ affinity: {}
 
 cronjobAffinity: {}
 
-cronjobs: ""
+inPodCronjobs: ""
 
 nativeCronjobs: {}
 
