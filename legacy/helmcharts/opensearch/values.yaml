@@ -54,6 +54,8 @@ cronjobAffinity: {}
 
 inPodCronjobs: ""
 
+nativeCronjobs: {}
+
 configMapSha: ""
 
 useSpot: false
@@ -63,4 +65,3 @@ cronjobUseSpot: false
 dynamicSecretMounts: []
 
 dynamicSecretVolumes: []
-
