@@ -11,8 +11,7 @@ spec:
   backupCommand: >-
     /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
       BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1)
-    fi && 
-    "PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump 
+    fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump 
     --host=$BACKUP_DB_HOST 
     --port=$BACKUP_DB_PORT 
     --dbname=$BACKUP_DB_NAME 
