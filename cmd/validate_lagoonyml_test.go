@@ -3,11 +3,13 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"os"
 	"reflect"
-	"sigs.k8s.io/yaml"
 	"testing"
+
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"sigs.k8s.io/yaml"
 )
 
 func TestValidateLagoonYml(t *testing.T) {
@@ -107,6 +109,28 @@ func TestValidateLagoonYml(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "multiline cronjobs should fail validation",
+			args: args{
+				lagoonYml:   "../test-resources/validate-lagoon-yml/cronjobs/lagoon.yml",
+				lYAML:       &lagoon.YAML{},
+				projectName: "",
+				debug:       false,
+			},
+			wantErr: true,
+		},
+		{
+			name: "merged multiline cronjobs should fail validation",
+			args: args{
+				lagoonYml:                "../test-resources/validate-lagoon-yml/cronjobs/lagoon.yml",
+				lagoonOverrideYml:        "../test-resources/validate-lagoon-yml/cronjobs/lagoon-override.yml",
+				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/cronjobs/lagoon-override-env.yml",
+				lYAML:                    &lagoon.YAML{},
+				projectName:              "",
+				debug:                    false,
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -155,4 +179,46 @@ func TestValidateLagoonYml(t *testing.T) {
 
 		})
 	}
+}
+
+func TestMultilineCronjobs(t *testing.T) {
+	var l lagoon.YAML
+	if err := generator.LoadAndUnmarshalLagoonYml("../test-resources/validate-lagoon-yml/cronjobs/multiline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
+		t.Fatalf("couldn't load and unmarshal YAML: %v", err)
+	}
+
+	for _, e := range l.Environments {
+		for _, lagoonCronjob := range e.Cronjobs {
+			t.Run(lagoonCronjob.Name, func(tt *testing.T) {
+				err := ValidateCronjob(&lagoonCronjob)
+
+				tt.Log(err)
+				if err == nil {
+					tt.Fatalf("expected error, but got nil")
+				}
+			})
+		}
+	}
+
+}
+
+func TestSinglelineCronjobs(t *testing.T) {
+	var l lagoon.YAML
+	if err := generator.LoadAndUnmarshalLagoonYml("../test-resources/validate-lagoon-yml/cronjobs/singleline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
+		t.Fatalf("couldn't load and unmarshal YAML: %v", err)
+	}
+
+	for _, e := range l.Environments {
+		for _, lagoonCronjob := range e.Cronjobs {
+			t.Run(lagoonCronjob.Name, func(tt *testing.T) {
+				fmt.Printf("%q\n", lagoonCronjob.Command)
+				err := ValidateCronjob(&lagoonCronjob)
+
+				if err != nil {
+					tt.Fatalf("unexpected error %v", err)
+				}
+			})
+		}
+	}
+
 }
