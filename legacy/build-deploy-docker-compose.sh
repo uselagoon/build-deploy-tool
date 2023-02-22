@@ -187,6 +187,7 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
   # create it
   kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy=${DOCKER_COMPOSE_YAML}
 fi
+
 set +ex
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
@@ -213,7 +214,36 @@ You can run docker compose config locally to check that your docker-compose file
   exit 1
 fi
 set -ex
-# validate .lagoon.yml
+
+set +ex
+##############################################
+### RUN lagoon-yml validation against the final data which may have overrides
+### from .lagoon.override.yml file or LAGOON_YAML_OVERRIDE environment variable
+##############################################
+lyvOutput=$(bash -c 'build-deploy-tool validate lagoon-yml; exit $?' 2>&1)
+lyvExit=$?
+
+if [ "${lyvExit}" != "0" ]; then
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  previousStepEnd=${currentStepEnd}
+  echo "
+##############################################
+Warning!
+There are issues with your .lagoon.yml file that must be fixed.
+Refer to the .lagoon.yml docs for the correct syntax
+https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
+##############################################
+"
+  echo "${lyvOutput}"
+  echo "
+##############################################"
+  exit 1
+fi
+set -ex
+
+# Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
+# aren't in build-deploy-tool.
 if ! lagoon-linter; then
 	echo "https://docs.lagoon.sh/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
 	echo "If you require assistance to fix this error, please contact support."
