@@ -18,11 +18,18 @@ type ProductionRoutes struct {
 	Standby *Environment `json:"standby"`
 }
 
+// Cronjob represents a Lagoon cronjob.
+type Cronjob struct {
+	Name    string `json:"name"`
+	Command string `json:"command"`
+}
+
 // Environment represents a Lagoon environment.
 type Environment struct {
 	AutogenerateRoutes *bool                `json:"autogenerateRoutes"`
 	Types              map[string]string    `json:"types"`
 	Routes             []map[string][]Route `json:"routes"`
+	Cronjobs           []Cronjob            `json:"cronjobs"`
 }
 
 // Environments .
@@ -80,7 +87,6 @@ type Autogenerate struct {
 	IngressClass      string   `json:"ingressClass"`
 }
 
-//
 func (a *Routes) UnmarshalJSON(data []byte) error {
 	tmpMap := map[string]interface{}{}
 	json.Unmarshal(data, &tmpMap)

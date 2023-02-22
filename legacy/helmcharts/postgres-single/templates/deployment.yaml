@@ -50,7 +50,7 @@ spec:
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           env:
             - name: CRONJOBS
-              value: {{ .Values.inPodCronjobs | quote }}
+              value: {{ .Values.inPodCronjobs | toYaml | indent 14 | trim }}
             - name: LAGOON_GIT_SHA
               value: {{ .Values.gitSha | quote }}
           envFrom:

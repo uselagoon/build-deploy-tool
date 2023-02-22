@@ -75,7 +75,9 @@ affinity: {}
 
 cronjobAffinity: {}
 
-cronjobs: ""
+inPodCronjobs: ""
+
+nativeCronjobs: {}
 
 tls_acme: false
 routesAutogenerateInsecure: Allow
