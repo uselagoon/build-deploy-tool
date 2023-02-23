@@ -59,7 +59,7 @@ type Route struct {
 	Ingresses map[string]Ingress
 }
 
-var defaultHSTSMaxAge = 3153600
+var defaultHSTSMaxAge = 31536000
 
 // UnmarshalJSON implements json.Unmarshaler.
 func (r *Route) UnmarshalJSON(data []byte) error {
