@@ -70,7 +70,7 @@ spec:
                 name: lagoon-env
           env:
             - name: CRONJOBS
-              value: {{ .Values.inPodCronjobs | quote }}
+              value: {{ .Values.inPodCronjobs | toYaml | indent 14 | trim }}
           volumeMounts:
             - name: {{ include "solr.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}

@@ -1,0 +1,49 @@
+docker-compose-yaml: docker-compose.yml
+environments:
+    main:
+      cronjobs:
+        - name: block scalar literal stripped
+          command: |-
+            multiline
+            command
+
+        - name: flow scalar plain 2
+          command: singleline command
+      routes:
+        -   nginx:
+            - a.example.com:
+                tls-acme: "true"
+            - b.example.com
+            - c.example.com
+production_routes:
+  active:
+    routes:
+      - nginx:
+          - "active.example.com":
+              tls-acme: "true"
+              insecure: Redirect
+  standby:
+    routes:
+      - nginx:
+          - "standby.example.com":
+              tls-acme: "false"
+              insecure: Redirect
+
+
+tasks:
+  pre-rollout:
+    - run:
+        name: lagoon.yml pre-rollout task1
+        command: echo "task 1"
+        service: cli
+  post-rollout:
+    - run:
+        name: lagoon.yml post-rollout task1
+        command: echo "task 1"
+        service: cli
+        shell: bash
+    - run:
+        name: lagoon.yml post-rollout task2
+        command: echo "task 2"
+        service: cli
+        shell: bash
