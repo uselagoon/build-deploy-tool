@@ -943,7 +943,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						Name:     "My Cronjob2",
 						Service:  "cli",
 						Schedule: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *",
-						Command:  "drush cron",
+						Command:  "flock -n /tmp/cron.lock.f6d199ad6c0075de8176b5c0a14a5d571a473001ced482bc9289182da3d90083 -c 'drush cron'",
 						Timeout:  "4h",
 					},
 				},
