@@ -10,8 +10,6 @@ import (
 )
 
 func Test_flagDefaultVolumeCreation(t *testing.T) {
-	type args struct {
-	}
 	tests := []struct {
 		name        string
 		buildValues *BuildValues
