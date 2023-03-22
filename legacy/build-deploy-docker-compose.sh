@@ -1691,3 +1691,6 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   previousStepEnd=${currentStepEnd}
 fi
 set -x
+
+# attempt to reduce race conditions in final messages to lagoon by delaying the completion of the build pod itself until the last status update is sent
+sleep 2
