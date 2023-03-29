@@ -8,20 +8,20 @@ set +x # reduce noise in build logs
 echo "##############################################"
 build-deploy-tool version
 echo "##############################################"
-set -x
+
 
 REGISTRY=$REGISTRY
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 REGISTRY_REPOSITORY=$NAMESPACE
 LAGOON_VERSION=$(cat /lagoon/version)
 
-set +x # reduce noise in build logs
+
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   INTERNAL_REGISTRY_URL=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_URL") | .value' | sed -e 's#^http://##' | sed -e 's#^https://##')
   INTERNAL_REGISTRY_USERNAME=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_USERNAME") | .value')
   INTERNAL_REGISTRY_PASSWORD=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_PASSWORD") | .value')
 fi
-set -x
+
 
 if [ "$CI" == "true" ]; then
   CI_OVERRIDE_IMAGE_REPO=172.17.0.1:5000/lagoon
@@ -29,7 +29,9 @@ else
   CI_OVERRIDE_IMAGE_REPO=""
 fi
 
-echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
+
+build-deploy-tool print begin --step "Checkout Repository"
+
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
   /kubectl-build-deploy/scripts/git-checkout-pull-merge.sh "$SOURCE_REPOSITORY" "$PR_HEAD_SHA" "$PR_BASE_SHA"
 else
@@ -52,7 +54,7 @@ else
   LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
 fi
 
-echo -e "##############################################\nBEGIN Kubernetes and Container Registry Setup\n##############################################"
+build-deploy-tool print begin --step "Kubernetes and Container Registry Setup"
 sleep 0.5s
 
 REGISTRY_SECRETS=()
@@ -61,7 +63,6 @@ PRIVATE_REGISTRY_URLS=()
 PRIVATE_DOCKER_HUB_REGISTRY=0
 PRIVATE_EXTERNAL_REGISTRY=0
 
-set +x # reduce noise in build logs
 if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
   DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
 else
@@ -104,7 +105,7 @@ fi
 # grab all the container-registries that are defined in the `.lagoon.yml` file
 PRIVATE_CONTAINER_REGISTRIES=($(cat .lagoon.yml | shyaml keys container-registries 2> /dev/null || echo ""))
 if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
-  echo -e "##############################################\nBEGIN Custom Container Registries Setup\n##############################################"
+  build-deploy-tool print begin --step "Custom Container Registries Setup"
   sleep 0.5s
 fi
 for PRIVATE_CONTAINER_REGISTRY in "${PRIVATE_CONTAINER_REGISTRIES[@]}"
