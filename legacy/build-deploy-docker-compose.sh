@@ -1445,6 +1445,9 @@ do
     fi
   fi
 
+  # handle gpu configuration
+  . /kubectl-build-deploy/scripts/exec-gpu-generation.sh
+
   # handle spot configurations
   . /kubectl-build-deploy/scripts/exec-spot-generation.sh
 
