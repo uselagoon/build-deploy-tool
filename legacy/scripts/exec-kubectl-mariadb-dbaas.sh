@@ -34,6 +34,7 @@ kubectl patch \
 # since the operator can support multiple replica hosts being defined, we should comma seperate them here
 if DB_READREPLICA_HOSTS=$(kubectl -n ${NAMESPACE} get mariadbconsumer/${SERVICE_NAME} -o yaml | shyaml get-value spec.consumer.services.replicas); then
     DB_READREPLICA_HOSTS=$(echo $DB_READREPLICA_HOSTS | cut -c 3- | rev | cut -c 1- | rev | sed 's/^\|$//g' | paste -sd, -)
+    yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'readReplicaHosts' $DB_READREPLICA_HOSTS
     kubectl patch \
         -n ${NAMESPACE} \
         configmap lagoon-env \

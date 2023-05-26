@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:20.10.14
+FROM docker:20.10.22
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/lagoon-images" repository="https://github.com/uselagoon/lagoon-images"
@@ -71,7 +71,7 @@ ENV KUBECTL_VERSION=v1.20.4 \
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
     && apk add --update openssl curl jq parallel \
-    && apk add --no-cache bash git openssh py-pip skopeo \
+    && apk add --no-cache bash git openssh-client-common=9.1_p1-r2 openssh=9.1_p1-r2 py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
     && pip install shyaml yq \
     && curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
@@ -106,7 +106,7 @@ ENV IMAGECACHE_REGISTRY=imagecache.amazeeio.cloud
 
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
 
-RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.7.0/lagoon-linter_0.7.0_linux_amd64.tar.gz \
+RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_amd64.tar.gz \
     | tar -xz -C /usr/local/bin lagoon-linter
 
 # RUN curl -sSL https://github.com/uselagoon/build-deploy-tool/releases/download/v0.11.0/build-deploy-tool_0.11.0_linux_amd64.tar.gz \

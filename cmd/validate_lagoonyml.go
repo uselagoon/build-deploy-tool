@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
@@ -38,7 +39,7 @@ var validateLagoonYml = &cobra.Command{
 		lYAML := &lagoon.YAML{}
 		err = ValidateLagoonYml(lagoonYAML, lagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
 		if err != nil {
-			fmt.Println("Could not validate your .lagoon.yml - ", err.Error())
+			fmt.Println("Could not validate your .lagoon.yml -", err.Error())
 			os.Exit(1)
 		}
 
@@ -57,6 +58,21 @@ func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvV
 	if err := generator.LoadAndUnmarshalLagoonYml(lagoonYml, lagoonYmlOverride, lagoonYmlEnvVar, lYAML, projectName, debug); err != nil {
 		return err
 	}
+
+	failedCronjobValidation := false
+	for eName, e := range lYAML.Environments {
+		for _, cronjob := range e.Cronjobs {
+			if err := ValidateCronjob(&cronjob); err != nil {
+				failedCronjobValidation = true
+				fmt.Println(fmt.Errorf("error: environment %s: %v", eName, err))
+			}
+		}
+	}
+
+	if failedCronjobValidation {
+		return fmt.Errorf("found invalid cron jobs")
+	}
+
 	return nil
 }
 
@@ -64,4 +80,17 @@ func init() {
 	validateCmd.PersistentFlags().BoolP("print-resulting-lagoonyml", "", false,
 		"Display the resulting, post merging, lagoon.yml file.")
 	validateCmd.AddCommand(validateLagoonYml)
+}
+
+// ValidateCronjob returns an error if the command for the cronjob has any
+// newlines, and nil otherwise.
+func ValidateCronjob(c *lagoon.Cronjob) error {
+	command := strings.TrimSpace(c.Command)
+
+	if strings.Contains(command, "\n") {
+		return fmt.Errorf("invalid cronjob, multiline commands are not supported: %q",
+			command)
+	}
+
+	return nil
 }

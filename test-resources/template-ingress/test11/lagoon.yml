@@ -17,7 +17,6 @@ environments:
               monitoring-path: "/api/v1"
               tls-acme: 'false'
               insecure: Allow
-              hsts: max-age=31536000
   master:
     cronjobs:
       - name: drush cron
@@ -30,7 +29,6 @@ environments:
         - "master.content.example.com":
             tls-acme: 'false'
             insecure: Allow
-            hsts: max-age=31536000
   develop:
     cronjobs:
       - name: drush cron
@@ -43,4 +41,3 @@ environments:
         - "develop.content.example.com":
             tls-acme: 'false'
             insecure: Allow
-            hsts: max-age=31536000
