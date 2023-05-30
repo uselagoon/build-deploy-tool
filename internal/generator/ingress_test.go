@@ -342,7 +342,7 @@ func Test_generateAndMerge(t *testing.T) {
 			},
 		},
 		{
-			name: "test3 - generate routes from lagoon yaml and merge ones from api with hsts",
+			name: "test4 - generate routes from lagoon yaml and merge ones from api with hsts",
 			args: args{
 				buildValues: BuildValues{
 					Branch:       "main",
@@ -397,6 +397,83 @@ func Test_generateAndMerge(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test5 - wildcard with tls-acme false",
+			args: args{
+				buildValues: BuildValues{
+					Branch:       "main",
+					IngressClass: "nginx",
+				},
+				lagoonYAML: lagoon.YAML{
+					Environments: lagoon.Environments{
+						"main": lagoon.Environment{
+							Routes: []map[string][]lagoon.Route{
+								{
+									"nginx": {
+										{
+											Ingresses: map[string]lagoon.Ingress{
+												"a.example.com": {
+													TLSAcme:  helpers.BoolPtr(false),
+													Wildcard: helpers.BoolPtr(true),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			want: lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
+					{
+						Domain:           "a.example.com",
+						LagoonService:    "nginx",
+						TLSAcme:          helpers.BoolPtr(false),
+						Annotations:      map[string]string{},
+						MonitoringPath:   "/",
+						Insecure:         helpers.StrPtr("Redirect"),
+						IngressClass:     "nginx",
+						AlternativeNames: []string{},
+						Wildcard:         helpers.BoolPtr(true),
+					},
+				},
+			},
+		},
+		{
+			name: "test6 - wildcard with tls-acme true (should error)",
+			args: args{
+				buildValues: BuildValues{
+					Branch:       "main",
+					IngressClass: "nginx",
+				},
+				lagoonYAML: lagoon.YAML{
+					Environments: lagoon.Environments{
+						"main": lagoon.Environment{
+							Routes: []map[string][]lagoon.Route{
+								{
+									"nginx": {
+										{
+											Ingresses: map[string]lagoon.Ingress{
+												"a.example.com": {
+													TLSAcme:  helpers.BoolPtr(true),
+													Wildcard: helpers.BoolPtr(true),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: true,
+			want: lagoon.RoutesV2{
+				Routes: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -407,7 +484,7 @@ func Test_generateAndMerge(t *testing.T) {
 			}
 			lValues, _ := json.Marshal(got)
 			wValues, _ := json.Marshal(tt.want)
-			if !reflect.DeepEqual(string(lValues), string(wValues)) {
+			if !reflect.DeepEqual(string(lValues), string(wValues)) && !tt.wantErr {
 				t.Errorf("generateAndMerge() = %v, want %v", string(lValues), string(wValues))
 			}
 		})
@@ -421,9 +498,10 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 		buildValues BuildValues
 	}
 	tests := []struct {
-		name string
-		args args
-		want lagoon.RoutesV2
+		name    string
+		args    args
+		want    lagoon.RoutesV2
+		wantErr bool
 	}{
 		{
 			name: "test1",
@@ -508,7 +586,7 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 			},
 		},
 		{
-			name: "test2 - with custom ingress class defined",
+			name: "test3 - with custom ingress class defined",
 			args: args{
 				buildValues: BuildValues{
 					IsActiveEnvironment: true,
@@ -552,13 +630,97 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test4 - with wildcard and tls-acme true (should error)",
+			args: args{
+				buildValues: BuildValues{
+					IngressClass:        "nginx",
+					IsActiveEnvironment: true,
+				},
+				lagoonYAML: lagoon.YAML{
+					ProductionRoutes: &lagoon.ProductionRoutes{
+						Active: &lagoon.Environment{
+							Routes: []map[string][]lagoon.Route{
+								{
+									"nginx": {
+										{
+											Ingresses: map[string]lagoon.Ingress{
+												"active.example.com": {
+													TLSAcme:  helpers.BoolPtr(true),
+													Wildcard: helpers.BoolPtr(true),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				envVars: []lagoon.EnvironmentVariable{},
+			},
+			wantErr: true,
+			want: lagoon.RoutesV2{
+				Routes: nil,
+			},
+		},
+		{
+			name: "test5 - with wildcard and tls-acme false",
+			args: args{
+				buildValues: BuildValues{
+					IngressClass:        "nginx",
+					IsActiveEnvironment: true,
+				},
+				lagoonYAML: lagoon.YAML{
+					ProductionRoutes: &lagoon.ProductionRoutes{
+						Active: &lagoon.Environment{
+							Routes: []map[string][]lagoon.Route{
+								{
+									"nginx": {
+										{
+											Ingresses: map[string]lagoon.Ingress{
+												"active.example.com": {
+													TLSAcme:  helpers.BoolPtr(false),
+													Wildcard: helpers.BoolPtr(true),
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+				envVars: []lagoon.EnvironmentVariable{},
+			},
+			want: lagoon.RoutesV2{
+				Routes: []lagoon.RouteV2{
+					{
+						Domain:           "active.example.com",
+						LagoonService:    "nginx",
+						TLSAcme:          helpers.BoolPtr(false),
+						Annotations:      map[string]string{},
+						Migrate:          helpers.BoolPtr(true),
+						Insecure:         helpers.StrPtr("Redirect"),
+						MonitoringPath:   "/",
+						IngressClass:     "nginx",
+						AlternativeNames: []string{},
+						Wildcard:         helpers.BoolPtr(true),
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := generateActiveStandbyRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
+			got, err := generateActiveStandbyRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("generateAndMerge() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
 			lValues, _ := json.Marshal(got)
 			wValues, _ := json.Marshal(tt.want)
-			if !reflect.DeepEqual(string(lValues), string(wValues)) {
+			if !reflect.DeepEqual(string(lValues), string(wValues)) && !tt.wantErr {
 				t.Errorf("generateAndMerge() = %v, want %v", string(lValues), string(wValues))
 			}
 		})

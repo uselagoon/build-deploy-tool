@@ -76,7 +76,10 @@ func generateRoutes(
 		// generate the templates for these independently of any previously generated routes,
 		// this WILL overwrite previously created templates ensuring that anything defined in the `production_routes`
 		// section are created correctly ensuring active/standby will work
-		*activeStanbyRoutes = generateActiveStandbyRoutes(lagoonEnvVars, lYAML, buildValues)
+		*activeStanbyRoutes, err = generateActiveStandbyRoutes(lagoonEnvVars, lYAML, buildValues)
+		if err != nil {
+			return "", []string{}, []string{}, fmt.Errorf("couldn't generate and merge routes: %v", err)
+		}
 		// get the first route from the list of routes, replace the previous one if necessary
 		if len(activeStanbyRoutes.Routes) > 0 {
 			// if primary != "" {
@@ -244,14 +247,17 @@ func generateActiveStandbyRoutes(
 	envVars []lagoon.EnvironmentVariable,
 	lagoonYAML lagoon.YAML,
 	buildValues BuildValues,
-) lagoon.RoutesV2 {
+) (lagoon.RoutesV2, error) {
 	activeStanbyRoutes := &lagoon.RoutesV2{}
 	if lagoonYAML.ProductionRoutes != nil {
 		if buildValues.IsActiveEnvironment == true {
 			if lagoonYAML.ProductionRoutes.Active != nil {
 				if lagoonYAML.ProductionRoutes.Active.Routes != nil {
 					for _, routeMap := range lagoonYAML.ProductionRoutes.Active.Routes {
-						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
+						err := lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
+						if err != nil {
+							return *activeStanbyRoutes, err
+						}
 					}
 				}
 			}
@@ -260,13 +266,16 @@ func generateActiveStandbyRoutes(
 			if lagoonYAML.ProductionRoutes.Standby != nil {
 				if lagoonYAML.ProductionRoutes.Standby.Routes != nil {
 					for _, routeMap := range lagoonYAML.ProductionRoutes.Standby.Routes {
-						lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
+						err := lagoon.GenerateRoutesV2(activeStanbyRoutes, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, true)
+						if err != nil {
+							return *activeStanbyRoutes, err
+						}
 					}
 				}
 			}
 		}
 	}
-	return *activeStanbyRoutes
+	return *activeStanbyRoutes, nil
 }
 
 // getRoutesFromEnvVar will collect the value of the LAGOON_ROUTES_JSON
@@ -305,9 +314,15 @@ func generateAndMerge(
 
 	// otherwise it just uses the default environment name
 	for _, routeMap := range lagoonYAML.Environments[buildValues.Branch].Routes {
-		lagoon.GenerateRoutesV2(n, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, false)
+		err := lagoon.GenerateRoutesV2(n, routeMap, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix, false)
+		if err != nil {
+			return *n, err
+		}
 	}
 	// merge routes from the API on top of the routes from the `.lagoon.yml`
-	mainRoutes := lagoon.MergeRoutesV2(*n, api, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix)
+	mainRoutes, err := lagoon.MergeRoutesV2(*n, api, envVars, buildValues.IngressClass, buildValues.FastlyAPISecretPrefix)
+	if err != nil {
+		return *n, err
+	}
 	return mainRoutes, nil
 }

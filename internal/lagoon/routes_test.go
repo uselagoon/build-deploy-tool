@@ -11,7 +11,7 @@ import (
 
 func TestGenerateRouteStructure(t *testing.T) {
 	type args struct {
-		genRoutes           *RoutesV2
+		yamlRoutes          *RoutesV2
 		yamlRouteMap        map[string][]Route
 		variables           []EnvironmentVariable
 		defaultIngressClass string
@@ -19,14 +19,15 @@ func TestGenerateRouteStructure(t *testing.T) {
 		activeStandby       bool
 	}
 	tests := []struct {
-		name string
-		args args
-		want *RoutesV2
+		name    string
+		args    args
+		want    *RoutesV2
+		wantErr bool
 	}{
 		{
 			name: "test1",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -72,7 +73,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -128,7 +129,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		{
 			name: "test3",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -176,7 +177,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		{
 			name: "test4 - ingress class",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -225,7 +226,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		{
 			name: "test5 - custom ingress class on one route",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -285,7 +286,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 		{
 			name: "test6 - hsts",
 			args: args{
-				genRoutes: &RoutesV2{},
+				yamlRoutes: &RoutesV2{},
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
@@ -342,12 +343,74 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test7 - wildcard with tls-acme true (should error)",
+			args: args{
+				yamlRoutes: &RoutesV2{},
+				yamlRouteMap: map[string][]Route{
+					"nginx": {
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									TLSAcme:  helpers.BoolPtr(true),
+									Wildcard: helpers.BoolPtr(true),
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			wantErr: true,
+			want: &RoutesV2{
+				Routes: nil,
+			},
+		},
+		{
+			name: "test7 - wildcard with tls-acme false",
+			args: args{
+				yamlRoutes: &RoutesV2{},
+				yamlRouteMap: map[string][]Route{
+					"nginx": {
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									TLSAcme:  helpers.BoolPtr(false),
+									Wildcard: helpers.BoolPtr(true),
+								},
+							},
+						},
+					},
+				},
+				secretPrefix:  "fastly-api-",
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:           "www.example.com",
+						LagoonService:    "nginx",
+						MonitoringPath:   "/",
+						Insecure:         helpers.StrPtr("Redirect"),
+						TLSAcme:          helpers.BoolPtr(false),
+						Annotations:      map[string]string{},
+						AlternativeNames: []string{},
+						Wildcard:         helpers.BoolPtr(true),
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			GenerateRoutesV2(tt.args.genRoutes, tt.args.yamlRouteMap, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix, tt.args.activeStandby)
-			if !cmp.Equal(tt.args.genRoutes, tt.want) {
-				stra, _ := json.Marshal(tt.args.genRoutes)
+			err := GenerateRoutesV2(tt.args.yamlRoutes, tt.args.yamlRouteMap, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix, tt.args.activeStandby)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GenerateRouteStructure() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(tt.args.yamlRoutes, tt.want) && !tt.wantErr {
+				stra, _ := json.Marshal(tt.args.yamlRoutes)
 				strb, _ := json.Marshal(tt.want)
 				t.Errorf("GenerateRouteStructure() = %v, want %v", string(stra), string(strb))
 			}
@@ -357,21 +420,22 @@ func TestGenerateRouteStructure(t *testing.T) {
 
 func TestMergeRouteStructures(t *testing.T) {
 	type args struct {
-		genRoutes           RoutesV2
+		yamlRoutes          RoutesV2
 		apiRoutes           RoutesV2
 		variables           []EnvironmentVariable
 		defaultIngressClass string
 		secretPrefix        string
 	}
 	tests := []struct {
-		name string
-		args args
-		want RoutesV2
+		name    string
+		args    args
+		want    RoutesV2
+		wantErr bool
 	}{
 		{
 			name: "test1",
 			args: args{
-				genRoutes: RoutesV2{
+				yamlRoutes: RoutesV2{
 					Routes: []RouteV2{
 						{
 							Domain:         "example.com",
@@ -490,10 +554,197 @@ func TestMergeRouteStructures(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test2 - wildcard with tls-acme changed to false",
+			args: args{
+				yamlRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+						{
+							Domain:         "a.example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(false),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				apiRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(false),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+						{
+							Domain:         "a.example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(false),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				secretPrefix: "fastly-api-",
+			},
+			want: RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:           "example.com",
+						LagoonService:    "nginx",
+						MonitoringPath:   "/",
+						Insecure:         helpers.StrPtr("Redirect"),
+						TLSAcme:          helpers.BoolPtr(false),
+						Annotations:      map[string]string{},
+						AlternativeNames: []string{},
+						Wildcard:         helpers.BoolPtr(true),
+					},
+					{
+						Domain:           "a.example.com",
+						LagoonService:    "nginx",
+						MonitoringPath:   "/",
+						Insecure:         helpers.StrPtr("Redirect"),
+						TLSAcme:          helpers.BoolPtr(false),
+						Annotations:      map[string]string{},
+						AlternativeNames: []string{},
+						Wildcard:         helpers.BoolPtr(true),
+					},
+				},
+			},
+		},
+		{
+			name: "test3 - wildcard with tls-acme true (should error)",
+			args: args{
+				yamlRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				apiRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				secretPrefix: "fastly-api-",
+			},
+			wantErr: true,
+			want: RoutesV2{
+				Routes: nil,
+			},
+		},
+		{
+			name: "test4 - invalid yaml route",
+			args: args{
+				yamlRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "*._re/f#3safasF*.was_-..asfexample.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				apiRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "fail@example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				secretPrefix: "fastly-api-",
+			},
+			wantErr: true,
+			want: RoutesV2{
+				Routes: nil,
+			},
+		},
+		{
+			name: "test5 - invalid api route",
+			args: args{
+				yamlRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				apiRoutes: RoutesV2{
+					Routes: []RouteV2{
+						{
+							Domain:         "fail@example.com",
+							LagoonService:  "nginx",
+							MonitoringPath: "/",
+							Insecure:       helpers.StrPtr("Redirect"),
+							TLSAcme:        helpers.BoolPtr(true),
+							Annotations:    map[string]string{},
+							Wildcard:       helpers.BoolPtr(true),
+						},
+					},
+				},
+				secretPrefix: "fastly-api-",
+			},
+			wantErr: true,
+			want: RoutesV2{
+				Routes: nil,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MergeRoutesV2(tt.args.genRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix); !reflect.DeepEqual(got, tt.want) {
+			got, err := MergeRoutesV2(tt.args.yamlRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("MergeRouteStructures() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
 				stra, _ := json.Marshal(got)
 				strb, _ := json.Marshal(tt.want)
 				t.Errorf("MergeRouteStructures() = %v, want %v", string(stra), string(strb))

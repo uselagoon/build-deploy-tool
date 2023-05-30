@@ -452,6 +452,24 @@ func TestTemplateRoutes(t *testing.T) {
 			},
 			want: "../test-resources/template-ingress/test21-results",
 		},
+		{
+			name: "test22 check wildcard",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:         `[]`,
+				lagoonYAML:      "../test-resources/template-ingress/test22/lagoon.yml",
+				templatePath:    "../test-resources/template-ingress/output",
+			},
+			want: "../test-resources/template-ingress/test22-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
