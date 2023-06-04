@@ -1,0 +1,53 @@
+# All the possible YAML incantations for introducing a newline into a string.
+# https://yaml-multiline.info/
+environments:
+  main:
+    cronjobs:
+      - name: flow scalar plain
+        command: multiline
+
+          command
+      - name: flow scalar single quoted
+        command: 'multiline
+
+          command'
+      - name: flow scalar double quoted newline
+        command: "multiline
+
+          command"
+      - name: flow scalar double quoted escaped
+        command: "multiline\ncommand"
+      - name: multiline block literal clipped
+        command: |
+          multiline
+          command
+
+      - name: block scalar literal stripped
+        command: |-
+          multiline
+          command
+
+      - name: block scalar literal keep
+        command: |+
+          multiline
+          command
+
+      - name: block scalar folded clipped
+        command: >
+          multiline
+
+          command
+
+      - name: block scalar folded stripped
+        command: >-
+          multiline
+
+          command
+
+      - name: block scalar folded keep
+        command: >+
+          multiline
+
+          command
+
+# dummy comment to keep previous newline

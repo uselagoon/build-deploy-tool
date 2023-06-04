@@ -67,7 +67,7 @@ spec:
             - name: NGINX_FASTCGI_PASS
               value: '127.0.0.1'
             - name: CRONJOBS
-              value: {{ .Values.inPodCronjobs | quote }}
+              value: {{ .Values.inPodCronjobs | toYaml | indent 14 | trim }}
           envFrom:
             - configMapRef:
                 name: lagoon-env

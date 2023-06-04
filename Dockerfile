@@ -106,7 +106,7 @@ ENV IMAGECACHE_REGISTRY=imagecache.amazeeio.cloud
 
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
 
-RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.7.0/lagoon-linter_0.7.0_linux_amd64.tar.gz \
+RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_amd64.tar.gz \
     | tar -xz -C /usr/local/bin lagoon-linter
 
 # RUN curl -sSL https://github.com/uselagoon/build-deploy-tool/releases/download/v0.11.0/build-deploy-tool_0.11.0_linux_amd64.tar.gz \

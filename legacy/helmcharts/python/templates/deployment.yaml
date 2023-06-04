@@ -63,8 +63,7 @@ spec:
             - name: LAGOON_GIT_SHA
               value: {{ .Values.gitSha | quote }}
             - name: CRONJOBS
-              value: |
-                {{- toYaml .Values.inPodCronjobs | nindent 16 }}
+              value: {{ .Values.inPodCronjobs | toYaml | indent 14 | trim }}
           envFrom:
             - configMapRef:
                 name: lagoon-env
