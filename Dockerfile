@@ -102,8 +102,6 @@ COPY legacy/scripts /kubectl-build-deploy/scripts
 
 COPY legacy/helmcharts  /kubectl-build-deploy/helmcharts
 
-ENV IMAGECACHE_REGISTRY=imagecache.amazeeio.cloud
-
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
 
 RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_amd64.tar.gz \
