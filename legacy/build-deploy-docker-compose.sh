@@ -154,6 +154,10 @@ set +x
 IMAGECACHE_REGISTRY=""
 if [ ! -z "$(featureFlag IMAGECACHE_REGISTRY)" ]; then
   IMAGECACHE_REGISTRY=$(featureFlag IMAGECACHE_REGISTRY)
+  # add trailing slash if it is missing
+  length=${#IMAGECACHE_REGISTRY}
+  last_char=${IMAGECACHE_REGISTRY:length-1:1}
+  [[ $last_char != "/" ]] && IMAGECACHE_REGISTRY="$IMAGECACHE_REGISTRY/"; :
 fi
 
 # Load path of docker-compose that should be used
