@@ -70,8 +70,8 @@ ENV KUBECTL_VERSION=v1.20.4 \
     HELM_SHA256=01b317c506f8b6ad60b11b1dc3f093276bb703281cb1ae01132752253ec706a2
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
-    && apk add --update openssl curl jq parallel \
-    && apk add --no-cache bash git openssh-client-common=9.1_p1-r2 openssh=9.1_p1-r2 py-pip skopeo \
+    && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
+    && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
     && pip install shyaml yq \
     && curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
