@@ -5,3 +5,6 @@
 environment: ""
 
 readReplicaHosts: ""
+
+imageCache: ""
+image: uselagoon/php-8.0-cli

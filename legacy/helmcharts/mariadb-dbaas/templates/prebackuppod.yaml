@@ -70,7 +70,7 @@ spec:
                   key: {{ include "mariadb-dbaas.fullnameUppercase" . }}_READREPLICA_HOSTS
                   name: lagoon-env
             {{- end }}
-          image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
+          image: {{ .Values.imageCache }}{{ .Values.image }}
           imagePullPolicy: Always
           name: {{ include "mariadb-dbaas.fullname" . }}-prebackuppod
 {{ end }}

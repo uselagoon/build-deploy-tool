@@ -3,3 +3,6 @@
 # Declare variables to be passed into your templates.
 
 environment: ""
+
+imageCache: ""
+image: uselagoon/php-8.0-cli

@@ -5,3 +5,6 @@
 environment: ""
 
 readReplicaHosts: ""
+
+imageCache: ""
+image: amazeeio/alpine-mysql-client
