@@ -44,13 +44,27 @@ if [ ! -f .lagoon.yml ]; then
   echo "no .lagoon.yml file found"; exit 1;
 fi
 
+# Here we grab the git sha to populate build and runtime environment variables
+GIT_SHA=`git rev-parse HEAD`
 INJECT_GIT_SHA=$(cat .lagoon.yml | shyaml get-value environment_variables.git_sha false)
-if [ "$INJECT_GIT_SHA" == "true" ]
-then
-  LAGOON_GIT_SHA=`git rev-parse HEAD`
-else
-  LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
-fi
+case "$INJECT_GIT_SHA" in
+  true|both)
+    LAGOON_GIT_SHA=$GIT_SHA
+    LAGOON_BUILD_GIT_SHA=$GIT_SHA
+    ;;
+  build)
+    LAGOON_BUILD_GIT_SHA=$GIT_SHA
+    LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
+    ;;
+  runtime)
+    LAGOON_BUILD_GIT_SHA="0000000000000000000000000000000000000000"
+    LAGOON_GIT_SHA=$GIT_SHA
+    ;;
+  *)
+    LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
+    LAGOON_BUILD_GIT_SHA=$LAGOON_GIT_SHA
+    ;;
+esac
 
 echo -e "##############################################\nBEGIN Kubernetes and Container Registry Setup\n##############################################"
 sleep 0.5s
