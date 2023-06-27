@@ -12,6 +12,7 @@ echo
 
 # Create an array to store the volumes that need to be created
 volumes_to_create=()
+EXTRA_VOLUMES_MOUNT_VALS="" #this will be output to our values file
 
 # Iterate over the volumes
 for volume in $volumes; do
@@ -24,6 +25,13 @@ for volume in $volumes; do
   while IFS= read -r service; do
     path=$(yq e '.services."'$service'".labels."lagoon.volumes.'$volume'.path"' "$DOCKER_COMPOSE_YAML")
     echo "- Service: $service, Path: $path"
+
+  if [[ "$service" != "" ]]; then
+    EXTRA_VOLUMES_MOUNT_VALS+="\
+customVolumeMount.$service.$volume: $path
+"
+  fi
+
   done <<< "$services"
 
   # If no services reference the volume, print a message indicating it is not used
@@ -39,3 +47,25 @@ done
 
 echo "Volumes to be created:"
 echo "${volumes_to_create[@]}"
+
+EXTRA_VOLUMES_VALUES_YAML=""
+
+
+# Check if volumes_to_create array is not empty before iterating
+if [[ ${#volumes_to_create[@]} -gt 0 ]]; then
+  echo "Volumes to be created:"
+  EXTRA_VOLUMES_VALUES_YAML+="\
+customVolumes:
+"
+  for volume in "${volumes_to_create[@]}"; do
+    echo "- $volume"
+    EXTRA_VOLUMES_VALUES_YAML+="\
+    - $volume
+"
+  done
+else
+  echo "No volumes to create."
+fi
+
+echo "$EXTRA_VOLUMES_VALUES_YAML"
+echo "$EXTRA_VOLUMES_MOUNT_VALS"
