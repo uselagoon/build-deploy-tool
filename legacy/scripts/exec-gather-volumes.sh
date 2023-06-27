@@ -1,34 +1,45 @@
 #!/bin/bash
 
-# First step: Parse the docker-compose.yml for any volumes that have the label "lagoon.type: persistent"
-DOCKER_COMPOSE_YAML="test/docker-compose.yml"
+
+if [[ -z "$DOCKER_COMPOSE_YAML" ]]; then
+  echo "no docker compose file given"
+  exit
+fi
+
+EXTRA_MOUNT_VALUES_FILE="${KBD_SERVICE_VALUES_OUTDIR:-kubectl-build-deploy}/extravolumes-values.yaml"
+
+
 # Parse docker-compose.yml and extract volume names with "lagoon.type: persistent" label
 volumes=$(yq e '.volumes | with_entries(select(.value.labels."lagoon.type" == "persistent")) | keys | .[]' "$DOCKER_COMPOSE_YAML")
 
 # Print the list of volume names
-echo "Volumes:"
+echo "Extra volumes defined:"
 echo "$volumes"
 echo
 
 # Create an array to store the volumes that need to be created
 volumes_to_create=()
-EXTRA_VOLUMES_MOUNT_VALS="" #this will be output to our values file
+EXTRA_VOLUMES_MOUNT_VALS="\
+customVolumeMounts:
+" #this will be output to our values file
 
 # Iterate over the volumes
 for volume in $volumes; do
-  echo "Volume: $volume"
-
+#  echo "Volume: $volume"
+  EXTRA_VOLUMES_MOUNT_VALS+="\
+  - $volume:
+"
   # Loop through the services and check if they reference the current volume
   services=$(yq e '.services | to_entries | .[] | select(.value.labels | has("lagoon.volumes.'$volume'.path")) | .key' "$DOCKER_COMPOSE_YAML")
 
   # Print the services and their corresponding paths for the current volume
   while IFS= read -r service; do
     path=$(yq e '.services."'$service'".labels."lagoon.volumes.'$volume'.path"' "$DOCKER_COMPOSE_YAML")
-    echo "- Service: $service, Path: $path"
+#    echo "- Service: $service, Path: $path"
 
   if [[ "$service" != "" ]]; then
     EXTRA_VOLUMES_MOUNT_VALS+="\
-customVolumeMount.$service.$volume: $path
+    - $service: $path
 "
   fi
 
@@ -69,3 +80,6 @@ fi
 
 echo "$EXTRA_VOLUMES_VALUES_YAML"
 echo "$EXTRA_VOLUMES_MOUNT_VALS"
+
+echo "$EXTRA_VOLUMES_VALUES_YAML" > $EXTRA_MOUNT_VALUES_FILE
+echo "$EXTRA_VOLUMES_MOUNT_VALS" >> $EXTRA_MOUNT_VALUES_FILE
