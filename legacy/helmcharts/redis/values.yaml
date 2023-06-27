@@ -71,6 +71,8 @@ cronjobAffinity: {}
 
 inPodCronjobs: ""
 
+nativeCronjobs: {}
+
 configMapSha: ""
 
 useSpot: false

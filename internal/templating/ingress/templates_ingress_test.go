@@ -192,7 +192,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					HSTSEnabled:  helpers.BoolPtr(true),
-					HSTSMaxAge:   3153600,
+					HSTSMaxAge:   31536000,
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -233,7 +233,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					},
 					IngressClass:          "nginx",
 					HSTSEnabled:           helpers.BoolPtr(true),
-					HSTSMaxAge:            3153600,
+					HSTSMaxAge:            31536000,
 					HSTSIncludeSubdomains: helpers.BoolPtr(true),
 					HSTSPreload:           helpers.BoolPtr(true),
 				},

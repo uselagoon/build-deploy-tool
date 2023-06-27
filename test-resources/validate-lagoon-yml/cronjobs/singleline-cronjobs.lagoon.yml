@@ -1,0 +1,46 @@
+# Strings that may appear to have newlines but don't.
+environments:
+  main:
+    cronjobs:
+      - name: flow scalar plain 1
+        command: singleline
+          command
+      - name: flow scalar plain 2
+        command: singleline command
+      - name: flow scalar plain 3
+        command: singleline\ncommand
+      - name: flow scalar single quoted 1
+        command: 'singleline
+          command'
+      - name: flow scalar single quoted 2
+        command: 'singleline command'
+      - name: flow scalar single quoted 3
+        command: 'singleline\ncommand'
+      - name: flow scalar double quoted 1
+        command: "singleline
+          command"
+      - name: flow scalar double quoted 2
+        command: "singleline command"
+      - name: flow scalar double quoted 3
+        command: "singleline\
+          command"
+      - name: block scalar literal stripped
+        command: |-
+          singleline command
+
+      - name: block scalar folded clipped 1
+        command: >
+          singleline
+          command
+      - name: block scalar folded clipped 2
+        command: >
+          singleline command
+      - name: block scalar folded stripped 1
+        command: >-
+          singleline
+          command
+      - name: block scalar folded stripped 2
+        command: >-
+          singleline command
+
+# dummy comment to keep previous newline

@@ -26,6 +26,7 @@ type Environment struct {
 	Cronjobs           []Cronjob            `json:"cronjobs"`
 }
 
+// Cronjob represents a Lagoon cronjob.
 type Cronjob struct {
 	Name     string `json:"name"`
 	Service  string `json:"service"`
@@ -88,7 +89,6 @@ type Autogenerate struct {
 	IngressClass      string   `json:"ingressClass"`
 }
 
-//
 func (a *Routes) UnmarshalJSON(data []byte) error {
 	tmpMap := map[string]interface{}{}
 	json.Unmarshal(data, &tmpMap)

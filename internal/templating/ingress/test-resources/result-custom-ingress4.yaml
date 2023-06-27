@@ -11,7 +11,7 @@ metadata:
     lagoon.sh/branch: environment-with-really-really-reall-3fdb
     lagoon.sh/version: v2.x.x
     nginx.ingress.kubernetes.io/configuration-snippet: |
-      more_set_headers "Strict-Transport-Security: max-age=3153600";
+      more_set_headers "Strict-Transport-Security: max-age=31536000";
     nginx.ingress.kubernetes.io/server-snippet: |
       add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"

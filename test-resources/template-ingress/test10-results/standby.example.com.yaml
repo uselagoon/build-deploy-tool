@@ -25,6 +25,7 @@ metadata:
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main2
     lagoon.sh/environmentType: production
+    lagoon.sh/primaryIngress: "true"
     lagoon.sh/project: example-project
     lagoon.sh/service: standby.example.com
     lagoon.sh/service-type: custom-ingress
