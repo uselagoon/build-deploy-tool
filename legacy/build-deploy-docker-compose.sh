@@ -1223,6 +1223,16 @@ if [ ! -z "$LAGOON_CONFIG_API_HOST" ]; then
   echo -e "LAGOON_CONFIG_API_HOST=${LAGOON_CONFIG_API_HOST}\n" >> /kubectl-build-deploy/values.env
 fi
 
+if [ ! -z "$LAGOON_CONFIG_TOKEN_HOST" ]; then
+  BUILD_ARGS+=(--build-arg LAGOON_CONFIG_TOKEN_HOST="${LAGOON_CONFIG_TOKEN_HOST}")
+  echo -e "LAGOON_CONFIG_TOKEN_HOST=${LAGOON_CONFIG_TOKEN_HOST}\n" >> /kubectl-build-deploy/values.env
+fi
+
+if [ ! -z "$LAGOON_CONFIG_TOKEN_PORT" ]; then
+  BUILD_ARGS+=(--build-arg LAGOON_CONFIG_TOKEN_PORT="${LAGOON_CONFIG_TOKEN_PORT}")
+  echo -e "LAGOON_CONFIG_TOKEN_PORT=${LAGOON_CONFIG_TOKEN_PORT}\n" >> /kubectl-build-deploy/values.env
+fi
+
 if [ ! -z "$LAGOON_CONFIG_SSH_HOST" ]; then
   BUILD_ARGS+=(--build-arg LAGOON_CONFIG_SSH_HOST="${LAGOON_CONFIG_SSH_HOST}")
   echo -e "LAGOON_CONFIG_SSH_HOST=${LAGOON_CONFIG_SSH_HOST}\n" >> /kubectl-build-deploy/values.env
