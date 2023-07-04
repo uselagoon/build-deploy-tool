@@ -6,9 +6,9 @@
 #   apiToken: ''
 #   platformTLSConfiguration: ''
 
----
+# this is the default persistentStorage size for PVCs
 persistentStorage:
-  name: cli
+  size: 5Gi
 
 customVolumes:
   - config
@@ -28,7 +28,5 @@ customVolumeMounts:
 nameOverride: oiwjef
 
 project: oweifj
-
-persistentStorage.size: 5Gi
 
 lagoonVersion: 21
