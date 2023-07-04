@@ -24,10 +24,6 @@ customVolumeMounts:
       - php: /app/web/sites/default/files/
   - notused:
 
-Chart:
-  Name: chartname
-  Version: 0.0.1
-
 
 nameOverride: oiwjef
 
@@ -36,4 +32,3 @@ project: oweifj
 persistentStorage.size: 5Gi
 
 lagoonVersion: 21
-

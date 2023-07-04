@@ -4,12 +4,11 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ include "custom-pvc.name" (dict "Values" . "Context" $context ) }}
+  name: {{ template "custom-pvc.name" (dict "IterationValues" . "Context" $context ) }}
 
   labels:
-    {{- include "custom-pvc.labels" (dict "Values" . "Context" $context ) | nindent 4  }}
+    {{- include "custom-pvc.labels" (dict "IterationValues" . "Context" $context ) | nindent 4  }}
 annotations:
-  k8up.syn.tools/backup: "true"
   {{- include "custom-pvc.annotations" $context | nindent 4 }}
 spec:
   accessModes:

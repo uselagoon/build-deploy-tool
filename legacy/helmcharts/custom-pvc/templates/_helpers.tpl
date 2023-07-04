@@ -10,7 +10,7 @@
 
 
 {{- define "custom-pvc.name" -}}
-{{- printf "lcv-%s" .Values | trunc 63 | trimSuffix "-" -}}
+{{- printf "lcv-%s" .IterationValues | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 
 {{/*
@@ -37,8 +37,8 @@ app.kubernetes.io/instance: {{ .Context.Release.Name }}
 Lagoon Labels
 */}}
 {{- define "custom-pvc.lagoonLabels" -}}
-lagoon.sh/service: {{ .Values.Release.Name }}
-lagoon.sh/service-type: {{ .Values.Chart.Name }}
+lagoon.sh/service: {{ .Release.Name }}
+lagoon.sh/service-type: {{ .Chart.Name }}
 lagoon.sh/project: {{ .Values.project }}
 lagoon.sh/environment: {{ .Values.environment }}
 lagoon.sh/environmentType: {{ .Values.environmentType }}
