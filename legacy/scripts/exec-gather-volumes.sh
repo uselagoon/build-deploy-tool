@@ -7,7 +7,7 @@ if [[ -z "$DOCKER_COMPOSE_YAML" ]]; then
 fi
 
 EXTRA_MOUNT_VALUES_FILE="${KBD_SERVICE_VALUES_OUTDIR:-kubectl-build-deploy}/extravolumes-values.yaml"
-
+CUSTOMVOLUME_PREFIX="lcv-" # we just use this to distinguish from any other volumes that might be created
 
 # Parse docker-compose.yml and extract volume names with "lagoon.type: persistent" label
 volumes=$(yq e '.volumes | with_entries(select(.value.labels."lagoon.type" == "persistent")) | keys | .[]' "$DOCKER_COMPOSE_YAML")
@@ -27,7 +27,7 @@ customVolumeMounts:
 for volume in $volumes; do
 #  echo "Volume: $volume"
   EXTRA_VOLUMES_MOUNT_VALS+="\
-  - $volume:
+  - $CUSTOMVOLUME_PREFIX$volume:
 "
   # Loop through the services and check if they reference the current volume
   services=$(yq e '.services | to_entries | .[] | select(.value.labels | has("lagoon.volumes.'$volume'.path")) | .key' "$DOCKER_COMPOSE_YAML")
@@ -69,7 +69,7 @@ if [[ ${#volumes_to_create[@]} -gt 0 ]]; then
 customVolumes:
 "
   for volume in "${volumes_to_create[@]}"; do
-    echo "- $volume"
+    echo "- $CUSTOMVOLUME_PREFIX$volume"
     EXTRA_VOLUMES_VALUES_YAML+="\
     - $volume
 "
