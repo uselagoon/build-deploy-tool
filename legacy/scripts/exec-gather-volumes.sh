@@ -7,7 +7,9 @@ if [[ -z "$DOCKER_COMPOSE_YAML" ]]; then
 fi
 
 EXTRA_MOUNT_VALUES_FILE="${KBD_SERVICE_VALUES_OUTDIR:-kubectl-build-deploy}/extravolumes-values.yaml"
-CUSTOMVOLUME_PREFIX="lcv-" # we just use this to distinguish from any other volumes that might be created
+
+# The prefix below CAN be used, but this should be moved into the helm templates
+CUSTOMVOLUME_PREFIX="" # we just use this to distinguish from any other volumes that might be created
 
 # Parse docker-compose.yml and extract volume names with "lagoon.type: persistent" label
 volumes=$(yq e '.volumes | with_entries(select(.value.labels."lagoon.type" == "persistent")) | keys | .[]' "$DOCKER_COMPOSE_YAML")
