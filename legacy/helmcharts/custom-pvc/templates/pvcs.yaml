@@ -1,0 +1,23 @@
+{{ $context := . }}
+{{- range .Values.customVolumes }}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "custom-pvc.name" (dict "Values" . "Context" $context ) }}
+
+  labels:
+    {{- include "custom-pvc.labels" (dict "Values" . "Context" $context ) | nindent 4  }}
+annotations:
+  k8up.syn.tools/backup: "true"
+  {{- include "custom-pvc.annotations" $context | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: bulk
+  resources:
+    requests:
+      storage: {{ $context.Values.persistentStorage.size | quote }}
+
+{{- end }}
+
