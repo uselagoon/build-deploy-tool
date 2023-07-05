@@ -36,6 +36,20 @@ spec:
             claimName: {{ include "nginx-php-persistent.persistentStorageName" . }}
         - name: {{ include "nginx-php-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
+      {{/* we iterate over all the custom volumes and see if we can find our service */}}
+      {{- range .Values.customVolumeMounts }}
+        {{- range $volumeName, $value := . }}
+          {{- range $i, $servicePathMap := $value }}
+            {{- range $serviceName, $path := $servicePathMap }}
+              {{- if eq $serviceName $topValues.persistentStorage.name }}
+        - name: {{ template "custom-pvc.name" $volumeName }}
+          persistentVolumeClaim:
+            claimName: {{ template "custom-pvc.name" $volumeName }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
       {{- if .Values.dynamicSecretVolumes }}
         {{- toYaml .Values.dynamicSecretVolumes | nindent 8 }}
       {{- end }}
@@ -105,6 +119,18 @@ spec:
           volumeMounts:
             - name: {{ include "nginx-php-persistent.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}
+      {{- range .Values.customVolumeMounts }}
+        {{- range $volumeName, $value := . }}
+          {{- range $i, $servicePathMap := $value }}
+            {{- range $serviceName, $path := $servicePathMap }}
+              {{- if eq $serviceName $topValues.persistentStorage.name }}
+            - name: {{ template "custom-pvc.name" $volumeName }}
+              mountPath: {{ $path }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
           {{- if .Values.dynamicSecretMounts }}
             {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
           {{- end }}
@@ -142,6 +168,18 @@ spec:
               mountPath: {{ .Values.persistentStorage.path | quote }}
             - name: {{ include "nginx-php-persistent.twig-storage.name" . | quote }}
               mountPath: {{ include "nginx-php-persistent.twig-storage.path" . | quote }}
+      {{- range .Values.customVolumeMounts }}
+        {{- range $volumeName, $value := . }}
+          {{- range $i, $servicePathMap := $value }}
+            {{- range $serviceName, $path := $servicePathMap }}
+              {{- if eq $serviceName $topValues.persistentStorage.name }}
+            - name: {{ template "custom-pvc.name" $volumeName }}
+              mountPath: {{ $path }}
+              {{- end }}
+            {{- end }}
+          {{- end }}
+        {{- end }}
+      {{- end }}
           {{- if .Values.dynamicSecretMounts }}
             {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
           {{- end }}

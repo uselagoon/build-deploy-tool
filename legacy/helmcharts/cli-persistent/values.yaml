@@ -11,7 +11,7 @@ gitSha: ""
 image: ""
 
 persistentStorage:
-  name: ""
+  name: "cli"
 
 imagePullPolicy: Always
 
@@ -63,3 +63,15 @@ cronjobUseSpot: false
 dynamicSecretMounts: []
 
 dynamicSecretVolumes: []
+
+
+
+customVolumeMounts:
+  - config:
+      - cli: /config
+      - php: /config
+  - files:
+      - cli: /app/web/sites/default/files/
+      - nginx: /app/web/sites/default/files/
+      - php: /app/web/sites/default/files/
+  - notused:

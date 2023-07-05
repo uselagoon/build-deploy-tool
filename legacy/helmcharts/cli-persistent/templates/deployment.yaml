@@ -100,7 +100,6 @@ spec:
           {{- end }}
         {{- end }}
       {{- end }}
-
           {{- if .Values.dynamicSecretMounts }}
           {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
           {{- end }}
