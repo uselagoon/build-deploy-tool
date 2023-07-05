@@ -41,7 +41,6 @@ spec:
             claimName: {{ .Values.persistentStorage.name }}
         - name: {{ include "cli-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
-      {{/* we iterate over all the custom volumes and see if we can find our service */}}
       {{- range .Values.customVolumeMounts }}
         {{- range $volumeName, $value := . }}
           {{- range $i, $servicePathMap := $value }}

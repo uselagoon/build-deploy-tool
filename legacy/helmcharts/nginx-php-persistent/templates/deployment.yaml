@@ -1,3 +1,4 @@
+{{- $topValues := .Values }}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -36,7 +37,6 @@ spec:
             claimName: {{ include "nginx-php-persistent.persistentStorageName" . }}
         - name: {{ include "nginx-php-persistent.twig-storage.name" . | quote }}
           emptyDir: {}
-      {{/* we iterate over all the custom volumes and see if we can find our service */}}
       {{- range .Values.customVolumeMounts }}
         {{- range $volumeName, $value := . }}
           {{- range $i, $servicePathMap := $value }}
