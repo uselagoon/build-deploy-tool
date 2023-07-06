@@ -1391,6 +1391,9 @@ set -x
 YAML_FOLDER="/kubectl-build-deploy/lagoon/deploymentconfigs-pvcs-cronjobs-backups"
 mkdir -p $YAML_FOLDER
 
+# handle multiple pvc
+. /kubectl-build-deploy/scripts/exec-gather-volumes.sh
+
 for SERVICE_TYPES_ENTRY in "${SERVICE_TYPES[@]}"
 do
   IFS=':' read -ra SERVICE_TYPES_ENTRY_SPLIT <<< "$SERVICE_TYPES_ENTRY"

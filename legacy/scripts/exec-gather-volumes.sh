@@ -7,6 +7,7 @@ if [[ -z "$DOCKER_COMPOSE_YAML" ]]; then
 fi
 
 EXTRA_MOUNT_VALUES_FILE="${KBD_SERVICE_VALUES_OUTDIR:-kubectl-build-deploy}/extravolumes-values.yaml"
+touch ${EXTRA_MOUNT_VALUES_FILE}
 
 # The prefix below CAN be used, but this should be moved into the helm templates
 CUSTOMVOLUME_PREFIX="" # we just use this to distinguish from any other volumes that might be created
@@ -85,3 +86,5 @@ echo "$EXTRA_VOLUMES_MOUNT_VALS"
 
 echo "$EXTRA_VOLUMES_VALUES_YAML" > $EXTRA_MOUNT_VALUES_FILE
 echo "$EXTRA_VOLUMES_MOUNT_VALS" >> $EXTRA_MOUNT_VALUES_FILE
+
+helm template custom-pvc /kubectl-build-deploy/helmcharts/custom-pvc -f $EXTRA_MOUNT_VALUES_FILE > $YAML_FOLDER/pvc.yaml

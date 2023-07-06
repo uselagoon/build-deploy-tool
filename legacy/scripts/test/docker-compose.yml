@@ -1,0 +1,42 @@
+volumes:
+  config:
+    labels:
+      lagoon.type: persistent
+  files:
+    labels:
+      lagoon.type: persistent
+  db:
+    labels:
+      lagoon.type: none ## not technically needed, but explicit
+  notused:
+    labels:
+      lagoon.type: persistent ## not technically needed, but explicit
+  logs:
+    {}
+
+services:
+
+  cli:
+    labels:
+      lagoon.type: cli-persistent
+      lagoon.volumes.files.path: /app/web/sites/default/files/
+      lagoon.volumes.config.path: /config
+
+  nginx:
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.volumes.files.path: /app/web/sites/default/files/
+
+  php:
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.volumes.files.path: /app/web/sites/default/files/
+      lagoon.volumes.config.path: /config
+
+  mariadb:
+    image: uselagoon/mariadb-10.5-drupal:latest
+    labels:
+      lagoon.type: mariadb
+      lando.type: mariadb-drupal
+    volumes:
+      - db:/var/lib/mysql
