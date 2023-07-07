@@ -121,17 +121,14 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, "-c")
 	command = append(command, task.Command)
 
-	stdout, stderr, err := ExecTaskInPod(task, command, false) //(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
+	output, err := ExecTaskInPod(task, command, false) //(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
 
 	if err != nil {
 		fmt.Printf("Failed to execute task `%v` due to reason `%v`\n", task.Name, err.Error())
 	}
 
-	if len(stdout) > 0 {
-		fmt.Printf("*** Task STDOUT ***\n %v \n *** STDOUT Ends ***\n", stdout)
-	}
-	if len(stderr) > 0 {
-		fmt.Printf("*** Task STDERR ***\n %v \n *** STDERR Ends ***\n", stderr)
+	if len(output) > 0 {
+		fmt.Printf("*** Task output ***\n %v \n *** output ends ***\n", output)
 	}
 
 	return err
@@ -142,16 +139,16 @@ func ExecTaskInPod(
 	task Task,
 	command []string,
 	tty bool,
-) (string, string, error) {
+) (string, error) {
 
 	restCfg, err := getConfig()
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	clientset, err := GetK8sClient(restCfg)
 	if err != nil {
-		return "", "", fmt.Errorf("unable to create client: %v", err)
+		return "", fmt.Errorf("unable to create client: %v", err)
 	}
 
 	depClient := clientset.AppsV1().Deployments(task.Namespace)
@@ -162,11 +159,11 @@ func ExecTaskInPod(
 		LabelSelector: lagoonServiceLabel,
 	})
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	if len(deployments.Items) == 0 {
-		return "", "", &DeploymentMissingError{ErrorText: "No deployments found matching label: " + lagoonServiceLabel}
+		return "", &DeploymentMissingError{ErrorText: "No deployments found matching label: " + lagoonServiceLabel}
 	}
 
 	deployment := &deployments.Items[0]
@@ -176,14 +173,14 @@ func ExecTaskInPod(
 	numIterations := 1
 	for ; !podReady; numIterations++ {
 		if numIterations >= task.ScaleMaxIterations { //break if there's some reason we can't scale the pod
-			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
+			return "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
 			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, task.ScaleMaxIterations))
 
 			scale, err := clientset.AppsV1().Deployments(task.Namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
-				return "", "", err
+				return "", err
 			}
 
 			if scale.Spec.Replicas == 0 {
@@ -193,7 +190,7 @@ func ExecTaskInPod(
 			time.Sleep(time.Second * time.Duration(task.ScaleWaitTime))
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
-				return "", "", err
+				return "", err
 			}
 		} else {
 			podReady = true
@@ -208,7 +205,7 @@ func ExecTaskInPod(
 	})
 
 	if err != nil {
-		return "", "", err
+		return "", err
 	}
 
 	var pod corev1.Pod
@@ -229,7 +226,7 @@ func ExecTaskInPod(
 		}
 	}
 	if !foundRunningPod {
-		return "", "", &PodScalingError{
+		return "", &PodScalingError{
 			ErrorText: "Unable to find running Pod for namespace: " + task.Namespace,
 		}
 	}
@@ -250,7 +247,7 @@ func ExecTaskInPod(
 	scheme := runtime.NewScheme()
 
 	if err := corev1.AddToScheme(scheme); err != nil {
-		return "", "", fmt.Errorf("error adding to scheme: %v", err)
+		return "", fmt.Errorf("error adding to scheme: %v", err)
 	}
 	if len(command) == 0 {
 		command = []string{"sh"}
@@ -267,20 +264,20 @@ func ExecTaskInPod(
 
 	exec, err := remotecommand.NewSPDYExecutor(restCfg, "POST", req.URL())
 	if err != nil {
-		return "", "", fmt.Errorf("error while creating Executor: %v", err)
+		return "", fmt.Errorf("error while creating Executor: %v", err)
 	}
 
-	var stdout, stderr bytes.Buffer
+	var output bytes.Buffer
 	err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: &stdout,
-		Stderr: &stderr,
+		Stdout: &output,
+		Stderr: &output,
 		Tty:    tty,
 	})
 	if err != nil {
-		return stdout.String(), stderr.String(), fmt.Errorf("Error returned: %v", err)
+		return output.String(), fmt.Errorf("Error returned: %v", err)
 	}
 
-	return stdout.String(), stderr.String(), nil
+	return output.String(), nil
 
 }
 
