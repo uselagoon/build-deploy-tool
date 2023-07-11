@@ -45,7 +45,7 @@ spec:
         {{- range $volumeName, $value := . }}
           {{- range $i, $servicePathMap := $value }}
             {{- range $serviceName, $path := $servicePathMap }}
-              {{- if eq $serviceName $topValues.persistentStorage.name }}
+              {{- if eq $serviceName $.Release.Name }}
         - name: {{ template "custom-pvc.name" $volumeName }}
           persistentVolumeClaim:
             claimName: {{ template "custom-pvc.name" $volumeName }}
@@ -91,7 +91,7 @@ spec:
         {{- range $volumeName, $value := . }}
           {{- range $i, $servicePathMap := $value }}
             {{- range $serviceName, $path := $servicePathMap }}
-              {{- if eq $serviceName $topValues.persistentStorage.name }}
+              {{- if eq $serviceName $.Release.Name }}
             - name: {{ template "custom-pvc.name" $volumeName }}
               mountPath: {{ $path }}
               {{- end }}
