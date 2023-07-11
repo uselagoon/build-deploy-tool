@@ -7,8 +7,10 @@ metadata:
   name: {{ template "custom-pvc.name" (dict "IterationValues" . "Context" $context ) }}
   labels:
     {{- include "custom-pvc.labels" (dict "IterationValues" . "Context" $context ) | nindent 4  }}
-annotations:
-  {{- include "custom-pvc.annotations" $context | nindent 4 }}
+{{/*
+  annotations:
+    { { - include "custom-pvc.annotations" $context | nindent 4 } }
+*/}}
 spec:
   accessModes:
     - ReadWriteMany
