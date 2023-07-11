@@ -88,8 +88,4 @@ echo "$EXTRA_VOLUMES_VALUES_YAML" > $EXTRA_MOUNT_VALUES_FILE
 echo "$EXTRA_VOLUMES_MOUNT_VALS" >> $EXTRA_MOUNT_VALUES_FILE
 
 
-helm template custom-pvc /kubectl-build-deploy/helmcharts/custom-pvc -f $EXTRA_MOUNT_VALUES_FILE > $YAML_FOLDER/pvc.yaml
-
-echo "********** OUTPUT pvc.yaml *********"
-cat $YAML_FOLDER/pvc.yaml
-echo "********** END pvc.yaml *********"
+helm template custom-pvc /kubectl-build-deploy/helmcharts/custom-pvc -f $EXTRA_MOUNT_VALUES_FILE -f /kubectl-build-deploy/values.yaml > $YAML_FOLDER/pvc.yaml

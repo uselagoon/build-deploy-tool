@@ -39,12 +39,10 @@ Lagoon Labels
 {{- define "custom-pvc.lagoonLabels" -}}
 lagoon.sh/service: {{ .Release.Name }}
 lagoon.sh/service-type: {{ .Chart.Name }}
-{{/* Get these sorted
 lagoon.sh/project: {{ .Values.project }}
 lagoon.sh/environment: {{ .Values.environment }}
 lagoon.sh/environmentType: {{ .Values.environmentType }}
 lagoon.sh/buildType: {{ .Values.buildType }}
-*/}}
 {{- end -}}
 
 
