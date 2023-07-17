@@ -10,7 +10,7 @@ metadata:
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: bulk
+  storageClassName: bulk-efs
   resources:
     requests:
       storage: {{ .Values.persistentStorage.size | quote }}
