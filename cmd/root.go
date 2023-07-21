@@ -150,6 +150,8 @@ func init() {
 		"Ignore non-string-key docker-compose errors (true by default, subject to change).")
 	rootCmd.PersistentFlags().BoolP("ignore-missing-env-files", "", true,
 		"Ignore missing env_file files (true by default, subject to change).")
+	rootCmd.PersistentFlags().StringP("images", "", "",
+		"JSON representation of service:image reference")
 }
 
 // initConfig reads in config file and ENV variables if set.

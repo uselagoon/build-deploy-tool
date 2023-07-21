@@ -1,0 +1,19 @@
+docker-compose-yaml: ../test-resources/template-lagoon-services/test2/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - example.com
+    cronjobs:
+      - name: drush cron
+        schedule: "*/15 * * * *"
+        command: drush cron
+        service: cli
+      - name: drush cron2
+        schedule: "*/30 * * * *"
+        command: drush cron
+        service: cli
