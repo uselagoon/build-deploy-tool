@@ -586,28 +586,28 @@ readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o
 ### BUILD IMAGES
 ##############################################
 
+set +x # reduce noise in build logs
+# Get the pre-rollout and post-rollout vars
+  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+    LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+    LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+  fi
+  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+    TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+    TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+    if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+      LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
+    fi
+    if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+      LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
+    fi
+  fi
+set -x
+
 # we only need to build images for pullrequests and branches
 if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
   BUILD_ARGS=()
-
-  set +x # reduce noise in build logs
-  # Get the pre-rollout and post-rollout vars
-    if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-      LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-    fi
-    if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-      TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-      if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-        LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-      fi
-      if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-        LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-      fi
-    fi
-  set -x
 
   set +x # reduce noise in build logs
   # Add environment variables from lagoon API as build args
