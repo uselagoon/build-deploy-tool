@@ -105,8 +105,7 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
   if [ -z $BAAS_BUCKET_NAME ]; then
     # check for shared/cluster scoped bucket
     # use build scope for now for testing
-    # SHARED_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "internal_system" and .name == "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET") | "\(.value)"')
-    SHARED_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build" and .name == "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET") | "\(.value)"')
+    SHARED_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "internal_system" and .name == "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET") | "\(.value)"')
     if [ -z $SHARED_BUCKET_NAME ]; then
       # if no shared bucketname, create as normal
       BAAS_BUCKET_NAME=baas-${PROJECT}
