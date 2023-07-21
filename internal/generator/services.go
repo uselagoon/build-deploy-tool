@@ -182,7 +182,7 @@ func composeToServiceValues(
 		if servicePersistentName == "" && servicePersistentPath != "" {
 			// if there is a persistent path defined, then set the persistent name to be the compose service if no persistent name is provided
 			// persistent name is used by joined services like nginx/php or cli or worker pods to mount another service volume
-			servicePersistentName = composeService
+			servicePersistentName = lagoonOverrideName
 		}
 		servicePersistentSize := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.persistent.size")
 		if servicePersistentSize == "" {
@@ -378,6 +378,10 @@ func composeToServiceValues(
 			NativeCronjobs:             nativecronjobs,
 			PodSecurityContext:         buildValues.PodSecurityContext,
 		}
+
+		// handle extracting the built image name from the provided image references
+		cService.ImageName = buildValues.ImageReferences[composeService]
+
 		// check if the service has a service port override (this only applies to basic(-persistent))
 		servicePortOverride := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.service.port")
 		if servicePortOverride != "" {
@@ -389,6 +393,16 @@ func composeToServiceValues(
 				)
 			}
 			cService.ServicePort = int32(sPort)
+		}
+		useComposeServices := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.service.usecomposeports")
+		if useComposeServices == "true" {
+			for _, compPort := range composeServiceValues.Ports {
+				newService := AdditionalServicePort{
+					ServicePort: compPort,
+					ServiceName: fmt.Sprintf("%s-%d", composeService, compPort.Target),
+				}
+				cService.AdditionalServicePorts = append(cService.AdditionalServicePorts, newService)
+			}
 		}
 		return cService, nil
 	}

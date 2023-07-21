@@ -3,6 +3,7 @@ package generator
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -10,6 +11,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"sigs.k8s.io/yaml"
 )
 
@@ -50,6 +52,8 @@ type GeneratorInput struct {
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
 	DBaaSClient              *dbaasclient.Client
+	ImageReferences          map[string]string
+	ImagePullSecret          string
 }
 
 func NewGenerator(
@@ -58,6 +62,7 @@ func NewGenerator(
 
 	// create some initial variables to be passed through the generators
 	buildValues := BuildValues{}
+	buildValues.Flags = map[string]bool{}
 	lYAML := &lagoon.YAML{}
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	autogenRoutes := &lagoon.RoutesV2{}
@@ -83,6 +88,11 @@ func NewGenerator(
 	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
+
+	// get the image references values from the build images output
+	buildValues.ImageReferences = generator.ImageReferences
+	// add standard lagoon imagepull secret name
+	buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: "lagoon-internal-registry-secret"})
 
 	// get the project and environment variables
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
@@ -175,6 +185,41 @@ func NewGenerator(
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, generator.Debug)
 	buildValues.IngressClass = ingressClass
+
+	// check for rootless workloads
+	rootlessWorkloads := CheckFeatureFlag("ROOTLESS_WORKLOAD", lagoonEnvVars, generator.Debug)
+	if rootlessWorkloads == "enabled" {
+		buildValues.Flags["rootlessworkloads"] = true
+		buildValues.PodSecurityContext = PodSecurityContext{
+			RunAsGroup: 0,
+			RunAsUser:  10001,
+			FsGroup:    10000,
+		}
+	}
+
+	// check admin features for resources
+	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
+	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)
+	buildValues.Resources.Requests.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_REQUESTS", false)
+	// validate that what is provided
+	if buildValues.Resources.Limits.Memory != "" {
+		err := ValidateResourceQuantity(buildValues.Resources.Limits.Memory)
+		if err != nil {
+			return nil, fmt.Errorf("provided memory limit %s is not a valid resource quantity", buildValues.Resources.Limits.Memory)
+		}
+	}
+	if buildValues.Resources.Limits.EphemeralStorage != "" {
+		err := ValidateResourceQuantity(buildValues.Resources.Limits.EphemeralStorage)
+		if err != nil {
+			return nil, fmt.Errorf("provided ephemeral storage limit %s is not a valid resource quantity", buildValues.Resources.Limits.EphemeralStorage)
+		}
+	}
+	if buildValues.Resources.Requests.EphemeralStorage != "" {
+		err := ValidateResourceQuantity(buildValues.Resources.Requests.EphemeralStorage)
+		if err != nil {
+			return nil, fmt.Errorf("provided  ephemeral storage requests %s is not a valid resource quantity", buildValues.Resources.Requests.EphemeralStorage)
+		}
+	}
 
 	// get any variables from the API here
 	lagoonServiceTypes, _ := lagoon.GetLagoonVariable("LAGOON_SERVICE_TYPES", nil, lagoonEnvVars)
@@ -355,4 +400,31 @@ func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, deb
 	}
 	// otherwise nothing
 	return ""
+}
+
+func CheckAdminFeatureFlag(key string, debug bool) string {
+	if value, ok := os.LookupEnv(fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)); ok {
+		if debug {
+			fmt.Println(fmt.Sprintf("Using admin feature flag value from build variable %s", fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)))
+		}
+		return value
+	}
+	return ""
+}
+
+func ValidateResourceQuantity(s string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				err = errors.New(x)
+			case error:
+				err = x
+			default:
+				err = errors.New(fmt.Sprint(x))
+			}
+		}
+	}()
+	resource.MustParse(s)
+	return nil
 }

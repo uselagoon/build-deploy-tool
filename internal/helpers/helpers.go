@@ -230,12 +230,24 @@ func DeepCopy(src, dist interface{}) (err error) {
 	return nil
 }
 
+// just a generic anything template helper
 func TemplateThings(values, src, dist interface{}) {
 	yb, _ := yaml.Marshal(src)
-	tmpl, _ := template.New("").Parse(string(yb))
+	tmpl, _ := template.New("").Funcs(funcMap).Parse(string(yb))
 	queryBuilder := strings.Builder{}
 	tmpl.Execute(&queryBuilder, values)
 	yaml.Unmarshal([]byte(queryBuilder.String()), &dist)
+}
+
+var funcMap = template.FuncMap{
+	"ToUpper":        strings.ToUpper,
+	"ToLower":        strings.ToLower,
+	"FixServiceName": FixServiceName,
+}
+
+func FixServiceName(str string) string {
+	replaceHyphen := strings.ReplaceAll(str, "-", "_")
+	return strings.ToUpper(replaceHyphen)
 }
 
 func AppendIfMissing(slice []string, i string) []string {
