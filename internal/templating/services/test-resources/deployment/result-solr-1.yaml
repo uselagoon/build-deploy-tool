@@ -1,0 +1,88 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: solr
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: solr-php-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: solr
+    lagoon.sh/service-type: solr-php-persistent
+    lagoon.sh/template: solr-php-persistent-0.1.0
+  name: solr
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: solr
+      app.kubernetes.io/name: solr-php-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c 'tar -cf - -C "/var/solr" --exclude="lost\+found"
+          . || [ $? -eq 1 ]'
+        k8up.syn.tools/file-extension: .solr.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: ""
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: solr
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: solr-php-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: solr
+        lagoon.sh/service-type: solr-php-persistent
+        lagoon.sh/template: solr-php-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        livenessProbe:
+          failureThreshold: 5
+          initialDelaySeconds: 90
+          tcpSocket:
+            port: 8983
+          timeoutSeconds: 3
+        name: solr
+        ports:
+        - containerPort: 8983
+          name: tcp-8983
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 3
+          tcpSocket:
+            port: 8983
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /var/solr
+          name: solr
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: solr
+        persistentVolumeClaim:
+          claimName: solr
+status: {}

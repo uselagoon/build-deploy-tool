@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
@@ -126,7 +127,7 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			want: "test-resources/service/result-elasticsearch-1.yaml",
 		},
 		{
-			name: "test3 - opensearch",
+			name: "test4 - opensearch",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -156,6 +157,84 @@ func TestGenerateServiceTemplate(t *testing.T) {
 				},
 			},
 			want: "test-resources/service/result-opensearch-1.yaml",
+		},
+		{
+			name: "test5 - basic compose ports",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice-po",
+							OverrideName:     "myservice-po",
+							Type:             "basic",
+							DBaaSEnvironment: "development",
+							AdditionalServicePorts: []generator.AdditionalServicePort{
+								generator.AdditionalServicePort{
+									ServicePort: types.ServicePortConfig{
+										Target:   8191,
+										Protocol: "tcp",
+									},
+									ServiceName: "myservice-po-8191",
+								},
+							},
+						},
+						{
+							Name:             "myservice-persist-po",
+							OverrideName:     "myservice-persist-po",
+							Type:             "basic-persistent",
+							DBaaSEnvironment: "development",
+							AdditionalServicePorts: []generator.AdditionalServicePort{
+								generator.AdditionalServicePort{
+									ServicePort: types.ServicePortConfig{
+										Target:   8191,
+										Protocol: "tcp",
+									},
+									ServiceName: "myservice-persist-po-8191",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: "test-resources/service/result-basic-2.yaml",
+		},
+		{
+			name: "test6 - nginx-php",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "nginx-php",
+							DBaaSEnvironment: "development",
+							LinkedService: &generator.ServiceValues{
+								Name:             "myservice-php",
+								OverrideName:     "myservice",
+								Type:             "nginx-php",
+								DBaaSEnvironment: "production",
+							},
+						},
+					},
+				},
+			},
+			want: "test-resources/service/result-nginx-php-1.yaml",
 		},
 	}
 	for _, tt := range tests {

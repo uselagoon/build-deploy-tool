@@ -2,15 +2,18 @@ package services
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/yaml"
 )
 
@@ -36,21 +39,20 @@ func GenerateDeploymentTemplate(
 			// add the default labels
 			labels := map[string]string{
 				"app.kubernetes.io/managed-by": "build-deploy-tool",
+				"app.kubernetes.io/name":       serviceTypeValues.Name,
+				"app.kubernetes.io/instance":   serviceValues.OverrideName,
 				"lagoon.sh/project":            buildValues.Project,
 				"lagoon.sh/environment":        buildValues.Environment,
 				"lagoon.sh/environmentType":    buildValues.EnvironmentType,
 				"lagoon.sh/buildType":          buildValues.BuildType,
-				"app.kubernetes.io/name":       serviceTypeValues.Name,
-				"app.kubernetes.io/instance":   serviceValues.Name,
 				"lagoon.sh/template":           fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
-				"lagoon.sh/service":            serviceValues.Name,
+				"lagoon.sh/service":            serviceValues.OverrideName,
 				"lagoon.sh/service-type":       serviceTypeValues.Name,
 			}
 
 			// add the default annotations
 			annotations := map[string]string{
-				"lagoon.sh/version":      buildValues.LagoonVersion,
-				"lagoon.sh/configMapSha": buildValues.ConfigMapSha,
+				"lagoon.sh/version": buildValues.LagoonVersion,
 			}
 
 			// add any additional labels
@@ -64,13 +66,22 @@ func GenerateDeploymentTemplate(
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
 			}
 
+			templateAnnotations := make(map[string]string)
+			templateAnnotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
+			if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
+				bc := servicetypes.BackupConfiguration{}
+				helpers.TemplateThings(serviceValues, serviceTypeValues.Volumes.BackupConfiguration, &bc)
+				templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
+				templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
+			}
+
 			deployment := &appsv1.Deployment{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Deployment",
 					APIVersion: fmt.Sprintf("%s/%s", appsv1.SchemeGroupVersion.Group, appsv1.SchemeGroupVersion.Version),
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        serviceValues.Name,
+					Name:        serviceValues.OverrideName,
 					Labels:      labels,
 					Annotations: annotations,
 				},
@@ -127,13 +138,13 @@ func GenerateDeploymentTemplate(
 			// validate any annotations
 			if err := apivalidation.ValidateAnnotations(deployment.ObjectMeta.Annotations, nil); err != nil {
 				if len(err) != 0 {
-					return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+					return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 				}
 			}
 			// validate any labels
 			if err := metavalidation.ValidateLabels(deployment.ObjectMeta.Labels, nil); err != nil {
 				if len(err) != 0 {
-					return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+					return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 				}
 			}
 			// check length of labels
@@ -143,11 +154,20 @@ func GenerateDeploymentTemplate(
 			}
 
 			// start deployment template
-			depMeta := metav1.ObjectMeta{
-				Labels:      deployment.ObjectMeta.Labels,
-				Annotations: deployment.ObjectMeta.Annotations,
+			deployment.Spec.Template.ObjectMeta = metav1.ObjectMeta{
+				Labels:      map[string]string{},
+				Annotations: map[string]string{},
 			}
-			deployment.Spec.Template.ObjectMeta = depMeta
+			for key, value := range deployment.ObjectMeta.Labels {
+				deployment.Spec.Template.ObjectMeta.Labels[key] = value
+			}
+			// add any additional annotations
+			for key, value := range deployment.ObjectMeta.Annotations {
+				deployment.Spec.Template.ObjectMeta.Annotations[key] = value
+			}
+			for key, value := range templateAnnotations {
+				deployment.Spec.Template.ObjectMeta.Annotations[key] = value
+			}
 			deployment.Spec.Replicas = helpers.Int32Ptr(1)
 			if serviceValues.Replicas != 0 {
 				deployment.Spec.Replicas = &serviceValues.Replicas
@@ -155,7 +175,7 @@ func GenerateDeploymentTemplate(
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/name":     serviceTypeValues.Name,
-					"app.kubernetes.io/instance": serviceValues.Name,
+					"app.kubernetes.io/instance": serviceValues.OverrideName,
 				},
 			}
 			deployment.Spec.Strategy = serviceTypeValues.Strategy
@@ -165,6 +185,15 @@ func GenerateDeploymentTemplate(
 			deployment.Spec.Template.Spec.EnableServiceLinks = helpers.BoolPtr(false)
 			// set the priority class
 			deployment.Spec.Template.Spec.PriorityClassName = fmt.Sprintf("lagoon-priority-%s", buildValues.EnvironmentType)
+
+			// handle the podescurity from rootless workloads
+			if buildValues.PodSecurityContext.RunAsUser != 0 {
+				deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+					RunAsUser:  helpers.Int64Ptr(buildValues.PodSecurityContext.RunAsUser),
+					RunAsGroup: helpers.Int64Ptr(buildValues.PodSecurityContext.RunAsGroup),
+					FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
+				}
+			}
 
 			// start set up any volumes this deployment can use
 			// first handle any dynamic secret volumes that come from kubernetes secrets that are labeled
@@ -180,6 +209,7 @@ func GenerateDeploymentTemplate(
 				}
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
+
 			// if there is a persistent volume attached to this service, handle adding that here
 			if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
 				volume := corev1.Volume{
@@ -190,9 +220,15 @@ func GenerateDeploymentTemplate(
 						},
 					},
 				}
+				// if this servicetype has defaults, use them if one is not provided
+				if serviceValues.PersistentVolumePath == "" {
+					volume.Name = serviceValues.OverrideName
+					volume.VolumeSource.PersistentVolumeClaim.ClaimName = serviceValues.OverrideName
+				}
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
-			// if there are any specific container overrides provided, handle those here
+
+			// if there are any specific container volume overrides provided, handle those here
 			for _, pcv := range serviceTypeValues.PrimaryContainer.Volumes {
 				volume := corev1.Volume{}
 				helpers.TemplateThings(serviceValues, pcv, &volume)
@@ -203,6 +239,10 @@ func GenerateDeploymentTemplate(
 				helpers.TemplateThings(serviceValues, scv, &volume)
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
+
+			// future handle any additional volume mounts here
+			// @TODO
+
 			// end set up any volumes this deployment can use
 
 			// handle any image pull secrets
@@ -215,35 +255,92 @@ func GenerateDeploymentTemplate(
 			deployment.Spec.Template.Spec.ImagePullSecrets = pullsecrets
 
 			// start working out the containers to add
-			// add any init containers
-			if serviceTypeValues.InitContainer.Name != "" && serviceValues.PodSecurityContext.RunAsUser == 10001 {
+			// add any init container that the service may have
+			if serviceTypeValues.InitContainer.Name != "" {
+				enableInit := false
 				init := serviceTypeValues.InitContainer
-				for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
-					volumeMount := corev1.VolumeMount{}
-					helpers.TemplateThings(serviceValues, svm, &volumeMount)
-					init.Container.VolumeMounts = append(init.Container.VolumeMounts, volumeMount)
+				// check if the init container has any flags required to add it
+				for k, v := range buildValues.Flags {
+					if init.Flags[k] == v {
+						enableInit = true
+					}
 				}
-				cmd := []string{}
-				for _, c := range init.Command {
-					var c2 string
-					helpers.TemplateThings(serviceValues, c, &c2)
-					cmd = append(cmd, c2)
+				// otherwise if there are no flags
+				if enableInit || init.Flags == nil {
+					for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
+						volumeMount := corev1.VolumeMount{}
+						helpers.TemplateThings(serviceValues, svm, &volumeMount)
+						init.Container.VolumeMounts = append(init.Container.VolumeMounts, volumeMount)
+					}
+					cmd := []string{}
+					for _, c := range init.Command {
+						var c2 string
+						helpers.TemplateThings(serviceValues, c, &c2)
+						cmd = append(cmd, c2)
+					}
+					init.Container.Command = cmd
+					deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, init.Container)
 				}
-				init.Container.Command = cmd
-				deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, init.Container)
 			}
 
-			// handle the primary container
+			// handle the primary container for the service type
 			container := serviceTypeValues.PrimaryContainer
-			// if the service can change the port
-			if serviceTypeValues.Ports.CanChangePort {
-				// check if the port override is defined
-				if serviceValues.ServicePort != 0 {
-					// and change the port in the container definition to suit
-					container.Container.ReadinessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
-					container.Container.LivenessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
-					container.Container.ReadinessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
-					container.Container.Ports[0].ContainerPort = serviceValues.ServicePort
+			// if the service is set to consume the additional service ports only, then generate those here
+			if serviceValues.AdditionalServicePorts != nil {
+				// nulify the existing ports
+				container.Container.Ports = []corev1.ContainerPort{}
+				// start compose service port override templating here
+				for idx, addPort := range serviceValues.AdditionalServicePorts {
+					if idx == 0 {
+						// first port in the docker compose file should be a tcp based port (default unless udp or other is provided in the docker-compose file)
+						// the first port in the list will be used for any liveness/readiness probes, and will override the default option the container has
+						switch addPort.ServicePort.Protocol {
+						case "tcp":
+							container.Container.ReadinessProbe = &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(addPort.ServicePort.Target),
+										},
+									},
+								},
+								InitialDelaySeconds: 1, // @TODO make the timeout/delays configurable?
+								TimeoutSeconds:      1,
+							}
+							container.Container.LivenessProbe = &corev1.Probe{
+								ProbeHandler: corev1.ProbeHandler{
+									TCPSocket: &corev1.TCPSocketAction{
+										Port: intstr.IntOrString{
+											Type:   intstr.Int,
+											IntVal: int32(addPort.ServicePort.Target),
+										},
+									},
+								},
+								InitialDelaySeconds: 60, // @TODO make the timeout/delays configurable?
+								TimeoutSeconds:      10,
+							}
+						default:
+							return nil, fmt.Errorf("first port defined is not a tcp port, please ensure the first port is tcp")
+						}
+					}
+					// set the ports into the container
+					container.Container.Ports = append(container.Container.Ports, corev1.ContainerPort{
+						Name:          addPort.ServiceName,
+						ContainerPort: int32(addPort.ServicePort.Target),
+						Protocol:      corev1.Protocol(strings.ToUpper(addPort.ServicePort.Protocol)),
+					})
+				}
+			} else {
+				// otherwise if the service has a default port, and it can be changed, handle changing it here
+				if serviceTypeValues.Ports.CanChangePort {
+					// check if the port override is defined
+					if serviceValues.ServicePort != 0 {
+						// and change the port in the container definition to suit
+						container.Container.ReadinessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
+						container.Container.LivenessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
+						container.Container.Ports[0].ContainerPort = serviceValues.ServicePort
+					}
 				}
 			}
 
@@ -293,6 +390,11 @@ func GenerateDeploymentTemplate(
 					Name:      serviceValues.PersistentVolumeName,
 					MountPath: serviceValues.PersistentVolumePath,
 				}
+				// if this servicetype has a default volume path, use them it if one isn't provided
+				if serviceValues.PersistentVolumePath == "" {
+					volumeMount.MountPath = serviceTypeValues.Volumes.PersistentVolumePath
+					volumeMount.Name = serviceValues.OverrideName
+				}
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
 			for _, svm := range serviceTypeValues.PrimaryContainer.VolumeMounts {
@@ -300,6 +402,41 @@ func GenerateDeploymentTemplate(
 				helpers.TemplateThings(serviceValues, svm, &volumeMount)
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+			if serviceValues.PersistentVolumeName != "" && serviceValues.PersistentVolumePath != "" && serviceTypeValues.Volumes.PersistentVolumeSize == "" {
+				container.Container.VolumeMounts = append(container.Container.VolumeMounts, corev1.VolumeMount{
+					Name:      serviceValues.PersistentVolumeName,
+					MountPath: serviceValues.PersistentVolumePath,
+				})
+				volume := corev1.Volume{
+					Name: serviceValues.PersistentVolumeName,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: serviceValues.PersistentVolumeName,
+						},
+					},
+				}
+				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
+			}
+
+			if buildValues.Resources.Limits.Memory != "" {
+				if container.Container.Resources.Limits == nil {
+					container.Container.Resources.Limits = corev1.ResourceList{}
+				}
+				container.Container.Resources.Limits[corev1.ResourceMemory] = resource.MustParse(buildValues.Resources.Limits.Memory)
+			}
+			if buildValues.Resources.Limits.EphemeralStorage != "" {
+				if container.Container.Resources.Limits == nil {
+					container.Container.Resources.Limits = corev1.ResourceList{}
+				}
+				container.Container.Resources.Limits[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Limits.EphemeralStorage)
+			}
+			if buildValues.Resources.Requests.EphemeralStorage != "" {
+				if container.Container.Resources.Requests == nil {
+					container.Container.Resources.Requests = corev1.ResourceList{}
+				}
+				container.Container.Resources.Requests[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Requests.EphemeralStorage)
+			}
+
 			// append the final defined container to the spec
 			deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, container.Container)
 
@@ -374,49 +511,4 @@ func GenerateDeploymentTemplate(
 		}
 	}
 	return result, nil
-}
-
-// LinkedServiceCalculator checks the provided services to see if there are any linked services
-// linked services are mostly just `nginx-php` but lagoon has the possibility to support more than this in the future
-func LinkedServiceCalculator(services []generator.ServiceValues) []generator.ServiceValues {
-	linkedMap := make(map[string][]generator.ServiceValues)
-	retServices := []generator.ServiceValues{}
-	linkedOrder := []string{}
-
-	// go over the services twice to extract just the linked services (the override names will be the same in a linked service)
-	for _, s1 := range services {
-		for _, s2 := range services {
-			if s1.OverrideName == s2.OverrideName && s1.Name != s2.Name {
-				linkedMap[s1.OverrideName] = append(linkedMap[s1.OverrideName], s1)
-				linkedOrder = helpers.AppendIfMissing(linkedOrder, s1.OverrideName)
-			}
-		}
-	}
-	// go over the services again and any that are in the services that aren't in the linked map (again the override name is the key)
-	// add it as a standalone service
-	for _, s1 := range services {
-		if _, ok := linkedMap[s1.OverrideName]; !ok {
-			retServices = append(retServices, s1)
-		}
-	}
-
-	// go over the linked services and add the linkedservice to the main service
-	// example would be adding the `php` service in docker-compose to the `nginx` service as a `LinkedService` definition
-	// this allows the generated service values to carry across
-	for _, name := range linkedOrder {
-		service := generator.ServiceValues{}
-		if len(linkedMap[name]) == 2 {
-			for idx, s := range linkedMap[name] {
-				if idx == 0 {
-					service = s
-				}
-				if idx == 1 {
-					service.LinkedService = &s
-				}
-			}
-		}
-		// then add it to the slice of services to return
-		retServices = append(retServices, service)
-	}
-	return retServices
 }

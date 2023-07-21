@@ -46,19 +46,17 @@ func TestGeneratePVCTemplate(t *testing.T) {
 							ServicePort:      8080,
 						},
 						{
-							Name:                 "myservice-persist",
-							OverrideName:         "myservice-persist",
-							Type:                 "basic-persistent",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeSize: "5Gi",
+							Name:             "myservice-persist",
+							OverrideName:     "myservice-persist",
+							Type:             "basic-persistent",
+							DBaaSEnvironment: "development",
 						},
 						{
-							Name:                 "myservice-persist-po",
-							OverrideName:         "myservice-persist-po",
-							Type:                 "basic-persistent",
-							DBaaSEnvironment:     "development",
-							ServicePort:          8080,
-							PersistentVolumeSize: "5Gi",
+							Name:             "myservice-persist-po",
+							OverrideName:     "myservice-persist-po",
+							Type:             "basic-persistent",
+							DBaaSEnvironment: "development",
+							ServicePort:      8080,
 						},
 						{
 							Name:                 "myservice-persist-po",
@@ -74,7 +72,7 @@ func TestGeneratePVCTemplate(t *testing.T) {
 			want: "test-resources/pvc/result-basic-1.yaml",
 		},
 		{
-			name: "test2 - cli",
+			name: "test2 - cli (no volumes)",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -117,11 +115,10 @@ func TestGeneratePVCTemplate(t *testing.T) {
 					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
-							Name:                 "myservice",
-							OverrideName:         "myservice",
-							Type:                 "elasticsearch",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeSize: "5Gi",
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "elasticsearch",
+							DBaaSEnvironment: "development",
 						},
 						{
 							Name:                 "myservice-size",
@@ -149,11 +146,10 @@ func TestGeneratePVCTemplate(t *testing.T) {
 					Branch:          "environment-name",
 					Services: []generator.ServiceValues{
 						{
-							Name:                 "myservice",
-							OverrideName:         "myservice",
-							Type:                 "opensearch",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeSize: "5Gi",
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "opensearch",
+							DBaaSEnvironment: "development",
 						},
 						{
 							Name:                 "myservice-size",
@@ -166,6 +162,30 @@ func TestGeneratePVCTemplate(t *testing.T) {
 				},
 			},
 			want: "test-resources/pvc/result-opensearch-1.yaml",
+		},
+		{
+			name: "test5 - postgres-single",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "postgres-single",
+							DBaaSEnvironment: "development",
+						},
+					},
+				},
+			},
+			want: "test-resources/pvc/result-postgres-single-1.yaml",
 		},
 	}
 	for _, tt := range tests {

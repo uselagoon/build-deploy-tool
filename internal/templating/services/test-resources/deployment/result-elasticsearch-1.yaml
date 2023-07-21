@@ -1,0 +1,172 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: elasticsearch
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: elasticsearch
+    lagoon.sh/template: elasticsearch-0.1.0
+  name: myservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/name: elasticsearch
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "tar -cf - -C /usr/share/elasticsearch/data
+          ."
+        k8up.syn.tools/file-extension: .myservice.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: ""
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: elasticsearch
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice
+        lagoon.sh/service-type: elasticsearch
+        lagoon.sh/template: elasticsearch-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        name: ""
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: myservice
+      enableServiceLinks: false
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |-
+          set -xe
+          DESIRED="262144"
+          CURRENT=$(sysctl -n vm.max_map_count)
+          if [ "$DESIRED" -gt "$CURRENT" ]; then
+            sysctl -w vm.max_map_count=$DESIRED
+          fi
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        name: set-max-map-count
+        resources: {}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: myservice
+        persistentVolumeClaim:
+          claimName: myservice
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-size
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: elasticsearch
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-size
+    lagoon.sh/service-type: elasticsearch
+    lagoon.sh/template: elasticsearch-0.1.0
+  name: myservice-size
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-size
+      app.kubernetes.io/name: elasticsearch
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "tar -cf - -C /usr/share/elasticsearch/data
+          ."
+        k8up.syn.tools/file-extension: .myservice-size.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: ""
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-size
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: elasticsearch
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-size
+        lagoon.sh/service-type: elasticsearch
+        lagoon.sh/template: elasticsearch-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        name: ""
+        resources: {}
+        volumeMounts:
+        - mountPath: /usr/share/elasticsearch/data
+          name: myservice-size
+      enableServiceLinks: false
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |-
+          set -xe
+          DESIRED="262144"
+          CURRENT=$(sysctl -n vm.max_map_count)
+          if [ "$DESIRED" -gt "$CURRENT" ]; then
+            sysctl -w vm.max_map_count=$DESIRED
+          fi
+        image: busybox:latest
+        imagePullPolicy: IfNotPresent
+        name: set-max-map-count
+        resources: {}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: myservice-size
+        persistentVolumeClaim:
+          claimName: myservice-size
+status: {}

@@ -26,7 +26,6 @@ spec:
   resources:
     requests:
       storage: 5Gi
-  storageClassName: bulk
 status: {}
 ---
 apiVersion: v1
@@ -56,5 +55,4 @@ spec:
   resources:
     requests:
       storage: 100Gi
-  storageClassName: bulk
 status: {}

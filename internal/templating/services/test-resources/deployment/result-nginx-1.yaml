@@ -4,7 +4,6 @@ kind: Deployment
 metadata:
   annotations:
     lagoon.sh/branch: environment-name
-    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
@@ -74,7 +73,10 @@ spec:
             port: 50000
           initialDelaySeconds: 1
           timeoutSeconds: 3
-        resources: {}
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10M
       - env:
         - name: NGINX_FASTCGI_PASS
           value: 127.0.0.1
@@ -99,11 +101,18 @@ spec:
           periodSeconds: 10
           tcpSocket:
             port: 9000
-        resources: {}
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10000
+        runAsGroup: 0
+        runAsUser: 10001
 status: {}
 ---
 apiVersion: apps/v1
@@ -111,26 +120,25 @@ kind: Deployment
 metadata:
   annotations:
     lagoon.sh/branch: environment-name
-    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: nginx2
+    app.kubernetes.io/instance: nginx-2
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: nginx-php-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: nginx2
+    lagoon.sh/service: nginx-2
     lagoon.sh/service-type: nginx-php-persistent
     lagoon.sh/template: nginx-php-persistent-0.1.0
-  name: nginx2
+  name: nginx-2
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: nginx2
+      app.kubernetes.io/instance: nginx-2
       app.kubernetes.io/name: nginx-php-persistent
   strategy: {}
   template:
@@ -141,14 +149,14 @@ spec:
         lagoon.sh/version: v2.x.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: nginx2
+        app.kubernetes.io/instance: nginx-2
         app.kubernetes.io/managed-by: build-deploy-tool
         app.kubernetes.io/name: nginx-php-persistent
         lagoon.sh/buildType: branch
         lagoon.sh/environment: environment-name
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: nginx2
+        lagoon.sh/service: nginx-2
         lagoon.sh/service-type: nginx-php-persistent
         lagoon.sh/template: nginx-php-persistent-0.1.0
     spec:
@@ -181,7 +189,10 @@ spec:
             port: 50000
           initialDelaySeconds: 1
           timeoutSeconds: 3
-        resources: {}
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10M
         volumeMounts:
         - mountPath: /storage/data
           name: nginx2
@@ -209,16 +220,40 @@ spec:
           periodSeconds: 10
           tcpSocket:
             port: 9000
-        resources: {}
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
         volumeMounts:
         - mountPath: /storage/data
           name: nginx2
-        - mountPath: nginx2/php
+        - mountPath: /storage/data/php
           name: nginx2-twig
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - "set -e\nSENTINEL=\"/storage/.lagoon-rootless-migration-complete\"\nif !
+          [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 0:0 {} +\n\tfind
+          /storage -exec chmod a+r,u+w {} +\n\tfind /storage -type d -exec chmod a+x
+          {} +\n\ttouch \"$SENTINEL\"\nfi"
+        image: busybox:musl
+        imagePullPolicy: IfNotPresent
+        name: fix-storage-permissions
+        resources: {}
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /storage
+          name: nginx2
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10000
+        runAsGroup: 0
+        runAsUser: 10001
       volumes:
       - name: nginx2
         persistentVolumeClaim:

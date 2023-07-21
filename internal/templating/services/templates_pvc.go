@@ -48,26 +48,32 @@ func GeneratePVCTemplate(
 
 	}
 
+	// check linked services
+	checkedServices := LinkedServiceCalculator(buildValues.Services)
+
 	// for all the services that the build values generated
-	// iterate over them and generate any kubernetes pvcs
-	for _, serviceValues := range buildValues.Services {
+	// iterate over them and generate any kubernetes services
+	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			if val.Volumes.PersistentVolumeSize != "" {
-				if serviceValues.PersistentVolumeSize == "" {
-					return nil, fmt.Errorf("no persistent volume size defined for this service")
+				serviceTypeValues := &servicetypes.ServiceType{}
+				helpers.DeepCopy(val, serviceTypeValues)
+				persistentVolumeSize := serviceTypeValues.Volumes.PersistentVolumeSize
+				if serviceValues.PersistentVolumeSize != "" {
+					persistentVolumeSize = serviceValues.PersistentVolumeSize
 				}
 				serviceType := &servicetypes.ServiceType{}
 				helpers.DeepCopy(val, serviceType)
 
 				var pvcBytes []byte
 				additionalLabels["app.kubernetes.io/name"] = serviceType.Name
-				additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
+				additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
 				additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceType.Name, "0.1.0")
-				additionalLabels["lagoon.sh/service"] = serviceValues.Name
+				additionalLabels["lagoon.sh/service"] = serviceValues.OverrideName
 				additionalLabels["lagoon.sh/service-type"] = serviceType.Name
 
-				additionalAnnotations["k8up.syn.tools/backup"] = strconv.FormatBool(val.Volumes.Backup)
-				additionalAnnotations["k8up.io/backup"] = strconv.FormatBool(val.Volumes.Backup)
+				additionalAnnotations["k8up.syn.tools/backup"] = strconv.FormatBool(serviceTypeValues.Volumes.Backup)
+				additionalAnnotations["k8up.io/backup"] = strconv.FormatBool(serviceTypeValues.Volumes.Backup)
 
 				pvc := &corev1.PersistentVolumeClaim{
 					TypeMeta: metav1.TypeMeta{
@@ -75,7 +81,7 @@ func GeneratePVCTemplate(
 						APIVersion: corev1.SchemeGroupVersion.Version,
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: serviceValues.Name,
+						Name: serviceValues.OverrideName,
 					},
 				}
 				pvc.ObjectMeta.Labels = labels
@@ -90,13 +96,13 @@ func GeneratePVCTemplate(
 				// validate any annotations
 				if err := apivalidation.ValidateAnnotations(pvc.ObjectMeta.Annotations, nil); err != nil {
 					if len(err) != 0 {
-						return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+						return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 					}
 				}
 				// validate any labels
 				if err := metavalidation.ValidateLabels(pvc.ObjectMeta.Labels, nil); err != nil {
 					if len(err) != 0 {
-						return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+						return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 					}
 				}
 				// check length of labels
@@ -106,21 +112,23 @@ func GeneratePVCTemplate(
 				}
 
 				// start PVC template
-				q, err := resource.ParseQuantity(serviceValues.PersistentVolumeSize)
+				q, err := resource.ParseQuantity(persistentVolumeSize)
 				if err != nil {
 					return nil, fmt.Errorf("provided persistent volume size is not valid: %v", err)
 				}
 				volumeSize, _ := q.AsInt64()
 				pvc.Spec = corev1.PersistentVolumeClaimSpec{
 					AccessModes: []corev1.PersistentVolumeAccessMode{
-						val.Volumes.PersistentVolumeType,
+						serviceTypeValues.Volumes.PersistentVolumeType,
 					},
-					StorageClassName: helpers.StrPtr("bulk"),
 					Resources: corev1.ResourceRequirements{
 						Requests: corev1.ResourceList{
 							"storage": *resource.NewQuantity(volumeSize, resource.BinarySI),
 						},
 					},
+				}
+				if serviceTypeValues.Volumes.PersistentVolumeType == corev1.ReadWriteMany {
+					pvc.Spec.StorageClassName = helpers.StrPtr("bulk")
 				}
 				// end PVC template
 

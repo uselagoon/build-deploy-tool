@@ -4,7 +4,6 @@ kind: Deployment
 metadata:
   annotations:
     lagoon.sh/branch: environment-name
-    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
@@ -54,12 +53,38 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice@latest
-        name: ""
-        resources: {}
+        name: cli
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
+      volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
 status: {}
 ---
 apiVersion: apps/v1
@@ -67,7 +92,6 @@ kind: Deployment
 metadata:
   annotations:
     lagoon.sh/branch: environment-name
-    lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
@@ -117,10 +141,45 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice-persistent@latest
-        name: ""
-        resources: {}
+        name: cli
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
+        - mountPath: /storage/data/php
+          name: nginx-php-twig
+        - mountPath: /storage/data
+          name: nginx-php
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
+      volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
+      - emptyDir: {}
+        name: nginx-php-twig
+      - name: nginx-php
+        persistentVolumeClaim:
+          claimName: nginx-php
 status: {}
