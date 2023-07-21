@@ -29,13 +29,21 @@ type ServiceContainer struct {
 	Volumes      []corev1.Volume
 	VolumeMounts []corev1.VolumeMount
 	Command      []string
+	Flags        map[string]bool
 }
 
 type ServiceVolume struct {
-	PersistentVolumeSize string
-	PersistentVolumePath string
-	PersistentVolumeType corev1.PersistentVolumeAccessMode
-	Backup               bool
+	PersistentVolumeSize   string
+	PersistentVolumePath   string
+	PersistentVolumeType   corev1.PersistentVolumeAccessMode
+	SourceFromOtherService string
+	Backup                 bool
+	BackupConfiguration    BackupConfiguration
+}
+
+type BackupConfiguration struct {
+	Command       string
+	FileExtension string
 }
 
 type ServicePorts struct {
@@ -50,15 +58,22 @@ var ServiceTypes = map[string]ServiceType{
 	"cli":                  cli,
 	"cli-persistent":       cliPersistent,
 	"elasticsearch":        elasticsearch,
-	"opensearch":           opensearch,
 	"mariadb-single":       mariadbSingle,
 	"mongodb-single":       mongodbSingle,
-	"postgres-single":      postgresSingle,
-	"node":                 node,
-	"node-persistent":      nodePersistent,
-	"python":               python,
-	"python-persistent":    pythonPersistent,
 	"nginx":                nginx,
 	"nginx-php":            nginxPHP,
 	"nginx-php-persistent": nginxPHPPersistent,
+	"node":                 node,
+	"node-persistent":      nodePersistent,
+	"opensearch":           opensearch,
+	"postgres-single":      postgresSingle,
+	"python":               python,
+	"python-persistent":    pythonPersistent,
+	"redis":                redis,
+	"redis-persistent":     redisPersistent,
+	"varnish":              varnish,
+	"varnish-persistent":   varnishPersistent,
+	"solr":                 solr,
+	"worker":               worker,
+	"worker-persistent":    workerPersistent,
 }

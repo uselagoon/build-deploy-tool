@@ -1,35 +1,49 @@
 package servicetypes
 
 import (
-	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var postgresSingle = ServiceType{
-	Name: "postgres-single",
+var varnish = ServiceType{
+	Name: "varnish",
 	Ports: ServicePorts{
+		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
-				Port: 5432,
+				Port: 8080,
 				TargetPort: intstr.IntOrString{
-					Type:   intstr.Int,
-					IntVal: 5432,
+					Type:   intstr.String,
+					StrVal: "http",
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "5432-tcp",
+				Name:     "http",
+			},
+			{
+				Port: 6082,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.String,
+					StrVal: "controlport",
+				},
+				Protocol: corev1.ProtocolTCP,
+				Name:     "controlport",
 			},
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "postgres",
+		Name:            "varnish",
 		ImagePullPolicy: corev1.PullAlways,
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "5432-tcp",
-					ContainerPort: 5432,
+					Name:          "http",
+					ContainerPort: 8080,
+					Protocol:      corev1.ProtocolTCP,
+				},
+				{
+					Name:          "controlport",
+					ContainerPort: 6082,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -38,7 +52,7 @@ var postgresSingle = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 5432,
+							IntVal: 8080,
 						},
 					},
 				},
@@ -50,12 +64,12 @@ var postgresSingle = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 5432,
+							IntVal: 8080,
 						},
 					},
 				},
-				InitialDelaySeconds: 120,
-				PeriodSeconds:       5,
+				InitialDelaySeconds: 60,
+				TimeoutSeconds:      10,
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -65,19 +79,17 @@ var postgresSingle = ServiceType{
 			},
 		},
 	},
-	PodSecurityContext: ServicePodSecurityContext{
-		HasDefault: true,
-		FSGroup:    0,
-	},
-	Strategy: appsv1.DeploymentStrategy{
-		Type: appsv1.RecreateDeploymentStrategyType,
-	},
+}
+
+var varnishPersistent = ServiceType{
+	Name:  "varnish-persistent",
+	Ports: varnish.Ports,
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
-		PersistentVolumePath: "/var/lib/postgresql/data",
+		PersistentVolumePath: "/var/cache/varnish",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "PGPASSWORD=${{ .OverrideName | FixServiceName }}_PASSWORD pg_dump --host=localhost --port=${{ .OverrideName | FixServiceName }}_SERVICE_PORT --dbname=${{ .OverrideName | FixServiceName }}_DB --username=${{ .OverrideName | FixServiceName }}_USER --format=t -w"`,
+			Command:       `/bin/sh -c "/bin/busybox tar -cf - -C /var/cache/varnish ."`,
 			FileExtension: ".{{ .OverrideName }}.tar",
 		},
 	},

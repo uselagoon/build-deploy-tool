@@ -24,5 +24,9 @@ var mongodbSingle = ServiceType{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/data/db",
+		BackupConfiguration: BackupConfiguration{
+			Command:       `/bin/sh -c 'tar -cf - -C "/data/db" --exclude="lost\+found" . || [ $? -eq 1 ]'`,
+			FileExtension: ".{{ .OverrideName }}.tar",
+		},
 	},
 }

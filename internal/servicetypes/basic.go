@@ -2,6 +2,7 @@ package servicetypes
 
 import (
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -56,13 +57,10 @@ var basic = ServiceType{
 				InitialDelaySeconds: 60,
 				TimeoutSeconds:      10,
 			},
-			EnvFrom: []corev1.EnvFromSource{
-				{
-					ConfigMapRef: &corev1.ConfigMapEnvSource{
-						LocalObjectReference: corev1.LocalObjectReference{
-							Name: "lagoon-env",
-						},
-					},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("10m"),
+					corev1.ResourceMemory: resource.MustParse("100M"),
 				},
 			},
 		},
@@ -72,6 +70,11 @@ var basic = ServiceType{
 var basicPersistent = ServiceType{
 	Name:  "basic-persistent",
 	Ports: basic.Ports,
+	PrimaryContainer: ServiceContainer{
+		Name:            basic.PrimaryContainer.Name,
+		ImagePullPolicy: basic.PrimaryContainer.ImagePullPolicy,
+		Container:       basic.PrimaryContainer.Container,
+	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteMany,

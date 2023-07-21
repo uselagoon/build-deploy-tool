@@ -24,5 +24,9 @@ var mariadbSingle = ServiceType{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/var/lib/mysql",
+		BackupConfiguration: BackupConfiguration{
+			Command:       `/bin/sh -c 'mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --all-databases'`,
+			FileExtension: ".{{ .OverrideName }}.sql",
+		},
 	},
 }

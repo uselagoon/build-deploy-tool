@@ -3,6 +3,7 @@ package servicetypes
 import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
@@ -59,6 +60,12 @@ var nginx = ServiceType{
 				TimeoutSeconds:      3,
 				FailureThreshold:    5,
 			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("10m"),
+					corev1.ResourceMemory: resource.MustParse("10M"),
+				},
+			},
 		},
 	},
 }
@@ -110,6 +117,12 @@ var nginxPHP = ServiceType{
 					Value: "127.0.0.1",
 				},
 			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("10m"),
+					corev1.ResourceMemory: resource.MustParse("10M"),
+				},
+			},
 		},
 	},
 	SecondaryContainer: ServiceContainer{
@@ -153,6 +166,12 @@ var nginxPHP = ServiceType{
 					Value: "127.0.0.1",
 				},
 			},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse("10m"),
+					corev1.ResourceMemory: resource.MustParse("100M"),
+				},
+			},
 		},
 	},
 }
@@ -167,6 +186,9 @@ var nginxPHPPersistent = ServiceType{
 	},
 	InitContainer: ServiceContainer{
 		Name: "fix-storage-permissions",
+		Flags: map[string]bool{
+			"rootlessworkloads": true,
+		},
 		Command: []string{
 			"sh",
 			"-c",
@@ -214,7 +236,7 @@ fi`,
 		VolumeMounts: []corev1.VolumeMount{
 			{
 				Name:      "{{ .PersistentVolumeName }}-twig",
-				MountPath: "{{ .PersistentVolumeName }}/php",
+				MountPath: "{{ .PersistentVolumePath }}/php",
 			},
 		},
 	},
