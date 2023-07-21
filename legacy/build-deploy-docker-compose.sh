@@ -1075,6 +1075,7 @@ else
 # end custom route
 fi
 
+## TODO: remove this entire for loop as it won't be required once dbaas consumers are created via the go templating engine
 for SERVICE_TYPES_ENTRY in "${SERVICE_TYPES[@]}"
 do
   echo "=== BEGIN route processing for service ${SERVICE_TYPES_ENTRY} ==="
@@ -1086,12 +1087,6 @@ do
   SERVICE_TYPE=${SERVICE_TYPES_ENTRY_SPLIT[1]}
 
   touch /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
-
-  HELM_SERVICE_TEMPLATE="templates/service.yaml"
-  if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_SERVICE_TEMPLATE ]; then
-    cat /kubectl-build-deploy/values.yaml
-    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
-  fi
 
   HELM_DBAAS_TEMPLATE="templates/dbaas.yaml"
   if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_DBAAS_TEMPLATE ]; then
@@ -1530,6 +1525,21 @@ do
 done
 
 set +x
+
+# generate a map of servicename>imagename+hash json for the build-deploy-tool to use when templating
+# this reduces the need for the crazy logic with how services are currently mapped together in the case of nginx-php type deploymentss
+touch /kubectl-build-deploy/images.yaml
+for COMPOSE_SERVICE in "${COMPOSE_SERVICES[@]}"
+do
+  SERVICE_NAME_IMAGE_HASH="${IMAGE_HASHES[${COMPOSE_SERVICE}]}"
+  yq3 write -i -- /kubectl-build-deploy/images.yaml 'images.'$COMPOSE_SERVICE'' ${SERVICE_NAME_IMAGE_HASH}
+done
+
+echo "=== BEGIN deployment template for services ==="
+LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
+mkdir -p $LAGOON_SERVICES_YAML_FOLDER
+build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images $(yq3 r -j /kubectl-build-deploy/images.yaml | jq -M -c | base64 -w0)
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
 previousStepEnd=${currentStepEnd}
@@ -1553,8 +1563,18 @@ if [ "$(ls -A $YAML_FOLDER/)" ]; then
     find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
   fi
 
-  find $YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+  if [ "$(ls -A $YAML_FOLDER)" ]; then
+    # TODO: this will only be cronjobs until cronjobs are done via the go templating system
+    find $YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+  fi
+
+  # cat $LAGOON_SERVICES_YAML_FOLDER/services.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
+  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/services.yaml
+  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
+  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
 fi
 set -x
 
