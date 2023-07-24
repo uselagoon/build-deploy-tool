@@ -38,6 +38,7 @@ func TestGeneratePreBackupPod(t *testing.T) {
 							OverrideName:     "mariadb-database",
 							Type:             "mariadb-dbaas",
 							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
 						},
 					},
 					Backup: generator.BackupConfiguration{
@@ -65,6 +66,7 @@ func TestGeneratePreBackupPod(t *testing.T) {
 							OverrideName:     "postgres-database",
 							Type:             "postgres-dbaas",
 							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
 						},
 					},
 					Backup: generator.BackupConfiguration{
@@ -92,6 +94,7 @@ func TestGeneratePreBackupPod(t *testing.T) {
 							OverrideName:     "mongodb-database",
 							Type:             "mongodb-dbaas",
 							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
 						},
 					},
 					Backup: generator.BackupConfiguration{

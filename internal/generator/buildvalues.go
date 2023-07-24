@@ -48,7 +48,6 @@ type BuildValues struct {
 	TaskScaleMaxIterations        int                         `json:"taskScaleMaxIterations"`
 	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
-	DBaaSReadReplicas             map[string]bool             `json:"dbaasReadReplicas"`
 }
 
 type Fastly struct {

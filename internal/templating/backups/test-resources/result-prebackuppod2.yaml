@@ -15,9 +15,10 @@ metadata:
     prebackuppod: postgres-database
   name: postgres-database-prebackuppod
 spec:
-  backupCommand: /bin/sh -c "PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST
-    --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME --username=$BACKUP_DB_USERNAME
-    --format=t -w"
+  backupCommand: /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo
+    $BACKUP_DB_READREPLICAS | cut -d ',' -f1); fi && PGPASSWORD=$BACKUP_DB_PASSWORD
+    pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME
+    --username=$BACKUP_DB_USERNAME --format=t -w"
   fileExtension: .postgres-database.tar
   pod:
     metadata:
@@ -53,6 +54,11 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: POSTGRES_DATABASE_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_READREPLICAS
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_READREPLICAS
               name: lagoon-env
         image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
         imagePullPolicy: Always

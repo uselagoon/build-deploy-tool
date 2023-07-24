@@ -11,6 +11,7 @@ import (
 
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
+	v1 "k8s.io/api/core/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
@@ -89,6 +90,20 @@ func GeneratePreBackupPod(
 				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
+				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil {
+					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
+						Name: "BACKUP_DB_READREPLICAS",
+						ValueFrom: &v1.EnvVarSource{
+							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+								Key: fmt.Sprintf("%s_READREPLICAS", varFix(serviceValues.OverrideName)),
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: "lagoon-env",
+								},
+							},
+						},
+					})
+				}
+
 				for key, value := range additionalLabels {
 					prebackuppod.ObjectMeta.Labels[key] = value
 				}
@@ -159,6 +174,20 @@ func GeneratePreBackupPod(
 				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
+				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
+					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
+						Name: "BACKUP_DB_READREPLICAS",
+						ValueFrom: &v1.EnvVarSource{
+							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+								Key: fmt.Sprintf("%s_READREPLICAS", serviceValues.OverrideName),
+								LocalObjectReference: v1.LocalObjectReference{
+									Name: "lagoon-env",
+								},
+							},
+						},
+					})
+				}
+
 				for key, value := range additionalLabels {
 					prebackuppod.ObjectMeta.Labels[key] = value
 				}
@@ -228,7 +257,9 @@ type PreBackupPods map[string]string
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated
 var preBackupPodSpecs = PreBackupPods{
 	"mariadb-dbaas": `backupCommand: >-
-  /bin/sh -c "dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events
+  /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
+  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1)
+  fi && dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events
   --routines --quick --add-locks --no-autocommit --single-transaction
   --no-create-db --no-data -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME
   -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE > $dump && mysqldump
@@ -268,7 +299,7 @@ pod:
       image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
-	"postgres-dbaas": `backupCommand: /bin/sh -c "PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME --username=$BACKUP_DB_USERNAME --format=t -w"
+	"postgres-dbaas": `backupCommand: /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1); fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME --username=$BACKUP_DB_USERNAME --format=t -w"
 fileExtension: .{{ .Name }}.tar
 pod:
   spec:
