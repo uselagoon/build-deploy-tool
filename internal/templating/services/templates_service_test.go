@@ -199,6 +199,13 @@ func TestGenerateServiceTemplate(t *testing.T) {
 									},
 									ServiceName: "myservice-persist-po-8191",
 								},
+								generator.AdditionalServicePort{
+									ServicePort: types.ServicePortConfig{
+										Target:   8192,
+										Protocol: "tcp",
+									},
+									ServiceName: "myservice-persist-po-8192",
+								},
 							},
 						},
 					},

@@ -58,10 +58,11 @@ func GenerateServiceTemplate(
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			if serviceValues.AdditionalServicePorts != nil {
 				// if the service is set to consume the additional services only, then generate those here
-				for _, addPort := range serviceValues.AdditionalServicePorts {
+				for idx, addPort := range serviceValues.AdditionalServicePorts {
 					// copy the service type so we can transform it as required
 					serviceType := &servicetypes.ServiceType{}
 					helpers.DeepCopy(val, serviceType)
+					addPort.Index = idx
 					restoreResult, err := GenerateService(result, serviceType, serviceValues, addPort, labels, annotations, additionalLabels, additionalAnnotations)
 					if err != nil {
 						return nil, err
@@ -103,7 +104,7 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 			Name: serviceValues.OverrideName,
 		},
 	}
-	if portOverride.ServiceName != "" {
+	if portOverride.ServiceName != "" && portOverride.Index != 0 {
 		service.ObjectMeta.Name = portOverride.ServiceName
 	}
 	service.ObjectMeta.Labels = labels

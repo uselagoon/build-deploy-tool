@@ -17,7 +17,7 @@ metadata:
     lagoon.sh/service: node
     lagoon.sh/service-type: basic
     lagoon.sh/template: basic-0.1.0
-  name: node-1234
+  name: node
 spec:
   ports:
   - name: node-1234
