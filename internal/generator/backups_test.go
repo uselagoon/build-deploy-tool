@@ -541,6 +541,122 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test15 - baas bucket name",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Project:         "example-project",
+					Namespace:       "example-com-main",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_BAAS_BUCKET_NAME",
+						Value: "mybucket",
+						Scope: "global",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Project:         "example-project",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 4 * * 0",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "mybucket",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test16 - baas bucket name with shared",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Project:         "example-project",
+					Namespace:       "example-com-main",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_BAAS_BUCKET_NAME",
+						Value: "mybucket",
+						Scope: "global",
+					},
+					{
+						Name:  "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET",
+						Value: "baas-cluster-bucket",
+						Scope: "internal_system",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Project:         "example-project",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 4 * * 0",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "mybucket",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test17 - shared baas bucket name",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:       "branch",
+					EnvironmentType: "development",
+					Project:         "example-project",
+					Namespace:       "example-com-main",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET",
+						Value: "baas-cluster-bucket",
+						Scope: "internal_system",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:       "branch",
+				EnvironmentType: "development",
+				Project:         "example-project",
+				Namespace:       "example-com-main",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 4 * * 0",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-cluster-bucket/baas-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

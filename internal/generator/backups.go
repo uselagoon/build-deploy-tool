@@ -161,7 +161,12 @@ func generateBackupValues(
 	if lagoonBaaSBackupBucket != nil {
 		buildValues.Backup.S3BucketName = lagoonBaaSBackupBucket.Value
 	} else {
-		buildValues.Backup.S3BucketName = fmt.Sprintf("%s-%s", baasBucketPrefix, buildValues.Project)
+		lagoonSharedBaasBucket, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_PROJECT_SHARED_BUCKET", []string{"internal_system"}, mergedVariables)
+		if lagoonSharedBaasBucket != nil {
+			buildValues.Backup.S3BucketName = fmt.Sprintf("%s/%s-%s", lagoonSharedBaasBucket.Value, baasBucketPrefix, buildValues.Project)
+		} else {
+			buildValues.Backup.S3BucketName = fmt.Sprintf("%s-%s", baasBucketPrefix, buildValues.Project)
+		}
 	}
 
 	// check for custom baas backup variables in the API

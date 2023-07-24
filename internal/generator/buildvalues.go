@@ -48,6 +48,7 @@ type BuildValues struct {
 	TaskScaleMaxIterations        int                         `json:"taskScaleMaxIterations"`
 	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
+	DBaaSReadReplicas             map[string]bool             `json:"dbaasReadReplicas"`
 }
 
 type Fastly struct {
@@ -88,6 +89,7 @@ type ServiceValues struct {
 	CronjobNodeSelectors          *map[string]string       `json:"cronjobNodeSelectors"`
 	CronjobTolerations            *[]corev1.Toleration     `json:"cronjobTolerations"`
 	CronjobAffinity               *corev1.Affinity         `json:"cronjobAffinity"`
+	DBaasReadReplica              bool                     `json:"dBaasReadReplica"`
 }
 
 // CronjobValues is the values for cronjobs
