@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -195,22 +196,26 @@ func composeToServiceValues(
 		// work out cronjobs for this service
 		inpodcronjobs := []lagoon.Cronjob{}
 		nativecronjobs := []lagoon.Cronjob{}
-		for _, cronjob := range lYAML.Environments[buildValues.Branch].Cronjobs {
-			// if this cronjob is meant for this service, add it
-			if cronjob.Service == composeService {
-				var err error
-				inpod, err := helpers.IsInPodCronjob(cronjob.Schedule)
-				if err != nil {
-					return ServiceValues{}, fmt.Errorf("Unable to validate crontab for cronjob %s: %v", cronjob.Name, err)
-				}
-				cronjob.Schedule, err = helpers.ConvertCrontab(buildValues.Namespace, cronjob.Schedule)
-				if err != nil {
-					return ServiceValues{}, fmt.Errorf("Unable to convert crontab for cronjob %s: %v", cronjob.Name, err)
-				}
-				if inpod {
-					inpodcronjobs = append(inpodcronjobs, cronjob)
-				} else {
-					nativecronjobs = append(nativecronjobs, cronjob)
+		if !buildValues.CronjobsDisabled {
+			for _, cronjob := range lYAML.Environments[buildValues.Branch].Cronjobs {
+				// if this cronjob is meant for this service, add it
+				if cronjob.Service == composeService {
+					var err error
+					inpod, err := helpers.IsInPodCronjob(cronjob.Schedule)
+					if err != nil {
+						return ServiceValues{}, fmt.Errorf("Unable to validate crontab for cronjob %s: %v", cronjob.Name, err)
+					}
+					cronjob.Schedule, err = helpers.ConvertCrontab(buildValues.Namespace, cronjob.Schedule)
+					if err != nil {
+						return ServiceValues{}, fmt.Errorf("Unable to convert crontab for cronjob %s: %v", cronjob.Name, err)
+					}
+					if inpod {
+						inpodcronjobs = append(inpodcronjobs, cronjob)
+					} else {
+						// make the cronjob name kubernetes compliant
+						cronjob.Name = regexp.MustCompile(`[^a-zA-Z0-9]+`).ReplaceAllString(fmt.Sprintf("cronjob-%s-%s", lagoonOverrideName, strings.ToLower(cronjob.Name)), "-")
+						nativecronjobs = append(nativecronjobs, cronjob)
+					}
 				}
 			}
 		}

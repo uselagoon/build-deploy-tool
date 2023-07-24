@@ -46,7 +46,17 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route, 
 	// check the `LAGOON_FASTLY_SERVICE_IDS` to see if we have a domain specific override
 	// this is useful if all domains are using the nocache service, but you have a specific domain that should use a different service
 	// and you haven't defined it in the lagoon.yml file
-	// see section `FASTLY SERVICE ID PER INGRESS OVERRIDE` in `build-deploy-docker-compose.sh` for info on `LAGOON_FASTLY_SERVICE_IDS`
+	// # FASTLY SERVICE ID PER INGRESS OVERRIDE FROM LAGOON API VARIABLE
+	// # Allow the fastly serviceid for specific ingress to be overridden by the lagoon API
+	// # This accepts colon separated values like so `INGRESS_DOMAIN:FASTLY_SERVICE_ID:WATCH_STATUS:SECRET_NAME(OPTIONAL)`, and multiple overrides
+	// # separated by commas
+	// # Example 1: www.example.com:x1s8asfafasf7ssf:true
+	// # ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
+	// # Example 2: www.example.com:x1s8asfafasf7ssf:true,www.not-example.com:fa23rsdgsdgas:false
+	// # ^^^ same as above, but also tells the ingress creation to use the service id fa23rsdgsdgas for ingress www.not-example.com, with the watch status of false
+	// # Example 3: www.example.com:x1s8asfafasf7ssf:true:examplecom
+	// # ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
+	// # but it will also be annotated to be told to use the secret named `examplecom` that could be defined elsewhere
 	lfsIDs, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_IDS", []string{"build", "global"}, variables)
 	if err == nil {
 		lfsIDsSplit := strings.Split(lfsIDs.Value, ",")

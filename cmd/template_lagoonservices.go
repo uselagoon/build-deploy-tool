@@ -69,6 +69,11 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "deployments"), deploymentTemplateYAML)
+	cronjobTemplateYaml, err := servicestemplates.GenerateCronjobTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "cronjobs"), cronjobTemplateYaml)
 	return nil
 }
 

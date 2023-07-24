@@ -55,6 +55,7 @@ type BuildValues struct {
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
 	ImageReferences               map[string]string           `json:"imageReferences"`
 	Resources                     Resources                   `json:"resources"`
+	CronjobsDisabled              bool                        `json:"cronjobsDisabled"`
 	Flags                         map[string]bool             `json:"-"`
 }
 
