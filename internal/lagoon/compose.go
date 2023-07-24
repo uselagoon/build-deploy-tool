@@ -1,6 +1,7 @@
 package lagoon
 
 import (
+	"errors"
 	"fmt"
 	"os"
 
@@ -8,6 +9,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	composetypes "github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v2"
+	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
 type OriginalServiceOrder struct {
@@ -57,11 +59,33 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, erro
 		// extract the services only
 		if item.Key.(string) == "services" {
 			for idx, v := range item.Value.(goyaml.MapSlice) {
+				if err := CheckServiceNameValidity(v); err != nil {
+					return nil, err
+				}
 				l = append(l, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
 			}
 		}
 	}
 	return l, nil
+}
+
+// Checks the validity of the service name against the RFC1035 DNS label standard
+func CheckServiceNameValidity(v goyaml.MapItem) error {
+	// go over the service map looking for the labels slice
+	for _, s := range v.Value.(goyaml.MapSlice) {
+		if s.Key == "labels" {
+			// go over the labels looking for the lagoon.type label
+			for _, label := range s.Value.(goyaml.MapSlice) {
+				// check if the lagoon.type != none
+				if label.Key == "lagoon.type" && label.Value != "none" {
+					if err := utilvalidation.IsDNS1035Label(v.Key.(string)); err != nil {
+						return errors.New("Service name is invalid. Please refer to the documentation regarding service naming requirements")
+					}
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // CheckServiceLagoonLabel checks the labels in a compose service to see if the requested label exists, and returns the value if so

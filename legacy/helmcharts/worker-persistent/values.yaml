@@ -52,7 +52,7 @@ cronjobAffinity: {}
 
 inPodCronjobs: ""
 
-nativeinPodCronjobs: ""
+nativeCronjobs: {}
 
 configMapSha: ""
 

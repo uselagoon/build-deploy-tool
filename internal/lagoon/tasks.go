@@ -111,9 +111,6 @@ func getConfig() (*rest.Config, error) {
 
 // ExecuteTaskInEnvironment .
 func ExecuteTaskInEnvironment(task Task) error {
-	if debug {
-		fmt.Printf("Executing task '%v':'%v'\n", task.Name, task.Command)
-	}
 	command := make([]string, 0, 5)
 	if task.Shell != "" {
 		command = append(command, task.Shell)
@@ -124,10 +121,10 @@ func ExecuteTaskInEnvironment(task Task) error {
 	command = append(command, "-c")
 	command = append(command, task.Command)
 
-	stdout, stderr, err := ExecPod(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
+	stdout, stderr, err := ExecTaskInPod(task, command, false) //(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
 
 	if err != nil {
-		fmt.Printf("*** Task '%v' failed - STDOUT and STDERR follows ***\n", task.Name)
+		fmt.Printf("Failed to execute task `%v` due to reason `%v`\n", task.Name, err.Error())
 	}
 
 	if len(stdout) > 0 {
@@ -140,13 +137,11 @@ func ExecuteTaskInEnvironment(task Task) error {
 	return err
 }
 
-// ExecPod .
-func ExecPod(
-	podName, namespace string,
+// ExecTaskInPod .
+func ExecTaskInPod(
+	task Task,
 	command []string,
 	tty bool,
-	container string,
-	waitTime, maxIterations int,
 ) (string, string, error) {
 
 	restCfg, err := getConfig()
@@ -159,9 +154,9 @@ func ExecPod(
 		return "", "", fmt.Errorf("unable to create client: %v", err)
 	}
 
-	depClient := clientset.AppsV1().Deployments(namespace)
+	depClient := clientset.AppsV1().Deployments(task.Namespace)
 
-	lagoonServiceLabel := "lagoon.sh/service=" + podName
+	lagoonServiceLabel := "lagoon.sh/service=" + task.Service
 
 	deployments, err := depClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
@@ -180,13 +175,13 @@ func ExecPod(
 	podReady := false
 	numIterations := 1
 	for ; !podReady; numIterations++ {
-		if numIterations >= maxIterations { //break if there's some reason we can't scale the pod
+		if numIterations >= task.ScaleMaxIterations { //break if there's some reason we can't scale the pod
 			return "", "", errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, maxIterations))
+			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, task.ScaleMaxIterations))
 
-			scale, err := clientset.AppsV1().Deployments(namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
+			scale, err := clientset.AppsV1().Deployments(task.Namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
 			}
@@ -195,7 +190,7 @@ func ExecPod(
 				scale.Spec.Replicas = 1
 				depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
 			}
-			time.Sleep(time.Second * time.Duration(waitTime))
+			time.Sleep(time.Second * time.Duration(task.ScaleWaitTime))
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
 				return "", "", err
@@ -207,7 +202,7 @@ func ExecPod(
 
 	//grab pod - for now we'll copy precisely what the build script does and use the labels
 
-	podClient := clientset.CoreV1().Pods(namespace)
+	podClient := clientset.CoreV1().Pods(task.Namespace)
 	clientList, err := podClient.List(context.TODO(), v1.ListOptions{
 		LabelSelector: lagoonServiceLabel,
 	})
@@ -220,10 +215,10 @@ func ExecPod(
 	foundRunningPod := false
 	for _, i2 := range clientList.Items {
 		if i2.Status.Phase == "Running" && i2.ObjectMeta.DeletionTimestamp == nil {
-			if container != "" {
+			if task.Container != "" {
 				//is this container contained herein?
 				for _, c := range i2.Spec.Containers {
-					if c.Name != container {
+					if c.Name != task.Container {
 						continue
 					}
 				}
@@ -235,16 +230,21 @@ func ExecPod(
 	}
 	if !foundRunningPod {
 		return "", "", &PodScalingError{
-			ErrorText: "Unable to find running Pod for namespace: " + namespace,
+			ErrorText: "Unable to find running Pod for namespace: " + task.Namespace,
 		}
 	}
 	if debug {
-		fmt.Println("Going to exec into ", pod.Name)
+		podName := pod.Name
+		if task.Container != "" {
+			podName = fmt.Sprintf("%v/%v", podName, task.Container)
+		}
+		fmt.Printf("Executing task '%v' in pod %v \n", task.Name, podName)
 	}
+
 	req := clientset.CoreV1().RESTClient().Post().
 		Resource("pods").
 		Name(pod.Name).
-		Namespace(namespace).
+		Namespace(task.Namespace).
 		SubResource("exec")
 
 	scheme := runtime.NewScheme()
@@ -258,7 +258,7 @@ func ExecPod(
 
 	parameterCodec := runtime.NewParameterCodec(scheme)
 	req.VersionedParams(&corev1.PodExecOptions{
-		Container: container,
+		Container: task.Container,
 		Command:   command,
 		Stdout:    true,
 		Stderr:    true,
