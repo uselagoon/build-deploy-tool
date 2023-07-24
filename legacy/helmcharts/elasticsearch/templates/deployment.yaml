@@ -26,6 +26,8 @@ spec:
         {{- end }}
       annotations:
         {{- include "elasticsearch.annotations" . | nindent 8 }}
+        k8up.syn.tools/backupcommand: /bin/sh -c "tar -cf - -C {{ .Values.persistentStorage.path }} ."
+        k8up.syn.tools/file-extension: .{{ include "elasticsearch.fullname" . }}.tar
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
     spec:
     {{- with .Values.imagePullSecrets }}
@@ -84,7 +86,7 @@ spec:
                 name: lagoon-env
           env:
             - name: CRONJOBS
-              value: {{ .Values.inPodCronjobs | quote }}
+              value: {{ .Values.inPodCronjobs | toYaml | indent 14 | trim }}
           volumeMounts:
             - name: {{ include "elasticsearch.persistentStorageName" . }}
               mountPath: {{ .Values.persistentStorage.path | quote }}

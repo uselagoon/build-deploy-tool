@@ -187,6 +187,7 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
   # create it
   kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy=${DOCKER_COMPOSE_YAML}
 fi
+
 set +ex
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
@@ -213,7 +214,36 @@ You can run docker compose config locally to check that your docker-compose file
   exit 1
 fi
 set -ex
-# validate .lagoon.yml
+
+set +ex
+##############################################
+### RUN lagoon-yml validation against the final data which may have overrides
+### from .lagoon.override.yml file or LAGOON_YAML_OVERRIDE environment variable
+##############################################
+lyvOutput=$(bash -c 'build-deploy-tool validate lagoon-yml; exit $?' 2>&1)
+lyvExit=$?
+
+if [ "${lyvExit}" != "0" ]; then
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  previousStepEnd=${currentStepEnd}
+  echo "
+##############################################
+Warning!
+There are issues with your .lagoon.yml file that must be fixed.
+Refer to the .lagoon.yml docs for the correct syntax
+https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
+##############################################
+"
+  echo "${lyvOutput}"
+  echo "
+##############################################"
+  exit 1
+fi
+set -ex
+
+# Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
+# aren't in build-deploy-tool.
 if ! lagoon-linter; then
 	echo "https://docs.lagoon.sh/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
 	echo "If you require assistance to fix this error, please contact support."
@@ -320,6 +350,13 @@ do
     SERVICE_TYPE="python"
   fi
 
+  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/PreBackupPod" ]]; then
+    if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
+      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "$SERVICE_NAME" &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "$SERVICE_NAME"
+      fi
+    fi
+  fi
 
   if [ "$SERVICE_TYPE" == "none" ]; then
     continue
@@ -387,28 +424,28 @@ readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o
 ### BUILD IMAGES
 ##############################################
 
+set +x # reduce noise in build logs
+# Get the pre-rollout and post-rollout vars
+  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+    LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+    LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+  fi
+  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+    TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+    TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+    if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+      LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
+    fi
+    if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+      LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
+    fi
+  fi
+set -x
+
 # we only need to build images for pullrequests and branches
 if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
   BUILD_ARGS=()
-
-  set +x # reduce noise in build logs
-  # Get the pre-rollout and post-rollout vars
-    if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-      LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-    fi
-    if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-      TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-      TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-      if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-        LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-      fi
-      if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-        LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-      fi
-    fi
-  set -x
 
   set +x # reduce noise in build logs
   # Add environment variables from lagoon API as build args
@@ -646,6 +683,12 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSIO
 if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT" ]; then
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.memory' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT"
 fi
+if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS" ]; then
+  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.requests.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS"
+fi
+if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT" ]; then
+  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT"
+fi
 # check for ROOTLESS_WORKLOAD feature flag, disabled by default
 
 set +x
@@ -851,9 +894,25 @@ set -x
 ##############################################
 ### CREATE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
 ##############################################
+# start custom routes disabled
+AUTOGEN_ROUTES_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+  AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
+fi
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  TEMP_AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_AUTOGEN_ROUTES_DISABLED ]; then
+    AUTOGEN_ROUTES_DISABLED=$TEMP_AUTOGEN_ROUTES_DISABLED
+  fi
+fi
 
 # generate the autogenerated ingress
+if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
 build-deploy-tool template autogenerated-ingress
+else
+  echo ">> Autogenerated ingress templates disabled for this build"
+# end custom route
+fi
 
 # generate the dbaas templates if any
 build-deploy-tool template dbaas
@@ -882,7 +941,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration"
-set -x
 
 TEMPLATE_PARAMETERS=()
 
@@ -891,21 +949,50 @@ TEMPLATE_PARAMETERS=()
 ##############################################
 
 # Run the route generation process
-build-deploy-tool template ingress
 
-set +x
+# start custom routes disabled
+CUSTOM_ROUTES_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+  CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
+fi
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  TEMP_CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_CUSTOM_ROUTES_DISABLED ]; then
+    CUSTOM_ROUTES_DISABLED=$TEMP_CUSTOM_ROUTES_DISABLED
+  fi
+fi
+
+if [ ! "$CUSTOM_ROUTES_DISABLED" == true ]; then
+build-deploy-tool template ingress
+else
+  echo ">> Custom ingress templates disabled for this build"
+# end custom route
+fi
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration"
-set -x
-
 
 # Run the backup generation script
-. /kubectl-build-deploy/scripts/exec-backup-generation.sh
+BACKUPS_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
+  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+fi 
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
+  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
+    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
+  fi 
+fi 
+
+if [ ! "$BACKUPS_DISABLED" == true ]; then
+  . /kubectl-build-deploy/scripts/exec-backup-generation.sh
+else
+  echo ">> Backup configurations disabled for this build"
+fi
 
 # check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-set +x
 if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
 	# add namespace isolation network policy to deployment
 	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
@@ -938,6 +1025,10 @@ set -x
 ROUTE=$(build-deploy-tool identify primary-ingress)
 if [ ! -z "${ROUTE}" ]; then
   ROUTE=${ROUTE}
+fi
+# if both route generations are disabled, don't set a route
+if [[ "$CUSTOM_ROUTES_DISABLED" == true ]] && [[ "$AUTOGEN_ROUTES_DISABLED" == true ]]; then
+  ROUTE=""
 fi
 
 # Load all routes with correct schema and comma separated
@@ -1200,6 +1291,19 @@ do
   #   TEMPLATE_PARAMETERS+=(-p DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY}")
   # fi
 
+  # start cronjob disabled
+  CRONJOBS_DISABLED=false
+  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+    CRONJOBS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
+  fi
+  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+    TEMP_CRONJOBS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
+    if [ ! -z $TEMP_CRONJOBS_DISABLED ]; then
+      CRONJOBS_DISABLED=$TEMP_CRONJOBS_DISABLED
+    fi
+  fi
+
+  if [ ! "$CRONJOBS_DISABLED" == true ]; then
   CRONJOB_COUNTER=0
   CRONJOBS_ARRAY_INSIDE_POD=()   #crons run inside an existing pod more frequently than every 15 minutes
   while [ -n "$(cat .lagoon.yml | shyaml keys environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER 2> /dev/null)" ]
@@ -1249,6 +1353,11 @@ do
   else
     yq3 write -i --tag '!!str' -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' ''
   fi
+
+  else
+    echo ">> Cronjob configurations disabled for this build"
+  fi
+  # end cronjob disabled
 
   . /kubectl-build-deploy/scripts/exec-kubectl-resources-with-images.sh
 

@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set +x
 ##############################################
 #   it is possible to override the retention using a variable defined in the api
 #
@@ -104,7 +103,16 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     BAAS_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_BAAS_BUCKET_NAME") | "\(.value)"')
   fi
   if [ -z $BAAS_BUCKET_NAME ]; then
-    BAAS_BUCKET_NAME=baas-${PROJECT}
+    # check for shared/cluster scoped bucket
+    # use build scope for now for testing
+    SHARED_BUCKET_NAME=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "internal_system" and .name == "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET") | "\(.value)"')
+    if [ -z $SHARED_BUCKET_NAME ]; then
+      # if no shared bucketname, create as normal
+      BAAS_BUCKET_NAME=baas-${PROJECT}
+    else
+      # if shared, create using shared bucketname
+      BAAS_BUCKET_NAME=${SHARED_BUCKET_NAME}/baas-${PROJECT}
+    fi
   fi
 
   # Pull in .lagoon.yml variables
@@ -326,5 +334,3 @@ if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
     --set customBackupLocation.accessKey="${BAAS_CUSTOM_BACKUP_ACCESS_KEY}" \
     --set customBackupLocation.secretKey="${BAAS_CUSTOM_BACKUP_SECRET_KEY}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/k8up-lagoon-backup-schedule.yaml
 fi
-
-set -x

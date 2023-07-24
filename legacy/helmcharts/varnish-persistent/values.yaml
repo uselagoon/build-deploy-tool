@@ -79,6 +79,8 @@ affinity: {}
 
 cronjobAffinity: {}
 
+nativeCronjobs: {}
+
 configMapSha: ""
 
 useSpot: false
