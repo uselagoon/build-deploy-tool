@@ -1382,148 +1382,6 @@ set -x
 ##############################################
 ### CREATE PVC, DEPLOYMENTS AND CRONJOBS
 ##############################################
-
-YAML_FOLDER="/kubectl-build-deploy/lagoon/deploymentconfigs-pvcs-cronjobs-backups"
-mkdir -p $YAML_FOLDER
-
-for SERVICE_TYPES_ENTRY in "${SERVICE_TYPES[@]}"
-do
-  IFS=':' read -ra SERVICE_TYPES_ENTRY_SPLIT <<< "$SERVICE_TYPES_ENTRY"
-
-  SERVICE_NAME=${SERVICE_TYPES_ENTRY_SPLIT[0]}
-  SERVICE_TYPE=${SERVICE_TYPES_ENTRY_SPLIT[1]}
-
-  SERVICE_NAME_IMAGE="${MAP_SERVICE_NAME_TO_IMAGENAME[${SERVICE_NAME}]}"
-  SERVICE_NAME_IMAGE_HASH="${IMAGE_HASHES[${SERVICE_NAME_IMAGE}]}"
-
-  SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
-
-  COMPOSE_SERVICE=${MAP_SERVICE_TYPE_TO_COMPOSE_SERVICE["${SERVICE_TYPES_ENTRY}"]}
-
-  # Some Templates need additonal Parameters, like where persistent storage can be found.
-  HELM_SET_VALUES=()
-
-  # PERSISTENT_STORAGE_CLASS=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.class false)
-  # if [ ! $PERSISTENT_STORAGE_CLASS == "false" ]; then
-  #     TEMPLATE_PARAMETERS+=(-p PERSISTENT_STORAGE_CLASS="${PERSISTENT_STORAGE_CLASS}")
-  # fi
-
-  PERSISTENT_STORAGE_SIZE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.size false)
-  if [ ! $PERSISTENT_STORAGE_SIZE == "false" ]; then
-    HELM_SET_VALUES+=(--set "persistentStorage.size=${PERSISTENT_STORAGE_SIZE}")
-  fi
-
-  PERSISTENT_STORAGE_PATH=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent false)
-  if [ ! $PERSISTENT_STORAGE_PATH == "false" ]; then
-    HELM_SET_VALUES+=(--set "persistentStorage.path=${PERSISTENT_STORAGE_PATH}")
-
-    PERSISTENT_STORAGE_NAME=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.name false)
-    if [ ! $PERSISTENT_STORAGE_NAME == "false" ]; then
-      HELM_SET_VALUES+=(--set "persistentStorage.name=${PERSISTENT_STORAGE_NAME}")
-    else
-      HELM_SET_VALUES+=(--set "persistentStorage.name=${SERVICE_NAME}")
-    fi
-  fi
-
-  # all our templates appear to support this if they have a service defined in them, but only `basic` properly supports this
-  # as all services will get re-written in the future into build-deploy-tool, just handle basic only for now and don't
-  # support it in other templates (yet)
-  if  [[ "$SERVICE_TYPE" == "basic" ]] ||
-      [[ "$SERVICE_TYPE" == "basic-persistent" ]]; then
-    SERVICE_PORT_NUMBER=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.service\\.port false)
-    if [ ! $SERVICE_PORT_NUMBER == "false" ]; then
-      # check if the port provided is actually a number
-      if ! [[ $SERVICE_PORT_NUMBER =~ ^[0-9]+$ ]] ; then
-        echo "Provided service port is not a number"; exit 1;
-      fi
-      HELM_SET_VALUES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
-    fi
-  fi
-
-  # handle spot configurations
-  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
-
-  # handle dynamically added secrets
-  . /kubectl-build-deploy/scripts/exec-dynamic-secret-volumes.sh
-
-# TODO: we don't need this anymore
-  # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)
-  # if [ ! $DEPLOYMENT_STRATEGY == "false" ]; then
-  #   TEMPLATE_PARAMETERS+=(-p DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY}")
-  # fi
-
-  # start cronjob disabled
-  CRONJOBS_DISABLED=false
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    CRONJOBS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
-  fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    TEMP_CRONJOBS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
-    if [ ! -z $TEMP_CRONJOBS_DISABLED ]; then
-      CRONJOBS_DISABLED=$TEMP_CRONJOBS_DISABLED
-    fi
-  fi
-
-  if [ ! "$CRONJOBS_DISABLED" == true ]; then
-  CRONJOB_COUNTER=0
-  CRONJOBS_ARRAY_INSIDE_POD=()   #crons run inside an existing pod more frequently than every 15 minutes
-  while [ -n "$(cat .lagoon.yml | shyaml keys environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER 2> /dev/null)" ]
-  do
-
-    CRONJOB_SERVICE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.service)
-
-    # Only implement the cronjob for the services we are currently handling
-    if [ $CRONJOB_SERVICE == $SERVICE_NAME ]; then
-
-      CRONJOB_NAME=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.name | sed "s/[^[:alnum:]-]/-/g" | sed "s/^-//g")
-
-      CRONJOB_SCHEDULE_RAW=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.schedule)
-
-      # Convert the Cronjob Schedule for additional features and better spread
-      CRONJOB_SCHEDULE=$( /kubectl-build-deploy/scripts/convert-crontab.sh "${NAMESPACE}" "$CRONJOB_SCHEDULE_RAW")
-      CRONJOB_COMMAND=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.command)
-
-      if cronScheduleMoreOftenThan30Minutes "$CRONJOB_SCHEDULE_RAW" ; then
-        # If this cronjob is more often than 30 minutes, we run the cronjob inside the pod itself
-        CRONJOBS_ARRAY_INSIDE_POD+=("${CRONJOB_SCHEDULE} ${CRONJOB_COMMAND}")
-      else
-        # This cronjob runs less ofen than every 30 minutes, we create a kubernetes native cronjob for it.
-
-        # Add this cronjob to the native cleanup array, this will remove native cronjobs at the end of this script
-        NATIVE_CRONJOB_CLEANUP_ARRAY+=($(echo "cronjob-${SERVICE_NAME}-${CRONJOB_NAME}" | awk '{print tolower($0)}'))
-        # kubectl stores this cronjob name lowercased
-
-        # if [ ! -f $OPENSHIFT_TEMPLATE ]; then
-        #   echo "No cronjob support for service '${SERVICE_NAME}' with type '${SERVICE_TYPE}', please contact the Lagoon maintainers to implement cronjob support"; exit 1;
-        # else
-
-        yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "nativeCronjobs.${CRONJOB_NAME,,}.schedule" "$CRONJOB_SCHEDULE"
-        yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "nativeCronjobs.${CRONJOB_NAME,,}.command" "$CRONJOB_COMMAND"
-
-        # fi
-      fi
-    fi
-
-    let CRONJOB_COUNTER=CRONJOB_COUNTER+1
-  done
-
-
-  # if there are cronjobs running inside pods, add them to the deploymentconfig.
-  if [[ ${#CRONJOBS_ARRAY_INSIDE_POD[@]} -ge 1 ]]; then
-    yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' "$(printf '%s\n' "${CRONJOBS_ARRAY_INSIDE_POD[@]}")"
-  else
-    yq3 write -i --tag '!!str' -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' ''
-  fi
-
-  else
-    echo ">> Cronjob configurations disabled for this build"
-  fi
-  # end cronjob disabled
-
-  . /kubectl-build-deploy/scripts/exec-kubectl-resources-with-images.sh
-
-done
-
 set +x
 
 # generate a map of servicename>imagename+hash json for the build-deploy-tool to use when templating
@@ -1551,30 +1409,29 @@ set -x
 ##############################################
 
 set +x
-if [ "$(ls -A $YAML_FOLDER/)" ]; then
+if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
   if [ "$CI" == "true" ]; then
     # During CI tests of Lagoon itself we only have a single compute node, so we change podAntiAffinity to podAffinity
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/podAntiAffinity/podAffinity/g
+    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/podAntiAffinity/podAffinity/g
     # During CI tests of Lagoon itself we only have a single compute node, so we change ReadWriteMany to ReadWriteOnce
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
+    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
   fi
   if [ "$(featureFlag RWX_TO_RWO)" = enabled ]; then
     # If there is only a single compute node, this can be used to change RWX to RWO
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
+    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
   fi
 
-  if [ "$(ls -A $YAML_FOLDER)" ]; then
-    # TODO: this will only be cronjobs until cronjobs are done via the go templating system
-    find $YAML_FOLDER -type f -exec cat {} \;
-    kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
-  fi
+  echo "=== deployment templates for services ==="
+  ls -A $LAGOON_SERVICES_YAML_FOLDER
 
   # cat $LAGOON_SERVICES_YAML_FOLDER/services.yaml
   # cat $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
   # cat $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/cronjobs.yaml
   kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/services.yaml
   kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
   kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
+  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/cronjobs.yaml
 fi
 set -x
 
@@ -1630,6 +1487,7 @@ CURRENT_CRONJOBS=$(kubectl -n ${NAMESPACE} get cronjobs --no-headers | cut -d " 
 
 IFS=' ' read -a SPLIT_CURRENT_CRONJOBS <<< $CURRENT_CRONJOBS
 
+NATIVE_CRONJOB_CLEANUP_ARRAY=($(build-deploy-tool identify native-cronjobs | jq -r '.[]'))
 for SINGLE_NATIVE_CRONJOB in ${SPLIT_CURRENT_CRONJOBS[@]}
 do
   re="\<$SINGLE_NATIVE_CRONJOB\>"
