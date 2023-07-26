@@ -192,8 +192,8 @@ func NewGenerator(
 		buildValues.Flags["rootlessworkloads"] = true
 		buildValues.PodSecurityContext = PodSecurityContext{
 			RunAsGroup: 0,
-			RunAsUser:  10001,
-			FsGroup:    10000,
+			RunAsUser:  10000,
+			FsGroup:    10001,
 		}
 	}
 
