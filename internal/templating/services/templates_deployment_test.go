@@ -135,8 +135,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup: 0,
-						RunAsUser:  10001,
-						FsGroup:    10000,
+						RunAsUser:  10000,
+						FsGroup:    10001,
 					},
 					GitSha:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
