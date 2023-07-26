@@ -81,9 +81,9 @@ spec:
           priorityClassName: lagoon-priority-production
           restartPolicy: Never
           securityContext:
-            fsGroup: 10000
+            fsGroup: 10001
             runAsGroup: 0
-            runAsUser: 10001
+            runAsUser: 10000
           volumes:
           - name: lagoon-sshkey
             secret:

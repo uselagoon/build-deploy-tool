@@ -110,9 +110,9 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
 status: {}
 ---
 apiVersion: apps/v1
@@ -251,9 +251,9 @@ spec:
           name: nginx2
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
       volumes:
       - name: nginx2
         persistentVolumeClaim:

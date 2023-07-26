@@ -56,40 +56,26 @@ func GenerateServiceTemplate(
 	// iterate over them and generate any kubernetes services
 	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
-			if serviceValues.AdditionalServicePorts != nil {
-				// if the service is set to consume the additional services only, then generate those here
-				for idx, addPort := range serviceValues.AdditionalServicePorts {
-					// copy the service type so we can transform it as required
-					serviceType := &servicetypes.ServiceType{}
-					helpers.DeepCopy(val, serviceType)
-					addPort.Index = idx
-					restoreResult, err := GenerateService(result, serviceType, serviceValues, addPort, labels, annotations, additionalLabels, additionalAnnotations)
-					if err != nil {
-						return nil, err
-					}
-					result = append(result, restoreResult[:]...)
-				}
-			} else {
-				// if the service default has no ports, then don't generate any services
-				if val.Ports.Ports != nil {
-					// otherwise handle creating the default service port here
-					// copy the service type so we can transform it as required
-					serviceType := &servicetypes.ServiceType{}
-					helpers.DeepCopy(val, serviceType)
-					restoreResult, err := GenerateService(result, serviceType, serviceValues, generator.AdditionalServicePort{}, labels, annotations, additionalLabels, additionalAnnotations)
-					if err != nil {
-						return nil, err
-					}
-					result = append(result, restoreResult[:]...)
-				}
+			serviceType := &servicetypes.ServiceType{}
+			helpers.DeepCopy(val, serviceType)
+			restoreResult, err := GenerateService(result, serviceType, serviceValues, labels, annotations, additionalLabels, additionalAnnotations)
+			if err != nil {
+				return nil, err
 			}
+			result = append(result, restoreResult[:]...)
 		}
 	}
 	return result, nil
 }
 
-func GenerateService(result []byte, serviceType *servicetypes.ServiceType, serviceValues generator.ServiceValues, portOverride generator.AdditionalServicePort, labels, annotations, additionalLabels, additionalAnnotations map[string]string) ([]byte, error) {
+func GenerateService(result []byte, serviceType *servicetypes.ServiceType, serviceValues generator.ServiceValues, labels, annotations, additionalLabels, additionalAnnotations map[string]string) ([]byte, error) {
+	if serviceValues.AdditionalServicePorts == nil && serviceType.Ports.Ports == nil {
+		// there are no additional ports provided, and this servicetype has no default ports associated to it
+		// just drop out
+		return nil, nil
+	}
 	var serviceBytes []byte
+
 	additionalLabels["app.kubernetes.io/name"] = serviceType.Name
 	additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
 	additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceType.Name, "0.1.0")
@@ -103,9 +89,6 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 		ObjectMeta: metav1.ObjectMeta{
 			Name: serviceValues.OverrideName,
 		},
-	}
-	if portOverride.ServiceName != "" && portOverride.Index != 0 {
-		service.ObjectMeta.Name = portOverride.ServiceName
 	}
 	service.ObjectMeta.Labels = labels
 	service.ObjectMeta.Annotations = annotations
@@ -142,17 +125,27 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 	}
 
 	// start compose service port override templating here
-	if portOverride.ServicePort.Target != 0 {
-		switch portOverride.ServicePort.Protocol {
-		case "udp":
-			serviceType.Ports.Ports[0].Protocol = corev1.ProtocolUDP
+	if serviceValues.AdditionalServicePorts != nil {
+		// blank out the provided ports from the servicetype
+		serviceType.Ports.Ports = nil
+		// if the service is set to consume the additional services only, then generate those here
+		for _, addPort := range serviceValues.AdditionalServicePorts {
+			port := corev1.ServicePort{
+				Protocol: corev1.ProtocolTCP,
+				Name:     addPort.ServiceName,
+				TargetPort: intstr.IntOrString{
+					StrVal: addPort.ServiceName,
+					Type:   intstr.String,
+				},
+				Port: int32(addPort.ServicePort.Target),
+			}
+			// set protocol to anything but tcp if required
+			switch addPort.ServicePort.Protocol {
+			case "udp":
+				port.Protocol = corev1.ProtocolUDP
+			}
+			serviceType.Ports.Ports = append(serviceType.Ports.Ports, port)
 		}
-		serviceType.Ports.Ports[0].Name = portOverride.ServiceName
-		serviceType.Ports.Ports[0].TargetPort = intstr.IntOrString{
-			StrVal: portOverride.ServiceName,
-			Type:   intstr.String,
-		}
-		serviceType.Ports.Ports[0].Port = int32(portOverride.ServicePort.Target)
 	}
 	// end compose service port override templating here
 

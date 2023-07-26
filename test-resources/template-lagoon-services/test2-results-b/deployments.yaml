@@ -86,9 +86,9 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
       volumes:
       - name: lagoon-sshkey
         secret:
@@ -178,9 +178,9 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
 status: {}
 ---
 apiVersion: apps/v1
@@ -263,9 +263,9 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
 status: {}
 ---
 apiVersion: apps/v1
@@ -388,7 +388,7 @@ spec:
         - sh
         - -c
         - "set -e\nSENTINEL=\"/storage/.lagoon-rootless-migration-complete\"\nif !
-          [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 10001:0 {} +\n\tfind
+          [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 10000:0 {} +\n\tfind
           /storage -exec chmod a+r,u+w {} +\n\tfind /storage -type d -exec chmod a+x
           {} +\n\ttouch \"$SENTINEL\"\nfi"
         image: busybox:musl
@@ -402,9 +402,9 @@ spec:
           name: nginx-php
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10000
+        fsGroup: 10001
         runAsGroup: 0
-        runAsUser: 10001
+        runAsUser: 10000
       volumes:
       - name: nginx-php
         persistentVolumeClaim:
