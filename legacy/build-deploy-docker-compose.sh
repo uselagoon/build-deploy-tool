@@ -1428,10 +1428,10 @@ if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
   # cat $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
   # cat $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
   # cat $LAGOON_SERVICES_YAML_FOLDER/cronjobs.yaml
-  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/services.yaml
-  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
-  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
-  kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/cronjobs.yaml
+  if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
+    find $LAGOON_SERVICES_YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/
+  fi
 fi
 set -x
 

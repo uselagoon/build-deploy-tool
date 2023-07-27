@@ -52,7 +52,9 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "services"), serviceTemplateYAML)
+	if serviceTemplateYAML != nil {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "services"), serviceTemplateYAML)
+	}
 	if g.Debug {
 		fmt.Println(fmt.Sprintf("Templating pvc manifests %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "pvcs")))
 	}
@@ -60,7 +62,9 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "pvcs"), pvcTemplateYAML)
+	if pvcTemplateYAML != nil {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "pvcs"), pvcTemplateYAML)
+	}
 	if g.Debug {
 		fmt.Println(fmt.Sprintf("Templating deployment manifest %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "deployments")))
 	}
@@ -68,12 +72,16 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "deployments"), deploymentTemplateYAML)
+	if deploymentTemplateYAML != nil {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "deployments"), deploymentTemplateYAML)
+	}
 	cronjobTemplateYaml, err := servicestemplates.GenerateCronjobTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "cronjobs"), cronjobTemplateYaml)
+	if cronjobTemplateYaml != nil {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "cronjobs"), cronjobTemplateYaml)
+	}
 	return nil
 }
 
