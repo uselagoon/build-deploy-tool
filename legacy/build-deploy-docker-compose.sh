@@ -1286,6 +1286,7 @@ done
 ##############################################
 
 CONFIG_MAP_SHA=$(kubectl -n ${NAMESPACE} get configmap lagoon-env -o yaml | shyaml get-value data | sha256sum | awk '{print $1}')
+export CONFIG_MAP_SHA
 # write the configmap to the values file so when we `exec-kubectl-resources-with-images.sh` the deployments will get the value of the config map
 # which will cause a change in the deployment and trigger a rollout if only the configmap has changed
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'configMapSha' $CONFIG_MAP_SHA
