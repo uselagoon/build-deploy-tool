@@ -29,7 +29,7 @@ spec:
         metadata:
           annotations:
             lagoon.sh/branch: main
-            lagoon.sh/configMapSha: ""
+            lagoon.sh/configMapSha: abcdefg1234567890
             lagoon.sh/version: v2.7.x
           creationTimestamp: null
           labels:

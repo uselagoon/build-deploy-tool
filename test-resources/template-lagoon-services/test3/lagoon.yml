@@ -1,0 +1,1 @@
+docker-compose-yaml: ../test-resources/template-lagoon-services/test3/docker-compose.yml
