@@ -48,6 +48,7 @@ type GeneratorInput struct {
 	FastlyCacheNoCahce       string
 	FastlyAPISecretPrefix    string
 	SavedTemplatesPath       string
+	ConfigMapSha             string
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
@@ -88,7 +89,9 @@ func NewGenerator(
 	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
+	configMapSha := helpers.GetEnv("CONFIG_MAP_SHA", generator.ConfigMapSha, generator.Debug)
 
+	buildValues.ConfigMapSha = configMapSha
 	// get the image references values from the build images output
 	buildValues.ImageReferences = generator.ImageReferences
 	// add standard lagoon imagepull secret name

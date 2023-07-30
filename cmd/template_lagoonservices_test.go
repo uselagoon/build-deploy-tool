@@ -31,6 +31,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 		serviceID          string
 		secretPrefix       string
 		ingressClass       string
+		configMapSha       string
 		rootlessWorkloads  string
 		projectVars        string
 		envVars            string
@@ -60,6 +61,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-lagoon-services/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-lagoon-services/output",
+				configMapSha:    "abcdefg1234567890",
 				imageReferences: map[string]string{
 					"node": "harbor.example/example-project/main/node:latest",
 				},
@@ -81,6 +83,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-lagoon-services/test2/lagoon.yml",
 				templatePath:    "../test-resources/template-lagoon-services/output",
+				configMapSha:    "abcdefg1234567890",
 				imageReferences: map[string]string{
 					"nginx":   "harbor.example/example-project/main/nginx:latest",
 					"php":     "harbor.example/example-project/main/php:latest",
@@ -107,6 +110,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 				rootlessWorkloads: "enabled",
 				lagoonYAML:        "../test-resources/template-lagoon-services/test2/lagoon.yml",
 				templatePath:      "../test-resources/template-lagoon-services/output",
+				configMapSha:      "abcdefg1234567890",
 				imageReferences: map[string]string{
 					"nginx":   "harbor.example/example-project/main/nginx:latest",
 					"php":     "harbor.example/example-project/main/php:latest",
@@ -116,6 +120,31 @@ func TestTemplateLagoonServices(t *testing.T) {
 				},
 			},
 			want: "../test-resources/template-lagoon-services/test2-results-b",
+		},
+		{
+			name: "test3 - funky pvcs",
+			args: args{
+				alertContact:      "alertcontact",
+				statusPageID:      "statuspageid",
+				projectName:       "example-project",
+				environmentName:   "main",
+				environmentType:   "production",
+				buildType:         "branch",
+				lagoonVersion:     "v2.7.x",
+				branch:            "main",
+				projectVars:       `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
+				envVars:           `[]`,
+				rootlessWorkloads: "enabled",
+				lagoonYAML:        "../test-resources/template-lagoon-services/test3/lagoon.yml",
+				templatePath:      "../test-resources/template-lagoon-services/output",
+				configMapSha:      "abcdefg1234567890",
+				imageReferences: map[string]string{
+					"lnd":        "harbor.example/example-project/main/lnd:latest",
+					"thunderhub": "harbor.example/example-project/main/thunderhub:latest",
+					"tor":        "harbor.example/example-project/main/tor:latest",
+				},
+			},
+			want: "../test-resources/template-lagoon-services/test3-results",
 		},
 	}
 	for _, tt := range tests {
@@ -166,6 +195,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			err = os.Setenv("STANDBY_ENVIRONMENT", tt.args.standbyEnvironment)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			err = os.Setenv("CONFIG_MAP_SHA", tt.args.configMapSha)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -275,7 +308,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS"}, {Name: "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD"}})
+				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS"}, {Name: "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD"}, {Name: "CONFIG_MAP_SHA"}})
 			})
 		})
 	}
