@@ -40,7 +40,7 @@ spec:
           service:
             name: myservice-po
             port:
-              name: myservice-po-8192
+              name: tcp-8192
         path: /
         pathType: Prefix
   tls:

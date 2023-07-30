@@ -9,6 +9,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	networkv1 "k8s.io/api/networking/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -239,17 +240,13 @@ func GenerateIngressTemplate(
 	for _, service := range lValues.Services {
 		for idx, addPort := range service.AdditionalServicePorts {
 			if addPort.ServiceName == route.LagoonService {
-				servicePort = networkv1.ServiceBackendPort{
-					Name: addPort.ServiceName,
-				}
+				servicePort = services.GenerateServiceBackendPort(addPort)
 				backendService = service.OverrideName
 			}
 			// if this service is for the default named lagoonservice
 			if service.OverrideName == route.LagoonService && idx == 0 {
 				// and set the portname to the name of the first service in the list
-				servicePort = networkv1.ServiceBackendPort{
-					Name: addPort.ServiceName,
-				}
+				servicePort = services.GenerateServiceBackendPort(addPort)
 			}
 		}
 	}

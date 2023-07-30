@@ -20,10 +20,10 @@ metadata:
   name: myservice-po
 spec:
   ports:
-  - name: myservice-po-8191
+  - name: tcp-8191
     port: 8191
     protocol: TCP
-    targetPort: myservice-po-8191
+    targetPort: tcp-8191
   selector:
     app.kubernetes.io/instance: myservice-po
     app.kubernetes.io/name: basic
@@ -51,14 +51,14 @@ metadata:
   name: myservice-persist-po
 spec:
   ports:
-  - name: myservice-persist-po-8191
+  - name: tcp-8191
     port: 8191
     protocol: TCP
-    targetPort: myservice-persist-po-8191
-  - name: myservice-persist-po-8192
+    targetPort: tcp-8191
+  - name: tcp-8192
     port: 8192
     protocol: TCP
-    targetPort: myservice-persist-po-8192
+    targetPort: tcp-8192
   selector:
     app.kubernetes.io/instance: myservice-persist-po
     app.kubernetes.io/name: basic-persistent

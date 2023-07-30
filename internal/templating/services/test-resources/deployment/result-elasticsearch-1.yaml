@@ -54,7 +54,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
-        name: ""
+        name: elasticsearch
         resources: {}
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data
@@ -140,7 +140,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
-        name: ""
+        name: elasticsearch
         resources: {}
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data

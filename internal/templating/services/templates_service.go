@@ -7,6 +7,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 	corev1 "k8s.io/api/core/v1"
+	networkv1 "k8s.io/api/networking/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
@@ -132,9 +133,9 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 		for _, addPort := range serviceValues.AdditionalServicePorts {
 			port := corev1.ServicePort{
 				Protocol: corev1.ProtocolTCP,
-				Name:     addPort.ServiceName,
+				Name:     fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
 				TargetPort: intstr.IntOrString{
-					StrVal: addPort.ServiceName,
+					StrVal: fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
 					Type:   intstr.String,
 				},
 				Port: int32(addPort.ServicePort.Target),
@@ -142,6 +143,11 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 			// set protocol to anything but tcp if required
 			switch addPort.ServicePort.Protocol {
 			case "udp":
+				port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
+				port.TargetPort = intstr.IntOrString{
+					StrVal: fmt.Sprintf("udp-%d", addPort.ServicePort.Target),
+					Type:   intstr.String,
+				}
 				port.Protocol = corev1.ProtocolUDP
 			}
 			serviceType.Ports.Ports = append(serviceType.Ports.Ports, port)
@@ -169,4 +175,17 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 	// join all dbaas-consumer templates together
 	restoreResult := append(separator[:], serviceBytes[:]...)
 	return restoreResult, nil
+}
+
+func GenerateServiceBackendPort(addPort generator.AdditionalServicePort) networkv1.ServiceBackendPort {
+	switch addPort.ServicePort.Protocol {
+	case "udp":
+		return networkv1.ServiceBackendPort{
+			Name: fmt.Sprintf("udp-%d", addPort.ServicePort.Target),
+		}
+	default:
+		return networkv1.ServiceBackendPort{
+			Name: fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
+		}
+	}
 }

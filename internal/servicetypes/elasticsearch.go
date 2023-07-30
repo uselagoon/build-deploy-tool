@@ -21,6 +21,10 @@ var elasticsearch = ServiceType{
 			},
 		},
 	},
+	PrimaryContainer: ServiceContainer{
+		Name:            "elasticsearch",
+		ImagePullPolicy: corev1.PullAlways,
+	},
 	InitContainer: ServiceContainer{
 		Name: "set-max-map-count",
 		Command: []string{

@@ -71,10 +71,10 @@ spec:
         name: basic
         ports:
         - containerPort: 8191
-          name: myservice-po-8191
+          name: tcp-8191
           protocol: TCP
         - containerPort: 8211
-          name: myservice-po-8211
+          name: tcp-8211
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1

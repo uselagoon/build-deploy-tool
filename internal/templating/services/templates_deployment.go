@@ -291,6 +291,11 @@ func GenerateDeploymentTemplate(
 				container.Container.Ports = []corev1.ContainerPort{}
 				// start compose service port override templating here
 				for idx, addPort := range serviceValues.AdditionalServicePorts {
+					port := corev1.ContainerPort{
+						Name:          fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
+						ContainerPort: int32(addPort.ServicePort.Target),
+						Protocol:      corev1.Protocol(strings.ToUpper(addPort.ServicePort.Protocol)),
+					}
 					if idx == 0 {
 						// first port in the docker compose file should be a tcp based port (default unless udp or other is provided in the docker-compose file)
 						// the first port in the list will be used for any liveness/readiness probes, and will override the default option the container has
@@ -324,12 +329,12 @@ func GenerateDeploymentTemplate(
 							return nil, fmt.Errorf("first port defined is not a tcp port, please ensure the first port is tcp")
 						}
 					}
+					switch addPort.ServicePort.Protocol {
+					case "udp":
+						port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
+					}
 					// set the ports into the container
-					container.Container.Ports = append(container.Container.Ports, corev1.ContainerPort{
-						Name:          addPort.ServiceName,
-						ContainerPort: int32(addPort.ServicePort.Target),
-						Protocol:      corev1.Protocol(strings.ToUpper(addPort.ServicePort.Protocol)),
-					})
+					container.Container.Ports = append(container.Container.Ports, port)
 				}
 			} else {
 				// otherwise if the service has a default port, and it can be changed, handle changing it here

@@ -56,6 +56,14 @@ func GeneratePVCTemplate(
 	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			if val.Volumes.PersistentVolumeSize != "" {
+				if serviceValues.PersistentVolumeName != "" {
+					if serviceValues.PersistentVolumeName != serviceValues.OverrideName {
+						// this service base volume is not needed because it is created by a different service
+						// lagoon legacy templates allowed due to a funny templating issue, for multiple "basic" types to mount one volume
+						// from one main service, across multiple services of the same type
+						continue
+					}
+				}
 				serviceTypeValues := &servicetypes.ServiceType{}
 				helpers.DeepCopy(val, serviceTypeValues)
 				persistentVolumeSize := serviceTypeValues.Volumes.PersistentVolumeSize
