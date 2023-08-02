@@ -22,6 +22,7 @@ stream_logs_deployment() {
       # this will wait for all log streaming we started to finish
       wait
     }
+    patchBuildStep "applyDeployment"
 
     # If we are here, this means the pods have all stopped (probably because they failed), we just restart
   done

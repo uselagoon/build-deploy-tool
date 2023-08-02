@@ -97,52 +97,40 @@ set +x
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
 set -x
 
-function beginBuildStep() {
-  [ "$1" ] || return #Buildstep start
-
-  echo -e "##############################################\nBEGIN ${1}\n##############################################"
-  sleep 0.5s
-
-}
-
-function patchBuildStep() {
-  [ "$1" ] || return #total start time
-  [ "$2" ] || return #step start time
-  [ "$3" ] || return #previous step end time
-  [ "$4" ] || return #namespace
-  [ "$5" ] || return #buildstep
-  [ "$6" ] || return #buildstep
-  totalStartTime=$(date -d "${1}" +%s)
-  startTime=$(date -d "${2}" +%s)
-  endTime=$(date -d "${3}" +%s)
-  timeZone=$(date +"%Z")
-
-  diffSeconds="$(($endTime-$startTime))"
-  diffTime=$(date -d @${diffSeconds} +"%H:%M:%S" -u)
-
-  diffTotalSeconds="$(($endTime-$totalStartTime))"
-  diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
-
-  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
-
-  # patch the buildpod with the buildstep
-  if [ "${SCC_CHECK}" == false ]; then
-    kubectl patch -n ${4} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}" &> /dev/null
-
-    # tiny sleep to allow patch to complete before logs roll again
-    sleep 0.5s
-  fi
-}
 ##############################################
 ### PREPARATION
 ##############################################
 
 set +x
-buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
-beginBuildStep "Initial Environment Setup"
+buildStartTime="$(date +"%Y-%m-%d %H:%M:%S %Z")"
+previousStepEnd="${buildStartTime}"
+build-deploy-tool print begin --step "Initial Environment Setup"
 echo "STEP: Preparation started ${buildStartTime}"
 set -x
+
+function patchBuildStep() {
+  [ "$1" ] || return #buildStep
+  # patch the buildpod with the buildstep
+  if [ "${SCC_CHECK}" == false ]; then
+    kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${1}\"},\"annotations\":{\"lagoon.sh/buildTime\":\"$(date +%s)\"}}}" &> /dev/null
+    # tiny sleep to allow patch to complete before logs roll again
+    sleep 2s
+  fi
+}
+
+function buildStep() {
+  [ "$1" ] || return #buildStep
+  [ "$2" ] || return #buildStepLong
+  [ "$3" ] || return #nextStepLong
+
+  build-deploy-tool print complete --start "${buildStartTime}" --previous "${previousStepEnd}" --step "${2}"
+  previousStepEnd="$(date +"%Y-%m-%d %H:%M:%S %Z")"
+  build-deploy-tool print begin --step "${3}"
+
+  # patch the buildpod with the buildstep
+  patchBuildStep "${1}"
+}
 
 ##############################################
 ### PUSH the latest .lagoon.yml into lagoon-yaml configmap as a pre-deploy field
@@ -198,8 +186,9 @@ dccExit=$?
 echo "docker-compose validate exit code ${dccExit}: ${dccOutput}"
 
 if [ "${dccExit}" != "0" ]; then
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation Error"
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S %Z")"
+  build-deploy-tool print complete --start "${buildStartTime}" --previous "${previousStepEnd}" --step "Docker Compose Validation Error"
+  patchBuildStep "dockerComposeValidationError"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -224,8 +213,9 @@ lyvOutput=$(bash -c 'build-deploy-tool validate lagoon-yml; exit $?' 2>&1)
 lyvExit=$?
 
 if [ "${lyvExit}" != "0" ]; then
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S %Z")"
+  build-deploy-tool print complete --start "${buildStartTime}" --previous "${previousStepEnd}" --step ".lagoon.yml Validation Error"
+  patchBuildStep "lagoonYmlValidationError" 
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -253,10 +243,7 @@ else
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Configure Variables"
+buildStep "initialSetup" "Initial Environment Setup" "Configure Variables"
 set -x
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
@@ -568,10 +555,7 @@ do
 done
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds"
+buildStep "configureVars" "Configure Variables" "Image Builds"
 set -x
 ##############################################
 ### CACHE IMAGE LIST GENERATION
@@ -762,6 +746,7 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       set -x
 
       . /kubectl-build-deploy/scripts/exec-build.sh
+      patchBuildStep "imageBuild"
 
       # Keep a list of the images we have built, as we need to push them to the OpenShift Registry later
       IMAGES_BUILD["${IMAGE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
@@ -793,10 +778,7 @@ done
 set -x
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Pre-Rollout Tasks"
+buildStep "imageBuildComplete" "Image Builds" "Pre-Rollout Tasks"
 set -x
 
 ##############################################
@@ -810,10 +792,7 @@ else
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 1"
+buildStep "preRolloutsCompleted" "Pre-Rollout Tasks" "Service Configuration Phase 1"
 set -x
 
 
@@ -917,10 +896,7 @@ LAGOON_PR_NUMBER=${PR_NUMBER}\n\
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 2"
+buildStep "serviceConfigurationComplete" "Service Configuration Phase 1" "Service Configuration Phase 2"
 set -x
 
 ##############################################
@@ -1104,10 +1080,7 @@ do
 done
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Route/Ingress Configuration"
+buildStep "serviceConfiguration2Complete" "Service Configuration Phase 2" "Route/Ingress Configuration"
 
 TEMPLATE_PARAMETERS=()
 
@@ -1136,10 +1109,7 @@ else
 # end custom route
 fi
 
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Backup Configuration"
+buildStep "routeConfigurationComplete" "Route/Ingress Configuration" "Backup Configuration"
 
 # Run the backup generation script
 BACKUPS_DISABLED=false
@@ -1174,10 +1144,7 @@ if [ "$(ls -A $YAML_FOLDER/)" ]; then
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry"
+buildStep "backupConfigurationComplete" "Backup Configuration" "Image Push to Registry"
 set -x
 
 ##############################################
@@ -1378,10 +1345,7 @@ elif [ "$BUILD_TYPE" == "promote" ]; then
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Deployment Templating"
+buildStep "imagePushComplete" "Image Push to Registry" "Deployment Templating"
 set -x
 
 ##############################################
@@ -1530,10 +1494,7 @@ do
 done
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Applying Deployments"
+buildStep "deploymentTemplatingComplete" "Deployment Templating" "Applying Deployments"
 set -x
 
 ##############################################
@@ -1596,10 +1557,7 @@ do
 done
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Cronjob Cleanup"
+buildStep "deploymentApplyComplete" "Applying Deployments" "Cronjob Cleanup"
 set -x
 
 ##############################################
@@ -1624,10 +1582,7 @@ do
 done
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Post-Rollout Tasks"
+buildStep "cronjobCleanupComplete" "Cronjob Cleanup" "Post-Rollout Tasks"
 set -x
 
 ##############################################
@@ -1642,10 +1597,7 @@ else
 fi
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Build and Deploy"
+buildStep "postRolloutsCompleted" "Post-Rollout Tasks" "Build and Deploy"
 set -x
 
 ##############################################
@@ -1672,14 +1624,15 @@ fi
 set -x
 
 set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy"
-previousStepEnd=${currentStepEnd}
+build-deploy-tool print complete --start "${buildStartTime}" --previous "${previousStepEnd}" --step "Build and Deploy"
+patchBuildStep "deployCompleted"
+previousStepEnd="$(date +"%Y-%m-%d %H:%M:%S %Z")"
 set -x
 
 set +x
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
-  beginBuildStep "Insights Gathering"
+  build-deploy-tool print begin --step "Insights Gathering"
+  patchBuildStep "insightsGathering"
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
@@ -1689,11 +1642,12 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
 
     IMAGE_TAG="${IMAGE_TAG:-latest}"
     IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
+    patchBuildStep "insightsGathering"
     . /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh
   done
 
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering"
-  previousStepEnd=${currentStepEnd}
+  build-deploy-tool print complete --start "${buildStartTime}" --previous "${previousStepEnd}" --step "Insights Gathering"
+  patchBuildStep "insightsCompleted"
+  previousStepEnd="$(date +"%Y-%m-%d %H:%M:%S %Z")"
 fi
 set -x
