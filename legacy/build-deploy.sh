@@ -62,11 +62,12 @@ PRIVATE_DOCKER_HUB_REGISTRY=0
 PRIVATE_EXTERNAL_REGISTRY=0
 
 set +x # reduce noise in build logs
-if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
-  DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
-else
+if [[ -f "/var/run/secrets/kubernetes.io/serviceaccount/token" ]]; then
   DEPLOYER_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
-fi
+else
+  if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
+    DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+  fi
 if [ -z ${DEPLOYER_TOKEN} ]; then
   echo "No deployer token found"; exit 1;
 fi
