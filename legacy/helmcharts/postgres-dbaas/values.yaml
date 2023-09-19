@@ -7,4 +7,4 @@ environment: ""
 readReplicaHosts: ""
 
 imageCache: ""
-image: uselagoon/php-8.0-cli
+image: uselagoon/database-tools:latest

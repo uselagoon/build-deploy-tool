@@ -7,4 +7,4 @@ environment: ""
 readReplicaHosts: ""
 
 imageCache: ""
-image: amazeeio/alpine-mysql-client
+image: uselagoon/database-tools:latest
