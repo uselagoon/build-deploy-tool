@@ -70,7 +70,7 @@ spec:
                   key: {{ include "mariadb-dbaas.fullnameUppercase" . }}_READREPLICA_HOSTS
                   name: lagoon-env
             {{- end }}
-          image: {{ .Values.imageCache }}{{ .Values.image }}
+          image: {{ .Values.imageCache }}uselagoon/database-tools:latest
           imagePullPolicy: Always
           name: {{ include "mariadb-dbaas.fullname" . }}-prebackuppod
 {{ end }}

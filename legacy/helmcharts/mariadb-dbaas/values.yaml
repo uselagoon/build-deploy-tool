@@ -7,4 +7,3 @@ environment: ""
 readReplicaHosts: ""
 
 imageCache: ""
-image: uselagoon/database-tools:latest

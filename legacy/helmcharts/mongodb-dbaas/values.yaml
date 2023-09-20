@@ -5,4 +5,3 @@
 environment: ""
 
 imageCache: ""
-image: uselagoon/database-tools:latest
