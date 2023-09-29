@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"strconv"
 	"time"
@@ -267,12 +268,16 @@ func ExecTaskInPod(
 		return "", fmt.Errorf("error while creating Executor: %v", err)
 	}
 
-	var output bytes.Buffer
+	var stdOut, stdErr bytes.Buffer
 	err = exec.Stream(remotecommand.StreamOptions{
-		Stdout: &output,
-		Stderr: &output,
+		Stdout: &stdOut,
+		Stderr: &stdErr,
 		Tty:    tty,
 	})
+	buffers := []io.Reader{&stdOut, &stdErr}
+	var output bytes.Buffer
+	reader := io.MultiReader(buffers...)
+	output.ReadFrom(reader)
 	if err != nil {
 		return output.String(), fmt.Errorf("Error returned: %v", err)
 	}
