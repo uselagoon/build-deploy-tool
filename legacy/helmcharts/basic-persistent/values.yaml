@@ -17,8 +17,7 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
-podSecurityContext:
-  fsGroupChangePolicy: "OnRootMismatch"
+podSecurityContext: {}
 
 securityContext: {}
   # capabilities:
