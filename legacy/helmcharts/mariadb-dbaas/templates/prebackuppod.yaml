@@ -33,10 +33,6 @@ spec:
     && cat $dump && rm $dump"
   fileExtension: .{{ include "mariadb-dbaas.fullname" . }}.sql
   pod:
-    metadata:
-      labels:
-        prebackuppod: {{ include "mariadb-dbaas.fullname" . }}
-        {{- include "mariadb-dbaas.labels" . | nindent 8 }}
     spec:
       containers:
         - args:

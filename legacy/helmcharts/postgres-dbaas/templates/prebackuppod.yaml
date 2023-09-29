@@ -19,10 +19,6 @@ spec:
     --format=t -w"
   fileExtension: .{{ include "postgres-dbaas.fullname" . }}.tar
   pod:
-    metadata:
-      labels:
-        prebackuppod: {{ include "postgres-dbaas.fullname" . }}
-        {{- include "postgres-dbaas.labels" . | nindent 8 }}
     spec:
       containers:
         - args:
