@@ -99,10 +99,17 @@ set -x
 
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
+  [ "$2" ] || return #buildstep
 
   echo -e "##############################################\nBEGIN ${1}\n##############################################"
-  sleep 0.5s
 
+  # patch the buildpod with the buildstep
+  if [ "${SCC_CHECK}" == false ]; then
+    kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\"}}}" &> /dev/null
+    # tiny sleep to allow patch to complete before logs roll again
+    sleep 0.5s
+  fi
 }
 
 function patchBuildStep() {
@@ -124,23 +131,15 @@ function patchBuildStep() {
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
   echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
-
-  # patch the buildpod with the buildstep
-  if [ "${SCC_CHECK}" == false ]; then
-    kubectl patch -n ${4} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}" &> /dev/null
-
-    # tiny sleep to allow patch to complete before logs roll again
-    sleep 0.5s
-  fi
 }
+
 ##############################################
 ### PREPARATION
 ##############################################
 
 set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
-beginBuildStep "Initial Environment Setup"
+beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
 set -x
 
@@ -256,7 +255,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Configure Variables"
+beginBuildStep "Configure Variables" "configuringVariables"
 set -x
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
@@ -571,7 +570,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds"
+beginBuildStep "Image Builds" "buildingImages"
 set -x
 ##############################################
 ### CACHE IMAGE LIST GENERATION
@@ -796,7 +795,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Pre-Rollout Tasks"
+beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 set -x
 
 ##############################################
@@ -813,7 +812,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 1"
+beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 set -x
 
 
@@ -920,7 +919,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 2"
+beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 set -x
 
 ##############################################
@@ -1107,7 +1106,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Route/Ingress Configuration"
+beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 
 TEMPLATE_PARAMETERS=()
 
@@ -1139,7 +1138,7 @@ fi
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Backup Configuration"
+beginBuildStep "Backup Configuration" "configuringBackups"
 
 # Run the backup generation script
 
@@ -1209,7 +1208,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry"
+beginBuildStep "Image Push to Registry" "pushingImages"
 set -x
 
 ##############################################
@@ -1413,7 +1412,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Deployment Templating"
+beginBuildStep "Deployment Templating" "templatingDeployments"
 set -x
 
 ##############################################
@@ -1565,7 +1564,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Applying Deployments"
+beginBuildStep "Applying Deployments" "applyingDeployments"
 set -x
 
 ##############################################
@@ -1631,7 +1630,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Cronjob Cleanup"
+beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 set -x
 
 ##############################################
@@ -1659,7 +1658,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Post-Rollout Tasks"
+beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 set -x
 
 ##############################################
@@ -1677,7 +1676,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Build and Deploy"
+beginBuildStep "Build and Deploy" "finalizingBuild"
 set -x
 
 ##############################################
@@ -1711,7 +1710,7 @@ set -x
 
 set +x
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
-  beginBuildStep "Insights Gathering"
+  beginBuildStep "Insights Gathering" "gatheringInsights"
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
