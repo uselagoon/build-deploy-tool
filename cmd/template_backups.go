@@ -2,12 +2,18 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	backuptemplate "github.com/uselagoon/build-deploy-tool/internal/templating/backups"
+	"sigs.k8s.io/yaml"
 )
+
+type readReplicaValues struct {
+	ReadReplicaHosts string `json:"readReplicaHosts"`
+}
 
 var backupGeneration = &cobra.Command{
 	Use:     "backup-schedule",
@@ -37,6 +43,30 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 		return err
 	}
 	savedTemplates := g.SavedTemplatesPath
+
+	// TODO: the dbaas consumers aren't known when the generator runs currently
+	// so this is a small helper function to collect this from the build stage
+	// this will eventually need to be collected directly by the generator or some other component
+	// of the generator in the future, but since backups are the only thing that need to know this at this stage
+	repServices := []generator.ServiceValues{}
+	for _, s := range lagoonBuild.BuildValues.Services {
+		rawYAML, err := os.ReadFile(fmt.Sprintf("/kubectl-build-deploy/%s-values.yaml", s.Name))
+		if err != nil {
+			repServices = append(repServices, s)
+			// skip this one
+			continue
+		}
+		dbaasValues := &readReplicaValues{}
+		err = yaml.Unmarshal(rawYAML, dbaasValues)
+		if err != nil {
+			return fmt.Errorf("couldn't read %v: %v", fmt.Sprintf("/kubectl-build-deploy/%s-values.yaml", s.Name), err)
+		}
+		if dbaasValues.ReadReplicaHosts != "" {
+			s.DBaasReadReplica = true
+		}
+		repServices = append(repServices, s)
+	}
+	lagoonBuild.BuildValues.Services = repServices
 
 	// generate the backup schedule templates
 	templateYAML, err := backuptemplate.GenerateBackupSchedule(*lagoonBuild.BuildValues)

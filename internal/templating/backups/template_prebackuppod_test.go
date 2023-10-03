@@ -191,6 +191,34 @@ func TestGeneratePreBackupPod(t *testing.T) {
 			},
 			want: "test-resources/result-prebackuppod6.yaml",
 		},
+		{
+			name: "test7 - k8up/v1",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "mariadb-database",
+							OverrideName:     "mariadb-database",
+							Type:             "mariadb-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v2",
+					},
+				},
+			},
+			want: "test-resources/result-prebackuppod7.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -15,14 +15,8 @@ metadata:
     prebackuppod: mariadb
   name: mariadb-prebackuppod
 spec:
-  backupCommand: /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo
-    $BACKUP_DB_READREPLICAS | cut -d ',' -f1) fi && dump=$(mktemp) && mysqldump --max-allowed-packet=500M
-    --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db
-    --no-data -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE
-    > $dump && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks
-    --no-autocommit --single-transaction --no-create-db --ignore-table=$BACKUP_DB_DATABASE.watchdog
-    --no-create-info -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD
-    $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
+  backupCommand: |
+    /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1); fi && dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --no-data --no-tablespaces -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE > $dump && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --ignore-table=$BACKUP_DB_DATABASE.watchdog --no-create-info --no-tablespaces --skip-triggers -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
   fileExtension: .mariadb.sql
   pod:
     metadata: {}
@@ -51,11 +45,6 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: MARIADB_DATABASE
-              name: lagoon-env
-        - name: BACKUP_DB_READREPLICAS
-          valueFrom:
-            configMapKeyRef:
-              key: MARIADB_READREPLICAS
               name: lagoon-env
         image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
         imagePullPolicy: Always
