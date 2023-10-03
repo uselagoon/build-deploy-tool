@@ -1626,6 +1626,65 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
 previousStepEnd=${currentStepEnd}
+beginBuildStep "Removed Route Cleanup" "cleanupRemovedRoutes"
+set -x
+
+##############################################
+### CLEANUP Ingress/routes which have been removed from .lagoon.yml
+##############################################
+set +x
+# collect the current routes, its possible to exclude ingress by adding a label 'lagoon.sh/noclean=true' and it won't get deleted
+CURRENT_ROUTES=$(kubectl -n ${NAMESPACE} get ingress -l "lagoon.sh/noclean!=true" --no-headers | cut -d " " -f 1 | xargs)
+# collect the routes that Lagoon thinks it should have based on the .lagoon.yml and any routes that have come from the api
+# using the build-deploy-tool generator
+YAML_ROUTES_TO_JSON=$(build-deploy-tool identify ingress | jq -r '.secondary[]')
+
+IFS=' ' read -a SPLIT_CURRENT_ROUTES <<< $CURRENT_ROUTES
+MATCHED_INGRESS=false
+DELETE_INGRESS=()
+# loop over the routes from kubernetes
+for SINGLE_ROUTE in ${SPLIT_CURRENT_ROUTES[@]}
+do
+  # loop over the routes that Lagoon thinks it should have
+  for YAML_ROUTE in ${YAML_ROUTES_TO_JSON}
+  do
+    re="http?(s)://$SINGLE_ROUTE"
+    if [[ "$YAML_ROUTE" =~ $re ]]; then
+      # if it matches one, drop out
+      MATCHED_INGRESS=true
+      continue
+    fi
+  done
+  # if the route doesn't exist in what Lagoon thinks it should have
+  # delete it or flag it for deletion
+  if [ "$MATCHED_INGRESS" != "true" ]; then
+    DELETE_INGRESS+=($SINGLE_ROUTE)
+  fi
+  MATCHED_INGRESS=false
+done
+
+if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
+  if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
+    echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
+    echo "> You can remove these in the next build by setting the flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+  fi
+  for DI in ${DELETE_INGRESS[@]}
+  do
+    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
+      kubectl -n ${NAMESPACE} delete ingress ${SINGLE_ROUTE}
+    else
+      echo "> The route '${SINGLE_ROUTE}' would be removed"
+    fi
+  done
+else
+  echo "No route cleanup required"
+fi
+set -x
+
+set +x
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cleanupRemovedRoutesComplete" "Removed Route Cleanup"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 set -x
 
