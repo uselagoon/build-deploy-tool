@@ -71,6 +71,7 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
+				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
@@ -84,10 +85,6 @@ func GeneratePreBackupPod(
 					return nil, err
 				}
 
-				k8upPBPSpec.Pod.ObjectMeta = metav1.ObjectMeta{
-					Labels: labels,
-				}
-				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil {
@@ -155,6 +152,7 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
+				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
@@ -168,10 +166,6 @@ func GeneratePreBackupPod(
 					return nil, err
 				}
 
-				k8upPBPSpec.Pod.ObjectMeta = metav1.ObjectMeta{
-					Labels: labels,
-				}
-				k8upPBPSpec.Pod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 				prebackuppod.Spec = k8upPBPSpec
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {

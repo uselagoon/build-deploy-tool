@@ -19,14 +19,7 @@ spec:
     --archive"
   fileExtension: .mongodb-database.bson
   pod:
-    metadata:
-      labels:
-        app.kubernetes.io/managed-by: build-deploy-tool
-        lagoon.sh/buildType: branch
-        lagoon.sh/environment: environment-with-really-really-reall-3fdb
-        lagoon.sh/environmentType: production
-        lagoon.sh/project: example-project
-        prebackuppod: mongodb-database
+    metadata: {}
     spec:
       containers:
       - args:

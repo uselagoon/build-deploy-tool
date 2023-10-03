@@ -21,14 +21,7 @@ spec:
     --username=$BACKUP_DB_USERNAME --format=t -w"
   fileExtension: .postgres-database.tar
   pod:
-    metadata:
-      labels:
-        app.kubernetes.io/managed-by: build-deploy-tool
-        lagoon.sh/buildType: branch
-        lagoon.sh/environment: environment-with-really-really-reall-3fdb
-        lagoon.sh/environmentType: production
-        lagoon.sh/project: example-project
-        prebackuppod: postgres-database
+    metadata: {}
     spec:
       containers:
       - args:

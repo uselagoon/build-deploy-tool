@@ -25,14 +25,7 @@ spec:
     $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
   fileExtension: .mariadb.sql
   pod:
-    metadata:
-      labels:
-        app.kubernetes.io/managed-by: build-deploy-tool
-        lagoon.sh/buildType: branch
-        lagoon.sh/environment: main
-        lagoon.sh/environmentType: production
-        lagoon.sh/project: example-project
-        prebackuppod: mariadb
+    metadata: {}
     spec:
       containers:
       - args:
@@ -88,14 +81,7 @@ spec:
   backupCommand: /bin/sh -c "tar -cf - -C /usr/share/elasticsearch/data ."
   fileExtension: .elasticsearch.tar
   pod:
-    metadata:
-      labels:
-        app.kubernetes.io/managed-by: build-deploy-tool
-        lagoon.sh/buildType: branch
-        lagoon.sh/environment: main
-        lagoon.sh/environmentType: production
-        lagoon.sh/project: example-project
-        prebackuppod: elasticsearch
+    metadata: {}
     spec:
       containers:
       - args:
