@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 
@@ -169,7 +168,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
 			retErr = fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
 		}
-		nsb, err := ioutil.ReadFile(filename)
+		nsb, err := os.ReadFile(filename)
 		if err != nil {
 			retErr = err
 		}

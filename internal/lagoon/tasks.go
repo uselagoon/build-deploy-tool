@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strconv"
 	"time"
@@ -85,9 +84,9 @@ func getConfig() (*rest.Config, error) {
 	if *kubeconfig == "" {
 		//Fall back on out of cluster
 		// read the deployer token.
-		token, err := ioutil.ReadFile("/var/run/secrets/lagoon/deployer/token")
+		token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 		if err != nil {
-			token, err = ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
+			token, err = os.ReadFile("/var/run/secrets/lagoon/deployer/token")
 			if err != nil {
 				return nil, err
 			}
