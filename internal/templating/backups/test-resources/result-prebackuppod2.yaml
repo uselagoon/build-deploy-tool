@@ -1,0 +1,57 @@
+---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    prebackuppod: postgres-database
+  name: postgres-database-prebackuppod
+spec:
+  backupCommand: |
+    /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1); fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME --username=$BACKUP_DB_USERNAME --format=t -w"
+  fileExtension: .postgres-database.tar
+  pod:
+    metadata: {}
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        env:
+        - name: BACKUP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_HOST
+              name: lagoon-env
+        - name: BACKUP_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_USERNAME
+              name: lagoon-env
+        - name: BACKUP_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_PASSWORD
+              name: lagoon-env
+        - name: BACKUP_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_READREPLICAS
+          valueFrom:
+            configMapKeyRef:
+              key: POSTGRES_DATABASE_READREPLICAS
+              name: lagoon-env
+        image: uselagoon/database-tools:latest
+        imagePullPolicy: Always
+        name: postgres-database-prebackuppod
+        resources: {}

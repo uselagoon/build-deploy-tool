@@ -1162,44 +1162,6 @@ fi
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Backup Configuration" "configuringBackups"
-
-# Run the backup generation script
-BACKUPS_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
-  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
-fi 
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
-  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
-    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
-  fi 
-fi 
-
-if [ ! "$BACKUPS_DISABLED" == true ]; then
-  . /kubectl-build-deploy/scripts/exec-backup-generation.sh
-else
-  echo ">> Backup configurations disabled for this build"
-fi
-
-# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
-	# add namespace isolation network policy to deployment
-	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
-		-f /kubectl-build-deploy/values.yaml \
-		> $YAML_FOLDER/isolation-network-policy.yaml
-fi
-set -x
-
-if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  find $YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
-fi
-
-set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
-previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Push to Registry" "pushingImages"
 set -x
 
@@ -1412,6 +1374,76 @@ fi
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Backup Configuration" "configuringBackups"
+
+# Run the backup generation script
+
+BACKUPS_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
+  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+fi 
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
+  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
+    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
+  fi 
+fi 
+
+if [ ! "$BACKUPS_DISABLED" == true ]; then
+  # check if k8up v2 feature flag is enabled
+  if [ "$(featureFlag K8UP_V2)" = enabled ]; then
+  # build-tool doesn't do any capability checks yet, so do this for now
+    if [[ "${CAPABILITIES[@]}" =~ "k8up.io/v1/Schedule" ]]; then
+    echo "Backups: generating k8up.io/v1 resources"
+      if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+        # Create baas-repo-pw secret based on the project secret
+        kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+      fi
+      build-deploy-tool template backup-schedule --version v2
+      # check if the existing schedule exists, and delete it
+      if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
+        if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get schedules.backup.appuio.ch k8up-lagoon-backup-schedule &> /dev/null; then
+          echo "Backups: removing old backup.appuio.ch/v1alpha1 schedule"
+          kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete schedules.backup.appuio.ch k8up-lagoon-backup-schedule
+        fi
+        if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get prebackuppods.backup.appuio.ch &> /dev/null; then
+          echo "Backups: removing old backup.appuio.ch/v1alpha1 prebackuppods"
+          kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch --all
+        fi
+      fi
+      K8UP_VERSION="v2"
+    fi
+  fi
+  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]] && [[ "$K8UP_VERSION" != "v2" ]]; then
+    echo "Backups: generating backup.appuio.ch/v1alpha1 resources"
+    if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+      # Create baas-repo-pw secret based on the project secret
+      kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+    fi
+    build-deploy-tool template backup-schedule --version v1
+  fi
+else
+  echo ">> Backup configurations disabled for this build"
+fi
+
+# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
+if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
+	# add namespace isolation network policy to deployment
+	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
+		-f /kubectl-build-deploy/values.yaml \
+		> $YAML_FOLDER/isolation-network-policy.yaml
+fi
+set -x
+
+if [ "$(ls -A $YAML_FOLDER/)" ]; then
+  find $YAML_FOLDER -type f -exec cat {} \;
+  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+fi
+
+set +x
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
 set -x

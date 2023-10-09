@@ -1,0 +1,57 @@
+---
+apiVersion: backup.appuio.ch/v1alpha1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    prebackuppod: mongodb-database
+  name: mongodb-database-prebackuppod
+spec:
+  backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_NAME}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true
+    --archive"
+  fileExtension: .mongodb-database.bson
+  pod:
+    metadata: {}
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        env:
+        - name: BACKUP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_HOST
+              name: lagoon-env
+        - name: BACKUP_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_USERNAME
+              name: lagoon-env
+        - name: BACKUP_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_PASSWORD
+              name: lagoon-env
+        - name: BACKUP_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_READREPLICAS
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_READREPLICAS
+              name: lagoon-env
+        image: uselagoon/database-tools:latest
+        imagePullPolicy: Always
+        name: mongodb-database-prebackuppod
+        resources: {}
