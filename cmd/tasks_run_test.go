@@ -166,13 +166,14 @@ func Test_iterateTaskGenerator(t *testing.T) {
 	tests := []struct {
 		name      string
 		debug     bool
+		prePost   string
 		args      args
 		wantError bool
 	}{
 		{name: "Runs with no errors",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(namespace string, incoming lagoon.Task) error {
+				taskRunner: func(namespace string, prePost string, incoming lagoon.Task) error {
 					return nil
 				},
 				tasks: []lagoon.Task{
@@ -180,12 +181,13 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				},
 				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
+			prePost:   "PreRollout",
 			wantError: false,
 		},
 		{name: "Allows deploy missing errors and keeps rolling (pre rollout case)",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(namespace string, incoming lagoon.Task) error {
+				taskRunner: func(namespace string, prePost string, incoming lagoon.Task) error {
 					return &lagoon.DeploymentMissingError{}
 				},
 				tasks: []lagoon.Task{
@@ -193,12 +195,13 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				},
 				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
+			prePost:   "PreRollout",
 			wantError: false,
 		},
 		{name: "Does not allow deploy missing errors and stops with error (post rollout)",
 			args: args{
 				allowDeployMissingErrors: false,
-				taskRunner: func(namespace string, incoming lagoon.Task) error {
+				taskRunner: func(namespace string, prePost string, incoming lagoon.Task) error {
 					return &lagoon.DeploymentMissingError{}
 				},
 				tasks: []lagoon.Task{
@@ -206,12 +209,13 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				},
 				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
+			prePost:   "PostRollout",
 			wantError: true,
 		},
 		{name: "Allows deploy missing errors but stops with any other error (pre rollout)",
 			args: args{
 				allowDeployMissingErrors: true,
-				taskRunner: func(namespace string, incoming lagoon.Task) error {
+				taskRunner: func(namespace string, prePost string, incoming lagoon.Task) error {
 					return &lagoon.PodScalingError{}
 				},
 				tasks: []lagoon.Task{
@@ -219,12 +223,13 @@ func Test_iterateTaskGenerator(t *testing.T) {
 				},
 				buildValues: generator.BuildValues{Namespace: "empty"},
 			},
+			prePost:   "PostRollout",
 			wantError: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.debug)
+			got, _ := iterateTaskGenerator(tt.args.allowDeployMissingErrors, tt.args.taskRunner, tt.args.buildValues, tt.prePost, tt.debug)
 			_, err := got(tasklib.TaskEnvironment{}, tt.args.tasks)
 
 			if tt.wantError && err == nil {

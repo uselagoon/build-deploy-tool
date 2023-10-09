@@ -68,6 +68,7 @@ else
   if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
     DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
   fi
+fi
 if [ -z ${DEPLOYER_TOKEN} ]; then
   echo "No deployer token found"; exit 1;
 fi
