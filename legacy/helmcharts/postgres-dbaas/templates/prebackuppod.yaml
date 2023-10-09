@@ -61,7 +61,7 @@ spec:
                   key: {{ include "postgres-dbaas.fullnameUppercase" . }}_READREPLICA_HOSTS
                   name: lagoon-env
             {{- end }}
-          image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
+          image: {{ .Values.imageCache }}uselagoon/database-tools:latest
           imagePullPolicy: Always
           name: {{ include "postgres-dbaas.fullname" . }}-prebackuppod
 {{ end }}

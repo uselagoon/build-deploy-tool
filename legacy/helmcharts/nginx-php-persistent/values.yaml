@@ -4,6 +4,7 @@
 
 replicaCount: 1
 
+imageCache: ""
 images:
   nginx: ""
   php: ""
