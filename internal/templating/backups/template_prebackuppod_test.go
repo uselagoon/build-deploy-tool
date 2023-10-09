@@ -105,94 +105,7 @@ func TestGeneratePreBackupPod(t *testing.T) {
 			want: "test-resources/result-prebackuppod3.yaml",
 		},
 		{
-			name: "test4 - k8up/v1alpha1",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:                 "elasticsearch",
-							OverrideName:         "elasticsearch",
-							Type:                 "elasticsearch",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeName: "elastic",
-							PersistentVolumePath: "/var/storage/path",
-						},
-					},
-					Backup: generator.BackupConfiguration{
-						K8upVersion: "v1",
-					},
-				},
-			},
-			want: "test-resources/result-prebackuppod4.yaml",
-		},
-		{
-			name: "test5 - k8up/v1alpha1",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:                 "opensearch",
-							OverrideName:         "opensearch",
-							Type:                 "opensearch",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeName: "elastic",
-							PersistentVolumePath: "/var/storage/path",
-						},
-					},
-					Backup: generator.BackupConfiguration{
-						K8upVersion: "v1",
-					},
-				},
-			},
-			want: "test-resources/result-prebackuppod5.yaml",
-		},
-		{
-			name: "test6 - k8up/v1",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:                 "opensearch",
-							OverrideName:         "opensearch",
-							Type:                 "opensearch",
-							DBaaSEnvironment:     "development",
-							PersistentVolumeName: "elastic",
-							PersistentVolumePath: "/var/storage/path",
-						},
-					},
-					Backup: generator.BackupConfiguration{
-						K8upVersion: "v2",
-					},
-				},
-			},
-			want: "test-resources/result-prebackuppod6.yaml",
-		},
-		{
-			name: "test7 - k8up/v1",
+			name: "test4 - k8up/v1",
 			args: args{
 				lValues: generator.BuildValues{
 					Project:         "example-project",
@@ -217,7 +130,7 @@ func TestGeneratePreBackupPod(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-prebackuppod7.yaml",
+			want: "test-resources/result-prebackuppod4.yaml",
 		},
 	}
 	for _, tt := range tests {

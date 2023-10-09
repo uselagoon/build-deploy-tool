@@ -51,7 +51,7 @@ spec:
             configMapKeyRef:
               key: POSTGRES_DATABASE_READREPLICAS
               name: lagoon-env
-        image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
+        image: uselagoon/database-tools:latest
         imagePullPolicy: Always
         name: postgres-database-prebackuppod
         resources: {}

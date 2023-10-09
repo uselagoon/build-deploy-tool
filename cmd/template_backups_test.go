@@ -56,7 +56,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY","value":"https://imagecache.example.com","scope":"global"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",

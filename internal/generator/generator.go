@@ -177,6 +177,15 @@ func NewGenerator(
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
+	imageCache := CheckFeatureFlag("IMAGECACHE_REGISTRY", lagoonEnvVars, generator.Debug)
+	fmt.Println(imageCache)
+	if imageCache != "" {
+		if imageCache[len(imageCache)-1:] != "/" {
+			imageCache = fmt.Sprintf("%s/", imageCache)
+		}
+	}
+	buildValues.ImageCache = imageCache
+
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, generator.Debug)
 	buildValues.IngressClass = ingressClass

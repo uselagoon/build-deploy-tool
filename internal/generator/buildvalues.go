@@ -47,6 +47,7 @@ type BuildValues struct {
 	IngressClass                  string                      `json:"ingressClass"`
 	TaskScaleMaxIterations        int                         `json:"taskScaleMaxIterations"`
 	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
+	ImageCache                    string                      `json:"imageCache"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
 }
 

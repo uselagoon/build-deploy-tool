@@ -51,7 +51,7 @@ spec:
             configMapKeyRef:
               key: MARIADB_DATABASE_READREPLICAS
               name: lagoon-env
-        image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
+        image: uselagoon/database-tools:latest
         imagePullPolicy: Always
         name: mariadb-database-prebackuppod
         resources: {}

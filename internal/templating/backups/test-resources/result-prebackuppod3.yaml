@@ -51,7 +51,7 @@ spec:
             configMapKeyRef:
               key: MONGODB_DATABASE_READREPLICAS
               name: lagoon-env
-        image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
+        image: uselagoon/database-tools:latest
         imagePullPolicy: Always
         name: mongodb-database-prebackuppod
         resources: {}

@@ -87,6 +87,11 @@ func GeneratePreBackupPod(
 
 				prebackuppod.Spec = k8upPBPSpec
 
+				if lValues.ImageCache != "" {
+					imageCachedImage := fmt.Sprintf("%s%s", lValues.ImageCache, prebackuppod.Spec.Pod.Spec.Containers[0].Image)
+					prebackuppod.Spec.Pod.Spec.Containers[0].Image = imageCachedImage
+				}
+
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
 						Name: "BACKUP_DB_READREPLICAS",
@@ -167,6 +172,11 @@ func GeneratePreBackupPod(
 				}
 
 				prebackuppod.Spec = k8upPBPSpec
+
+				if lValues.ImageCache != "" {
+					imageCachedImage := fmt.Sprintf("%s%s", lValues.ImageCache, prebackuppod.Spec.Pod.Spec.Containers[0].Image)
+					prebackuppod.Spec.Pod.Spec.Containers[0].Image = imageCachedImage
+				}
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
@@ -301,7 +311,7 @@ pod:
           configMapKeyRef:
             key: {{ .Name | VarFix }}_DATABASE
             name: lagoon-env
-      image: imagecache.amazeeio.cloud/amazeeio/alpine-mysql-client
+      image: uselagoon/database-tools:latest
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
 	"postgres-dbaas": `backupCommand: >
@@ -341,7 +351,7 @@ pod:
           configMapKeyRef:
             key: {{ .Name | VarFix }}_DATABASE
             name: lagoon-env
-      image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
+      image: uselagoon/database-tools:latest
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
 	"mongodb-dbaas": `backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_NAME}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true --archive"
@@ -373,73 +383,7 @@ pod:
           configMapKeyRef:
             key: {{ .Name | VarFix }}_DATABASE
             name: lagoon-env
-      image: imagecache.amazeeio.cloud/uselagoon/php-8.0-cli
+      image: uselagoon/database-tools:latest
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
-	"elasticsearch": `backupCommand: /bin/sh -c "tar -cf - -C {{ .PersistentVolumePath }} ."
-fileExtension: .{{ .Name }}.tar
-pod:
-  spec:
-    affinity:
-    podAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            labelSelector:
-                matchExpressions:
-                - key: lagoon.sh/service
-                  operator: In
-                  values:
-                    - {{ .Name }}
-            topologyKey: kubernetes.io/hostname
-            weight: 100
-    containers:
-    - args:
-        - sleep
-        - infinity
-      envFrom:
-        - configMapRef:
-            name: lagoon-env
-      image: imagecache.amazeeio.cloud/library/alpine
-      imagePullPolicy: Always
-      name: {{ .Name }}-prebackuppod
-      volumeMounts:
-        - name: {{ .PersistentVolumeName }}
-          mountPath: "{{ .PersistentVolumePath }}"
-    volumes:
-    - name: {{ .PersistentVolumeName }}
-      persistentVolumeClaim:
-        claimName: {{ .PersistentVolumeName }}`,
-	"opensearch": `backupCommand: /bin/sh -c "tar -cf - -C {{ .PersistentVolumePath }} ."
-fileExtension: .{{ .Name }}.tar
-pod:
-  spec:
-    affinity:
-    podAffinity:
-        preferredDuringSchedulingIgnoredDuringExecution:
-        - podAffinityTerm:
-            labelSelector:
-                matchExpressions:
-                - key: lagoon.sh/service
-                  operator: In
-                  values:
-                    - {{ .Name }}
-            topologyKey: kubernetes.io/hostname
-            weight: 100
-    containers:
-    - args:
-        - sleep
-        - infinity
-      envFrom:
-        - configMapRef:
-            name: lagoon-env
-      image: imagecache.amazeeio.cloud/library/alpine
-      imagePullPolicy: Always
-      name: {{ .Name }}-prebackuppod
-      volumeMounts:
-        - name: {{ .PersistentVolumeName }}
-          mountPath: "{{ .PersistentVolumePath }}"
-    volumes:
-    - name: {{ .PersistentVolumeName }}
-      persistentVolumeClaim:
-        claimName: {{ .PersistentVolumeName }}`,
 }
