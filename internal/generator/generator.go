@@ -178,7 +178,6 @@ func NewGenerator(
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
 	imageCache := CheckFeatureFlag("IMAGECACHE_REGISTRY", lagoonEnvVars, generator.Debug)
-	fmt.Println(imageCache)
 	if imageCache != "" {
 		if imageCache[len(imageCache)-1:] != "/" {
 			imageCache = fmt.Sprintf("%s/", imageCache)
