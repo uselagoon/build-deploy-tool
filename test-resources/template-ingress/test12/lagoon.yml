@@ -1,4 +1,4 @@
-docker-compose-yaml: ../test-resources/template-ingress/test1/docker-compose.yml
+docker-compose-yaml: ../test-resources/template-ingress/test12/docker-compose.yml
 
 environment_variables:
   git_sha: "true"

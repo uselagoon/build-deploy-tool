@@ -806,11 +806,14 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
     build-deploy-tool tasks pre-rollout
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 set -x
@@ -1640,11 +1643,14 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
   build-deploy-tool tasks post-rollout
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Build and Deploy" "finalizingBuild"
 set -x
