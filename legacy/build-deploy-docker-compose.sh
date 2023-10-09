@@ -99,10 +99,17 @@ set -x
 
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
+  [ "$2" ] || return #buildstep
 
   echo -e "##############################################\nBEGIN ${1}\n##############################################"
-  sleep 0.5s
 
+  # patch the buildpod with the buildstep
+  if [ "${SCC_CHECK}" == false ]; then
+    kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\"}}}" &> /dev/null
+    # tiny sleep to allow patch to complete before logs roll again
+    sleep 0.5s
+  fi
 }
 
 function patchBuildStep() {
@@ -124,23 +131,15 @@ function patchBuildStep() {
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
   echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
-
-  # patch the buildpod with the buildstep
-  if [ "${SCC_CHECK}" == false ]; then
-    kubectl patch -n ${4} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}" &> /dev/null
-
-    # tiny sleep to allow patch to complete before logs roll again
-    sleep 0.5s
-  fi
 }
+
 ##############################################
 ### PREPARATION
 ##############################################
 
 set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
-beginBuildStep "Initial Environment Setup"
+beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
 set -x
 
@@ -149,6 +148,16 @@ set -x
 ##############################################
 
 set +x
+
+# set the imagecache registry if it is provided
+IMAGECACHE_REGISTRY=""
+if [ ! -z "$(featureFlag IMAGECACHE_REGISTRY)" ]; then
+  IMAGECACHE_REGISTRY=$(featureFlag IMAGECACHE_REGISTRY)
+  # add trailing slash if it is missing
+  length=${#IMAGECACHE_REGISTRY}
+  last_char=${IMAGECACHE_REGISTRY:length-1:1}
+  [[ $last_char != "/" ]] && IMAGECACHE_REGISTRY="$IMAGECACHE_REGISTRY/"; :
+fi
 
 # Load path of docker-compose that should be used
 DOCKER_COMPOSE_YAML=($(cat .lagoon.yml | shyaml get-value docker-compose-yaml))
@@ -256,7 +265,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Configure Variables"
+beginBuildStep "Configure Variables" "configuringVariables"
 set -x
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
@@ -571,7 +580,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds"
+beginBuildStep "Image Builds" "buildingImages"
 set -x
 ##############################################
 ### CACHE IMAGE LIST GENERATION
@@ -796,7 +805,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Pre-Rollout Tasks"
+beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 set -x
 
 ##############################################
@@ -807,13 +816,16 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
     build-deploy-tool tasks pre-rollout
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 1"
+beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 set -x
 
 
@@ -857,7 +869,9 @@ set +x
 if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then
 	yq3 merge -ix -- /kubectl-build-deploy/values.yaml /kubectl-build-deploy/rootless.values.yaml
 fi
-
+if [ "$(featureFlag FS_ON_ROOT_MISMATCH)" = enabled ]; then
+	yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroupChangePolicy' "OnRootMismatch"
+fi
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
@@ -920,7 +934,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 2"
+beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 set -x
 
 ##############################################
@@ -1104,6 +1118,9 @@ do
     # Load the requested class and plan for this service
     DBAAS_ENVIRONMENT="${MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT["${SERVICE_NAME}"]}"
     yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'environment' $DBAAS_ENVIRONMENT
+    if [ ! -z "$IMAGECACHE_REGISTRY" ]; then
+      yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'imageCache' $IMAGECACHE_REGISTRY
+    fi
     helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_DBAAS_TEMPLATE -f /kubectl-build-deploy/values.yaml -f /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
     DBAAS+=("${SERVICE_NAME}:${SERVICE_TYPE}")
   fi
@@ -1113,7 +1130,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Route/Ingress Configuration"
+beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 
 TEMPLATE_PARAMETERS=()
 
@@ -1145,7 +1162,7 @@ fi
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Backup Configuration"
+beginBuildStep "Backup Configuration" "configuringBackups"
 
 # Run the backup generation script
 BACKUPS_DISABLED=false
@@ -1183,7 +1200,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry"
+beginBuildStep "Image Push to Registry" "pushingImages"
 set -x
 
 ##############################################
@@ -1338,7 +1355,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
           skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
         # If image not from an external registry and no docker hub creds were supplied, pull image from the imagecache
         else
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}/${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
+          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
         fi
       # If the private registry counter is 1 and no external registry was listed, we know a private docker hub was specified
       else
@@ -1346,7 +1363,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
       fi
     # If no private registries, use the imagecache
     else
-      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}/${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
+      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
     fi
 
     IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
@@ -1387,7 +1404,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Deployment Templating"
+beginBuildStep "Deployment Templating" "templatingDeployments"
 set -x
 
 ##############################################
@@ -1539,7 +1556,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Applying Deployments"
+beginBuildStep "Applying Deployments" "applyingDeployments"
 set -x
 
 ##############################################
@@ -1605,7 +1622,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Cronjob Cleanup"
+beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 set -x
 
 ##############################################
@@ -1618,7 +1635,7 @@ IFS=' ' read -a SPLIT_CURRENT_CRONJOBS <<< $CURRENT_CRONJOBS
 
 for SINGLE_NATIVE_CRONJOB in ${SPLIT_CURRENT_CRONJOBS[@]}
 do
-  re="\<$SINGLE_NATIVE_CRONJOB\>"
+  re="\<^$SINGLE_NATIVE_CRONJOB$\>"
   text=$( IFS=' '; echo "${NATIVE_CRONJOB_CLEANUP_ARRAY[*]}")
   if [[ "$text" =~ $re ]]; then
     #echo "Single cron found: ${SINGLE_NATIVE_CRONJOB}"
@@ -1633,7 +1650,7 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Post-Rollout Tasks"
+beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 set -x
 
 ##############################################
@@ -1645,13 +1662,16 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
   build-deploy-tool tasks post-rollout
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Build and Deploy"
+beginBuildStep "Build and Deploy" "finalizingBuild"
 set -x
 
 ##############################################
@@ -1685,7 +1705,7 @@ set -x
 
 set +x
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
-  beginBuildStep "Insights Gathering"
+  beginBuildStep "Insights Gathering" "gatheringInsights"
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
