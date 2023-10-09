@@ -60,7 +60,7 @@ spec:
                 find /storage -type d -exec chmod a+x {} +
                 touch "$SENTINEL"
               fi
-          image: busybox:musl
+          image: {{ .Values.imageCache }}library/busybox:musl
           imagePullPolicy: IfNotPresent
           name: fix-storage-permissions
           securityContext:
