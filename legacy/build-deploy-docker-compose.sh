@@ -859,7 +859,9 @@ set +x
 if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then
 	yq3 merge -ix -- /kubectl-build-deploy/values.yaml /kubectl-build-deploy/rootless.values.yaml
 fi
-
+if [ "$(featureFlag FS_ON_ROOT_MISMATCH)" = enabled ]; then
+	yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroupChangePolicy' "OnRootMismatch"
+fi
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
