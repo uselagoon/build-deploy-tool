@@ -410,8 +410,8 @@ do
 
   if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/PreBackupPod" ]]; then
     if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
-      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "$SERVICE_NAME" &> /dev/null; then
-        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "$SERVICE_NAME"
+      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod" &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod"
       fi
     fi
   fi
