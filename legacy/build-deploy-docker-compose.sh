@@ -1150,6 +1150,7 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
+set -x
 
 TEMPLATE_PARAMETERS=()
 
@@ -1178,11 +1179,11 @@ else
 # end custom route
 fi
 
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry" "pushingImages"
-set -x
+# apply the currently templated components out so that the route and lagoon-env configmaps gets what they need
+if [ "$(ls -A $YAML_FOLDER/)" ]; then
+  find $YAML_FOLDER -type f -exec cat {} \;
+  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+fi
 
 ##############################################
 ### PROJECT WIDE ENV VARIABLES
@@ -1290,6 +1291,13 @@ do
   esac
 done
 
+set +x
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Image Push to Registry" "pushingImages"
+set -x
+
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
 ##############################################
@@ -1386,6 +1394,7 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
+set -x
 
 # Run the backup generation script
 
