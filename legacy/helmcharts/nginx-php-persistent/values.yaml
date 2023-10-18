@@ -4,6 +4,7 @@
 
 replicaCount: 1
 
+imageCache: ""
 images:
   nginx: ""
   php: ""
@@ -20,7 +21,6 @@ nameOverride: ""
 fullnameOverride: ""
 
 podSecurityContext: {}
-  # fsGroup: 2000
 
 securityContext: {}
   # capabilities:
