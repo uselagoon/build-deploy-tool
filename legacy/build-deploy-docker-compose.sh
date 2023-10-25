@@ -1766,7 +1766,7 @@ fi
 # remove any certificates for tls-acme false ingress to prevent reissuing attempts
 TLS_FALSE_INGRESSES=$(kubectl -n ${NAMESPACE} get ingress -o json | jq -r '.items[] | select(.metadata.annotations["kubernetes.io/tls-acme"] == "false") | .metadata.name')
 for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
-  TLS_SECRETS=$(kubectl -n ${NAMESPACE} get ingress ${TLS_FALSE_INGRESS} -o json | jq -r '.spec.tls[].secretName')
+  TLS_SECRETS=$(kubectl -n ${NAMESPACE} get ingress ${TLS_FALSE_INGRESS} -o json | jq -r '.spec.tls[]?.secretName')
   for TLS_SECRET in $TLS_SECRETS; do
     if kubectl -n ${NAMESPACE} get certificates.cert-manager.io ${TLS_SECRET} &> /dev/null; then
       echo ">> Cleaning up certificate for ${TLS_SECRET} as tls-acme is set to false"
