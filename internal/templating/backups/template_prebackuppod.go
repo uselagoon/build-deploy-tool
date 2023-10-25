@@ -94,10 +94,10 @@ func GeneratePreBackupPod(
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
-						Name: "BACKUP_DB_READREPLICAS",
+						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
 							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-								Key: fmt.Sprintf("%s_READREPLICAS", varFix(serviceValues.OverrideName)),
+								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
 								},
@@ -180,10 +180,10 @@ func GeneratePreBackupPod(
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
-						Name: "BACKUP_DB_READREPLICAS",
+						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
 							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-								Key: fmt.Sprintf("%s_READREPLICAS", varFix(serviceValues.OverrideName)),
+								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
 								},
@@ -261,8 +261,8 @@ type PreBackupPods map[string]string
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated
 var preBackupPodSpecs = PreBackupPods{
 	"mariadb-dbaas": `backupCommand: >
-  /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
-  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1);
+  /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
+  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
   fi &&
   dump=$(mktemp)
   && mysqldump --max-allowed-packet=500M --events --routines --quick
@@ -315,8 +315,8 @@ pod:
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
 	"postgres-dbaas": `backupCommand: >
-  /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
-  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1);
+  /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
+  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
   fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump
   --host=$BACKUP_DB_HOST
   --port=$BACKUP_DB_PORT
