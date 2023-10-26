@@ -41,20 +41,22 @@ func GeneratePreBackupPod(
 		"lagoon.sh/version": lValues.LagoonVersion,
 	}
 
-	// add any additional labels
-	additionalLabels := map[string]string{}
-	additionalAnnotations := map[string]string{}
-	if lValues.BuildType == "branch" {
-		additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
-	} else if lValues.BuildType == "pullrequest" {
-		additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
-		additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
-		additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
-
-	}
-
 	// create the prebackuppods
 	for _, serviceValues := range lValues.Services {
+		// add any additional labels
+		additionalLabels := map[string]string{}
+		additionalAnnotations := map[string]string{}
+		if lValues.BuildType == "branch" {
+			additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
+		} else if lValues.BuildType == "pullrequest" {
+			additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
+			additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
+			additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
+		}
+		additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
+		additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
+		additionalLabels["lagoon.sh/service"] = serviceValues.Name
+		additionalLabels["lagoon.sh/service-type"] = serviceValues.Type
 		if _, ok := preBackupPodSpecs[serviceValues.Type]; ok {
 			switch lValues.Backup.K8upVersion {
 			case "v1":
@@ -94,10 +96,10 @@ func GeneratePreBackupPod(
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
-						Name: "BACKUP_DB_READREPLICAS",
+						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
 							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-								Key: fmt.Sprintf("%s_READREPLICAS", varFix(serviceValues.OverrideName)),
+								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
 								},
@@ -180,10 +182,10 @@ func GeneratePreBackupPod(
 
 				if prebackuppod.Spec.Pod.Spec.Containers[0].EnvFrom == nil && serviceValues.DBaasReadReplica {
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
-						Name: "BACKUP_DB_READREPLICAS",
+						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
 							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
-								Key: fmt.Sprintf("%s_READREPLICAS", varFix(serviceValues.OverrideName)),
+								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
 								},
@@ -261,8 +263,8 @@ type PreBackupPods map[string]string
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated
 var preBackupPodSpecs = PreBackupPods{
 	"mariadb-dbaas": `backupCommand: >
-  /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
-  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1);
+  /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
+  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
   fi &&
   dump=$(mktemp)
   && mysqldump --max-allowed-packet=500M --events --routines --quick
@@ -315,8 +317,8 @@ pod:
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
 	"postgres-dbaas": `backupCommand: >
-  /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICAS ]; then
-  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1);
+  /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
+  BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
   fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump
   --host=$BACKUP_DB_HOST
   --port=$BACKUP_DB_PORT
