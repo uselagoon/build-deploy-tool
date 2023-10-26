@@ -73,7 +73,6 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
-				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
@@ -159,7 +158,6 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
-				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
