@@ -41,20 +41,22 @@ func GeneratePreBackupPod(
 		"lagoon.sh/version": lValues.LagoonVersion,
 	}
 
-	// add any additional labels
-	additionalLabels := map[string]string{}
-	additionalAnnotations := map[string]string{}
-	if lValues.BuildType == "branch" {
-		additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
-	} else if lValues.BuildType == "pullrequest" {
-		additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
-		additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
-		additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
-
-	}
-
 	// create the prebackuppods
 	for _, serviceValues := range lValues.Services {
+		// add any additional labels
+		additionalLabels := map[string]string{}
+		additionalAnnotations := map[string]string{}
+		if lValues.BuildType == "branch" {
+			additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
+		} else if lValues.BuildType == "pullrequest" {
+			additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
+			additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
+			additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
+		}
+		additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
+		additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
+		additionalLabels["lagoon.sh/service"] = serviceValues.Name
+		additionalLabels["lagoon.sh/service-type"] = serviceValues.Type
 		if _, ok := preBackupPodSpecs[serviceValues.Type]; ok {
 			switch lValues.Backup.K8upVersion {
 			case "v1":
@@ -71,7 +73,6 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
-				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
@@ -157,7 +158,6 @@ func GeneratePreBackupPod(
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
-				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])

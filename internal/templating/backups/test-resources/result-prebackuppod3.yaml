@@ -7,12 +7,15 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: mongodb-database
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mongodb-dbaas
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-with-really-really-reall-3fdb
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    prebackuppod: mongodb-database
+    lagoon.sh/service: mongodb-database
+    lagoon.sh/service-type: mongodb-dbaas
   name: mongodb-database-prebackuppod
 spec:
   backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_NAME}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true

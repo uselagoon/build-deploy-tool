@@ -7,12 +7,15 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: mariadb-database
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mariadb-dbaas
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-with-really-really-reall-3fdb
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    prebackuppod: mariadb-database
+    lagoon.sh/service: mariadb-database
+    lagoon.sh/service-type: mariadb-dbaas
   name: mariadb-database-prebackuppod
 spec:
   backupCommand: |
