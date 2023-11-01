@@ -59,8 +59,8 @@ func GeneratePreBackupPod(
 			additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
 		}
 		additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
-		additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
-		additionalLabels["lagoon.sh/service"] = serviceValues.Name
+		additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
+		additionalLabels["lagoon.sh/service"] = serviceValues.OverrideName
 		additionalLabels["lagoon.sh/service-type"] = serviceValues.Type
 		if _, ok := preBackupPodSpecs[serviceValues.Type]; ok {
 			switch lValues.Backup.K8upVersion {
@@ -71,14 +71,14 @@ func GeneratePreBackupPod(
 						APIVersion: k8upv1alpha1.GroupVersion.String(),
 					},
 					ObjectMeta: metav1.ObjectMeta{
-						Name: fmt.Sprintf("%s-prebackuppod", serviceValues.Name),
+						Name: fmt.Sprintf("%s-prebackuppod", serviceValues.OverrideName),
 					},
 					Spec: k8upv1alpha1.PreBackupPodSpec{},
 				}
 
 				prebackuppod.ObjectMeta.Labels = labels
 				prebackuppod.ObjectMeta.Annotations = annotations
-				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
+				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.OverrideName
 
 				var pbp bytes.Buffer
 				tmpl, _ := template.New("").Funcs(funcMap).Parse(preBackupPodSpecs[serviceValues.Type])
