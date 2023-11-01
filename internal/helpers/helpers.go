@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base32"
+	"encoding/base64"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -290,4 +291,15 @@ func AppendIfMissing(slice []string, i string) []string {
 		}
 	}
 	return append(slice, i)
+}
+
+// helper function to read a file and base64 encode the result
+// returns an empty string on any error
+// mainly used in tests to consume JSON or YAML test resources
+func ReadFileBase64Encode(file string) string {
+	raw, err := os.ReadFile(file)
+	if err != nil {
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(raw)
 }

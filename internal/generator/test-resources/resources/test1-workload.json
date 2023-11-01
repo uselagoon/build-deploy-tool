@@ -1,0 +1,48 @@
+{
+    "nginx": {
+        "serviceType": "nginx",
+        "hpa": {
+            "spec": {
+                "minReplicas": 8,
+                "maxReplicas": 16,
+                "metrics": [
+                    {
+                        "type": "Resource",
+                        "resource": {
+                            "name": "cpu",
+                            "target": {
+                                "type": "Utilization",
+                                "averageUtilization": 3000
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "pdb": {
+            "spec": {
+                "minAvailable": 1
+            }
+        },
+        "resources": [
+            {
+                "name": "php",
+                "resources": {
+                    "requests": {
+                        "cpu": "10m",
+                        "memory": "10Mi"
+                    }
+                }
+            },
+            {
+                "name": "nginx",
+                "resources": {
+                    "requests": {
+                        "cpu": "10m",
+                        "memory": "10Mi"
+                    }
+                }
+            }
+        ]
+    }
+}
