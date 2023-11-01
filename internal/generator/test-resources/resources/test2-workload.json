@@ -1,0 +1,44 @@
+{
+    "nginx": {
+        "serviceType": "nginx",
+        "hpa": {
+            "spec": {
+                "minReplicas": 8,
+                "maxReplicas": 16,
+                "metrics": [
+                    {
+                        "type": "Resource",
+                        "resource": {
+                            "name": "cpu",
+                            "target": {
+                                "type": "Utilization",
+                                "averageUtilization": 3000
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "node": {
+        "serviceType": "node",
+        "hpa": {
+            "spec": {
+                "minReplicas": 8,
+                "maxReplicas": 16,
+                "metrics": [
+                    {
+                        "type": "Resource",
+                        "resource": {
+                            "name": "cpu",
+                            "target": {
+                                "type": "Utilization",
+                                "averageUtilization": 3000
+                            }
+                        }
+                    }
+                ]
+            }
+        }
+    }
+}
