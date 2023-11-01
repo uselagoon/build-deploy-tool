@@ -322,7 +322,7 @@ pod:
   fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump
   --host=$BACKUP_DB_HOST
   --port=$BACKUP_DB_PORT
-  --dbname=$BACKUP_DB_NAME
+  --dbname=$BACKUP_DB_DATABASE
   --username=$BACKUP_DB_USERNAME
   --format=t -w"
 fileExtension: .{{ .Name }}.tar
@@ -356,7 +356,7 @@ pod:
       image: uselagoon/database-tools:latest
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
-	"mongodb-dbaas": `backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_NAME}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true --archive"
+	"mongodb-dbaas": `backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_DATABASE}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true --archive"
 fileExtension: .{{ .Name }}.bson
 pod:
   spec:
