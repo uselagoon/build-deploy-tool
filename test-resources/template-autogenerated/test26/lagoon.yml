@@ -9,10 +9,9 @@ routes:
 environment_variables:
   git_sha: "true"
 
-example-project:
-  environments:
-    main:
-      autogenerateRoutes: false
-      routes:
-        - node:
-            - example.com
+environments:
+  main:
+    autogenerateRoutes: false
+    routes:
+      - node:
+          - example.com
