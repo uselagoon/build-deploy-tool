@@ -7,16 +7,20 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: postgres-database
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: postgres-dbaas
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-with-really-really-reall-3fdb
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
+    lagoon.sh/service: postgres-database
+    lagoon.sh/service-type: postgres-dbaas
     prebackuppod: postgres-database
   name: postgres-database-prebackuppod
 spec:
   backupCommand: |
-    /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICAS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICAS | cut -d ',' -f1); fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_NAME --username=$BACKUP_DB_USERNAME --format=t -w"
+    /bin/sh -c  "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump --host=$BACKUP_DB_HOST --port=$BACKUP_DB_PORT --dbname=$BACKUP_DB_DATABASE --username=$BACKUP_DB_USERNAME --format=t -w"
   fileExtension: .postgres-database.tar
   pod:
     metadata: {}
@@ -46,10 +50,10 @@ spec:
             configMapKeyRef:
               key: POSTGRES_DATABASE_DATABASE
               name: lagoon-env
-        - name: BACKUP_DB_READREPLICAS
+        - name: BACKUP_DB_READREPLICA_HOSTS
           valueFrom:
             configMapKeyRef:
-              key: POSTGRES_DATABASE_READREPLICAS
+              key: POSTGRES_DATABASE_READREPLICA_HOSTS
               name: lagoon-env
         image: uselagoon/database-tools:latest
         imagePullPolicy: Always
