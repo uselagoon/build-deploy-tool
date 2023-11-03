@@ -4,6 +4,8 @@
 # set it to something usable here
 LAGOON_BUILD_NAME=$HOSTNAME
 
+BUILD_WARNING_COUNT=0
+
 function cronScheduleMoreOftenThan30Minutes() {
   #takes a unexpanded cron schedule, returns 0 if it's more often that 30 minutes
   MINUTE=$(echo $1 | (read -a ARRAY; echo ${ARRAY[0]}) )
@@ -198,17 +200,19 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
 fi
 
 set +ex
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
 ### use the `build-validate` built in validater to run over the provided docker-compose file
 ##############################################
 dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
 dccExit=$?
-echo "docker-compose validate exit code ${dccExit}: ${dccOutput}"
-
 if [ "${dccExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -222,9 +226,32 @@ You can run docker compose config locally to check that your docker-compose file
 ##############################################"
   exit 1
 fi
-set -ex
 
-set +ex
+## validate the docker-compose in a way to eventually phase out forked library by displaying warnings
+dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
+dccExit=$?
+if [ "${dccExit}" != "0" ]; then
+  ((++BUILD_WARNING_COUNT))
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation"
+  previousStepEnd=${currentStepEnd}
+  echo "
+##############################################
+Warning!
+There are issues with your docker compose file that lagoon uses that should be fixed.
+You can run docker compose config locally to check that your docker-compose file is valid.
+##############################################
+"
+  echo ${dccOutput}
+  echo "
+##############################################"
+else
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation"
+  previousStepEnd=${currentStepEnd}
+fi
+
+beginBuildStep ".lagoon.yml Validation" "lagoonYmlValidation"
 ##############################################
 ### RUN lagoon-yml validation against the final data which may have overrides
 ### from .lagoon.override.yml file or LAGOON_YAML_OVERRIDE environment variable
@@ -234,7 +261,7 @@ lyvExit=$?
 
 if [ "${lyvExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -251,6 +278,7 @@ https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
 fi
 set -ex
 
+set +x
 # Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
 # aren't in build-deploy-tool.
 if ! lagoon-linter; then
@@ -261,9 +289,8 @@ else
 	echo "lagoon-linter found no issues with the .lagoon.yml file"
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
 set -x
@@ -1780,9 +1807,21 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy"
 previousStepEnd=${currentStepEnd}
-set -x
 
-set +x
+if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+  beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+  echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings"
+  previousStepEnd=${currentStepEnd}
+  # patch the buildpod with the buildstep
+  if [ "${SCC_CHECK}" == false ]; then
+    kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+    # tiny sleep to allow patch to complete before logs roll again
+    sleep 5
+  fi
+fi
+
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   beginBuildStep "Insights Gathering" "gatheringInsights"
   ##############################################
@@ -1800,5 +1839,33 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering"
   previousStepEnd=${currentStepEnd}
+
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
+else
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
 fi
 set -x
