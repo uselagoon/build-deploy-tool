@@ -857,6 +857,9 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSIO
 if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT" ]; then
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.memory' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT"
 fi
+if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_CPU_LIMIT" ]; then
+  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.cpu' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_CPU_LIMIT"
+fi
 if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS" ]; then
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.requests.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS"
 fi
