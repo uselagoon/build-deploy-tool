@@ -36,6 +36,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 		templatePath          string
 		controllerDevSchedule string
 		controllerPRSchedule  string
+		k8upVersion           string
 	}
 	tests := []struct {
 		name    string
@@ -54,7 +55,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				k8upVersion:     "v1",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY","value":"https://imagecache.example.com","scope":"global"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test1/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
@@ -72,7 +74,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				k8upVersion:     "v1",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test2/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
@@ -90,6 +93,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
+				k8upVersion:     "v1",
 				projectVars:     `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test3/lagoon.yml",
@@ -111,7 +115,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				prBaseBranch:    "main2",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				k8upVersion:     "v1",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test4/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
@@ -132,7 +137,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				prBaseBranch:    "main2",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				k8upVersion:     "v1",
+				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test5/lagoon.yml",
 				templatePath:    "../test-resources/template-backups/output",
@@ -150,6 +156,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
+				k8upVersion:     "v1",
 				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
 				envVars:         `[]`,
 				lagoonYAML:      "../test-resources/template-backups/test6/lagoon.yml",
@@ -249,6 +256,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				RetryWaitMin: time.Duration(10) * time.Millisecond,
 				RetryWaitMax: time.Duration(50) * time.Millisecond,
 			})
+			generator.BackupConfiguration.K8upVersion = tt.args.k8upVersion
 
 			savedTemplates := tt.args.templatePath
 			err = os.MkdirAll(tt.args.templatePath, 0755)
@@ -257,7 +265,12 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			}
 			defer os.RemoveAll(savedTemplates)
 
-			defer os.RemoveAll(savedTemplates)
+			ts := dbaasclient.TestDBaaSHTTPServer()
+			defer ts.Close()
+			err = os.Setenv("DBAAS_OPERATOR_HTTP", ts.URL)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 
 			if err := BackupTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("BackupTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)

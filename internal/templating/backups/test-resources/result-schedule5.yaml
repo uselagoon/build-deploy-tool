@@ -48,6 +48,8 @@ spec:
   resourceRequirementsTemplate: {}
 status: {}
 ---
+apiVersion: v1
+kind: Secret
 metadata:
   creationTimestamp: null
   name: lagoon-baas-custom-backup-credentials
@@ -55,6 +57,8 @@ stringData:
   access-key: abc123
   secret-key: abcdefghijklmnopqrstuvwxyz
 ---
+apiVersion: v1
+kind: Secret
 metadata:
   creationTimestamp: null
   name: lagoon-baas-custom-restore-credentials

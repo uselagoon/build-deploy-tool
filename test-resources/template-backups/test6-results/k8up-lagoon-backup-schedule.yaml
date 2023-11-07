@@ -23,10 +23,11 @@ spec:
     repoPasswordSecretRef:
       key: repo-pw
       name: baas-repo-pw
-    s3: {}
+    s3:
+      bucket: baas-example-project
   backup:
     resources: {}
-    schedule: 5 23 * * *
+    schedule: 5,20,35,50 5 * * 0
   check:
     resources: {}
     schedule: 5 5 * * 0
@@ -35,8 +36,8 @@ spec:
     retention:
       keepDaily: 10
       keepHourly: 10
-      keepMonthly: 10
-      keepWeekly: 10
+      keepMonthly: 12
+      keepWeekly: 16
     schedule: 5 5 * * 0
   resourceRequirementsTemplate: {}
 status: {}

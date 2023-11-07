@@ -25,7 +25,14 @@ spec:
     repoPasswordSecretRef:
       key: repo-pw
       name: baas-repo-pw
-    s3: {}
+    s3:
+      accessKeyIDSecretRef:
+        key: access-key
+        name: lagoon-baas-custom-backup-credentials
+      bucket: baas-example-project
+      secretAccessKeySecretRef:
+        key: secret-key
+        name: lagoon-baas-custom-backup-credentials
   backup:
     resources: {}
     schedule: 3,33 12 * * *
@@ -42,9 +49,11 @@ spec:
   resourceRequirementsTemplate: {}
 status: {}
 ---
+apiVersion: v1
+kind: Secret
 metadata:
   creationTimestamp: null
-  name: lagoon-baas-custom-restore-credentials
+  name: lagoon-baas-custom-backup-credentials
 stringData:
   access-key: abcdefg
   secret-key: abcdefg1234567
