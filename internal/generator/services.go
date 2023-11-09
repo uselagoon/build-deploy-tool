@@ -155,6 +155,7 @@ func composeToServiceValues(
 		if serviceDeploymentServiceType == "" {
 			serviceDeploymentServiceType = composeService
 		}
+
 		// if there is a `lagoon.name` label on this service, this should be used as an override name
 		lagoonOverrideName := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.name")
 		if lagoonOverrideName != "" {
@@ -261,7 +262,7 @@ func composeToServiceValues(
 				// elif [[ "${CAPABILITIES[@]}" =~ "mariadb.amazee.io/v1/MariaDBConsumer" ]] && ! checkDBaaSHealth ; then
 				lagoonType = fmt.Sprintf("%s-single", lagoonType)
 			} else {
-				// if there is a `lagoon.name` label on this service, this should be used as an override name
+				// if there is a `lagoon.%s-dbaas.environment` label on this service, this should be used as an the environment type for the dbaas
 				dbaasLabelOverride := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, fmt.Sprintf("lagoon.%s-dbaas.environment", lagoonType))
 				if dbaasLabelOverride != "" {
 					dbaasEnvironment = dbaasLabelOverride

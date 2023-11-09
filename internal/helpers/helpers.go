@@ -32,12 +32,12 @@ func IntPtr(i int) *int {
 	return &i
 }
 
-// Int32PTr
+// Int32Ptr
 func Int32Ptr(i int32) *int32 {
 	return &i
 }
 
-// Int64PTr
+// Int64Ptr
 func Int64Ptr(i int64) *int64 {
 	return &i
 }

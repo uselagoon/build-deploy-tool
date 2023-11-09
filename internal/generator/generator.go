@@ -49,6 +49,7 @@ type GeneratorInput struct {
 	FastlyAPISecretPrefix    string
 	SavedTemplatesPath       string
 	ConfigMapSha             string
+	BackupConfiguration      BackupConfiguration
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
@@ -96,6 +97,8 @@ func NewGenerator(
 	buildValues.ImageReferences = generator.ImageReferences
 	// add standard lagoon imagepull secret name
 	buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: "lagoon-internal-registry-secret"})
+
+	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
 	// get the project and environment variables
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
@@ -184,6 +187,14 @@ func NewGenerator(
 	// add the calculated build runtime variables into the existing variable slice
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
+
+	imageCache := CheckFeatureFlag("IMAGECACHE_REGISTRY", lagoonEnvVars, generator.Debug)
+	if imageCache != "" {
+		if imageCache[len(imageCache)-1:] != "/" {
+			imageCache = fmt.Sprintf("%s/", imageCache)
+		}
+	}
+	buildValues.ImageCache = imageCache
 
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, generator.Debug)

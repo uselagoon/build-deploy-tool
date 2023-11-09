@@ -23,7 +23,8 @@ spec:
     repoPasswordSecretRef:
       key: repo-pw
       name: baas-repo-pw
-    s3: {}
+    s3:
+      bucket: baas-example-project
   backup:
     resources: {}
     schedule: 50 5 * * 6

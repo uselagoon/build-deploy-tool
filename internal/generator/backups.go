@@ -15,6 +15,9 @@ const (
 	dailyDefaultBackupRetention   = 7
 	weeklyDefaultBackupRetention  = 6
 	monthlyDefaultBackupRetention = 1
+
+	// TODO: make this configurable
+	baasBucketPrefix = "baas"
 )
 
 func generateBackupValues(
@@ -28,39 +31,69 @@ func generateBackupValues(
 	// create a new schedule placeholder set to the default value so it can be adjusted through this
 	// generator
 	newBackupSchedule := defaultBackupSchedule
-	switch buildValues.BuildType {
-	case "branch":
-		if buildValues.EnvironmentType == "development" {
-			lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
-			devBackupSchedule := ""
-			if lagoonBackupDevSchedule != nil {
-				devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+
+	customBackupConfig := CheckFeatureFlag("CUSTOM_BACKUP_CONFIG", mergedVariables, debug)
+	if customBackupConfig == "enabled" {
+		switch buildValues.BuildType {
+		case "promote":
+			if buildValues.EnvironmentType == "production" {
+				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PROD_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				devBackupSchedule := ""
+				if lagoonBackupDevSchedule != nil {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+				} else {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", newBackupSchedule, debug)
+				}
+				if devBackupSchedule != "" {
+					newBackupSchedule = devBackupSchedule
+				}
+			}
+		case "branch":
+			if buildValues.EnvironmentType == "production" {
+				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PROD_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				devBackupSchedule := ""
+				if lagoonBackupDevSchedule != nil {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+				} else {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", newBackupSchedule, debug)
+				}
+				if devBackupSchedule != "" {
+					newBackupSchedule = devBackupSchedule
+				}
+			}
+			if buildValues.EnvironmentType == "development" {
+				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				devBackupSchedule := ""
+				if lagoonBackupDevSchedule != nil {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+				} else {
+					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", newBackupSchedule, debug)
+				}
+				if devBackupSchedule != "" {
+					newBackupSchedule = devBackupSchedule
+				}
+			}
+		case "pullrequest":
+			lagoonBackupPRSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PR_SCHEDULE", []string{"build", "global"}, mergedVariables)
+			prBackupSchedule := ""
+			if lagoonBackupPRSchedule != nil {
+				prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", lagoonBackupPRSchedule.Value, debug)
 			} else {
-				devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", newBackupSchedule, debug)
+				prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", prBackupSchedule, debug)
 			}
-			if devBackupSchedule != "" {
-				newBackupSchedule = devBackupSchedule
-			}
-		}
-	case "pullrequest":
-		lagoonBackupPRSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PR_SCHEDULE", []string{"build", "global"}, mergedVariables)
-		prBackupSchedule := ""
-		if lagoonBackupPRSchedule != nil {
-			prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", lagoonBackupPRSchedule.Value, debug)
-		} else {
-			prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", prBackupSchedule, debug)
-		}
-		if prBackupSchedule == "" {
-			lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
-			if lagoonBackupDevSchedule != nil {
-				newBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+			if prBackupSchedule == "" {
+				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				if lagoonBackupDevSchedule != nil {
+					newBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
+				} else {
+					newBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", newBackupSchedule, debug)
+				}
 			} else {
-				newBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", newBackupSchedule, debug)
+				newBackupSchedule = prBackupSchedule
 			}
-		} else {
-			newBackupSchedule = prBackupSchedule
 		}
 	}
+
 	buildValues.Backup.BackupSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, newBackupSchedule)
 	if err != nil {
 		return fmt.Errorf("Unable to convert crontab for default backup schedule: %v", err)
@@ -122,6 +155,20 @@ func generateBackupValues(
 			return fmt.Errorf("Unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}
 	}
+
+	// work out the bucket name
+	lagoonBaaSBackupBucket, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_BUCKET_NAME", []string{"build", "global"}, mergedVariables)
+	if lagoonBaaSBackupBucket != nil {
+		buildValues.Backup.S3BucketName = lagoonBaaSBackupBucket.Value
+	} else {
+		lagoonSharedBaasBucket, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_PROJECT_SHARED_BUCKET", []string{"internal_system"}, mergedVariables)
+		if lagoonSharedBaasBucket != nil {
+			buildValues.Backup.S3BucketName = fmt.Sprintf("%s/%s-%s", lagoonSharedBaasBucket.Value, baasBucketPrefix, buildValues.Project)
+		} else {
+			buildValues.Backup.S3BucketName = fmt.Sprintf("%s-%s", baasBucketPrefix, buildValues.Project)
+		}
+	}
+
 	// check for custom baas backup variables in the API
 	lagoonBaaSCustomBackupEndpoint, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_ENDPOINT", []string{"build", "global"}, mergedVariables)
 	if lagoonBaaSCustomBackupEndpoint != nil {

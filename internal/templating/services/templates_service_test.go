@@ -177,7 +177,7 @@ func TestGenerateServiceTemplate(t *testing.T) {
 							Type:             "basic",
 							DBaaSEnvironment: "development",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
-								generator.AdditionalServicePort{
+								{
 									ServicePort: types.ServicePortConfig{
 										Target:   8191,
 										Protocol: "tcp",
@@ -192,14 +192,14 @@ func TestGenerateServiceTemplate(t *testing.T) {
 							Type:             "basic-persistent",
 							DBaaSEnvironment: "development",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
-								generator.AdditionalServicePort{
+								{
 									ServicePort: types.ServicePortConfig{
 										Target:   8191,
 										Protocol: "tcp",
 									},
 									ServiceName: "myservice-persist-po-8191",
 								},
-								generator.AdditionalServicePort{
+								{
 									ServicePort: types.ServicePortConfig{
 										Target:   8192,
 										Protocol: "tcp",
