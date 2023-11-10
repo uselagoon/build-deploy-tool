@@ -180,7 +180,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-nginx-1.yaml",
 		},
 		{
-			name: "test2 - cli",
+			name: "test3 - cli",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -221,7 +221,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-cli-1.yaml",
 		},
 		{
-			name: "test5 - postgres-single",
+			name: "test4 - postgres-single",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -250,7 +250,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-postgres-single-1.yaml",
 		},
 		{
-			name: "test3 - elasticsearch",
+			name: "test5 - elasticsearch",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -282,7 +282,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-elasticsearch-1.yaml",
 		},
 		{
-			name: "test4 - opensearch",
+			name: "test6 - opensearch",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -314,7 +314,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-opensearch-1.yaml",
 		},
 		{
-			name: "test5 - basic compose ports",
+			name: "test7 - basic compose ports",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -364,7 +364,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-basic-2.yaml",
 		},
 		{
-			name: "test5 - solr",
+			name: "test8 - solr",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -393,7 +393,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-solr-1.yaml",
 		},
 		{
-			name: "test7 - basic resources",
+			name: "test9 - basic resources",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -450,6 +450,74 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 				},
 			},
 			want: "test-resources/deployment/result-basic-3.yaml",
+		},
+		{
+			name: "test10 - nginx-php with imagecache override",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					ImageCache: "imagecache.example.com/",
+					Flags: map[string]bool{
+						"rootlessworkloads": true,
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSha:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "nginx",
+							OverrideName:     "nginx",
+							Type:             "nginx-php",
+							DBaaSEnvironment: "production",
+							ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+						},
+						{
+							Name:             "php",
+							OverrideName:     "nginx",
+							Type:             "nginx-php",
+							DBaaSEnvironment: "production",
+							ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						},
+						{
+							Name:                 "nginx2",
+							OverrideName:         "nginx-2",
+							Type:                 "nginx-php-persistent",
+							DBaaSEnvironment:     "production",
+							ImageName:            "harbor.example.com/example-project/environment-name/nginx2@latest",
+							PersistentVolumePath: "/storage/data",
+							PersistentVolumeName: "nginx2",
+						},
+						{
+							Name:                 "php2",
+							OverrideName:         "nginx-2",
+							Type:                 "nginx-php-persistent",
+							DBaaSEnvironment:     "production",
+							ImageName:            "harbor.example.com/example-project/environment-name/php2@latest",
+							PersistentVolumeSize: "10Gi",
+							PersistentVolumePath: "/storage/data",
+							PersistentVolumeName: "nginx2",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-nginx-2.yaml",
 		},
 	}
 	for _, tt := range tests {

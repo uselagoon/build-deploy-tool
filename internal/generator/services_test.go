@@ -552,7 +552,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						"lagoon.service.usecomposeports": "true",
 					},
 					Ports: []composetypes.ServicePortConfig{
-						composetypes.ServicePortConfig{
+						{
 							Target:   8181,
 							Protocol: "tcp",
 						},
@@ -569,7 +569,7 @@ func Test_composeToServiceValues(t *testing.T) {
 				InPodCronjobs:              []lagoon.Cronjob{},
 				NativeCronjobs:             []lagoon.Cronjob{},
 				AdditionalServicePorts: []AdditionalServicePort{
-					AdditionalServicePort{
+					{
 						ServicePort: composetypes.ServicePortConfig{
 							Target:   8181,
 							Protocol: "tcp",

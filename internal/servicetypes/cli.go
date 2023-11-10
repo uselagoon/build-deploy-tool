@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+// defines all the cli service type defaults
 var cli = ServiceType{
 	Name: "cli",
 	PrimaryContainer: ServiceContainer{
@@ -61,6 +62,7 @@ var cli = ServiceType{
 	},
 }
 
+// contains all the persistent type overrides that the cli service doesn't have
 var cliPersistent = ServiceType{
 	Name: "cli-persistent",
 	PrimaryContainer: ServiceContainer{

@@ -391,7 +391,7 @@ spec:
           [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 10000:0 {} +\n\tfind
           /storage -exec chmod a+r,u+w {} +\n\tfind /storage -type d -exec chmod a+x
           {} +\n\ttouch \"$SENTINEL\"\nfi"
-        image: busybox:musl
+        image: library/busybox:musl
         imagePullPolicy: IfNotPresent
         name: fix-storage-permissions
         resources: {}

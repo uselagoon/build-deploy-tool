@@ -6,6 +6,7 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+// defines all the basic service type defaults
 var basic = ServiceType{
 	Name: "basic",
 	Ports: ServicePorts{
@@ -67,6 +68,7 @@ var basic = ServiceType{
 	},
 }
 
+// contains all the persistent type overrides that the basic service doesn't have
 var basicPersistent = ServiceType{
 	Name:  "basic-persistent",
 	Ports: basic.Ports,

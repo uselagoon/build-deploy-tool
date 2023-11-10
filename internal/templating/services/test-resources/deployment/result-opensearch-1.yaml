@@ -71,7 +71,7 @@ spec:
           if [ "$DESIRED" -gt "$CURRENT" ]; then
             sysctl -w vm.max_map_count=$DESIRED
           fi
-        image: busybox:latest
+        image: library/busybox:latest
         imagePullPolicy: IfNotPresent
         name: set-max-map-count
         resources: {}
@@ -157,7 +157,7 @@ spec:
           if [ "$DESIRED" -gt "$CURRENT" ]; then
             sysctl -w vm.max_map_count=$DESIRED
           fi
-        image: busybox:latest
+        image: library/busybox:latest
         imagePullPolicy: IfNotPresent
         name: set-max-map-count
         resources: {}

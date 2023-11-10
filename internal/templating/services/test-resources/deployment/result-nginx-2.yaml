@@ -111,6 +111,7 @@ spec:
       priorityClassName: lagoon-priority-production
       securityContext:
         fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
         runAsUser: 10000
 status: {}
@@ -240,7 +241,7 @@ spec:
           [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 0:0 {} +\n\tfind
           /storage -exec chmod a+r,u+w {} +\n\tfind /storage -type d -exec chmod a+x
           {} +\n\ttouch \"$SENTINEL\"\nfi"
-        image: library/busybox:musl
+        image: imagecache.example.com/library/busybox:musl
         imagePullPolicy: IfNotPresent
         name: fix-storage-permissions
         resources: {}
@@ -252,6 +253,7 @@ spec:
       priorityClassName: lagoon-priority-production
       securityContext:
         fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
         runAsUser: 10000
       volumes:

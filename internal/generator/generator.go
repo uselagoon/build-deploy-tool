@@ -211,6 +211,11 @@ func NewGenerator(
 		}
 	}
 
+	fsOnRootMismatch := CheckFeatureFlag("FS_ON_ROOT_MISMATCH", lagoonEnvVars, generator.Debug)
+	if fsOnRootMismatch == "enabled" {
+		buildValues.PodSecurityContext.OnRootMismatch = true
+	}
+
 	// check admin features for resources
 	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
 	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)

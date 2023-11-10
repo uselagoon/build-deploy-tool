@@ -73,9 +73,10 @@ type ResourceRequests struct {
 }
 
 type PodSecurityContext struct {
-	FsGroup    int64 `json:"fsGroup"`
-	RunAsGroup int64 `json:"runAsGroup"`
-	RunAsUser  int64 `json:"runAsUser"`
+	FsGroup        int64 `json:"fsGroup"`
+	RunAsGroup     int64 `json:"runAsGroup"`
+	RunAsUser      int64 `json:"runAsUser"`
+	OnRootMismatch bool  `json:"onRootMismatch"`
 }
 
 type Fastly struct {

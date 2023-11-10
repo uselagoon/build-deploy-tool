@@ -194,6 +194,16 @@ func GenerateDeploymentTemplate(
 					FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
 				}
 			}
+			if buildValues.PodSecurityContext.OnRootMismatch {
+				fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+				if deployment.Spec.Template.Spec.SecurityContext != nil {
+					deployment.Spec.Template.Spec.SecurityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+				} else {
+					deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+						FSGroupChangePolicy: &fsGroupChangePolicy,
+					}
+				}
+			}
 
 			// start set up any volumes this deployment can use
 			// first handle any dynamic secret volumes that come from kubernetes secrets that are labeled
@@ -279,6 +289,10 @@ func GenerateDeploymentTemplate(
 						cmd = append(cmd, c2)
 					}
 					init.Container.Command = cmd
+					// init containers contain will more than likely contain public images, we should add a provided pull through imagecache if one is defined
+					if buildValues.ImageCache != "" {
+						init.Container.Image = fmt.Sprintf("%s%s", buildValues.ImageCache, init.Container.Image)
+					}
 					deployment.Spec.Template.Spec.InitContainers = append(deployment.Spec.Template.Spec.InitContainers, init.Container)
 				}
 			}

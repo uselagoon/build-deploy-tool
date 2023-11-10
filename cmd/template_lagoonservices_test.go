@@ -42,9 +42,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 		imageReferences    map[string]string
 	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name        string
+		description string
+		args        args
+		want        string
 	}{
 		{
 			name: "test1 basic deployment",
@@ -122,7 +123,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 			want: "../test-resources/template-lagoon-services/test2-results-b",
 		},
 		{
-			name: "test3 - funky pvcs",
+			name:        "test3 - funky pvcs",
+			description: "only create pvcs of the requested persistent-name in the docker-compose file",
 			args: args{
 				alertContact:      "alertcontact",
 				statusPageID:      "statuspageid",

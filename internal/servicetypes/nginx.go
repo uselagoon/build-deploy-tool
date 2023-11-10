@@ -203,7 +203,7 @@ fi`,
 		},
 		Container: corev1.Container{
 			Name:            "fix-storage-permissions",
-			Image:           "busybox:musl",
+			Image:           "library/busybox:musl",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{
 				RunAsUser: helpers.Int64Ptr(0),

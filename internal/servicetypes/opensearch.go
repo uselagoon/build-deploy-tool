@@ -39,7 +39,7 @@ fi`,
 		},
 		Container: corev1.Container{
 			Name:            "set-max-map-count",
-			Image:           "busybox:latest",
+			Image:           "library/busybox:latest",
 			ImagePullPolicy: corev1.PullIfNotPresent,
 			SecurityContext: &corev1.SecurityContext{
 				Privileged: helpers.BoolPtr(true),
