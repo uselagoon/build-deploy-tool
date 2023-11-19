@@ -385,6 +385,26 @@ pod:
           configMapKeyRef:
             key: {{ .Name | VarFix }}_DATABASE
             name: lagoon-env
+      - name: BACKUP_DB_PORT
+        valueFrom:
+          configMapKeyRef:
+            key: {{ .Name | VarFix }}_PORT
+            name: lagoon-env
+      - name: BACKUP_DB_AUTHSOURCE
+        valueFrom:
+          configMapKeyRef:
+            key: {{ .Name | VarFix }}_AUTHSOURCE
+            name: lagoon-env
+      - name: BACKUP_DB_AUTHMECHANISM
+        valueFrom:
+          configMapKeyRef:
+            key: {{ .Name | VarFix }}_AUTHMECHANISM
+            name: lagoon-env
+      - name: BACKUP_DB_AUTHTLS
+        valueFrom:
+          configMapKeyRef:
+            key: {{ .Name | VarFix }}_AUTHTLS
+            name: lagoon-env
       image: uselagoon/database-tools:latest
       imagePullPolicy: Always
       name: {{ .Name }}-prebackuppod`,
