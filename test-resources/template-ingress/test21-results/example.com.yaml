@@ -8,12 +8,8 @@ metadata:
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: main
     lagoon.sh/version: v2.7.x
-    monitor.stakater.com/enabled: "true"
-    monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    uptimerobot.monitor.stakater.com/alert-contacts: alertcontact
-    uptimerobot.monitor.stakater.com/interval: "60"
-    uptimerobot.monitor.stakater.com/status-pages: statuspageid
+    route.lagoon.sh/path-override: /
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: example.com
@@ -25,10 +21,10 @@ metadata:
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
-    lagoon.sh/primaryIngress: "true"
     lagoon.sh/project: example-project
     lagoon.sh/service: example.com
     lagoon.sh/service-type: custom-ingress
+    route.lagoon.sh/primary: "true"
   name: example.com
 spec:
   rules:

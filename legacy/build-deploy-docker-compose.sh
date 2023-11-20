@@ -1206,6 +1206,35 @@ fi
 # Load all routes with correct schema and comma separated
 ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "acme.openshift.io/exposer!=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
 
+# remove stakater annotations, and fix primary label
+for ingress in $(kubectl  -n ${NAMESPACE} get ingress -o json | jq -r '.items[] | @base64'); do
+    _jq() {
+     echo ${ingress} | base64 --decode | jq -r ${1}
+    }
+    INGRESS_NAME=$(echo $(_jq '.') | jq -r '.metadata.name')
+    PRIMARY=$(echo $(_jq '.') | jq -r '.metadata.labels["lagoon.sh/primaryIngress"] // false ')
+    OVERRIDE=$(echo $(_jq '.') | jq -r '.metadata.annotations["monitor.stakater.com/overridePath"] // empty ')
+    PATCH='{
+  "metadata": {
+    "annotations": {
+      "monitor.stakater.com/enabled": null,
+      "monitor.stakater.com/overridePath": null,
+      "uptimerobot.monitor.stakater.com/alert-contacts": null,
+      "uptimerobot.monitor.stakater.com/interval": null,
+      "uptimerobot.monitor.stakater.com/status-pages": null
+    },
+    "labels": {
+      "route.lagoon.sh/primary": "'${PRIMARY}'"
+    }
+  }
+}'
+    # if the ingress has a stakater override path annotation defined, change it to the new annotation
+    if [ ! -z "${OVERRIDE}" ]; then
+      PATCH=$(echo "${PATCH}" | jq '.metadata.annotations += {"route.lagoon.sh/path-override":"'${OVERRIDE}'"}')
+    fi
+    kubectl -n ${NAMESPACE} patch ingress ${INGRESS_NAME} -p "${PATCH}"
+done
+
 # Active / Standby routes
 ACTIVE_ROUTES=""
 STANDBY_ROUTES=""
