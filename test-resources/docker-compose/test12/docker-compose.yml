@@ -1,0 +1,29 @@
+version: '2'
+
+x-environment: &default-environment
+  MYVAR1: ${MYVAR1:-${MYVAR2:-defaultvalue}substring}
+
+services:
+  cli:
+    image: uselagoon/php-8.1-cli-drupal:23.10.0
+    environment:
+      <<: *default-environment
+
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: .
+      dockerfile: node.dockerfile
+    labels:
+      lagoon.type: node
+    volumes:
+      - .:/app:delegated
+    environment:
+      - LAGOON_LOCALDEV_HTTP_PORT=3000
+      - LAGOON_ROUTE=http://node.docker.amazee.io
+
+networks:
+  amazeeio-network:
+    external: true

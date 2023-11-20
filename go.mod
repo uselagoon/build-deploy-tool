@@ -5,11 +5,11 @@ go 1.18
 require (
 	github.com/PaesslerAG/gval v1.1.2
 	github.com/amazeeio/dbaas-operator v0.3.0
-	github.com/compose-spec/compose-go v1.2.7
+	github.com/compose-spec/compose-go v1.20.0
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/go-retryablehttp v0.5.4
-	github.com/imdario/mergo v0.3.13
+	github.com/imdario/mergo v0.3.16
 	github.com/k8up-io/k8up/v2 v2.5.2
 	github.com/spf13/cobra v1.5.0
 	github.com/uselagoon/machinery v0.0.7
@@ -25,9 +25,9 @@ require (
 	github.com/PuerkitoBio/purell v1.1.1 // indirect
 	github.com/PuerkitoBio/urlesc v0.0.0-20170810143723-de5bf2ad4578 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/distribution/distribution/v3 v3.0.0-20210316161203-a01c71e2477e // indirect
+	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/go-connections v0.4.0 // indirect
-	github.com/docker/go-units v0.4.0 // indirect
+	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.8.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -55,10 +55,11 @@ require (
 	github.com/xeipuuv/gojsonpointer v0.0.0-20180127040702-4e3ac2762d5f // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
+	golang.org/x/exp v0.0.0-20230713183714-613f0c0eb8a1 // indirect
 	golang.org/x/net v0.0.0-20220822230855-b0a4917ee28c // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
-	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c // indirect
-	golang.org/x/sys v0.0.0-20220818161305-2296e01440c6 // indirect
+	golang.org/x/sync v0.3.0 // indirect
+	golang.org/x/sys v0.1.0 // indirect
 	golang.org/x/term v0.0.0-20220722155259-a9ba230a4035 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20220609170525-579cf78fd858 // indirect
@@ -75,6 +76,6 @@ require (
 	sigs.k8s.io/structured-merge-diff/v4 v4.2.3 // indirect
 )
 
-replace github.com/compose-spec/compose-go v1.2.7 => github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1
+replace github.com/compose-spec/compose-go v1.20.0 => github.com/shreddedbacon/compose-go v0.0.0-20231103005133-1fbf57481b8b
 
-// replace github.com/compose-spec/compose-go v1.2.7 => ../../compose-spec/compose-go
+// replace github.com/compose-spec/compose-go v1.2.7 => ../../shreddedbacon/compose-go
