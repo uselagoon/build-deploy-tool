@@ -113,3 +113,16 @@ lagoon.sh/prHeadBranch: {{ .Values.prHeadBranch | quote }}
 lagoon.sh/prBaseBranch: {{ .Values.prBaseBranch | quote }}
 {{- end }}
 {{- end -}}
+
+{{/*
+Merge resources from global over resources defined in the values
+*/}}
+{{- define "resources" -}}
+{{- $value := dict -}}
+{{- range (rest .) -}}
+  {{- $value = merge $value . -}}
+{{- end -}}
+{{- if $value -}}
+{{- toYaml $value }}
+{{- end }}
+{{- end -}}
