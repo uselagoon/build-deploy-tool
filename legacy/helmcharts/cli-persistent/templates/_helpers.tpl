@@ -96,3 +96,7 @@ Generate path for twig storage emptyDir
 {{- define "cli-persistent.twig-storage.path" -}}
 {{- printf "%s/php" .Values.persistentStorage.path }}
 {{- end -}}
+
+{{- define "custom-pvc.name" -}}
+{{- printf "lcv-%s" . | trunc 63 | trimSuffix "-" -}}
+{{- end -}}

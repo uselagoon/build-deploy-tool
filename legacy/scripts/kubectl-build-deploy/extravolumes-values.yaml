@@ -1,0 +1,8 @@
+
+
+customVolumes:
+  - testmount
+
+customVolumeMounts:
+  - testmount:
+      - cli: /testmount/

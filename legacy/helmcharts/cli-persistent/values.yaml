@@ -11,7 +11,7 @@ gitSha: ""
 image: ""
 
 persistentStorage:
-  name: ""
+  name: "cli"
 
 imagePullPolicy: Always
 

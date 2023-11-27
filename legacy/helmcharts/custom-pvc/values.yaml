@@ -1,0 +1,11 @@
+# Default values for custom-pvc.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# fastly:
+#   apiToken: ''
+#   platformTLSConfiguration: ''
+
+# this is the default persistentStorage size for PVCs
+persistentStorage:
+  size: 5Gi
