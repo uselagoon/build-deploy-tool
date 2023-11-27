@@ -8,9 +8,8 @@ metadata:
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: main
     lagoon.sh/version: v2.7.x
-    monitor.stakater.com/enabled: "false"
-    monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    route.lagoon.sh/path-override: /
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: www.example.com
@@ -25,6 +24,7 @@ metadata:
     lagoon.sh/project: example-project
     lagoon.sh/service: www.example.com
     lagoon.sh/service-type: custom-ingress
+    route.lagoon.sh/primary: "false"
   name: www.example.com
 spec:
   rules:

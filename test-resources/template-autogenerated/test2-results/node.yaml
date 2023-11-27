@@ -10,7 +10,6 @@ metadata:
     lagoon.sh/prHeadBranch: main
     lagoon.sh/prNumber: "123"
     lagoon.sh/version: v2.7.x
-    monitor.stakater.com/enabled: "false"
     nginx.ingress.kubernetes.io/server-snippet: |
       add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
@@ -28,6 +27,7 @@ metadata:
     lagoon.sh/project: example-project
     lagoon.sh/service: node
     lagoon.sh/service-type: node
+    route.lagoon.sh/primary: "false"
   name: node
 spec:
   rules:
