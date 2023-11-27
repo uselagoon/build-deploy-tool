@@ -11,7 +11,7 @@ jobs:
     strategy:
       matrix:
         goversion:
-        - 1.18
+        - 1.21
     steps:
       -
         name: Checkout Branch or Tag
