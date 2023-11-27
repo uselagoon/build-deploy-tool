@@ -30,7 +30,7 @@ spec:
     schedule: 5 23 * * *
   check:
     resources: {}
-    schedule: 5 5 * * 0
+    schedule: 5 7 * * 1
   prune:
     resources: {}
     retention:
@@ -38,6 +38,6 @@ spec:
       keepHourly: 10
       keepMonthly: 10
       keepWeekly: 10
-    schedule: 5 5 * * 0
+    schedule: 5 4 * * 0
   resourceRequirementsTemplate: {}
 status: {}
