@@ -32,6 +32,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v1",
 						S3Endpoint:     "https://minio.endpoint",
@@ -63,6 +64,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v1",
 						BackupSchedule: "50 5 * * 6",
@@ -92,6 +94,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v1",
 						S3Endpoint:     "https://minio.endpoint",
@@ -127,6 +130,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v1",
 						S3Endpoint:     "https://minio.endpoint",
@@ -162,6 +166,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v1",
 						S3Endpoint:     "https://minio.endpoint",
@@ -199,6 +204,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
+					BackupsEnabled:  true,
 					Backup: generator.BackupConfiguration{
 						K8upVersion:    "v2",
 						S3Endpoint:     "https://minio.endpoint",

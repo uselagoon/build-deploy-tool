@@ -39,13 +39,14 @@ func TestBackupTemplateGeneration(t *testing.T) {
 		k8upVersion           string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name     string
+		args     args
+		want     string
+		emptyDir bool // if no templates are generated, then there will be a .gitkeep file in there
+		wantErr  bool
 	}{
 		{
-			name: "test1",
+			name: "test1 - defaults",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -56,15 +57,17 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY","value":"https://imagecache.example.com","scope":"global"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test1/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY","value":"https://imagecache.example.com","scope":"global"},
+					{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test1/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
 			want: "../test-resources/template-backups/test1-results",
 		},
 		{
-			name: "test2",
+			name: "test2 - custom backup config with override schedule for dev",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -75,15 +78,18 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test2/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},
+					{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},
+					{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test2/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
 			want: "../test-resources/template-backups/test2-results",
 		},
 		{
-			name: "test3",
+			name: "test3 - custom dev schedule, but custom config disabled so defaults",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -94,15 +100,17 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test3/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},
+					{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test3/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
 			want: "../test-resources/template-backups/test3-results",
 		},
 		{
-			name: "test4",
+			name: "test4 - custom backup keys with custom schedules for dev and pr envs",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -116,15 +124,21 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test4/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},
+					{"name":"LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY","value":"abcdefg","scope":"build"},
+					{"name":"LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY","value":"abcdefg1234567","scope":"build"},
+					{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},
+					{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},
+					{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test4/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
 			want: "../test-resources/template-backups/test4-results",
 		},
 		{
-			name: "test5",
+			name: "test5 - custom restore keys with custom schedules for dev and prs",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -138,15 +152,41 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY","value":"abcdefg","scope":"build"},{"name":"LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY","value":"abcdefg1234567","scope":"build"},{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test5/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG","value":"enabled","scope":"global"},
+					{"name":"LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY","value":"abcdefg","scope":"build"},
+					{"name":"LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY","value":"abcdefg1234567","scope":"build"},
+					{"name":"LAGOON_BACKUP_DEV_SCHEDULE","value":"1,31 23 * * *","scope":"build"},
+					{"name":"LAGOON_BACKUP_PR_SCHEDULE","value":"3,33 12 * * *","scope":"build"},
+					{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test5/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
 			want: "../test-resources/template-backups/test5-results",
 		},
 		{
-			name: "test6",
+			name: "test6 - all defaults k8upv2",
+			args: args{
+				alertContact:    "alertcontact",
+				statusPageID:    "statuspageid",
+				projectName:     "example-project",
+				environmentName: "main",
+				environmentType: "production",
+				buildType:       "branch",
+				lagoonVersion:   "v2.7.x",
+				branch:          "main",
+				k8upVersion:     "v2",
+				projectVars: `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test6/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
+			},
+			want: "../test-resources/template-backups/test6-results",
+		},
+		{
+			name: "test7 - nothing to backup so no schedule",
 			args: args{
 				alertContact:    "alertcontact",
 				statusPageID:    "statuspageid",
@@ -157,12 +197,14 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				lagoonVersion:   "v2.7.x",
 				branch:          "main",
 				k8upVersion:     "v1",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-backups/test6/lagoon.yml",
-				templatePath:    "../test-resources/template-backups/output",
+				projectVars: `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},
+					{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:      `[]`,
+				lagoonYAML:   "../test-resources/template-backups/test7/lagoon.yml",
+				templatePath: "../test-resources/template-backups/output",
 			},
-			want: "../test-resources/template-backups/test6-results",
+			want:     "../test-resources/template-backups/test7-results",
+			emptyDir: true,
 		},
 	}
 	for _, tt := range tests {
@@ -283,7 +325,16 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", tt.want, err)
 			}
-			if len(files) != len(results) {
+			resultSize := 0
+			if !tt.emptyDir {
+				results, err = ioutil.ReadDir(tt.want)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", tt.want, err)
+				}
+				// .gitkeep file needs to be subtracted to equal 0
+				resultSize = len(results)
+			}
+			if len(files) != resultSize {
 				for _, f := range files {
 					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
 					if err != nil {
