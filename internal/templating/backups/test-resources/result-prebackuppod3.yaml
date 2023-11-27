@@ -19,8 +19,10 @@ metadata:
     prebackuppod: mongodb-database
   name: mongodb-database-prebackuppod
 spec:
-  backupCommand: /bin/sh -c "mongodump --uri=mongodb://${BACKUP_DB_USER}:${BACKUP_DB_PASSWORD}@${BACKUP_DB_HOST}:${BACKUP_DB_PORT}/${BACKUP_DB_DATABASE}?ssl=true&sslInsecure=true&tls=true&tlsInsecure=true
-    --archive"
+  backupCommand: /bin/sh -c "dump=$(mktemp) && mongodump --quiet --ssl --tlsInsecure
+    --username=${BACKUP_DB_USERNAME} --password=${BACKUP_DB_PASSWORD} --host=${BACKUP_DB_HOST}:${BACKUP_DB_PORT}
+    --db=${BACKUP_DB_DATABASE} --authenticationDatabase=${BACKUP_DB_AUTHSOURCE} --authenticationMechanism=${BACKUP_DB_AUTHMECHANISM}
+    --archive=$dump && cat $dump && rm $dump"
   fileExtension: .mongodb-database.bson
   pod:
     metadata: {}
@@ -49,6 +51,26 @@ spec:
           valueFrom:
             configMapKeyRef:
               key: MONGODB_DATABASE_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_PORT
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_PORT
+              name: lagoon-env
+        - name: BACKUP_DB_AUTHSOURCE
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_AUTHSOURCE
+              name: lagoon-env
+        - name: BACKUP_DB_AUTHMECHANISM
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_AUTHMECHANISM
+              name: lagoon-env
+        - name: BACKUP_DB_AUTHTLS
+          valueFrom:
+            configMapKeyRef:
+              key: MONGODB_DATABASE_AUTHTLS
               name: lagoon-env
         - name: BACKUP_DB_READREPLICA_HOSTS
           valueFrom:
