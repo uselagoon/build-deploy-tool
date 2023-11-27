@@ -43,7 +43,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -77,7 +77,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -113,7 +113,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -147,7 +147,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -183,7 +183,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -217,7 +217,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -253,7 +253,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -296,7 +296,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 0-23 1-31 1-12 0-6",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -336,7 +336,7 @@ func Test_generateBackupValues(t *testing.T) {
 						BackupLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -378,7 +378,7 @@ func Test_generateBackupValues(t *testing.T) {
 						BackupLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -415,7 +415,7 @@ func Test_generateBackupValues(t *testing.T) {
 						RestoreLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -462,7 +462,7 @@ func Test_generateBackupValues(t *testing.T) {
 						RestoreLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -529,7 +529,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
@@ -566,7 +566,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "mybucket",
 					PruneRetention: PruneRetention{
@@ -608,7 +608,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "mybucket",
 					PruneRetention: PruneRetention{
@@ -645,7 +645,7 @@ func Test_generateBackupValues(t *testing.T) {
 				Namespace:       "example-com-main",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					S3BucketName:   "baas-cluster-bucket/baas-example-project",
 					PruneRetention: PruneRetention{
