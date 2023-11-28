@@ -1,6 +1,7 @@
 package generator
 
 import (
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -197,6 +198,10 @@ func composeToServiceValues(
 		// work out cronjobs for this service
 		inpodcronjobs := []lagoon.Cronjob{}
 		nativecronjobs := []lagoon.Cronjob{}
+		// check if there are any duplicate named cronjobs
+		if err := checkDuplicateCronjobs(lYAML.Environments[buildValues.Branch].Cronjobs); err != nil {
+			return ServiceValues{}, err
+		}
 		if !buildValues.CronjobsDisabled {
 			for _, cronjob := range lYAML.Environments[buildValues.Branch].Cronjobs {
 				// if this cronjob is meant for this service, add it
@@ -436,4 +441,37 @@ func getDBaasEnvironment(
 		return exists, fmt.Errorf("There was an error checking DBaaS endpoint %s: %v", buildValues.DBaaSOperatorEndpoint, err)
 	}
 	return exists, nil
+}
+
+func checkDuplicateCronjobs(cronjobs []lagoon.Cronjob) error {
+	var unique []lagoon.Cronjob
+	var duplicates []lagoon.Cronjob
+	for _, v := range cronjobs {
+		skip := false
+		for _, u := range unique {
+			if v.Name == u.Name {
+				skip = true
+				duplicates = append(duplicates, v)
+				break
+			}
+		}
+		if !skip {
+			unique = append(unique, v)
+		}
+	}
+	var uniqueDuplicates []lagoon.Cronjob
+	for _, d := range duplicates {
+		for _, u := range unique {
+			if d.Name == u.Name {
+				uniqueDuplicates = append(uniqueDuplicates, u)
+			}
+		}
+	}
+	// join the two together
+	result := append(duplicates, uniqueDuplicates...)
+	if result != nil {
+		b, _ := json.Marshal(result)
+		return fmt.Errorf("duplicate named cronjobs detected: %v", string(b))
+	}
+	return nil
 }

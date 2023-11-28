@@ -639,7 +639,7 @@ func Test_composeToServiceValues(t *testing.T) {
 			},
 		},
 		{
-			name: "test16 - cronjobs disabled",
+			name: "test17 - cronjobs disabled",
 			args: args{
 				lYAML: &lagoon.YAML{
 					Environments: lagoon.Environments{
@@ -686,7 +686,7 @@ func Test_composeToServiceValues(t *testing.T) {
 			},
 		},
 		{
-			name: "test14 - invalid service port",
+			name: "test18 - invalid service port",
 			args: args{
 				lYAML: &lagoon.YAML{
 					Environments: lagoon.Environments{
@@ -710,6 +710,50 @@ func Test_composeToServiceValues(t *testing.T) {
 			want:    ServiceValues{},
 			wantErr: true,
 		},
+		{
+			name: "test19 - duplicate cronjobs",
+			args: args{
+				lYAML: &lagoon.YAML{
+					Environments: lagoon.Environments{
+						"main": lagoon.Environment{
+							Cronjobs: []lagoon.Cronjob{
+								{
+									Name:     "My Cronjob",
+									Command:  "env",
+									Service:  "cli",
+									Schedule: "5 2 * * *",
+								},
+								{
+									Name:     "My Cronjob2",
+									Command:  "drush cron",
+									Service:  "cli",
+									Schedule: "*/5 * * * *",
+								},
+								{
+									Name:     "My Cronjob",
+									Command:  "env",
+									Service:  "cli",
+									Schedule: "15 5 4 * 0",
+								},
+							},
+						},
+					},
+				},
+				buildValues: &BuildValues{
+					Environment:          "main",
+					Branch:               "main",
+					BuildType:            "branch",
+					ServiceTypeOverrides: &lagoon.EnvironmentVariable{},
+				},
+				composeService: "cli",
+				composeServiceValues: composetypes.ServiceConfig{
+					Labels: composetypes.Labels{
+						"lagoon.type": "cli",
+					},
+				},
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -730,6 +774,82 @@ func Test_composeToServiceValues(t *testing.T) {
 			wValues, _ := json.Marshal(tt.want)
 			if !reflect.DeepEqual(string(lValues), string(wValues)) {
 				t.Errorf("composeToServiceValues() = %v, want %v", string(lValues), string(wValues))
+			}
+		})
+	}
+}
+
+func Test_checkDuplicateCronjobs(t *testing.T) {
+	type args struct {
+		cronjobs []lagoon.Cronjob
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test1 - no duplicate cronjob names",
+			args: args{
+				cronjobs: []lagoon.Cronjob{
+					{
+						Name:     "drush uli",
+						Command:  "drush uli",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+					{
+						Name:     "drush cron",
+						Command:  "drush cron",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+					{
+						Name:     "drush cr",
+						Command:  "drush cr",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+				},
+			},
+		},
+		{
+			name: "test2 - duplicate cronjob names",
+			args: args{
+				cronjobs: []lagoon.Cronjob{
+					{
+						Name:     "drush uli",
+						Command:  "drush uli",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+					{
+						Name:     "drush cr",
+						Command:  "drush cr",
+						Service:  "cli",
+						Schedule: "5,25,2 4 * * *",
+					},
+					{
+						Name:     "drush cron",
+						Command:  "drush cron",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+					{
+						Name:     "drush cr",
+						Command:  "drush cr",
+						Service:  "cli",
+						Schedule: "5 * * * *",
+					},
+				},
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := checkDuplicateCronjobs(tt.args.cronjobs); (err != nil) != tt.wantErr {
+				t.Errorf("checkDuplicateCronjobs() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
