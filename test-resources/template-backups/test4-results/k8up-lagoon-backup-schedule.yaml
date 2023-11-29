@@ -38,14 +38,14 @@ spec:
     schedule: 3,33 12 * * *
   check:
     resources: {}
-    schedule: 5 5 * * 0
+    schedule: 5 7 * * 1
   prune:
     resources: {}
     retention:
       keepDaily: 7
       keepMonthly: 1
       keepWeekly: 6
-    schedule: 5 5 * * 0
+    schedule: 5 4 * * 0
   resourceRequirementsTemplate: {}
 status: {}
 ---
