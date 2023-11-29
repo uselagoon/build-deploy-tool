@@ -37,7 +37,7 @@ fastly:
 #   serviceId: ''
 #   apiSecretName: ''
 
-resources:
+containerResources:
   nginx:
     # limits:
     #   cpu: 100m
@@ -52,6 +52,8 @@ resources:
     requests:
       cpu: 10m
       memory: 100Mi
+
+resources: {}
 
 nodeSelector: {}
 
