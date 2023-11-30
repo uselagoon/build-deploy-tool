@@ -1191,8 +1191,20 @@ do
 
   HELM_SERVICE_TEMPLATE="templates/service.yaml"
   if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_SERVICE_TEMPLATE ]; then
+    SERVICE_OVERRIDES=()
+    if  [[ "$SERVICE_TYPE" == "basic" ]] ||
+        [[ "$SERVICE_TYPE" == "basic-persistent" ]]; then
+      SERVICE_PORT_NUMBER=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.service\\.port false)
+      if [ ! $SERVICE_PORT_NUMBER == "false" ]; then
+        # check if the port provided is actually a number
+        if ! [[ $SERVICE_PORT_NUMBER =~ ^[0-9]+$ ]] ; then
+          echo "Provided service port is not a number"; exit 1;
+        fi
+        SERVICE_OVERRIDES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
+      fi
+    fi
     cat /kubectl-build-deploy/values.yaml
-    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
+    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${SERVICE_OVERRIDES[@]}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
   fi
 
   HELM_DBAAS_TEMPLATE="templates/dbaas.yaml"
