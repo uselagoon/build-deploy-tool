@@ -217,3 +217,103 @@ func TestCheckLagoonLabel(t *testing.T) {
 		})
 	}
 }
+
+func TestUnmarshalLagoonDockerComposeYAML(t *testing.T) {
+	type args struct {
+		file string
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantErrMsg string
+		wantErr    bool
+	}{
+		{
+			name: "test1 docker-compose drupal example",
+			args: args{
+				file: "../../test-resources/docker-compose/test1/docker-compose.yml",
+			},
+			wantErr:    true,
+			wantErrMsg: `line 59: mapping key "<<" already defined at line 58`,
+		},
+		{
+			name: "test2 docker-compose node example",
+			args: args{
+				file: "../../test-resources/docker-compose/test2/docker-compose.yml",
+			},
+		},
+		{
+			name: "test3 docker-compose complex",
+			args: args{
+				file: "../../test-resources/docker-compose/test3/docker-compose.yml",
+			},
+		},
+		{
+			name: "test4 docker-compose complex",
+			args: args{
+				file: "../../test-resources/docker-compose/test4/docker-compose.yml",
+			},
+		},
+		{
+			name: "test5 docker-compose complex",
+			args: args{
+				file: "../../test-resources/docker-compose/test5/docker-compose.yml",
+			},
+			wantErr:    true,
+			wantErrMsg: `line 57: mapping key "<<" already defined at line 56`,
+		},
+		{
+			name: "test6 docker-compose complex",
+			args: args{
+				file: "../../test-resources/docker-compose/test6/docker-compose.yml",
+			},
+		},
+		// these tests are specific to docker-compose validations, but will pass yaml validations
+		{
+			name: "test7 check an invalid docker-compose with ignoring non-string key errors (valid yaml)",
+			args: args{
+				file: "../../test-resources/docker-compose/test7/docker-compose.yml",
+			},
+		},
+		{
+			name: "test8 check an invalid docker-compose (same as test7 but not ignoring the errors)",
+			args: args{
+				file: "../../test-resources/docker-compose/test8/docker-compose.yml",
+			},
+		},
+		{
+			name: "test9 check an valid docker-compose with missing env_files",
+			args: args{
+				file: "../../test-resources/docker-compose/test9/docker-compose.yml",
+			},
+		},
+		{
+			name: "test10 check an valid docker-compose with missing env_files (same as test9 but not ignoring the errors)",
+			args: args{
+				file: "../../test-resources/docker-compose/test10/docker-compose.yml",
+			},
+		},
+		{
+			name: "test11 docker-compose service name with '.'",
+			args: args{
+				file: "../../test-resources/docker-compose/test11/docker-compose.yml",
+			},
+		},
+		// ^^ these tests are specific to docker-compose validations, but will pass yaml validations
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := ValidateUnmarshalDockerComposeYAML(tt.args.file)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ValidateUnmarshalDockerComposeYAML() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err != nil {
+				if !strings.Contains(err.Error(), tt.wantErrMsg) {
+					t.Errorf("ValidateUnmarshalDockerComposeYAML() error = %v, wantErr %v", err.Error(), tt.wantErrMsg)
+				}
+				return
+			}
+		})
+	}
+}

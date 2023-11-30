@@ -4,6 +4,8 @@
 # set it to something usable here
 LAGOON_BUILD_NAME=$HOSTNAME
 
+BUILD_WARNING_COUNT=0
+
 function cronScheduleMoreOftenThan30Minutes() {
   #takes a unexpanded cron schedule, returns 0 if it's more often that 30 minutes
   MINUTE=$(echo $1 | (read -a ARRAY; echo ${ARRAY[0]}) )
@@ -119,6 +121,7 @@ function patchBuildStep() {
   [ "$4" ] || return #namespace
   [ "$5" ] || return #buildstep
   [ "$6" ] || return #buildstep
+  [ "$7" ] || return #has warnings
   totalStartTime=$(date -d "${1}" +%s)
   startTime=$(date -d "${2}" +%s)
   endTime=$(date -d "${3}" +%s)
@@ -130,7 +133,12 @@ function patchBuildStep() {
   diffTotalSeconds="$(($endTime-$totalStartTime))"
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
-  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
+  hasWarnings=""
+  if [ "${7}" == "true" ]; then
+    hasWarnings=" WithWarnings"
+  fi
+
+  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}${hasWarnings}\n##############################################"
 }
 
 ##############################################
@@ -198,17 +206,20 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
 fi
 
 set +ex
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
+DOCKER_COMPOSE_WARNING_COUNT=0
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
 ### use the `build-validate` built in validater to run over the provided docker-compose file
 ##############################################
 dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
 dccExit=$?
-echo "docker-compose validate exit code ${dccExit}: ${dccOutput}"
-
 if [ "${dccExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -222,9 +233,61 @@ You can run docker compose config locally to check that your docker-compose file
 ##############################################"
   exit 1
 fi
-set -ex
 
-set +ex
+## validate the docker-compose in a way to eventually phase out forked library by displaying warnings
+dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
+dccExit=$?
+if [ "${dccExit}" != "0" ]; then
+  ((++BUILD_WARNING_COUNT))
+  ((++DOCKER_COMPOSE_WARNING_COUNT))
+  echo "
+##############################################
+Warning!
+There are issues with your docker compose file that lagoon uses that should be fixed.
+You can run docker compose config locally to check that your docker-compose file is valid.
+"
+  if [[ "${dccOutput}" =~ "no such file or directory" ]]; then
+    echo "> an env_file is defined in your docker-compose file, but no matching file found."
+  fi
+  if [[ "${dccOutput}" =~ "Non-string key" ]]; then
+    echo "> an invalid string key was detected in your docker-compose file."
+  fi
+  echo ERR: ${dccOutput}
+  echo ""
+fi
+
+dccOutput=$(bash -c 'build-deploy-tool validate docker-compose-with-errors --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
+dccExit2=$?
+if [ "${dccExit2}" != "0" ]; then
+  ((++DOCKER_COMPOSE_WARNING_COUNT))
+  if [ "${dccExit}" == "0" ]; then
+    ((++BUILD_WARNING_COUNT))
+    echo "
+##############################################
+Warning!
+There are issues with your docker compose file that lagoon uses that should be fixed.
+You can run docker compose config locally to check that your docker-compose file is valid.
+"
+  fi
+  echo "> There are yaml validation errors in your docker-compose file that should be corrected."
+  echo ERR: ${dccOutput}
+  echo ""
+fi
+
+if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
+  echo "Read the docs for more on errors displayed here https://docs.lagoon.sh/lagoon-build-errors
+"
+  echo "##############################################"
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
+  previousStepEnd=${currentStepEnd}
+else
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
+  previousStepEnd=${currentStepEnd}
+fi
+
+beginBuildStep ".lagoon.yml Validation" "lagoonYmlValidation"
 ##############################################
 ### RUN lagoon-yml validation against the final data which may have overrides
 ### from .lagoon.override.yml file or LAGOON_YAML_OVERRIDE environment variable
@@ -234,7 +297,7 @@ lyvExit=$?
 
 if [ "${lyvExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -251,6 +314,7 @@ https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
 fi
 set -ex
 
+set +x
 # Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
 # aren't in build-deploy-tool.
 if ! lagoon-linter; then
@@ -261,9 +325,8 @@ else
 	echo "lagoon-linter found no issues with the .lagoon.yml file"
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
 set -x
@@ -578,7 +641,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
 set -x
@@ -803,7 +866,7 @@ set -x
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 set -x
@@ -818,7 +881,7 @@ else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
   set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
   set -x
 fi
 
@@ -932,7 +995,7 @@ fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 set -x
@@ -1159,7 +1222,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 set -x
@@ -1305,7 +1368,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Push to Registry" "pushingImages"
 set -x
@@ -1403,7 +1466,7 @@ fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
 set -x
@@ -1474,7 +1537,7 @@ fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
 set -x
@@ -1626,7 +1689,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Applying Deployments" "applyingDeployments"
 set -x
@@ -1692,7 +1755,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 set -x
@@ -1727,7 +1790,7 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 set -x
@@ -1743,7 +1806,7 @@ else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
   set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
   set -x
 fi
 
@@ -1790,11 +1853,9 @@ set -x
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
 previousStepEnd=${currentStepEnd}
-set -x
 
-set +x
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   beginBuildStep "Insights Gathering" "gatheringInsights"
   ##############################################
@@ -1810,7 +1871,35 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   done
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
   previousStepEnd=${currentStepEnd}
+
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
+else
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
 fi
 set -x
