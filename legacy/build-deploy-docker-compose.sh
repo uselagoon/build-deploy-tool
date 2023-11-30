@@ -275,7 +275,7 @@ You can run docker compose config locally to check that your docker-compose file
 fi
 
 if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
-  echo "Read the docs for more on errors displayed here :LINK_TO_DOCS:
+  echo "Read the docs for more on errors displayed here https://docs.lagoon.sh/lagoon-build-errors
 "
   echo "##############################################"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
