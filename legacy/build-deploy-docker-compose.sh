@@ -1297,6 +1297,7 @@ done
 CLEANUP_WARNINGS="false"
 if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
   CLEANUP_WARNINGS="true"
+  ((++BUILD_WARNING_COUNT))
   echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
   if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
     echo "> You can remove these in the next build by setting the flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
