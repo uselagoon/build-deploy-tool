@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"fmt"
 
@@ -11,18 +10,9 @@ import (
 )
 
 type identifyServices struct {
-	Name       string       `json:"name"`
-	Type       string       `json:"type"`
-	Containers []containers `json:"containers,omitempty"`
-}
-
-type containers struct {
-	Name  string  `json:"name"`
-	Ports []ports `json:"ports,omitempty"`
-}
-
-type ports struct {
-	Port int32 `json:"port"`
+	Deployments []string `json:"deployments,omitempty"`
+	Volumes     []string `json:"volumes,omitempty"`
+	Services    []string `json:"services,omitempty"`
 }
 
 var lagoonServiceIdentify = &cobra.Command{
@@ -30,7 +20,7 @@ var lagoonServiceIdentify = &cobra.Command{
 	Aliases: []string{"ls"},
 	Short:   "Identify the lagoon services for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		gen, err := generator.GenerateInput(*rootCmd, true)
+		gen, err := generator.GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}
@@ -38,22 +28,17 @@ var lagoonServiceIdentify = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error reading images flag: %v", err)
 		}
-		var imageRefs struct {
-			Images map[string]string `json:"images"`
-		}
-		imagesStr, err := base64.StdEncoding.DecodeString(images)
+		imageRefs, err := loadImagesFromFile(images)
 		if err != nil {
-			return fmt.Errorf("error decoding images payload: %v", err)
-		}
-		if err := json.Unmarshal(imagesStr, &imageRefs); err != nil {
-			return fmt.Errorf("error unmarshalling images payload: %v", err)
+			return err
 		}
 		gen.ImageReferences = imageRefs.Images
 		out, err := LagoonServiceTemplateIdentification(gen)
 		if err != nil {
 			return err
 		}
-		fmt.Println(out)
+		b, _ := json.Marshal(out)
+		fmt.Println(string(b))
 		return nil
 	},
 }
@@ -62,9 +47,9 @@ var lagoonServiceIdentify = &cobra.Command{
 // about the services that lagoon will be deploying (this will be kubernetes `kind: deployment`, but lagoon calls them services ¯\_(ツ)_/¯)
 // this command can be used to identify services that are deployed by the build, so that services that may remain in the environment can be identified
 // and eventually removed
-func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identifyServices, error) {
+func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*identifyServices, error) {
 
-	lServices := []identifyServices{}
+	servicesData := identifyServices{}
 	lagoonBuild, err := generator.NewGenerator(
 		g,
 	)
@@ -74,27 +59,26 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identify
 
 	deployments, err := servicestemplates.GenerateDeploymentTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
-		return nil, fmt.Errorf("couldn't generate template: %v", err)
+		return nil, fmt.Errorf("couldn't identify deployments: %v", err)
 	}
 	for _, d := range deployments {
-		dcs := []containers{}
-		for _, dc := range d.Spec.Template.Spec.Containers {
-			dcp := []ports{}
-			for _, p := range dc.Ports {
-				dcp = append(dcp, ports{Port: p.ContainerPort})
-			}
-			dcs = append(dcs, containers{
-				Name:  dc.Name,
-				Ports: dcp,
-			})
-		}
-		lServices = append(lServices, identifyServices{
-			Name:       d.Name,
-			Type:       d.ObjectMeta.Labels["lagoon.sh/service-type"],
-			Containers: dcs,
-		})
+		servicesData.Deployments = append(servicesData.Deployments, d.ObjectMeta.Name)
 	}
-	return lServices, nil
+	pvcs, err := servicestemplates.GeneratePVCTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't identify volumes: %v", err)
+	}
+	for _, pvc := range pvcs {
+		servicesData.Volumes = append(servicesData.Volumes, pvc.ObjectMeta.Name)
+	}
+	services, err := servicestemplates.GenerateServiceTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't identify services: %v", err)
+	}
+	for _, service := range services {
+		servicesData.Services = append(servicesData.Services, service.ObjectMeta.Name)
+	}
+	return &servicesData, nil
 }
 
 func init() {
