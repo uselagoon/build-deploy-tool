@@ -72,7 +72,7 @@ spec:
             - configMapRef:
                 name: lagoon-env
           resources:
-            {{- toYaml .Values.resources.nginx | nindent 12 }}
+            {{- include "resources" (list "resources" .Values.resources .Values.containerResources.nginx ) | nindent 12 }}
           {{- if .Values.dynamicSecretMounts }}
           volumeMounts:
             {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
@@ -105,7 +105,7 @@ spec:
             - name: NGINX_FASTCGI_PASS
               value: '127.0.0.1'
           resources:
-            {{- toYaml .Values.resources.php | nindent 12 }}
+            {{- include "resources" (list "resources" .Values.resources .Values.containerResources.php ) | nindent 12 }}
           {{- if .Values.dynamicSecretMounts }}
           volumeMounts:
             {{- toYaml .Values.dynamicSecretMounts | nindent 12 }}
