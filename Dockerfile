@@ -2,10 +2,10 @@ ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
-FROM golang:${GO_VER:-1.18}-alpine as golang
+FROM golang:${GO_VER:-1.21}-alpine3.18 as golang
 
 RUN apk add --no-cache git
-RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.2.0
+RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
 
 WORKDIR /app
 
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:20.10.22
+FROM docker:20.10.24
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/lagoon-images" repository="https://github.com/uselagoon/lagoon-images"
@@ -65,9 +65,9 @@ ENV TMPDIR=/tmp \
     BASH_ENV=/home/.bashrc
 
 # Defining Versions
-ENV KUBECTL_VERSION=v1.20.4 \
-    HELM_VERSION=v3.5.2 \
-    HELM_SHA256=01b317c506f8b6ad60b11b1dc3f093276bb703281cb1ae01132752253ec706a2
+ENV KUBECTL_VERSION=v1.27.6 \
+    HELM_VERSION=v3.13.0 \
+    HELM_SHA256=138676351483e61d12dfade70da6c03d471bbdcac84eaadeb5e1d06fa114a24f
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
     && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
@@ -78,7 +78,7 @@ RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing au
     && chmod +x /usr/bin/kubectl \
     && curl -Lo /usr/bin/yq3 https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 \
     && chmod +x /usr/bin/yq3 \
-    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.15.1/yq_linux_amd64 \
+    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_amd64 \
     && chmod +x /usr/bin/yq \
     && curl -Lo /tmp/helm.tar.gz https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz \
     && echo "${HELM_SHA256}  /tmp/helm.tar.gz" | sha256sum -c -  \
