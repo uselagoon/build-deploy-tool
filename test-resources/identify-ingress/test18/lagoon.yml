@@ -1,0 +1,13 @@
+docker-compose-yaml: ../test-resources/identify-ingress/test18/docker-compose.yml
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - "wild.example.com":
+              wildcard: true
+              tls-acme: false
+          - "alt.example.com":
+              alternativenames:
+                - www.example.com
+                - en.example.com

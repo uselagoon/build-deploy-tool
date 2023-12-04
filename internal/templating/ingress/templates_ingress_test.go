@@ -40,6 +40,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -77,6 +78,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -114,6 +116,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -152,6 +155,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -192,6 +196,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					IngressClass: "nginx",
 					HSTSEnabled:  helpers.BoolPtr(true),
 					HSTSMaxAge:   31536000,
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -235,6 +240,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					HSTSMaxAge:            31536000,
 					HSTSIncludeSubdomains: helpers.BoolPtr(true),
 					HSTSPreload:           helpers.BoolPtr(true),
+					IngressName:           "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -274,6 +280,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -314,6 +321,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -351,6 +359,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -389,6 +398,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					Wildcard:     helpers.BoolPtr(true),
+					IngressName:  "wildcard-www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -427,6 +437,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					Wildcard:     helpers.BoolPtr(true),
+					IngressName:  "wildcard-this-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.e-f1945",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
