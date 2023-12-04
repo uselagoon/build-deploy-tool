@@ -1255,9 +1255,7 @@ fi
 
 # apply the currently templated components out so that the route and lagoon-env configmaps gets what they need
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  if [ "$(featureFlag LOG_DEBUGGING)" = enabled ]; then 
-    find $YAML_FOLDER -type f -exec cat {} \;
-  fi
+  find $YAML_FOLDER -type f -exec cat {} \;
   kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
 fi
 
@@ -1611,9 +1609,7 @@ fi
 set -x
 
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  if [ "$(featureFlag LOG_DEBUGGING)" = enabled ]; then 
-    find $YAML_FOLDER -type f -exec cat {} \;
-  fi
+  find $YAML_FOLDER -type f -exec cat {} \;
   kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
 fi
 
@@ -1793,9 +1789,7 @@ if [ "$(ls -A $YAML_FOLDER/)" ]; then
     find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
   fi
 
-  if [ "$(featureFlag LOG_DEBUGGING)" = enabled ]; then 
-    find $YAML_FOLDER -type f -exec cat {} \;
-  fi
+  find $YAML_FOLDER -type f -exec cat {} \;
   kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
 fi
 set -x
