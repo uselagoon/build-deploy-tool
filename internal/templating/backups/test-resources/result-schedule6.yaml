@@ -1,0 +1,49 @@
+---
+apiVersion: k8up.io/v1
+kind: Schedule
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: k8up-lagoon-backup-schedule
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: k8up-schedule
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: k8up-lagoon-backup-schedule
+    lagoon.sh/service-type: k8up-schedule
+    lagoon.sh/template: k8up-schedule-0.1.0
+  name: k8up-lagoon-backup-schedule
+spec:
+  backend:
+    repoPasswordSecretRef:
+      key: repo-pw
+      name: baas-repo-pw
+    s3:
+      accessKeyIDSecretRef:
+        key: access-key
+        name: my-s3-secret
+      bucket: my-bucket
+      endpoint: https://minio.endpoint
+      secretAccessKeySecretRef:
+        key: secret-key
+        name: my-s3-secret
+  backup:
+    resources: {}
+    schedule: 50 5 * * 6
+  check:
+    resources: {}
+    schedule: 50 5 * * 6
+  prune:
+    resources: {}
+    retention:
+      keepDaily: 7
+      keepMonthly: 1
+      keepWeekly: 6
+    schedule: 50 5 * * 6
+  resourceRequirementsTemplate: {}
+status: {}

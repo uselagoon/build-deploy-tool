@@ -1,0 +1,122 @@
+---
+apiVersion: k8up.io/v1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: mariadb-database
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mariadb-dbaas
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: mariadb-database
+    lagoon.sh/service-type: mariadb-dbaas
+    prebackuppod: mariadb-database
+  name: mariadb-database-prebackuppod
+spec:
+  backupCommand: |
+    /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); fi && dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --no-data --no-tablespaces -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE > $dump && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --ignore-table=$BACKUP_DB_DATABASE.watchdog --no-create-info --no-tablespaces --skip-triggers -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
+  fileExtension: .mariadb-database.sql
+  pod:
+    metadata: {}
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        env:
+        - name: BACKUP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE_HOST
+              name: lagoon-env
+        - name: BACKUP_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE_USERNAME
+              name: lagoon-env
+        - name: BACKUP_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE_PASSWORD
+              name: lagoon-env
+        - name: BACKUP_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_READREPLICA_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE_READREPLICA_HOSTS
+              name: lagoon-env
+        image: uselagoon/database-tools:latest
+        imagePullPolicy: Always
+        name: mariadb-database-prebackuppod
+        resources: {}
+---
+apiVersion: k8up.io/v1
+kind: PreBackupPod
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-with-really-really-reall-3fdb
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mariadb-dbaas
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-with-really-really-reall-3fdb
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: mariadb
+    lagoon.sh/service-type: mariadb-dbaas
+    prebackuppod: mariadb
+  name: mariadb-prebackuppod
+spec:
+  backupCommand: |
+    /bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); fi && dump=$(mktemp) && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --no-data --no-tablespaces -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE > $dump && mysqldump --max-allowed-packet=500M --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --ignore-table=$BACKUP_DB_DATABASE.watchdog --no-create-info --no-tablespaces --skip-triggers -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE >> $dump && cat $dump && rm $dump"
+  fileExtension: .mariadb.sql
+  pod:
+    metadata: {}
+    spec:
+      containers:
+      - args:
+        - sleep
+        - infinity
+        env:
+        - name: BACKUP_DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_HOST
+              name: lagoon-env
+        - name: BACKUP_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_USERNAME
+              name: lagoon-env
+        - name: BACKUP_DB_PASSWORD
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_PASSWORD
+              name: lagoon-env
+        - name: BACKUP_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_DATABASE
+              name: lagoon-env
+        - name: BACKUP_DB_READREPLICA_HOSTS
+          valueFrom:
+            configMapKeyRef:
+              key: MARIADB_READREPLICA_HOSTS
+              name: lagoon-env
+        image: uselagoon/database-tools:latest
+        imagePullPolicy: Always
+        name: mariadb-prebackuppod
+        resources: {}

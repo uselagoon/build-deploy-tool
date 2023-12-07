@@ -4,6 +4,7 @@
 
 replicaCount: 1
 
+imageCache: ""
 images:
   nginx: ""
   php: ""
@@ -20,7 +21,6 @@ nameOverride: ""
 fullnameOverride: ""
 
 podSecurityContext: {}
-  # fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -40,7 +40,7 @@ fastly:
 #   serviceId: ''
 #   apiSecretName: ''
 
-resources:
+containerResources:
   nginx:
     # limits:
     #   cpu: 100m
@@ -55,6 +55,8 @@ resources:
     requests:
       cpu: 10m
       memory: 100Mi
+
+resources: {}
 
 nodeSelector: {}
 

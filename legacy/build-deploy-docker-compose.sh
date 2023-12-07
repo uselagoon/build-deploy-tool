@@ -4,6 +4,8 @@
 # set it to something usable here
 LAGOON_BUILD_NAME=$HOSTNAME
 
+BUILD_WARNING_COUNT=0
+
 function cronScheduleMoreOftenThan30Minutes() {
   #takes a unexpanded cron schedule, returns 0 if it's more often that 30 minutes
   MINUTE=$(echo $1 | (read -a ARRAY; echo ${ARRAY[0]}) )
@@ -99,10 +101,17 @@ set -x
 
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
+  [ "$2" ] || return #buildstep
 
   echo -e "##############################################\nBEGIN ${1}\n##############################################"
-  sleep 0.5s
 
+  # patch the buildpod with the buildstep
+  if [ "${SCC_CHECK}" == false ]; then
+    kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\"}}}" &> /dev/null
+    # tiny sleep to allow patch to complete before logs roll again
+    sleep 0.5s
+  fi
 }
 
 function patchBuildStep() {
@@ -112,6 +121,7 @@ function patchBuildStep() {
   [ "$4" ] || return #namespace
   [ "$5" ] || return #buildstep
   [ "$6" ] || return #buildstep
+  [ "$7" ] || return #has warnings
   totalStartTime=$(date -d "${1}" +%s)
   startTime=$(date -d "${2}" +%s)
   endTime=$(date -d "${3}" +%s)
@@ -123,24 +133,21 @@ function patchBuildStep() {
   diffTotalSeconds="$(($endTime-$totalStartTime))"
   diffTotalTime=$(date -d @${diffTotalSeconds} +"%H:%M:%S" -u)
 
-  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}\n##############################################"
-
-  # patch the buildpod with the buildstep
-  if [ "${SCC_CHECK}" == false ]; then
-    kubectl patch -n ${4} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${5}\"}}}" &> /dev/null
-
-    # tiny sleep to allow patch to complete before logs roll again
-    sleep 0.5s
+  hasWarnings=""
+  if [ "${7}" == "true" ]; then
+    hasWarnings=" WithWarnings"
   fi
+
+  echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}${hasWarnings}\n##############################################"
 }
+
 ##############################################
 ### PREPARATION
 ##############################################
 
 set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
-beginBuildStep "Initial Environment Setup"
+beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
 set -x
 
@@ -149,6 +156,16 @@ set -x
 ##############################################
 
 set +x
+
+# set the imagecache registry if it is provided
+IMAGECACHE_REGISTRY=""
+if [ ! -z "$(featureFlag IMAGECACHE_REGISTRY)" ]; then
+  IMAGECACHE_REGISTRY=$(featureFlag IMAGECACHE_REGISTRY)
+  # add trailing slash if it is missing
+  length=${#IMAGECACHE_REGISTRY}
+  last_char=${IMAGECACHE_REGISTRY:length-1:1}
+  [[ $last_char != "/" ]] && IMAGECACHE_REGISTRY="$IMAGECACHE_REGISTRY/"; :
+fi
 
 # Load path of docker-compose that should be used
 DOCKER_COMPOSE_YAML=($(cat .lagoon.yml | shyaml get-value docker-compose-yaml))
@@ -189,17 +206,20 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
 fi
 
 set +ex
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
+DOCKER_COMPOSE_WARNING_COUNT=0
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
 ### use the `build-validate` built in validater to run over the provided docker-compose file
 ##############################################
 dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
 dccExit=$?
-echo "docker-compose validate exit code ${dccExit}: ${dccOutput}"
-
 if [ "${dccExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -213,9 +233,61 @@ You can run docker compose config locally to check that your docker-compose file
 ##############################################"
   exit 1
 fi
-set -ex
 
-set +ex
+## validate the docker-compose in a way to eventually phase out forked library by displaying warnings
+dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
+dccExit=$?
+if [ "${dccExit}" != "0" ]; then
+  ((++BUILD_WARNING_COUNT))
+  ((++DOCKER_COMPOSE_WARNING_COUNT))
+  echo "
+##############################################
+Warning!
+There are issues with your docker compose file that lagoon uses that should be fixed.
+You can run docker compose config locally to check that your docker-compose file is valid.
+"
+  if [[ "${dccOutput}" =~ "no such file or directory" ]]; then
+    echo "> an env_file is defined in your docker-compose file, but no matching file found."
+  fi
+  if [[ "${dccOutput}" =~ "Non-string key" ]]; then
+    echo "> an invalid string key was detected in your docker-compose file."
+  fi
+  echo ERR: ${dccOutput}
+  echo ""
+fi
+
+dccOutput=$(bash -c 'build-deploy-tool validate docker-compose-with-errors --docker-compose '${DOCKER_COMPOSE_YAML}'; exit $?' 2>&1)
+dccExit2=$?
+if [ "${dccExit2}" != "0" ]; then
+  ((++DOCKER_COMPOSE_WARNING_COUNT))
+  if [ "${dccExit}" == "0" ]; then
+    ((++BUILD_WARNING_COUNT))
+    echo "
+##############################################
+Warning!
+There are issues with your docker compose file that lagoon uses that should be fixed.
+You can run docker compose config locally to check that your docker-compose file is valid.
+"
+  fi
+  echo "> There are yaml validation errors in your docker-compose file that should be corrected."
+  echo ERR: ${dccOutput}
+  echo ""
+fi
+
+if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
+  echo "Read the docs for more on errors displayed here https://docs.lagoon.sh/lagoon-build-errors
+"
+  echo "##############################################"
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
+  previousStepEnd=${currentStepEnd}
+else
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
+  previousStepEnd=${currentStepEnd}
+fi
+
+beginBuildStep ".lagoon.yml Validation" "lagoonYmlValidation"
 ##############################################
 ### RUN lagoon-yml validation against the final data which may have overrides
 ### from .lagoon.override.yml file or LAGOON_YAML_OVERRIDE environment variable
@@ -225,7 +297,7 @@ lyvExit=$?
 
 if [ "${lyvExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation Error"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -242,6 +314,7 @@ https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
 fi
 set -ex
 
+set +x
 # Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
 # aren't in build-deploy-tool.
 if ! lagoon-linter; then
@@ -252,11 +325,10 @@ else
 	echo "lagoon-linter found no issues with the .lagoon.yml file"
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Configure Variables"
+beginBuildStep "Configure Variables" "configuringVariables"
 set -x
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
@@ -352,8 +424,8 @@ do
 
   if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/PreBackupPod" ]]; then
     if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
-      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "$SERVICE_NAME" &> /dev/null; then
-        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "$SERVICE_NAME"
+      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod" &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod"
       fi
     fi
   fi
@@ -407,9 +479,9 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds"
+beginBuildStep "Image Builds" "buildingImages"
 set -x
 ##############################################
 ### CACHE IMAGE LIST GENERATION
@@ -632,9 +704,9 @@ set -x
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Pre-Rollout Tasks"
+beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 set -x
 
 ##############################################
@@ -645,13 +717,16 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
     build-deploy-tool tasks pre-rollout
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 1"
+beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 set -x
 
 
@@ -695,7 +770,9 @@ set +x
 if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then
 	yq3 merge -ix -- /kubectl-build-deploy/values.yaml /kubectl-build-deploy/rootless.values.yaml
 fi
-
+if [ "$(featureFlag FS_ON_ROOT_MISMATCH)" = enabled ]; then
+	yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroupChangePolicy' "OnRootMismatch"
+fi
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
@@ -756,9 +833,9 @@ fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Service Configuration Phase 2"
+beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 set -x
 
 ##############################################
@@ -908,14 +985,36 @@ fi
 
 # generate the autogenerated ingress
 if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
-build-deploy-tool template autogenerated-ingress
+  build-deploy-tool template autogenerated-ingress
 else
   echo ">> Autogenerated ingress templates disabled for this build"
 # end custom route
 fi
 
-# generate the dbaas templates if any
-build-deploy-tool template dbaas
+# identify any autognerated resources based on their resource name
+AUTOGEN_INGRESS=$(build-deploy-tool identify created-ingress | jq -r '.autogenerated[]')
+AUTOGEN_ROUTES=$(kubectl -n ${NAMESPACE} get ingress --no-headers -l "lagoon.sh/autogenerated=true" | cut -d " " -f 1 | xargs)
+MATCHED_AUTOGEN=false
+DELETE_AUTOGEN=()
+for AR in $AUTOGEN_ROUTES; do
+  for AI in $AUTOGEN_INGRESS; do
+    if [ "${AR}" == "${AI}" ]; then
+      MATCHED_AUTOGEN=true
+      continue
+    fi
+  done
+  if [ "${MATCHED_AUTOGEN}" != "true" ]; then
+    DELETE_AUTOGEN+=($AR)
+  fi
+  MATCHED_AUTOGEN=false
+done
+for DA in ${!DELETE_AUTOGEN[@]}; do
+  # delete any autogenerated ingress in the namespace as they are disabled
+  if kubectl -n ${NAMESPACE} get ingress ${DELETE_AUTOGEN[$DA]} &> /dev/null; then
+    echo ">> Removing autogenerated ingress for ${DELETE_AUTOGEN[$DA]} because it was disabled"
+    kubectl -n ${NAMESPACE} delete ingress ${DELETE_AUTOGEN[$DA]}
+  fi
+done
 
 for SERVICE_TYPES_ENTRY in "${SERVICE_TYPES[@]}"
 do
@@ -931,16 +1030,31 @@ do
 
   HELM_SERVICE_TEMPLATE="templates/service.yaml"
   if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_SERVICE_TEMPLATE ]; then
+    SERVICE_OVERRIDES=()
+    if  [[ "$SERVICE_TYPE" == "basic" ]] ||
+        [[ "$SERVICE_TYPE" == "basic-persistent" ]]; then
+      SERVICE_PORT_NUMBER=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.service\\.port false)
+      if [ ! $SERVICE_PORT_NUMBER == "false" ]; then
+        # check if the port provided is actually a number
+        if ! [[ $SERVICE_PORT_NUMBER =~ ^[0-9]+$ ]] ; then
+          echo "Provided service port is not a number"; exit 1;
+        fi
+        SERVICE_OVERRIDES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
+      fi
+    fi
     cat /kubectl-build-deploy/values.yaml
-    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
+    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${SERVICE_OVERRIDES[@]}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
   fi
 done
 
+# generate the dbaas templates if any
+build-deploy-tool template dbaas
+
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Route/Ingress Configuration"
+beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 
 TEMPLATE_PARAMETERS=()
 
@@ -969,49 +1083,73 @@ else
 # end custom route
 fi
 
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeConfigurationComplete" "Route/Ingress Configuration"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Backup Configuration"
-
-# Run the backup generation script
-BACKUPS_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
-  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
-fi 
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
-  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
-    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
-  fi 
-fi 
-
-if [ ! "$BACKUPS_DISABLED" == true ]; then
-  . /kubectl-build-deploy/scripts/exec-backup-generation.sh
-else
-  echo ">> Backup configurations disabled for this build"
-fi
-
-# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
-	# add namespace isolation network policy to deployment
-	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
-		-f /kubectl-build-deploy/values.yaml \
-		> $YAML_FOLDER/isolation-network-policy.yaml
-fi
-set -x
-
+# apply the currently templated components out so that the route and lagoon-env configmaps gets what they need
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
   find $YAML_FOLDER -type f -exec cat {} \;
   kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "configuringRoutesComplete" "Route/Ingress Configuration" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry"
-set -x
+beginBuildStep "Route/Ingress Cleanup" "cleanupRoutes"
+
+##############################################
+### CLEANUP Ingress/routes which have been removed from .lagoon.yml
+##############################################s
+
+set +x
+# collect the current routes, its possible to exclude ingress by adding a label 'route.lagoon.sh/remove=false' and it won't get deleted
+CURRENT_ROUTES=$(kubectl -n ${NAMESPACE} get ingress -l "route.lagoon.sh/remove!=false" -l "lagoon.sh/autogenerated!=true" --no-headers | cut -d " " -f 1 | xargs)
+# collect the routes that Lagoon thinks it should have based on the .lagoon.yml and any routes that have come from the api
+# using the build-deploy-tool generator
+YAML_ROUTES_TO_JSON=$(build-deploy-tool identify created-ingress | jq -r '.secondary[]')
+
+MATCHED_INGRESS=false
+DELETE_INGRESS=()
+# loop over the routes from kubernetes
+for SINGLE_ROUTE in ${CURRENT_ROUTES}; do
+  # loop over the routes that Lagoon thinks it should have
+  for YAML_ROUTE in ${YAML_ROUTES_TO_JSON}; do
+    if [ "${SINGLE_ROUTE}" == "${YAML_ROUTE}" ]; then
+      MATCHED_INGRESS=true
+      continue
+    fi
+  done
+  if [ "${MATCHED_INGRESS}" != "true" ]; then
+    DELETE_INGRESS+=($SINGLE_ROUTE)
+  fi
+  MATCHED_INGRESS=false
+done
+
+CLEANUP_WARNINGS="false"
+if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
+  CLEANUP_WARNINGS="true"
+  ((++BUILD_WARNING_COUNT))
+  echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
+  if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
+    echo "> You can remove these in the next build by setting the flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+  fi
+  for DI in ${DELETE_INGRESS[@]}
+  do
+    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
+      if kubectl -n ${NAMESPACE} get ingress ${DI} &> /dev/null; then
+        echo ">> Removing ingress ${DI}"
+        kubectl -n ${NAMESPACE} delete ingress ${DI}
+        #delete anything else?
+      fi
+    else
+      echo "> The route '${DI}' would be removed"
+    fi
+  done
+else
+  echo "No route cleanup required"
+fi
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeCleanupComplete" "Route/Ingress Cleanup" "${CLEANUP_WARNINGS}"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Update Configmap" "updateConfigmap"
 
 ##############################################
 ### PROJECT WIDE ENV VARIABLES
@@ -1034,12 +1172,31 @@ fi
 # Load all routes with correct schema and comma separated
 ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "acme.openshift.io/exposer!=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
 
+# swap dioscuri for activestanby label
+for ingress in $(kubectl  -n ${NAMESPACE} get ingress -l "dioscuri.amazee.io/migrate" -o json | jq -r '.items[] | @base64'); do
+    _jq() {
+     echo ${ingress} | base64 --decode | jq -r ${1}
+    }
+    INGRESS_NAME=$(echo $(_jq '.') | jq -r '.metadata.name')
+    MIGRATE_VALUE=$(echo $(_jq '.') | jq -r '.metadata.labels["dioscuri.amazee.io/migrate"] // false ')
+    PATCH='{
+  "metadata": {
+    "labels": {
+      "activestandby.lagoon.sh/migrate": "'${MIGRATE_VALUE}'",
+      "dioscuri.amazee.io/migrate": null,
+      "dioscuri.amazee.io/migrated-from": null
+    }
+  }
+}'
+    kubectl -n ${NAMESPACE} patch ingress ${INGRESS_NAME} -p "${PATCH}"
+done
+
 # Active / Standby routes
 ACTIVE_ROUTES=""
 STANDBY_ROUTES=""
 if [ ! -z "${STANDBY_ENVIRONMENT}" ]; then
-ACTIVE_ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "dioscuri.amazee.io/migrate=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
-STANDBY_ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "dioscuri.amazee.io/migrate=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
+ACTIVE_ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "activestandby.lagoon.sh/migrate=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
+STANDBY_ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "activestandby.lagoon.sh/migrate=true" -o=go-template --template='{{range $indexItems, $ingress := .items}}{{if $indexItems}},{{end}}{{$tls := .spec.tls}}{{range $indexRule, $rule := .spec.rules}}{{if $indexRule}},{{end}}{{if $tls}}https://{{else}}http://{{end}}{{.host}}{{end}}{{end}}')
 fi
 
 # Get list of autogenerated routes
@@ -1080,7 +1237,6 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
       -p "{\"data\":$(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") ) | map( { (.name) : .value } ) | add | tostring')}"
   fi
 fi
-set -x
 
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
   kubectl patch \
@@ -1119,6 +1275,12 @@ do
 
   esac
 done
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateConfigmapComplete" "Update Configmap" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Image Push to Registry" "pushingImages"
+set -x
 
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
@@ -1166,7 +1328,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
           skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
         # If image not from an external registry and no docker hub creds were supplied, pull image from the imagecache
         else
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}/${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
+          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
         fi
       # If the private registry counter is 1 and no external registry was listed, we know a private docker hub was specified
       else
@@ -1174,7 +1336,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
       fi
     # If no private registries, use the imagecache
     else
-      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}/${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
+      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
     fi
 
     IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
@@ -1213,9 +1375,80 @@ fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Deployment Templating"
+beginBuildStep "Backup Configuration" "configuringBackups"
+set -x
+
+# Run the backup generation script
+
+BACKUPS_DISABLED=false
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
+  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
+fi 
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
+  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
+    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
+  fi 
+fi 
+
+if [ ! "$BACKUPS_DISABLED" == true ]; then
+  # check if k8up v2 feature flag is enabled
+  if [ "$(featureFlag K8UP_V2)" = enabled ]; then
+  # build-tool doesn't do any capability checks yet, so do this for now
+    if [[ "${CAPABILITIES[@]}" =~ "k8up.io/v1/Schedule" ]]; then
+    echo "Backups: generating k8up.io/v1 resources"
+      if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+        # Create baas-repo-pw secret based on the project secret
+        kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+      fi
+      build-deploy-tool template backup-schedule --version v2
+      # check if the existing schedule exists, and delete it
+      if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
+        if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get schedules.backup.appuio.ch k8up-lagoon-backup-schedule &> /dev/null; then
+          echo "Backups: removing old backup.appuio.ch/v1alpha1 schedule"
+          kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete schedules.backup.appuio.ch k8up-lagoon-backup-schedule
+        fi
+        if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get prebackuppods.backup.appuio.ch &> /dev/null; then
+          echo "Backups: removing old backup.appuio.ch/v1alpha1 prebackuppods"
+          kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch --all
+        fi
+      fi
+      K8UP_VERSION="v2"
+    fi
+  fi
+  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]] && [[ "$K8UP_VERSION" != "v2" ]]; then
+    echo "Backups: generating backup.appuio.ch/v1alpha1 resources"
+    if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+      # Create baas-repo-pw secret based on the project secret
+      kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+    fi
+    build-deploy-tool template backup-schedule --version v1
+  fi
+else
+  echo ">> Backup configurations disabled for this build"
+fi
+
+# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
+if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
+	# add namespace isolation network policy to deployment
+	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
+		-f /kubectl-build-deploy/values.yaml \
+		> $YAML_FOLDER/isolation-network-policy.yaml
+fi
+set -x
+
+if [ "$(ls -A $YAML_FOLDER/)" ]; then
+  find $YAML_FOLDER -type f -exec cat {} \;
+  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+fi
+
+set +x
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Deployment Templating" "templatingDeployments"
 set -x
 
 ##############################################
@@ -1365,9 +1598,9 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Applying Deployments"
+beginBuildStep "Applying Deployments" "applyingDeployments"
 set -x
 
 ##############################################
@@ -1442,9 +1675,9 @@ done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Cronjob Cleanup"
+beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 set -x
 
 ##############################################
@@ -1452,27 +1685,34 @@ set -x
 ##############################################
 
 CURRENT_CRONJOBS=$(kubectl -n ${NAMESPACE} get cronjobs --no-headers | cut -d " " -f 1 | xargs)
-
-IFS=' ' read -a SPLIT_CURRENT_CRONJOBS <<< $CURRENT_CRONJOBS
-
-for SINGLE_NATIVE_CRONJOB in ${SPLIT_CURRENT_CRONJOBS[@]}
-do
-  re="\<$SINGLE_NATIVE_CRONJOB\>"
-  text=$( IFS=' '; echo "${NATIVE_CRONJOB_CLEANUP_ARRAY[*]}")
-  if [[ "$text" =~ $re ]]; then
-    #echo "Single cron found: ${SINGLE_NATIVE_CRONJOB}"
-    continue
-  else
-    #echo "Single cron missing: ${SINGLE_NATIVE_CRONJOB}"
-    kubectl -n ${NAMESPACE} delete cronjob ${SINGLE_NATIVE_CRONJOB}
+MATCHED_CRONJOB=false
+DELETE_CRONJOBS=()
+# NATIVE_CRONJOB_CLEANUP_ARRAY is calculated in a prior step, when cronjobs are generated by the build-deploy-tool, this will need to be re-calculated using the tool
+for SINGLE_NATIVE_CRONJOB in $CURRENT_CRONJOBS; do
+  for CLEANUP_NATIVE_CRONJOB in ${NATIVE_CRONJOB_CLEANUP_ARRAY[@]}; do
+    if [ "${SINGLE_NATIVE_CRONJOB}" == "${CLEANUP_NATIVE_CRONJOB}" ]; then
+      MATCHED_CRONJOB=true
+      continue
+    fi
+  done
+  if [ "${MATCHED_CRONJOB}" != "true" ]; then
+    DELETE_CRONJOBS+=($SINGLE_NATIVE_CRONJOB)
+  fi
+  MATCHED_CRONJOB=false
+done
+for DC in ${!DELETE_CRONJOBS[@]}; do
+  # delete any cronjobs if they were removed
+  if kubectl -n ${NAMESPACE} get cronjob ${DELETE_CRONJOBS[$DC]} &> /dev/null; then
+    echo ">> Removing cronjob ${DELETE_CRONJOBS[$DC]} because it was removed"
+    kubectl -n ${NAMESPACE} delete cronjob ${DELETE_CRONJOBS[$DC]}
   fi
 done
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Post-Rollout Tasks"
+beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 set -x
 
 ##############################################
@@ -1484,13 +1724,16 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
   build-deploy-tool tasks post-rollout
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
+  set +x
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
+  set -x
 fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Build and Deploy"
+beginBuildStep "Build and Deploy" "finalizingBuild"
 set -x
 
 ##############################################
@@ -1514,17 +1757,27 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
   # create it
   kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=post-deploy=${DOCKER_COMPOSE_YAML}
 fi
+
+# remove any certificates for tls-acme false ingress to prevent reissuing attempts
+TLS_FALSE_INGRESSES=$(kubectl -n ${NAMESPACE} get ingress -o json | jq -r '.items[] | select(.metadata.annotations["kubernetes.io/tls-acme"] == "false") | .metadata.name')
+for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
+  TLS_SECRETS=$(kubectl -n ${NAMESPACE} get ingress ${TLS_FALSE_INGRESS} -o json | jq -r '.spec.tls[]?.secretName')
+  for TLS_SECRET in $TLS_SECRETS; do
+    if kubectl -n ${NAMESPACE} get certificates.cert-manager.io ${TLS_SECRET} &> /dev/null; then
+      echo ">> Cleaning up certificate for ${TLS_SECRET} as tls-acme is set to false"
+      kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET}
+    fi
+  done
+done
 set -x
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
 previousStepEnd=${currentStepEnd}
-set -x
 
-set +x
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
-  beginBuildStep "Insights Gathering"
+  beginBuildStep "Insights Gathering" "gatheringInsights"
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
@@ -1538,7 +1791,35 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   done
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
   previousStepEnd=${currentStepEnd}
+
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
+else
+  if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
+    beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
+    echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
+    previousStepEnd=${currentStepEnd}
+    # patch the buildpod with the buildstep
+    if [ "${SCC_CHECK}" == false ]; then
+      kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
+        -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"deployCompletedWithWarnings\"}}}" &> /dev/null
+      # tiny sleep to allow patch to complete before logs roll again
+      sleep 5
+    fi
+  fi
 fi
 set -x

@@ -40,6 +40,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -77,6 +78,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -114,6 +116,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					Fastly: lagoon.Fastly{
 						Watch: false,
 					},
+					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -152,6 +155,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -192,6 +196,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					IngressClass: "nginx",
 					HSTSEnabled:  helpers.BoolPtr(true),
 					HSTSMaxAge:   31536000,
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -235,6 +240,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					HSTSMaxAge:            31536000,
 					HSTSIncludeSubdomains: helpers.BoolPtr(true),
 					HSTSPreload:           helpers.BoolPtr(true),
+					IngressName:           "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -257,44 +263,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			want: "test-resources/result-custom-ingress5.yaml",
 		},
 		{
-			name: "test6 - invalid domain",
-			args: args{
-				route: lagoon.RouteV2{
-					Domain:         "fail@.extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
-					LagoonService:  "nginx",
-					MonitoringPath: "/",
-					Insecure:       helpers.StrPtr("Redirect"),
-					TLSAcme:        helpers.BoolPtr(true),
-					Migrate:        helpers.BoolPtr(false),
-					Annotations: map[string]string{
-						"custom-annotation": "custom annotation value",
-					},
-					Fastly: lagoon.Fastly{
-						Watch: false,
-					},
-					IngressClass: "nginx",
-				},
-				values: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "lagoon.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Monitoring: generator.MonitoringConfig{
-						AlertContact: "abcdefg",
-						StatusPageID: "12345",
-						Enabled:      true,
-					},
-				},
-				activeStandby: false,
-			},
-			wantErr: true,
-		},
-		{
-			name: "test7 - invalid annotation",
+			name: "test6 - invalid annotation",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
@@ -311,6 +280,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -332,7 +302,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test8 - invalid label",
+			name: "test7 - invalid label",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
@@ -351,6 +321,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -372,44 +343,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "test9 - too long domain",
-			args: args{
-				route: lagoon.RouteV2{
-					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
-					LagoonService:  "nginx",
-					MonitoringPath: "/",
-					Insecure:       helpers.StrPtr("Redirect"),
-					TLSAcme:        helpers.BoolPtr(true),
-					Migrate:        helpers.BoolPtr(false),
-					Annotations: map[string]string{
-						"custom-annotation": "custom annotation value",
-					},
-					Fastly: lagoon.Fastly{
-						Watch: false,
-					},
-					IngressClass: "nginx",
-				},
-				values: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "development",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "lagoon.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Monitoring: generator.MonitoringConfig{
-						AlertContact: "abcdefg",
-						StatusPageID: "12345",
-						Enabled:      true,
-					},
-				},
-				activeStandby: false,
-			},
-			wantErr: true,
-		},
-		{
-			name: "test10 - custom ingress with exceptionally long subdomain",
+			name: "test8 - custom ingress with exceptionally long subdomain",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
@@ -425,6 +359,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressClass: "nginx",
+					IngressName:  "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -444,6 +379,84 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				activeStandby: false,
 			},
 			want: "test-resources/result-custom-ingress6.yaml",
+		},
+		{
+			name: "test9 - wildcard ingress",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(false),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass: "nginx",
+					Wildcard:     helpers.BoolPtr(true),
+					IngressName:  "wildcard-www.example.com",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-wildcard-ingress1.yaml",
+		},
+		{
+			name: "test10 - wildcard ingress",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "this-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(false),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass: "nginx",
+					Wildcard:     helpers.BoolPtr(true),
+					IngressName:  "wildcard-this-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.e-f1945",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-wildcard-ingress2.yaml",
 		},
 	}
 	for _, tt := range tests {
