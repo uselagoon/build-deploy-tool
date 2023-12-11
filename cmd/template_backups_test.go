@@ -37,6 +37,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 		controllerDevSchedule string
 		controllerPRSchedule  string
 		k8upVersion           string
+		namespace             string
 	}
 	tests := []struct {
 		name    string
@@ -51,6 +52,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "production",
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
@@ -70,6 +72,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "development",
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
@@ -89,6 +92,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "production",
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
@@ -108,6 +112,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "development",
 				buildType:       "pullrequest",
 				prNumber:        "123",
@@ -130,6 +135,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "development",
 				buildType:       "pullrequest",
 				prNumber:        "123",
@@ -152,6 +158,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				statusPageID:    "statuspageid",
 				projectName:     "example-project",
 				environmentName: "main",
+				namespace:       "example-project-main",
 				environmentType: "production",
 				buildType:       "branch",
 				lagoonVersion:   "v2.7.x",
@@ -181,6 +188,10 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			err = os.Setenv("ENVIRONMENT", tt.args.environmentName)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
+			err = os.Setenv("NAMESPACE", tt.args.namespace)
 			if err != nil {
 				t.Errorf("%v", err)
 			}

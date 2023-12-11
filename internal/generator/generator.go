@@ -53,6 +53,7 @@ type GeneratorInput struct {
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
 	DBaaSClient              *dbaasclient.Client
+	Namespace                string
 }
 
 func NewGenerator(
@@ -74,6 +75,7 @@ func NewGenerator(
 	monitoringStatusPageID := helpers.GetEnv("MONITORING_STATUSPAGEID", generator.MonitoringStatusPageID, generator.Debug)
 	projectName := helpers.GetEnv("PROJECT", generator.ProjectName, generator.Debug)
 	environmentName := helpers.GetEnv("ENVIRONMENT", generator.EnvironmentName, generator.Debug)
+	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
 	branch := helpers.GetEnv("BRANCH", generator.Branch, generator.Debug)
 	prNumber := helpers.GetEnv("PR_NUMBER", generator.PRNumber, generator.Debug)
 	prTitle := helpers.GetEnv("PR_NUMBER", generator.PRTitle, generator.Debug)
@@ -110,6 +112,7 @@ func NewGenerator(
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName
+	buildValues.Namespace = namespace
 	buildValues.EnvironmentType = environmentType
 	buildValues.BuildType = buildType
 	buildValues.LagoonVersion = lagoonVersion
