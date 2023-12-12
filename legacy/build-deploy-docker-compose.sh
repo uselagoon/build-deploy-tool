@@ -1344,11 +1344,8 @@ ROUTES=$(kubectl -n ${NAMESPACE} get ingress --sort-by='{.metadata.name}' -l "ac
 
 # swap dioscuri for activestanby label
 for ingress in $(kubectl  -n ${NAMESPACE} get ingress -l "dioscuri.amazee.io/migrate" -o json | jq -r '.items[] | @base64'); do
-    _jq() {
-     echo ${ingress} | base64 --decode | jq -r ${1}
-    }
-    INGRESS_NAME=$(echo $(_jq '.') | jq -r '.metadata.name')
-    MIGRATE_VALUE=$(echo $(_jq '.') | jq -r '.metadata.labels["dioscuri.amazee.io/migrate"] // false ')
+    INGRESS_NAME=$(echo $ingress | jq -Rr '@base64d | fromjson | .metadata.name')
+    MIGRATE_VALUE=$(echo $ingress | jq -Rr '@base64d | fromjson | .metadata.labels["dioscuri.amazee.io/migrate"] // false')
     PATCH='{
   "metadata": {
     "labels": {
