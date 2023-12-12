@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
@@ -14,7 +13,6 @@ import (
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
-var namespace string
 
 const (
 	preRolloutTasks = iota
@@ -161,19 +159,6 @@ type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, err
 // without needing to pass those into the call to the returned function itself.
 func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, prePost string, debug bool) (iterateTaskFuncType, error) {
 	var retErr error
-	namespace := buildValues.Namespace
-	if namespace == "" {
-		//Try load from file
-		const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-			retErr = fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
-		}
-		nsb, err := os.ReadFile(filename)
-		if err != nil {
-			retErr = err
-		}
-		namespace = strings.Trim(string(nsb), "\n ")
-	}
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			// set the iterations and wait times here
@@ -188,7 +173,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 				return true, err
 			}
 			if runTask {
-				err := taskRunner(namespace, prePost, task)
+				err := taskRunner(buildValues.Namespace, prePost, task)
 				if err != nil {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
@@ -266,7 +251,7 @@ func init() {
 	taskCmd.AddCommand(tasksPostRun)
 
 	addArgs := func(command *cobra.Command) {
-		command.Flags().StringVarP(&namespace, "namespace", "n", "",
+		command.Flags().StringP("namespace", "n", "",
 			"The environments environment variables JSON payload")
 	}
 	addArgs(tasksPreRun)
