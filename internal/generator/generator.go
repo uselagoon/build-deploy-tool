@@ -75,7 +75,6 @@ func NewGenerator(
 	monitoringStatusPageID := helpers.GetEnv("MONITORING_STATUSPAGEID", generator.MonitoringStatusPageID, generator.Debug)
 	projectName := helpers.GetEnv("PROJECT", generator.ProjectName, generator.Debug)
 	environmentName := helpers.GetEnv("ENVIRONMENT", generator.EnvironmentName, generator.Debug)
-	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
 	branch := helpers.GetEnv("BRANCH", generator.Branch, generator.Debug)
 	prNumber := helpers.GetEnv("PR_NUMBER", generator.PRNumber, generator.Debug)
 	prTitle := helpers.GetEnv("PR_NUMBER", generator.PRTitle, generator.Debug)
@@ -88,6 +87,15 @@ func NewGenerator(
 	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
+
+	// try source the namespace from the generator, but whatever is defined in the service account location
+	// should be used if one exists, falls back to whatever came in via generator
+	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
+	namespace, err := helpers.GetNamespace(namespace, "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		// a file was found, but there was an issue accessing it
+		return nil, err
+	}
 
 	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
@@ -230,7 +238,7 @@ func NewGenerator(
 	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
+	err = generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
 	if err != nil {
 		return nil, err
 	}

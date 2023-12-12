@@ -7,6 +7,7 @@ import (
 	"encoding/base32"
 	"encoding/gob"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -169,6 +170,18 @@ func WriteTemplateFile(templateOutputFile string, data []byte) {
 type EnvironmentVariable struct {
 	Name  string
 	Value string
+}
+
+// Try and get the namespace name from the serviceaccount location if it exists
+func GetNamespace(namespace, filename string) (string, error) {
+	if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
+		nsb, err := os.ReadFile(filename)
+		if err != nil {
+			return "", err
+		}
+		namespace = strings.Trim(string(nsb), "\n ")
+	}
+	return namespace, nil
 }
 
 func UnsetEnvVars(localVars []EnvironmentVariable) {
