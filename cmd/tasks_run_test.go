@@ -143,8 +143,6 @@ func Test_runTasks(t *testing.T) {
 		},
 	}
 
-	oldNamespace := namespace
-	namespace = "default"
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := runTasks(tt.args.taskRunner, tt.args.lYAML.Tasks.Prerollout, tt.args.lagoonConditionalEvaluationEnvironment); (err != nil) != tt.wantErr {
@@ -153,7 +151,6 @@ func Test_runTasks(t *testing.T) {
 
 		})
 	}
-	namespace = oldNamespace
 }
 
 func Test_iterateTaskGenerator(t *testing.T) {
