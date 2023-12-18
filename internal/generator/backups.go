@@ -10,7 +10,6 @@ import (
 const (
 	defaultCheckSchedule          = "M H(5-8) * * 1"
 	defaultPruneSchedule          = "M H(3-5) * * 0"
-	defaultBackupSchedule         = "M H(22-2) * * *"
 	hourlyDefaultBackupRetention  = 0
 	dailyDefaultBackupRetention   = 7
 	weeklyDefaultBackupRetention  = 6
