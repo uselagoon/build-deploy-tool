@@ -30,7 +30,7 @@ func generateBackupValues(
 	// builds need to calculate a new schedule from multiple places for backups
 	// create a new schedule placeholder set to the default value so it can be adjusted through this
 	// generator
-	newBackupSchedule := defaultBackupSchedule
+	newBackupSchedule := buildValues.DefaultBackupSchedule
 
 	customBackupConfig := CheckFeatureFlag("CUSTOM_BACKUP_CONFIG", mergedVariables, debug)
 	if customBackupConfig == "enabled" {

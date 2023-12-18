@@ -149,7 +149,7 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M */6 * * *",
 			},
-			want: "31 1,7,13,19",
+			want: "31 1,7,13,19 * * *",
 		},
 	}
 	for _, tt := range tests {
