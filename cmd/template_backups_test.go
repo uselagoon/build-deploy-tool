@@ -38,6 +38,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 		controllerPRSchedule  string
 		k8upVersion           string
 		namespace             string
+		defaultBackupSchedule string
 	}
 	tests := []struct {
 		name    string
@@ -171,6 +172,27 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			},
 			want: "../test-resources/template-backups/test6-results",
 		},
+		{
+			name: "test7",
+			args: args{
+				alertContact:          "alertcontact",
+				statusPageID:          "statuspageid",
+				projectName:           "example-project",
+				environmentName:       "main",
+				namespace:             "example-project-main",
+				environmentType:       "production",
+				buildType:             "branch",
+				lagoonVersion:         "v2.7.x",
+				branch:                "main",
+				k8upVersion:           "v1",
+				projectVars:           `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
+				envVars:               `[]`,
+				lagoonYAML:            "../test-resources/template-backups/test7/lagoon.yml",
+				templatePath:          "../test-resources/template-backups/output",
+				defaultBackupSchedule: "M */6 * * *",
+			},
+			want: "../test-resources/template-backups/test7-results",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -255,6 +277,10 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
+			err = os.Setenv("DEFAULT_BACKUP_SCHEDULE", tt.args.defaultBackupSchedule)
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 			generator, err := generatorInput(false)
 			if err != nil {
 				t.Errorf("%v", err)
@@ -335,7 +361,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "DEFAULT_BACKUP_SCHEDULE"}})
 			})
 		})
 	}

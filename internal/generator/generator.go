@@ -88,6 +88,8 @@ func NewGenerator(
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 
+	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", "M H(22-2) * * *", generator.Debug)
+
 	// try source the namespace from the generator, but whatever is defined in the service account location
 	// should be used if one exists, falls back to whatever came in via generator
 	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
@@ -110,6 +112,8 @@ func NewGenerator(
 
 	//add the dbaas client to build values too
 	buildValues.DBaaSClient = generator.DBaaSClient
+
+	buildValues.DefaultBackupSchedule = defaultBackupSchedule
 
 	// set the task scale iterations/wait times
 	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
