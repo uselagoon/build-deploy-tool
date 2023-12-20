@@ -1325,6 +1325,38 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeCleanupComplete" "Route/Ingress Cleanup" "${CLEANUP_WARNINGS}"
+
+##############################################
+### Report any ingress that have stale or stalled acme challenges, this accordion will only show if there are stale challenges
+##############################################s
+# collect any current challenge routes in the namespace that are older than 1 hour (to ignore current build ones or pending ones)
+CURRENT_CHALLENGE_ROUTES=$(kubectl -n ${NAMESPACE} get ingress -l "acme.cert-manager.io/http01-solver=true" -o jsonpath='{range .items[*]}{.spec.rules[0].host} {.metadata.creationTimestamp}{"\n"}{end}' | while read -r name timestamp; do
+        echo "$name" | awk -v current_time=$(date +%s) -v hours_back=$(date +%s -d "1 hour ago") -v ns_time=$(date --date="${timestamp}" +%s) '(current_time - ns_time) >(current_time - hours_back){print $0}';
+done)
+if [ ${#CURRENT_CHALLENGE_ROUTES[@]} -ne 0 ]; then
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Route/Ingress Certificate Challenges" "staleChallenges"
+  ((++BUILD_WARNING_COUNT))
+  echo ">> Lagoon detected routes that have stale acme certificate challenges."
+  echo "  This indicates that the routes have not generated the certificate for some reason."
+  echo "  You may need to verify that the DNS or configuration is correct for the hosting provider."
+  echo "  https://docs.lagoon.sh/using-lagoon-the-basics/going-live/#routes-ssl"
+  echo "  Depending on your going live instructions from your hosting provider, you may need to make adjustments to your .lagoon.yml file"
+  echo "  Otherwise, If you no longer need these routes, you should remove them from your .lagoon.yml file."
+  echo ""
+  for CR in ${CURRENT_CHALLENGE_ROUTES[@]}
+  do
+      echo ">> The route '${CR}' has stale certificate challenge"
+      # grab the error after 'order is' because the pretext could lead to confusion
+      FAILURE_REASON=$(kubectl -n ${NAMESPACE} get certificate.cert-manager.io ${CR}-tls -o json | jq -r '.status.conditions[] | select (.reason=="Failed") | .message' | grep -oP "order is.*$")
+      if [ -z "$FAILURE_REASON" ]; then # if there is a capturable failure reason, print it here
+        echo "  reason: ${FAILURE_REASON}"
+      fi
+  done
+
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "staleChallengesComplete" "Route/Ingress Certificate Challenges" "true"
+fi
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Update Configmap" "updateConfigmap"
 
