@@ -1723,6 +1723,10 @@ do
 
       if cronScheduleMoreOftenThan30Minutes "$CRONJOB_SCHEDULE_RAW" ; then
         # If this cronjob is more often than 30 minutes, we run the cronjob inside the pod itself
+        # Lagoon enforces that only a single instance of a cronjob can run at any one time.
+        # https://man7.org/linux/man-pages/man1/flock.1.html
+        # https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Shell-Parameter-Expansion
+        CRONJOB_COMMAND="flock -n '/tmp/cron.lock.$(echo "$CRONJOB_COUNTER $CRONJOB_COMMAND" | sha256sum | awk '{ print $1 }')' -c ${CRONJOB_COMMAND@Q}"
         CRONJOBS_ARRAY_INSIDE_POD+=("${CRONJOB_SCHEDULE} ${CRONJOB_COMMAND}")
       else
         # This cronjob runs less ofen than every 30 minutes, we create a kubernetes native cronjob for it.
