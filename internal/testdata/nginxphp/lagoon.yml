@@ -1,0 +1,15 @@
+docker-compose-yaml: ../internal/testdata/nginxphp/docker-compose.yml
+
+routes:
+  autogenerate:
+    enabled: true
+    insecure: Redirect
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - example.com

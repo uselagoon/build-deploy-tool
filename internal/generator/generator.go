@@ -54,6 +54,7 @@ type GeneratorInput struct {
 	Debug                    bool
 	DBaaSClient              *dbaasclient.Client
 	Namespace                string
+	DefaultBackupSchedule    string
 }
 
 func NewGenerator(
@@ -88,7 +89,10 @@ func NewGenerator(
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 
-	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", "M H(22-2) * * *", generator.Debug)
+	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", generator.DefaultBackupSchedule, generator.Debug)
+	if defaultBackupSchedule == "" {
+		defaultBackupSchedule = "M H(22-2) * * *"
+	}
 
 	// try source the namespace from the generator, but whatever is defined in the service account location
 	// should be used if one exists, falls back to whatever came in via generator
@@ -378,7 +382,7 @@ func collectBuildVariables(buildValues BuildValues) []lagoon.EnvironmentVariable
 	return vars
 }
 
-// GetEnv gets an environment variable
+// checks the provided environment variables looking for feature flag based variables
 func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, debug bool) string {
 	// check for force value
 	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {

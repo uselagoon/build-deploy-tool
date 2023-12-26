@@ -24,7 +24,7 @@ var backupGeneration = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error reading domain flag: %v", err)
 		}
-		generator, err := generatorInput(true)
+		generator, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}

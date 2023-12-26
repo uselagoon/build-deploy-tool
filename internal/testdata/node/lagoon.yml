@@ -1,0 +1,74 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.yml
+
+routes:
+  autogenerate:
+    enabled: true
+    insecure: Redirect
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com
+
+  autogendisabled:
+    autogenerateRoutes: false
+    routes:
+      - node:
+          - example.com
+
+  tworoutes:
+    routes:
+      - node:
+          - example.com
+          - www.example.com
+
+  branch/routes:
+    routes:
+      - node:
+          - customdomain-will-be-main-domain.com
+          - customdomain-will-be-not-be-main-domain.com
+
+  ingressclass:
+    routes:
+      - node:
+          - example.com:
+              ingressClass: "custom-ingress"
+  hsts:
+    routes:
+      - node:
+          - example.com:
+              hstsEnabled: true
+              hstsMaxAge: 10000
+
+  hsts2:
+    routes:
+      - node:
+          - example.com:
+              hstsEnabled: true
+              hstsMaxAge: 10000
+              hstsIncludeSubdomains: true
+              hstsPreload: true
+
+  pr-4841:
+    routes:
+      - nginx:
+        - performance.example.com
+
+  alternativename:
+    routes:
+      - node:
+          - example.com:
+              alternativenames:
+                - www.example.com
+                - en.example.com
+
+  wildcard:
+    routes:
+      - node:
+          - example.com:
+              tls-acme: false
+              wildcard: true

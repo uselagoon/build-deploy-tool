@@ -53,7 +53,7 @@ var tasksPreRun = &cobra.Command{
 	Aliases: []string{"pre"},
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}
@@ -84,7 +84,7 @@ var tasksPostRun = &cobra.Command{
 	Aliases: []string{"post"},
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}

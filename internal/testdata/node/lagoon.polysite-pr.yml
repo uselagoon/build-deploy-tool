@@ -1,0 +1,35 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.yml
+
+environment_variables:
+  git_sha: 'true'
+
+tasks:
+  post-rollout:
+    - run:
+        name: Call 
+        command: node /app/.lagoon/run-post.js || true 
+        service: node
+
+example-project:
+  environments:
+    develop:
+      routes:
+        - nginx:
+          - develop.example.com
+          - app.develop.example.com
+    pr-4841:
+      routes:
+        - nginx:
+          - performance.example.com
+
+example-project2:
+  environments:
+    develop:
+      routes:
+        - nginx:
+          - develop2.example.com
+          - app.develop2.example.com
+    pr-4841:
+      routes:
+        - nginx:
+          - performance2.example.com
