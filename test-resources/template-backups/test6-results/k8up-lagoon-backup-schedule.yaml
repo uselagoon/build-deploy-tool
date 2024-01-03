@@ -27,10 +27,10 @@ spec:
       bucket: baas-example-project
   backup:
     resources: {}
-    schedule: 5,20,35,50 5 * * 0
+    schedule: 3,18,33,48 5 * * 0
   check:
     resources: {}
-    schedule: 5 5 * * 0
+    schedule: 48 3 * * 0
   prune:
     resources: {}
     retention:
@@ -38,6 +38,6 @@ spec:
       keepHourly: 10
       keepMonthly: 12
       keepWeekly: 16
-    schedule: 5 5 * * 0
+    schedule: 48 3 * * 0
   resourceRequirementsTemplate: {}
 status: {}

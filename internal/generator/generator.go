@@ -53,6 +53,7 @@ type GeneratorInput struct {
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
 	DBaaSClient              *dbaasclient.Client
+	Namespace                string
 }
 
 func NewGenerator(
@@ -87,6 +88,15 @@ func NewGenerator(
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 
+	// try source the namespace from the generator, but whatever is defined in the service account location
+	// should be used if one exists, falls back to whatever came in via generator
+	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
+	namespace, err := helpers.GetNamespace(namespace, "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		// a file was found, but there was an issue accessing it
+		return nil, err
+	}
+
 	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
 	// get the project and environment variables
@@ -110,6 +120,7 @@ func NewGenerator(
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName
+	buildValues.Namespace = namespace
 	buildValues.EnvironmentType = environmentType
 	buildValues.BuildType = buildType
 	buildValues.LagoonVersion = lagoonVersion
@@ -227,7 +238,7 @@ func NewGenerator(
 	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
+	err = generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
 	if err != nil {
 		return nil, err
 	}
