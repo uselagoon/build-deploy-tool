@@ -1,562 +1,394 @@
 package cmd
 
 import (
+	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
-	"time"
 
-	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
 
 func TestTemplateRoutes(t *testing.T) {
-	type args struct {
-		alertContact       string
-		statusPageID       string
-		projectName        string
-		environmentName    string
-		branch             string
-		prNumber           string
-		prHeadBranch       string
-		prBaseBranch       string
-		environmentType    string
-		buildType          string
-		activeEnvironment  string
-		standbyEnvironment string
-		cacheNoCache       string
-		serviceID          string
-		secretPrefix       string
-		ingressClass       string
-		projectVars        string
-		envVars            string
-		lagoonVersion      string
-		lagoonYAML         string
-		valuesFilePath     string
-		templatePath       string
-	}
 	tests := []struct {
-		name string
-		args args
-		want string
+		name         string
+		args         testdata.TestData
+		templatePath string
+		want         string
 	}{
 		{
 			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test1/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test1-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true:annotationscom",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-1",
 		},
 		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test2/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test2-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-2",
 		},
 		{
 			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test3/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test3-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_ID",
+							Value: "service-id:true",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-3",
 		},
 		{
 			name: "test4 check no fastly and no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test4/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test4-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-4",
 		},
 		{
 			name: "test5 multiproject1 no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "multiproject1",
-				environmentName: "multiproject",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "multiproject",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test5/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test5-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "multiproject1",
+					EnvironmentName: "multiproject",
+					Branch:          "multiproject",
+					LagoonYAML:      "../internal/testdata/node/lagoon.polysite.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-5",
 		},
 		{
 			name: "test6 multiproject2 no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "multiproject2",
-				environmentName: "multiproject",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "multiproject",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test6/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test6-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "multiproject2",
+					EnvironmentName: "multiproject",
+					Branch:          "multiproject",
+					LagoonYAML:      "../internal/testdata/node/lagoon.polysite.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-6",
 		},
 		{
 			name: "test7 multidomain no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test7/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test7-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "tworoutes",
+					Branch:          "tworoutes",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-7",
 		},
 		{
 			name: "test8 multidomain no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "branch-routes",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "branch/routes",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test8/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test8-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "branch-routes",
+					Branch:          "branch/routes",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-8",
 		},
 		{
 			name: "test9 active no values",
-			args: args{
-				alertContact:      "alertcontact",
-				statusPageID:      "statuspageid",
-				projectName:       "example-project",
-				environmentName:   "main",
-				environmentType:   "production",
-				activeEnvironment: "main",
-				buildType:         "branch",
-				lagoonVersion:     "v2.7.x",
-				branch:            "main",
-				projectVars:       `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:           `[]`,
-				secretPrefix:      "fastly-api-",
-				lagoonYAML:        "../test-resources/template-ingress/test9/lagoon.yml",
-				templatePath:      "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test9-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:        "example-project",
+					EnvironmentName:    "main",
+					Branch:             "main",
+					ActiveEnvironment:  "main",
+					StandbyEnvironment: "main-sb",
+					LagoonYAML:         "../internal/testdata/node/lagoon.activestandby.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-9",
 		},
 		{
 			name: "test10 standby no values",
-			args: args{
-				alertContact:       "alertcontact",
-				statusPageID:       "statuspageid",
-				projectName:        "example-project",
-				environmentName:    "main2",
-				environmentType:    "production",
-				buildType:          "branch",
-				standbyEnvironment: "main2",
-				lagoonVersion:      "v2.7.x",
-				branch:             "main2",
-				projectVars:        `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:            `[]`,
-				secretPrefix:       "fastly-api-",
-				lagoonYAML:         "../test-resources/template-ingress/test10/lagoon.yml",
-				templatePath:       "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test10-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:        "example-project",
+					EnvironmentName:    "main-sb",
+					Branch:             "main-sb",
+					ActiveEnvironment:  "main",
+					StandbyEnvironment: "main-sb",
+					LagoonYAML:         "../internal/testdata/node/lagoon.activestandby.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-10",
 		},
 		{
 			name: "test11 standby no values",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "content-example-com",
-				environmentName: "production",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "production",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${environment}.${project}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test11/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test11-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "content-example-com",
+					EnvironmentName: "production",
+					Branch:          "production",
+					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/complex/ingress-templates/ingress-1",
 		},
 		{
 			name: "test12 check LAGOON_ROUTES_JSON generates ingress",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_ROUTES_JSON","value":"eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test12/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test12-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "noyamlroutes",
+					Branch:          "noyamlroutes",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true:annotationscom",
+							Scope: "build",
+						},
+						{
+							Name:  "LAGOON_ROUTES_JSON",
+							Value: base64.StdEncoding.EncodeToString([]byte(`{"routes":[{"domain":"test1.example.com","service":"nginx","tls-acme":false,"monitoring-path":"/bypass-cache"}]}`)),
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-11",
 		},
 		{
 			name: "test13 ingress class from default flag",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				ingressClass:    "nginx",
-				lagoonYAML:      "../test-resources/template-ingress/test13/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test13-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					IngressClass:    "nginx",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-12",
 		},
 		{
 			name: "test14 ingress class from lagoon.yml should overwrite default and featureflag variable",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				ingressClass:    "nginx",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"nginx","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test14/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test14-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "ingressclass",
+					Branch:          "ingressclass",
+					IngressClass:    "nginx",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true), templatePath: "testdata/output",
+			want: "../internal/testdata/node/ingress-templates/ingress-13",
 		},
 		{
 			name: "test15a ingress class from lagoon api project scope",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				ingressClass:    "nginx",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test15-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					IngressClass:    "nginx",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_INGRESS_CLASS",
+							Value: "custom-ingress",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-14",
 		},
 		{
 			name: "test15b ingress class from lagoon api environment scope",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				ingressClass:    "nginx",
-				projectVars:     `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"project-custom-ingress","scope":"build"},{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_INGRESS_CLASS","value":"custom-ingress","scope":"build"}]`,
-				lagoonYAML:      "../test-resources/template-ingress/test15/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test15-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_INGRESS_CLASS",
+							Value: "project-custom-ingress",
+							Scope: "build",
+						},
+					},
+					EnvVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_INGRESS_CLASS",
+							Value: "custom-ingress",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-15",
 		},
 		{
 			name: "test16 hsts basic",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test16/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test16-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "hsts",
+					Branch:          "hsts",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true:annotationscom",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-16",
 		},
 		{
 			name: "test17 hsts advanced",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:annotationscom","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test17/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test17-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "hsts2",
+					Branch:          "hsts2",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true:annotationscom",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-17",
 		},
 		{
 			name: "test18 check first route has monitoring only",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test18/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test18-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "tworoutes",
+					Branch:          "tworoutes",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-18",
 		},
 		{
 			name: "test19 pullrequest routes",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "pr-4841",
-				environmentType: "development",
-				buildType:       "pullrequest",
-				lagoonVersion:   "v2.7.x",
-				prNumber:        "4841",
-				prHeadBranch:    "main",
-				prBaseBranch:    "my-branch",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test19/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test19-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "pr-4841",
+					BuildType:       "pullrequest",
+					PRNumber:        "4841",
+					PRHeadBranch:    "main",
+					PRBaseBranch:    "my-branch",
+					EnvironmentType: "development",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-19",
 		},
 		{
 			name: "test20 pullrequest routes polysite",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "pr-4841",
-				environmentType: "development",
-				buildType:       "pullrequest",
-				lagoonVersion:   "v2.7.x",
-				prNumber:        "4841",
-				prHeadBranch:    "main",
-				prBaseBranch:    "my-branch",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test20/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test20-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "pr-4841",
+					BuildType:       "pullrequest",
+					PRNumber:        "4841",
+					PRHeadBranch:    "main",
+					PRBaseBranch:    "my-branch",
+					EnvironmentType: "development",
+					LagoonYAML:      "../internal/testdata/node/lagoon.polysite-pr.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-20",
 		},
 		{
 			name: "test21 alternative names",
-			args: args{
-				alertContact:       "alertcontact",
-				statusPageID:       "statuspageid",
-				projectName:        "example-project",
-				environmentName:    "main",
-				environmentType:    "production",
-				buildType:          "branch",
-				standbyEnvironment: "main2",
-				lagoonVersion:      "v2.7.x",
-				branch:             "main",
-				projectVars:        `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:            `[]`,
-				secretPrefix:       "fastly-api-",
-				lagoonYAML:         "../test-resources/template-ingress/test21/lagoon.yml",
-				templatePath:       "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test21-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "alternativename",
+					Branch:          "alternativename",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-21",
 		},
 		{
 			name: "test22 check wildcard",
-			args: args{
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/template-ingress/test22/lagoon.yml",
-				templatePath:    "../test-resources/template-ingress/output",
-			},
-			want: "../test-resources/template-ingress/test22-results",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "wildcard",
+					Branch:          "wildcard",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-22",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
-			err := os.Setenv("MONITORING_ALERTCONTACT", tt.args.alertContact)
+			savedTemplates := tt.templatePath
+			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			err = os.Setenv("MONITORING_STATUSPAGEID", tt.args.statusPageID)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PROJECT", tt.args.projectName)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ENVIRONMENT", tt.args.environmentName)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("BRANCH", tt.args.branch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_NUMBER", tt.args.prNumber)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_HEAD_BRANCH", tt.args.prHeadBranch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_BASE_BRANCH", tt.args.prBaseBranch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ENVIRONMENT_TYPE", tt.args.environmentType)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("BUILD_TYPE", tt.args.buildType)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ACTIVE_ENVIRONMENT", tt.args.activeEnvironment)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("STANDBY_ENVIRONMENT", tt.args.standbyEnvironment)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", tt.args.cacheNoCache)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_PROJECT_VARIABLES", tt.args.projectVars)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_ENVIRONMENT_VARIABLES", tt.args.envVars)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_VERSION", tt.args.lagoonVersion)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS", tt.args.ingressClass)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			generator, err := generatorInput(false)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			generator.LagoonYAML = tt.args.lagoonYAML
-			generator.SavedTemplatesPath = tt.args.templatePath
-			// add dbaasclient overrides for tests
-			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
-				RetryMax:     5,
-				RetryWaitMin: time.Duration(10) * time.Millisecond,
-				RetryWaitMax: time.Duration(50) * time.Millisecond,
-			})
 
-			savedTemplates := tt.args.templatePath
-			err = os.MkdirAll(tt.args.templatePath, 0755)
+			err = os.MkdirAll(savedTemplates, 0755)
 			if err != nil {
 				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
 			}

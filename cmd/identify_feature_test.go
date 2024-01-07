@@ -3,10 +3,10 @@ package cmd
 import (
 	"os"
 	"testing"
-	"time"
 
-	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
 
 func TestIdentifyFeatureFlag(t *testing.T) {
@@ -35,67 +35,65 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 		templatePath       string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		vars    []helpers.EnvironmentVariable
-		want    string
-		wantErr bool
+		name         string
+		args         testdata.TestData
+		templatePath string
+		varName      string
+		vars         []helpers.EnvironmentVariable
+		want         string
+		wantErr      bool
 	}{
 		{
-			name: "test1 check if flag is defined in lagoon project variables",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
-			want: "enabled",
+			name:    "test1 check if flag is defined in lagoon project variables",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "enabled",
 		},
 		{
-			name: "test2 check if flag is defined in lagoon environment variables",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
-			want: "enabled",
+			name:    "test2 check if flag is defined in lagoon environment variables",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					EnvVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "enabled",
 		},
 		{
-			name: "test3 check if force flag is defined in build variables",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
+			name:    "test3 check if force flag is defined in build variables",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -105,22 +103,16 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			want: "enabled",
 		},
 		{
-			name: "test4 check if force flag is defined in build variables and default flag is ignored",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
+			name:    "test4 check if force flag is defined in build variables and default flag is ignored",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -134,22 +126,22 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			want: "enabled",
 		},
 		{
-			name: "test5 check if force flag is defined in build variables and one defined in lagoon project variables is ignored",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
+			name:    "test5 check if force flag is defined in build variables and one defined in lagoon project variables is ignored",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -163,22 +155,22 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			want: "disabled",
 		},
 		{
-			name: "test6 check if default flag is ignored and lagoon project variable is used",
-			args: args{
-				name:            "ROOTLESS_WORKLOAD",
-				alertContact:    "alertcontact",
-				statusPageID:    "statuspageid",
-				projectName:     "example-project",
-				environmentName: "main",
-				environmentType: "production",
-				buildType:       "branch",
-				lagoonVersion:   "v2.7.x",
-				branch:          "main",
-				projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD","value":"enabled","scope":"build"}]`,
-				envVars:         `[]`,
-				lagoonYAML:      "../test-resources/identify-feature/alltest/lagoon.yml",
-				templatePath:    "../test-resources/output",
-			},
+			name:    "test6 check if default flag is ignored and lagoon project variable is used",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
@@ -191,89 +183,18 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
-			err := os.Setenv("MONITORING_ALERTCONTACT", tt.args.alertContact)
+			savedTemplates := tt.templatePath
+			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			err = os.Setenv("MONITORING_STATUSPAGEID", tt.args.statusPageID)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PROJECT", tt.args.projectName)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ENVIRONMENT", tt.args.environmentName)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("BRANCH", tt.args.branch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_NUMBER", tt.args.prNumber)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_HEAD_BRANCH", tt.args.prHeadBranch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("PR_BASE_BRANCH", tt.args.prBaseBranch)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ENVIRONMENT_TYPE", tt.args.environmentType)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("BUILD_TYPE", tt.args.buildType)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("ACTIVE_ENVIRONMENT", tt.args.activeEnvironment)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("STANDBY_ENVIRONMENT", tt.args.standbyEnvironment)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", tt.args.cacheNoCache)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_PROJECT_VARIABLES", tt.args.projectVars)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_ENVIRONMENT_VARIABLES", tt.args.envVars)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("LAGOON_VERSION", tt.args.lagoonVersion)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			generator, err := generatorInput(false)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			generator.LagoonYAML = tt.args.lagoonYAML
-			// add dbaasclient overrides for tests
-			generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
-				RetryMax:     5,
-				RetryWaitMin: time.Duration(10) * time.Millisecond,
-				RetryWaitMax: time.Duration(50) * time.Millisecond,
-			})
-
 			for _, envVar := range tt.vars {
 				err = os.Setenv(envVar.Name, envVar.Value)
 				if err != nil {
 					t.Errorf("%v", err)
 				}
 			}
-			got, err := IdentifyFeatureFlag(generator, tt.args.name)
+			got, err := IdentifyFeatureFlag(generator, tt.varName)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("IdentifyFeatureFlag() error = %v, wantErr %v", err, tt.wantErr)
 				return

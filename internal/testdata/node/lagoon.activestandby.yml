@@ -1,0 +1,24 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
+production_routes:
+  active:
+    routes:
+      - node:
+          - active.example.com
+  standby:
+    routes:
+      - node:
+          - standby.example.com
+
+environments:
+  main:
+    routes:
+      - node:
+          - main.example.com
+  main-sb:
+    routes:
+      - node:
+          - main-sb.example.com
