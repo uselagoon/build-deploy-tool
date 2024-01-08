@@ -56,6 +56,8 @@ type GeneratorInput struct {
 	DBaaSClient              *dbaasclient.Client
 	ImageReferences          map[string]string
 	ImagePullSecret          string
+	Namespace                string
+	DefaultBackupSchedule    string
 }
 
 func NewGenerator(
@@ -98,6 +100,20 @@ func NewGenerator(
 	// add standard lagoon imagepull secret name
 	buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: "lagoon-internal-registry-secret"})
 
+	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", generator.DefaultBackupSchedule, generator.Debug)
+	if defaultBackupSchedule == "" {
+		defaultBackupSchedule = "M H(22-2) * * *"
+	}
+
+	// try source the namespace from the generator, but whatever is defined in the service account location
+	// should be used if one exists, falls back to whatever came in via generator
+	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
+	namespace, err := helpers.GetNamespace(namespace, "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		// a file was found, but there was an issue accessing it
+		return nil, err
+	}
+
 	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
 	// get the project and environment variables
@@ -112,6 +128,8 @@ func NewGenerator(
 	//add the dbaas client to build values too
 	buildValues.DBaaSClient = generator.DBaaSClient
 
+	buildValues.DefaultBackupSchedule = defaultBackupSchedule
+
 	// set the task scale iterations/wait times
 	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
 	// set these on their `remote-controller` deployments to be injected to builds.
@@ -121,6 +139,7 @@ func NewGenerator(
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName
+	buildValues.Namespace = namespace
 	buildValues.EnvironmentType = environmentType
 	buildValues.BuildType = buildType
 	buildValues.LagoonVersion = lagoonVersion
@@ -278,7 +297,7 @@ func NewGenerator(
 	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
+	err = generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +420,7 @@ func collectBuildVariables(buildValues BuildValues) []lagoon.EnvironmentVariable
 	return vars
 }
 
-// GetEnv gets an environment variable
+// checks the provided environment variables looking for feature flag based variables
 func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, debug bool) string {
 	// check for force value
 	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {

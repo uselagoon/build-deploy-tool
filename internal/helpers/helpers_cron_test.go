@@ -128,7 +128,7 @@ func TestConvertCrontab(t *testing.T) {
 			want: "1,16,31,46 23 * * 0-5",
 		},
 		{
-			name: "test14 - set day",
+			name: "test15 - set day",
 			args: args{
 				namespace: "example-com-main",
 				cron:      "M/15 * 31 * 0-5",
@@ -136,12 +136,20 @@ func TestConvertCrontab(t *testing.T) {
 			want: "1,16,31,46 * 31 * 0-5",
 		},
 		{
-			name: "test14 - set month",
+			name: "test16 - set month",
 			args: args{
 				namespace: "example-com-main",
 				cron:      "M/15 * * 11 0-5",
 			},
 			want: "1,16,31,46 * * 11 0-5",
+		},
+		{
+			name: "test17 - hourly interval",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "M */6 * * *",
+			},
+			want: "31 1,7,13,19 * * *",
 		},
 	}
 	for _, tt := range tests {

@@ -6,6 +6,7 @@ import (
 	"encoding/base32"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html/template"
 	"os"
@@ -178,6 +179,18 @@ type EnvironmentVariable struct {
 	Value string
 }
 
+// Try and get the namespace name from the serviceaccount location if it exists
+func GetNamespace(namespace, filename string) (string, error) {
+	if _, err := os.Stat(filename); !errors.Is(err, os.ErrNotExist) {
+		nsb, err := os.ReadFile(filename)
+		if err != nil {
+			return "", err
+		}
+		namespace = strings.Trim(string(nsb), "\n ")
+	}
+	return namespace, nil
+}
+
 func UnsetEnvVars(localVars []EnvironmentVariable) {
 	varNames := []string{
 		"MONITORING_ALERTCONTACT",
@@ -201,6 +214,13 @@ func UnsetEnvVars(localVars []EnvironmentVariable) {
 		"LAGOON_FEATURE_BACKUP_DEV_SCHEDULE",
 		"LAGOON_FEATURE_BACKUP_PR_SCHEDULE",
 		"LAGOON_GIT_BRANCH",
+		"DEFAULT_BACKUP_SCHEDULE",
+		"LAGOON_FEATURE_BACKUP_DEV_SCHEDULE",
+		"LAGOON_FEATURE_BACKUP_PR_SCHEDULE",
+		"LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS",
+		"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+		"DBAAS_OPERATOR_HTTP",
+		"CONFIG_MAP_SHA",
 	}
 	for _, varName := range varNames {
 		os.Unsetenv(varName)

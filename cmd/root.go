@@ -136,6 +136,7 @@ func init() {
 		"Path to the template on disk")
 	rootCmd.PersistentFlags().StringP("saved-templates-path", "T", "/kubectl-build-deploy/lagoon/services-routes",
 		"Path to where the resulting templates are saved")
+	rootCmd.PersistentFlags().String("default-backup-schedule", "", "The default backup schedule to use")
 	rootCmd.PersistentFlags().StringP("monitoring-config", "M", "",
 		"The monitoring contact config if known")
 	rootCmd.PersistentFlags().StringP("monitoring-status-page-id", "m", "",

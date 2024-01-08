@@ -573,3 +573,45 @@ func TestCheckLabelLength(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNamespace(t *testing.T) {
+	type args struct {
+		namespace string
+		filename  string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    string
+		wantErr bool
+	}{
+		{
+			name: "test1 - no file",
+			args: args{
+				namespace: "test-namespace",
+				filename:  "test-resources/test1",
+			},
+			want: "test-namespace",
+		},
+		{
+			name: "test2 - test namespace file",
+			args: args{
+				namespace: "a-namespace",
+				filename:  "test-resources/test2",
+			},
+			want: "test-namespace",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetNamespace(tt.args.namespace, tt.args.filename)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetNamespace() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("GetNamespace() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

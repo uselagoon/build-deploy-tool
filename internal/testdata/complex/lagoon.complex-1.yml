@@ -1,0 +1,34 @@
+docker-compose-yaml: ../internal/testdata/complex/docker-compose.complex-1.yml
+
+tasks:
+
+  post-rollout:
+    - run:
+        name: Drush deploy
+        command: drush deploy
+        service: cli
+
+routes:
+  insecure: Redirect
+
+environments:
+
+  dev:
+    routes:
+      - nginx:
+          - test.example.com
+    cronjobs:
+      - name: drush cron
+        schedule: '0 0 * * *' # UTC == 2AM (or in the summer 3AM) EET
+        command: drush cron
+        service: cli
+
+  main:
+    routes:
+      - nginx:
+          - ex.example.com
+    cronjobs:
+      - name: drush cron
+        schedule: '0 0 * * *' # UTC == 2AM (or in the summer 3AM) EET
+        command: drush cron
+        service: cli

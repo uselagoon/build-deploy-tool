@@ -51,6 +51,7 @@ type BuildValues struct {
 	DynamicSecretMounts           []DynamicSecretMounts       `json:"dynamicSecretMounts"`
 	DynamicSecretVolumes          []DynamicSecretVolumes      `json:"dynamicSecretVolumes"`
 	ImageCache                    string                      `json:"imageCache"`
+	DefaultBackupSchedule         string                      `json:"defaultBackupSchedule"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
 	ImageReferences               map[string]string           `json:"imageReferences"`
 	Resources                     Resources                   `json:"resources"`

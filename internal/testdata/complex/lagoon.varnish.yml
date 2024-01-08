@@ -1,0 +1,19 @@
+---
+docker-compose-yaml: ../internal/testdata/complex/docker-compose.varnish.yml
+
+project: example-com
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - example.com
+    cronjobs:
+      - name: drush cron
+        schedule: "*/15 * * * *"
+        command: drush cron
+        service: cli
+      - name: drush cron2
+        schedule: "*/30 * * * *"
+        command: drush cron
+        service: cli

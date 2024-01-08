@@ -9,6 +9,7 @@ import (
 	"github.com/compose-spec/compose-go/loader"
 	composetypes "github.com/compose-spec/compose-go/types"
 	goyaml "gopkg.in/yaml.v2"
+	goyamlv3 "gopkg.in/yaml.v3"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
 )
 
@@ -67,6 +68,20 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, erro
 		}
 	}
 	return l, nil
+}
+
+// use goyamlv3 that newer versions of compose-go uses to validate
+func ValidateUnmarshalDockerComposeYAML(file string) error {
+	rawYAML, err := os.ReadFile(file)
+	if err != nil {
+		return fmt.Errorf("couldn't read %v: %v", file, err)
+	}
+	var m interface{}
+	err = goyamlv3.Unmarshal(rawYAML, &m)
+	if err != nil {
+		return err
+	}
+	return nil
 }
 
 // Checks the validity of the service name against the RFC1035 DNS label standard

@@ -1,0 +1,25 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
+multiproject1:
+  environments:
+    multiproject:
+      routes:
+        - node:
+            - multiproject1.com
+multiproject2:
+  environments:
+    multiproject:
+      routes:
+        - node:
+            - multiproject2.com
+
+multiproject3:
+  environments:
+    autogendisabled:
+      autogenerateRoutes: false
+      routes:
+        - node:
+            - example.com
