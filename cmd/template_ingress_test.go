@@ -449,7 +449,7 @@ func TestTemplateRoutes(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS"}})
+				helpers.UnsetEnvVars(nil)
 			})
 		})
 	}

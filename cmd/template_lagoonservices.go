@@ -16,7 +16,7 @@ var lagoonServiceGeneration = &cobra.Command{
 	Aliases: []string{"ls"},
 	Short:   "Generate the lagoon service templates for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		gen, err := generatorInput(true)
+		gen, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}

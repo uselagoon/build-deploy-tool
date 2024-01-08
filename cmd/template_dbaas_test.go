@@ -107,7 +107,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "DBAAS_OPERATOR_HTTP"}})
+				helpers.UnsetEnvVars(nil)
 			})
 		})
 	}
