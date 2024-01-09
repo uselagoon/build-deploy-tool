@@ -46,9 +46,6 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	savedTemplates := g.SavedTemplatesPath
 
 	// generate the templates
-	if g.Debug {
-		fmt.Println(fmt.Sprintf("Templating service manifests %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "services")))
-	}
 	services, err := servicestemplates.GenerateServiceTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
@@ -61,11 +58,11 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 			}
 			separator := []byte("---\n")
 			restoreResult := append(separator[:], serviceBytes[:]...)
+			if g.Debug {
+				fmt.Println(fmt.Sprintf("Templating service manifests %s", fmt.Sprintf("%s/service-%s.yaml", savedTemplates, d.Name)))
+			}
 			helpers.WriteTemplateFile(fmt.Sprintf("%s/service-%s.yaml", savedTemplates, d.Name), restoreResult)
 		}
-	}
-	if g.Debug {
-		fmt.Println(fmt.Sprintf("Templating pvc manifests %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "pvcs")))
 	}
 	pvcs, err := servicestemplates.GeneratePVCTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
@@ -79,11 +76,11 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 			}
 			separator := []byte("---\n")
 			restoreResult := append(separator[:], serviceBytes[:]...)
+			if g.Debug {
+				fmt.Println(fmt.Sprintf("Templating pvc manifests %s", fmt.Sprintf("%s/pvc-%s.yaml", savedTemplates, d.Name)))
+			}
 			helpers.WriteTemplateFile(fmt.Sprintf("%s/pvc-%s.yaml", savedTemplates, d.Name), restoreResult)
 		}
-	}
-	if g.Debug {
-		fmt.Println(fmt.Sprintf("Templating deployment manifest %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "deployments")))
 	}
 	deployments, err := servicestemplates.GenerateDeploymentTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
@@ -97,6 +94,9 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 			}
 			separator := []byte("---\n")
 			restoreResult := append(separator[:], deploymentBytes[:]...)
+			if g.Debug {
+				fmt.Println(fmt.Sprintf("Templating deployment manifests %s", fmt.Sprintf("%s/deployment-%s.yaml", savedTemplates, d.Name)))
+			}
 			helpers.WriteTemplateFile(fmt.Sprintf("%s/deployment-%s.yaml", savedTemplates, d.Name), restoreResult)
 		}
 	}
@@ -112,6 +112,9 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 			}
 			separator := []byte("---\n")
 			restoreResult := append(separator[:], deploymentBytes[:]...)
+			if g.Debug {
+				fmt.Println(fmt.Sprintf("Templating cronjob manifests %s", fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name)))
+			}
 			helpers.WriteTemplateFile(fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name), restoreResult)
 		}
 	}

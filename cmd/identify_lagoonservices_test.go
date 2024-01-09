@@ -1,25 +1,22 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
 
-	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
 
-func TestTemplateLagoonServices(t *testing.T) {
+func TestIdentifyLagoonServices(t *testing.T) {
 	tests := []struct {
-		name         string
-		description  string
-		args         testdata.TestData
-		templatePath string
-		want         string
+		name        string
+		description string
+		args        testdata.TestData
+		want        []identifyServices
 	}{
 		{
 			name: "test1 basic deployment",
@@ -33,8 +30,22 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node:latest",
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service1",
+			want: []identifyServices{
+				{
+					Name: "node",
+					Type: "basic",
+					Containers: []containers{
+						{
+							Name: "basic",
+							Ports: []ports{
+								{Port: 1234},
+								{Port: 8191},
+								{Port: 9001},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "test2a nginx-php deployment",
@@ -52,8 +63,61 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish:latest",
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/service-templates/service1",
+			want: []identifyServices{
+				{
+					Name: "cli",
+					Type: "cli-persistent",
+					Containers: []containers{
+						{
+							Name:  "cli",
+							Ports: []ports{},
+						},
+					},
+				},
+				{
+					Name: "redis",
+					Type: "redis",
+					Containers: []containers{
+						{
+							Name: "redis",
+							Ports: []ports{
+								{Port: 6379},
+							},
+						},
+					},
+				},
+				{
+					Name: "varnish",
+					Type: "varnish",
+					Containers: []containers{
+						{
+							Name: "varnish",
+							Ports: []ports{
+								{Port: 8080},
+								{Port: 6082},
+							},
+						},
+					},
+				},
+				{
+					Name: "nginx-php",
+					Type: "nginx-php-persistent",
+					Containers: []containers{
+						{
+							Name: "nginx",
+							Ports: []ports{
+								{Port: 8080},
+							},
+						},
+						{
+							Name: "php",
+							Ports: []ports{
+								{Port: 9000},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "test2b nginx-php deployment - rootless",
@@ -78,8 +142,61 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/service-templates/service2",
+			want: []identifyServices{
+				{
+					Name: "cli",
+					Type: "cli-persistent",
+					Containers: []containers{
+						{
+							Name:  "cli",
+							Ports: []ports{},
+						},
+					},
+				},
+				{
+					Name: "redis",
+					Type: "redis",
+					Containers: []containers{
+						{
+							Name: "redis",
+							Ports: []ports{
+								{Port: 6379},
+							},
+						},
+					},
+				},
+				{
+					Name: "varnish",
+					Type: "varnish",
+					Containers: []containers{
+						{
+							Name: "varnish",
+							Ports: []ports{
+								{Port: 8080},
+								{Port: 6082},
+							},
+						},
+					},
+				},
+				{
+					Name: "nginx-php",
+					Type: "nginx-php-persistent",
+					Containers: []containers{
+						{
+							Name: "nginx",
+							Ports: []ports{
+								{Port: 8080},
+							},
+						},
+						{
+							Name: "php",
+							Ports: []ports{
+								{Port: 9000},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name:        "test3 - funky pvcs",
@@ -103,8 +220,46 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service2",
+			want: []identifyServices{
+				{
+					Name: "lnd",
+					Type: "basic-persistent",
+					Containers: []containers{
+						{
+							Name: "basic",
+							Ports: []ports{
+								{Port: 8080},
+								{Port: 10009},
+							},
+						},
+					},
+				},
+				{
+					Name: "thunderhub",
+					Type: "basic-persistent",
+					Containers: []containers{
+						{
+							Name: "basic",
+							Ports: []ports{
+								{Port: 3000},
+							},
+						},
+					},
+				},
+				{
+					Name: "tor",
+					Type: "basic",
+					Containers: []containers{
+						{
+							Name: "basic",
+							Ports: []ports{
+								{Port: 9050},
+								{Port: 9051},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name:        "test4 - basic-persistent with worker-persistent",
@@ -127,14 +282,33 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service3",
+			want: []identifyServices{
+				{
+					Name: "lnd",
+					Type: "basic-persistent",
+					Containers: []containers{
+						{Name: "basic",
+							Ports: []ports{
+								{Port: 8080},
+								{Port: 10009},
+							}},
+					},
+				},
+				{
+					Name: "tor",
+					Type: "worker-persistent",
+					Containers: []containers{
+						{Name: "worker",
+							Ports: []ports{}},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
+			savedTemplates := "testdata/output"
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
@@ -154,57 +328,12 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 
-			err = LagoonServiceTemplateGeneration(generator)
+			out, err := LagoonServiceTemplateIdentification(generator)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-
-			files, err := os.ReadDir(savedTemplates)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
-			}
-			results, err := os.ReadDir(tt.want)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", tt.want, err)
-			}
-			if len(files) != len(results) {
-				for _, f := range files {
-					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
-					if err != nil {
-						t.Errorf("couldn't read file %v: %v", savedTemplates, err)
-					}
-					fmt.Println(string(f1))
-				}
-				t.Errorf("number of generated templates doesn't match results %v/%v: %v", len(files), len(results), err)
-			}
-			fCount := 0
-			for _, f := range files {
-				for _, r := range results {
-					if f.Name() == r.Name() {
-						fCount++
-						f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
-						if err != nil {
-							t.Errorf("couldn't read file %v: %v", savedTemplates, err)
-						}
-						r1, err := os.ReadFile(fmt.Sprintf("%s/%s", tt.want, f.Name()))
-						if err != nil {
-							t.Errorf("couldn't read file %v: %v", tt.want, err)
-						}
-						if !reflect.DeepEqual(f1, r1) {
-							t.Errorf("TemplateLagoonServices() = \n%v", diff.LineDiff(string(r1), string(f1)))
-						}
-					}
-				}
-			}
-			if fCount != len(files) {
-				for _, f := range files {
-					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
-					if err != nil {
-						t.Errorf("couldn't read file %v: %v", savedTemplates, err)
-					}
-					fmt.Println(string(f1))
-				}
-				t.Errorf("resulting templates do not match")
+			if !reflect.DeepEqual(out, tt.want) {
+				t.Errorf("returned output %v doesn't match want %v", out, tt.want)
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(nil)
