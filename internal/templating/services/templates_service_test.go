@@ -8,6 +8,7 @@ import (
 	"github.com/andreyvit/diff"
 	"github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGenerateServiceTemplate(t *testing.T) {
@@ -255,8 +256,18 @@ func TestGenerateServiceTemplate(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateServiceTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
+			separator := []byte("---\n")
+			var result []byte
+			for _, d := range got {
+				sBytes, err := yaml.Marshal(d)
+				if err != nil {
+					t.Errorf("couldn't generate template  %v", err)
+				}
+				restoreResult := append(separator[:], sBytes[:]...)
+				result = append(result, restoreResult[:]...)
+			}
+			if !reflect.DeepEqual(string(result), string(r1)) {
+				t.Errorf("GenerateServiceTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
 			}
 		})
 	}

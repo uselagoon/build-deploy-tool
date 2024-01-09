@@ -6,13 +6,16 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultVarnishPort int32 = 8080
+var defaultVarnishControlPort int32 = 6082
+
 var varnish = ServiceType{
 	Name: "varnish",
 	Ports: ServicePorts{
 		CanChangePort: true,
 		Ports: []corev1.ServicePort{
 			{
-				Port: 8080,
+				Port: defaultVarnishPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
 					StrVal: "http",
@@ -21,7 +24,7 @@ var varnish = ServiceType{
 				Name:     "http",
 			},
 			{
-				Port: 6082,
+				Port: defaultVarnishControlPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
 					StrVal: "controlport",
@@ -38,12 +41,12 @@ var varnish = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 8080,
+					ContainerPort: defaultVarnishPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 				{
 					Name:          "controlport",
-					ContainerPort: 6082,
+					ContainerPort: defaultVarnishControlPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -52,7 +55,7 @@ var varnish = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 8080,
+							IntVal: defaultVarnishPort,
 						},
 					},
 				},
@@ -64,7 +67,7 @@ var varnish = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 8080,
+							IntVal: defaultVarnishPort,
 						},
 					},
 				},

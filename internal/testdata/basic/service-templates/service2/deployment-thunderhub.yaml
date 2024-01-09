@@ -1,0 +1,89 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: thunderhub
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: thunderhub
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: thunderhub
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: thunderhub
+      app.kubernetes.io/name: basic-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.7.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: thunderhub
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: thunderhub
+        lagoon.sh/service-type: basic-persistent
+        lagoon.sh/template: basic-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example/example-project/main/thunderhub:latest
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 3000
+          name: tcp-3000
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /data
+          name: lnd
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
+      volumes:
+      - name: lnd
+        persistentVolumeClaim:
+          claimName: lnd
+status: {}

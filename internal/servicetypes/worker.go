@@ -5,6 +5,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
+var defaultWorkerPort int32 = 3000
+
 var worker = ServiceType{
 	Name: "worker",
 	PrimaryContainer: ServiceContainer{
@@ -25,6 +27,13 @@ var worker = ServiceType{
 				PeriodSeconds:       2,
 				FailureThreshold:    3,
 			},
+			VolumeMounts: []corev1.VolumeMount{
+				{
+					Name:      "lagoon-sshkey",
+					ReadOnly:  true,
+					MountPath: "/var/run/secrets/lagoon/sshkey/",
+				},
+			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse("10m"),
@@ -38,8 +47,8 @@ var worker = ServiceType{
 var workerPersistent = ServiceType{
 	Name: "worker-persistent",
 	PrimaryContainer: ServiceContainer{
-		Name:            cli.PrimaryContainer.Name,
-		ImagePullPolicy: cli.PrimaryContainer.ImagePullPolicy,
-		Container:       cli.PrimaryContainer.Container,
+		Name:            worker.PrimaryContainer.Name,
+		ImagePullPolicy: worker.PrimaryContainer.ImagePullPolicy,
+		Container:       worker.PrimaryContainer.Container,
 	},
 }

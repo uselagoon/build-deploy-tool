@@ -1,23 +1,27 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+var defaultElasticsearchPort int32 = 9200
 
 var elasticsearch = ServiceType{
 	Name: "elasticsearch",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 9200,
+				Port: defaultElasticsearchPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 9200,
+					IntVal: defaultElasticsearchPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "9200-tcp",
+				Name:     fmt.Sprintf("%d-tcp", defaultElasticsearchPort),
 			},
 		},
 	},

@@ -12,15 +12,13 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	"sigs.k8s.io/yaml"
 )
 
 // GenerateCronjobTemplate generates the lagoon template to apply.
 func GenerateCronjobTemplate(
 	buildValues generator.BuildValues,
-) ([]byte, error) {
-	separator := []byte("---\n")
-	var result []byte
+) ([]batchv1.CronJob, error) {
+	var result []batchv1.CronJob
 
 	// check linked services
 	checkedServices := LinkedServiceCalculator(buildValues.Services)
@@ -32,8 +30,6 @@ func GenerateCronjobTemplate(
 			for _, nCronjob := range serviceValues.NativeCronjobs {
 				serviceTypeValues := &servicetypes.ServiceType{}
 				helpers.DeepCopy(val, serviceTypeValues)
-
-				var cronjobBytes []byte
 
 				// add the default labels
 				labels := map[string]string{
@@ -266,13 +262,13 @@ func GenerateCronjobTemplate(
 					enableInit := false
 					init := serviceTypeValues.InitContainer
 					// check if the init container has any flags required to add it
-					for k, v := range buildValues.Flags {
-						if init.Flags[k] == v {
+					for k, v := range buildValues.FeatureFlags {
+						if init.FeatureFlags[k] == v {
 							enableInit = true
 						}
 					}
 					// otherwise if there are no flags
-					if enableInit || init.Flags == nil {
+					if enableInit || init.FeatureFlags == nil {
 						for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
 							volumeMount := corev1.VolumeMount{}
 							helpers.TemplateThings(serviceValues, svm, &volumeMount)
@@ -396,18 +392,7 @@ func GenerateCronjobTemplate(
 				cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers = append(cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers, container.Container)
 
 				// end cronjob template
-
-				cronjobBytes, err = yaml.Marshal(cronjob)
-				if err != nil {
-					return nil, err
-				}
-
-				// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-				// of the current build process
-				// join all dbaas-consumer templates together
-				restoreResult := append(separator[:], cronjobBytes[:]...)
-				result = append(result, restoreResult[:]...)
+				result = append(result, *cronjob)
 			}
 		}
 	}

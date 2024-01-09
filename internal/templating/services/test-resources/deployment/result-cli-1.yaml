@@ -54,10 +54,6 @@ spec:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice@latest
         name: cli
-        ports:
-        - containerPort: 3000
-          name: http
-          protocol: TCP
         readinessProbe:
           exec:
             command:
@@ -142,10 +138,6 @@ spec:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice-persistent@latest
         name: cli
-        ports:
-        - containerPort: 3000
-          name: http
-          protocol: TCP
         readinessProbe:
           exec:
             command:

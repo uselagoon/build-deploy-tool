@@ -14,15 +14,13 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/yaml"
 )
 
 // GenerateDeploymentTemplate generates the lagoon template to apply.
 func GenerateDeploymentTemplate(
 	buildValues generator.BuildValues,
-) ([]byte, error) {
-	separator := []byte("---\n")
-	var result []byte
+) ([]appsv1.Deployment, error) {
+	var deployments []appsv1.Deployment
 
 	// check linked services
 	checkedServices := LinkedServiceCalculator(buildValues.Services)
@@ -33,8 +31,6 @@ func GenerateDeploymentTemplate(
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			serviceTypeValues := &servicetypes.ServiceType{}
 			helpers.DeepCopy(val, serviceTypeValues)
-
-			var deploymentBytes []byte
 
 			// add the default labels
 			labels := map[string]string{
@@ -75,6 +71,7 @@ func GenerateDeploymentTemplate(
 				templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
 			}
 
+			// create the initial deployment spec
 			deployment := &appsv1.Deployment{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "Deployment",
@@ -170,7 +167,7 @@ func GenerateDeploymentTemplate(
 			}
 			deployment.Spec.Replicas = helpers.Int32Ptr(1)
 			if serviceValues.Replicas != 0 {
-				deployment.Spec.Replicas = &serviceValues.Replicas
+				deployment.Spec.Replicas = helpers.Int32Ptr(serviceValues.Replicas)
 			}
 			deployment.Spec.Selector = &metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -270,13 +267,14 @@ func GenerateDeploymentTemplate(
 				enableInit := false
 				init := serviceTypeValues.InitContainer
 				// check if the init container has any flags required to add it
-				for k, v := range buildValues.Flags {
-					if init.Flags[k] == v {
+				for k, v := range buildValues.FeatureFlags {
+					if init.FeatureFlags[k] == v {
 						enableInit = true
 					}
 				}
 				// otherwise if there are no flags
-				if enableInit || init.Flags == nil {
+				if enableInit || init.FeatureFlags == nil {
+					// add any volume mounts to the init container as required
 					for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
 						volumeMount := corev1.VolumeMount{}
 						helpers.TemplateThings(serviceValues, svm, &volumeMount)
@@ -289,7 +287,7 @@ func GenerateDeploymentTemplate(
 						cmd = append(cmd, c2)
 					}
 					init.Container.Command = cmd
-					// init containers contain will more than likely contain public images, we should add a provided pull through imagecache if one is defined
+					// init containers will more than likely contain public images, we should add a provided pull through imagecache if one is defined
 					if buildValues.ImageCache != "" {
 						init.Container.Image = fmt.Sprintf("%s%s", buildValues.ImageCache, init.Container.Image)
 					}
@@ -299,7 +297,8 @@ func GenerateDeploymentTemplate(
 
 			// handle the primary container for the service type
 			container := serviceTypeValues.PrimaryContainer
-			// if the service is set to consume the additional service ports only, then generate those here
+			// if the service is set to consume the additional service ports from the docker-compose file (lagoon.sh/usecomposeports label on service)
+			// then generate those additional service ports in the deploymeny here
 			if serviceValues.AdditionalServicePorts != nil {
 				// nulify the existing ports
 				container.Container.Ports = []corev1.ContainerPort{}
@@ -382,9 +381,11 @@ func GenerateDeploymentTemplate(
 					Value: cronjobs,
 				},
 			}
+			// expose any container envvars as required here
 			for _, envvar := range envvars {
 				container.Container.Env = append(container.Container.Env, envvar)
 			}
+			// consume the lagoon-env configmap here
 			container.Container.EnvFrom = []corev1.EnvFromSource{
 				{
 					ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -404,6 +405,7 @@ func GenerateDeploymentTemplate(
 				}
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+			// handle the default storage volumemount
 			if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
 				volumeMount := corev1.VolumeMount{
 					Name:      serviceValues.PersistentVolumeName,
@@ -416,11 +418,13 @@ func GenerateDeploymentTemplate(
 				}
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+			// create the container volume mounts
 			for _, svm := range serviceTypeValues.PrimaryContainer.VolumeMounts {
 				volumeMount := corev1.VolumeMount{}
 				helpers.TemplateThings(serviceValues, svm, &volumeMount)
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+			// mount the default storage volume if one exists
 			if serviceValues.PersistentVolumeName != "" && serviceValues.PersistentVolumePath != "" && serviceTypeValues.Volumes.PersistentVolumeSize == "" {
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, corev1.VolumeMount{
 					Name:      serviceValues.PersistentVolumeName,
@@ -437,6 +441,7 @@ func GenerateDeploymentTemplate(
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
 
+			// set the resource limit overrides if htey are provided
 			if buildValues.Resources.Limits.Memory != "" {
 				if container.Container.Resources.Limits == nil {
 					container.Container.Resources.Limits = corev1.ResourceList{}
@@ -515,19 +520,8 @@ func GenerateDeploymentTemplate(
 			}
 
 			// end deployment template
-
-			deploymentBytes, err = yaml.Marshal(deployment)
-			if err != nil {
-				return nil, err
-			}
-
-			// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-			// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-			// of the current build process
-			// join all dbaas-consumer templates together
-			restoreResult := append(separator[:], deploymentBytes[:]...)
-			result = append(result, restoreResult[:]...)
+			deployments = append(deployments, *deployment)
 		}
 	}
-	return result, nil
+	return deployments, nil
 }

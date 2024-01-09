@@ -10,6 +10,7 @@ import (
 	"github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"sigs.k8s.io/yaml"
 )
 
 func TestGenerateDeploymentTemplate(t *testing.T) {
@@ -130,7 +131,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
-					Flags: map[string]bool{
+					FeatureFlags: map[string]bool{
 						"rootlessworkloads": true,
 					},
 					PodSecurityContext: generator.PodSecurityContext{
@@ -469,7 +470,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 						},
 					},
 					ImageCache: "imagecache.example.com/",
-					Flags: map[string]bool{
+					FeatureFlags: map[string]bool{
 						"rootlessworkloads": true,
 					},
 					PodSecurityContext: generator.PodSecurityContext{
@@ -531,8 +532,18 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateDeploymentTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
+			separator := []byte("---\n")
+			var result []byte
+			for _, d := range got {
+				deploymentBytes, err := yaml.Marshal(d)
+				if err != nil {
+					t.Errorf("couldn't generate template  %v", err)
+				}
+				restoreResult := append(separator[:], deploymentBytes[:]...)
+				result = append(result, restoreResult[:]...)
+			}
+			if !reflect.DeepEqual(string(result), string(r1)) {
+				t.Errorf("GenerateDeploymentTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
 			}
 		})
 	}

@@ -7,12 +7,15 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultNginxPort int32 = 8080
+var defaultPHPPort int32 = 9000
+
 var nginx = ServiceType{
 	Name: "nginx",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 8080,
+				Port: defaultNginxPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
 					StrVal: "http",
@@ -29,7 +32,7 @@ var nginx = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 8080,
+					ContainerPort: defaultNginxPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -80,7 +83,7 @@ var nginxPHP = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 8080,
+					ContainerPort: defaultNginxPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -132,7 +135,7 @@ var nginxPHP = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 9000,
+					ContainerPort: defaultPHPPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -141,7 +144,7 @@ var nginxPHP = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 9000,
+							IntVal: defaultPHPPort,
 						},
 					},
 				},
@@ -153,7 +156,7 @@ var nginxPHP = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 9000,
+							IntVal: defaultPHPPort,
 						},
 					},
 				},
@@ -186,7 +189,7 @@ var nginxPHPPersistent = ServiceType{
 	},
 	InitContainer: ServiceContainer{
 		Name: "fix-storage-permissions",
-		Flags: map[string]bool{
+		FeatureFlags: map[string]bool{
 			"rootlessworkloads": true,
 		},
 		Command: []string{

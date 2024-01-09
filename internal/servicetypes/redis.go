@@ -1,23 +1,27 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+var defaultRedisPort int32 = 6379
 
 var redis = ServiceType{
 	Name: "redis",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 6379,
+				Port: defaultRedisPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 6379,
+					IntVal: defaultRedisPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "6379-tcp",
+				Name:     fmt.Sprintf("%d-tcp", defaultRedisPort),
 			},
 		},
 	},
@@ -27,8 +31,8 @@ var redis = ServiceType{
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "6379-tcp",
-					ContainerPort: 6379,
+					Name:          fmt.Sprintf("%d-tcp", defaultRedisPort),
+					ContainerPort: defaultRedisPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -37,7 +41,7 @@ var redis = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 6379,
+							IntVal: defaultRedisPort,
 						},
 					},
 				},
@@ -49,7 +53,7 @@ var redis = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 6379,
+							IntVal: defaultRedisPort,
 						},
 					},
 				},

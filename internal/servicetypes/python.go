@@ -6,12 +6,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultPythonPort int32 = 8800
+
 var python = ServiceType{
 	Name: "python",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 8800,
+				Port: defaultPythonPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
 					StrVal: "http",
@@ -28,7 +30,7 @@ var python = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 8800,
+					ContainerPort: defaultPythonPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -37,7 +39,7 @@ var python = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 8800,
+							IntVal: defaultPythonPort,
 						},
 					},
 				},
@@ -49,7 +51,7 @@ var python = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 3000,
+							IntVal: defaultPythonPort,
 						},
 					},
 				},

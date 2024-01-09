@@ -29,7 +29,7 @@ type ServiceContainer struct {
 	Volumes      []corev1.Volume
 	VolumeMounts []corev1.VolumeMount
 	Command      []string
-	Flags        map[string]bool
+	FeatureFlags map[string]bool
 }
 
 type ServiceVolume struct {

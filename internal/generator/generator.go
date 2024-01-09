@@ -66,7 +66,7 @@ func NewGenerator(
 
 	// create some initial variables to be passed through the generators
 	buildValues := BuildValues{}
-	buildValues.Flags = map[string]bool{}
+	buildValues.FeatureFlags = map[string]bool{}
 	lYAML := &lagoon.YAML{}
 	lagoonEnvVars := []lagoon.EnvironmentVariable{}
 	autogenRoutes := &lagoon.RoutesV2{}
@@ -222,7 +222,7 @@ func NewGenerator(
 	// check for rootless workloads
 	rootlessWorkloads := CheckFeatureFlag("ROOTLESS_WORKLOAD", lagoonEnvVars, generator.Debug)
 	if rootlessWorkloads == "enabled" {
-		buildValues.Flags["rootlessworkloads"] = true
+		buildValues.FeatureFlags["rootlessworkloads"] = true
 		buildValues.PodSecurityContext = PodSecurityContext{
 			RunAsGroup: 0,
 			RunAsUser:  10000,

@@ -31,13 +31,6 @@ var cli = ServiceType{
 					MountPath: "/var/run/secrets/lagoon/sshkey/",
 				},
 			},
-			Ports: []corev1.ContainerPort{
-				{
-					Name:          "http",
-					ContainerPort: 3000,
-					Protocol:      corev1.ProtocolTCP,
-				},
-			},
 			ReadinessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{

@@ -6,20 +6,22 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultBasicPort int32 = 3000
+
 // defines all the basic service type defaults
 var basic = ServiceType{
 	Name: "basic",
 	Ports: ServicePorts{
-		CanChangePort: true,
+		CanChangePort: true, // this service has the ability to change its default port
 		Ports: []corev1.ServicePort{
 			{
-				Port: 3000,
+				Port: defaultBasicPort, // this is the default port for basic service type
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
-					StrVal: "http",
+					StrVal: "basic",
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "http",
+				Name:     "basic",
 			},
 		},
 	},
@@ -29,8 +31,8 @@ var basic = ServiceType{
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "http",
-					ContainerPort: 3000,
+					Name:          "basic",
+					ContainerPort: defaultBasicPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -39,7 +41,7 @@ var basic = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 3000,
+							IntVal: defaultBasicPort,
 						},
 					},
 				},
@@ -51,7 +53,7 @@ var basic = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 3000,
+							IntVal: defaultBasicPort,
 						},
 					},
 				},

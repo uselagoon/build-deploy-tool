@@ -12,15 +12,13 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	"sigs.k8s.io/yaml"
 )
 
 // GeneratePVCTemplate generates the lagoon template to apply.
 func GeneratePVCTemplate(
 	buildValues generator.BuildValues,
-) ([]byte, error) {
-	separator := []byte("---\n")
-	var result []byte
+) ([]corev1.PersistentVolumeClaim, error) {
+	var result []corev1.PersistentVolumeClaim
 
 	// add the default labels
 	labels := map[string]string{
@@ -37,15 +35,12 @@ func GeneratePVCTemplate(
 	}
 
 	// add any additional labels
-	additionalLabels := map[string]string{}
-	additionalAnnotations := map[string]string{}
 	if buildValues.BuildType == "branch" {
-		additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
+		annotations["lagoon.sh/branch"] = buildValues.Branch
 	} else if buildValues.BuildType == "pullrequest" {
-		additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
-		additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
-		additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
-
+		annotations["lagoon.sh/prNumber"] = buildValues.PRNumber
+		annotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
+		annotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
 	}
 
 	// check linked services
@@ -73,7 +68,9 @@ func GeneratePVCTemplate(
 				serviceType := &servicetypes.ServiceType{}
 				helpers.DeepCopy(val, serviceType)
 
-				var pvcBytes []byte
+				additionalLabels := map[string]string{}
+				additionalAnnotations := map[string]string{}
+
 				additionalLabels["app.kubernetes.io/name"] = serviceType.Name
 				additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
 				additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceType.Name, "0.1.0")
@@ -92,15 +89,21 @@ func GeneratePVCTemplate(
 						Name: serviceValues.OverrideName,
 					},
 				}
-				pvc.ObjectMeta.Labels = labels
-				pvc.ObjectMeta.Annotations = annotations
+
+				labelsCopy := &map[string]string{}
+				helpers.DeepCopy(labels, labelsCopy)
+				annotationsCopy := &map[string]string{}
+				helpers.DeepCopy(annotations, annotationsCopy)
+
 				for key, value := range additionalLabels {
-					pvc.ObjectMeta.Labels[key] = value
+					(*labelsCopy)[key] = value
 				}
 				// add any additional annotations
 				for key, value := range additionalAnnotations {
-					pvc.ObjectMeta.Annotations[key] = value
+					(*annotationsCopy)[key] = value
 				}
+				pvc.ObjectMeta.Labels = *labelsCopy
+				pvc.ObjectMeta.Annotations = *annotationsCopy
 				// validate any annotations
 				if err := apivalidation.ValidateAnnotations(pvc.ObjectMeta.Annotations, nil); err != nil {
 					if len(err) != 0 {
@@ -139,18 +142,7 @@ func GeneratePVCTemplate(
 					pvc.Spec.StorageClassName = helpers.StrPtr("bulk")
 				}
 				// end PVC template
-
-				pvcBytes, err = yaml.Marshal(pvc)
-				if err != nil {
-					return nil, err
-				}
-
-				// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-				// of the current build process
-				// join all dbaas-consumer templates together
-				restoreResult := append(separator[:], pvcBytes[:]...)
-				result = append(result, restoreResult[:]...)
+				result = append(result, *pvc)
 			}
 		}
 	}

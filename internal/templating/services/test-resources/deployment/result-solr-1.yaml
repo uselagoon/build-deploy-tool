@@ -63,7 +63,7 @@ spec:
         name: solr
         ports:
         - containerPort: 8983
-          name: tcp-8983
+          name: 8983-tcp
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1

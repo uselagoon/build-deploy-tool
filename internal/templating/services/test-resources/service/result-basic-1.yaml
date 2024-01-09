@@ -20,10 +20,10 @@ metadata:
   name: myservice
 spec:
   ports:
-  - name: http
+  - name: basic
     port: 3000
     protocol: TCP
-    targetPort: http
+    targetPort: basic
   selector:
     app.kubernetes.io/instance: myservice
     app.kubernetes.io/name: basic
@@ -51,10 +51,10 @@ metadata:
   name: myservice-po
 spec:
   ports:
-  - name: http
+  - name: basic
     port: 8080
     protocol: TCP
-    targetPort: http
+    targetPort: basic
   selector:
     app.kubernetes.io/instance: myservice-po
     app.kubernetes.io/name: basic
@@ -82,10 +82,10 @@ metadata:
   name: myservice-persist
 spec:
   ports:
-  - name: http
+  - name: basic
     port: 3000
     protocol: TCP
-    targetPort: http
+    targetPort: basic
   selector:
     app.kubernetes.io/instance: myservice-persist
     app.kubernetes.io/name: basic-persistent
@@ -113,10 +113,10 @@ metadata:
   name: myservice-persist-po
 spec:
   ports:
-  - name: http
+  - name: basic
     port: 8080
     protocol: TCP
-    targetPort: http
+    targetPort: basic
   selector:
     app.kubernetes.io/instance: myservice-persist-po
     app.kubernetes.io/name: basic-persistent

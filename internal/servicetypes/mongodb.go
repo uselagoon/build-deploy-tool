@@ -1,22 +1,26 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+var defaultMongoDBPort int32 = 27017
 
 var mongodbSingle = ServiceType{
 	Name: "mongodb-single",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 27017,
+				Port: defaultMongoDBPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 27017,
+					IntVal: defaultMongoDBPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "27017-tcp",
+				Name:     fmt.Sprintf("%d-tcp", defaultMongoDBPort),
 			},
 		},
 	},

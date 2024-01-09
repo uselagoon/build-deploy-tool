@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: tor
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: tor
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: tor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: tor
+      app.kubernetes.io/name: basic
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.7.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: tor
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: tor
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example/example-project/main/tor:latest
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 9050
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 9050
+          name: tcp-9050
+          protocol: TCP
+        - containerPort: 9051
+          name: tcp-9051
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 9050
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}

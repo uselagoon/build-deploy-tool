@@ -138,28 +138,6 @@ func TestTemplateLagoonServices(t *testing.T) {
 		{
 			name:        "test4 - basic-persistent with worker-persistent",
 			description: "create a basic-persistent that gets a pvc and mount that volume on a worker-persistent type",
-			// args: args{
-			// 	alertContact:      "alertcontact",
-			// 	statusPageID:      "statuspageid",
-			// 	projectName:       "example-project",
-			// 	environmentName:   "main",
-			// 	environmentType:   "production",
-			// 	buildType:         "branch",
-			// 	lagoonVersion:     "v2.7.x",
-			// 	branch:            "main",
-			// 	projectVars:       `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-			// 	envVars:           `[]`,
-			// 	rootlessWorkloads: "enabled",
-			// 	lagoonYAML:        "../test-resources/template-lagoon-services/test4/lagoon.yml",
-			// 	templatePath:      "../test-resources/template-lagoon-services/output",
-			// 	configMapSha:      "abcdefg1234567890",
-			// 	imageReferences: map[string]string{
-			// 		"lnd": "harbor.example/example-project/main/lnd:latest",
-			// 		"tor": "harbor.example/example-project/main/tor:latest",
-			// 	},
-			// },
-			// templatePath: "testdata/output",
-			// want:         "../test-resources/template-lagoon-services/test4-results",
 			args2: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",

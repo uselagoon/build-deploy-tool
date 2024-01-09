@@ -1,24 +1,28 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultPostgresPort int32 = 5432
+
 var postgresSingle = ServiceType{
 	Name: "postgres-single",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 5432,
+				Port: defaultPostgresPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 5432,
+					IntVal: defaultPostgresPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "5432-tcp",
+				Name:     fmt.Sprintf("%d-tcp", defaultPostgresPort),
 			},
 		},
 	},
@@ -28,8 +32,8 @@ var postgresSingle = ServiceType{
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "5432-tcp",
-					ContainerPort: 5432,
+					Name:          fmt.Sprintf("%d-tcp", defaultPostgresPort),
+					ContainerPort: defaultPostgresPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -38,7 +42,7 @@ var postgresSingle = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 5432,
+							IntVal: defaultPostgresPort,
 						},
 					},
 				},
@@ -50,7 +54,7 @@ var postgresSingle = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 5432,
+							IntVal: defaultPostgresPort,
 						},
 					},
 				},

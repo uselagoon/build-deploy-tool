@@ -6,12 +6,14 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
+var defaultNodePort int32 = 3000
+
 var node = ServiceType{
 	Name: "node",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 3000,
+				Port: defaultNodePort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
 					StrVal: "http",
@@ -28,7 +30,7 @@ var node = ServiceType{
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
-					ContainerPort: 3000,
+					ContainerPort: defaultNodePort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -37,7 +39,7 @@ var node = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 3000,
+							IntVal: defaultNodePort,
 						},
 					},
 				},
@@ -49,7 +51,7 @@ var node = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 3000,
+							IntVal: defaultNodePort,
 						},
 					},
 				},

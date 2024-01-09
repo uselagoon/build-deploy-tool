@@ -12,7 +12,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"sigs.k8s.io/yaml"
 )
 
 var separator = []byte("---\n")
@@ -20,10 +19,8 @@ var separator = []byte("---\n")
 // GenerateServiceTemplate generates the lagoon template to apply.
 func GenerateServiceTemplate(
 	buildValues generator.BuildValues,
-) ([]byte, error) {
-
-	var result []byte
-
+) ([]corev1.Service, error) {
+	var services []corev1.Service
 	// add the default labels
 	labels := map[string]string{
 		"app.kubernetes.io/managed-by": "build-deploy-tool",
@@ -39,14 +36,12 @@ func GenerateServiceTemplate(
 	}
 
 	// add any additional labels
-	additionalLabels := map[string]string{}
-	additionalAnnotations := map[string]string{}
 	if buildValues.BuildType == "branch" {
-		additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
+		annotations["lagoon.sh/branch"] = buildValues.Branch
 	} else if buildValues.BuildType == "pullrequest" {
-		additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
-		additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
-		additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
+		annotations["lagoon.sh/prNumber"] = buildValues.PRNumber
+		annotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
+		annotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
 
 	}
 
@@ -59,23 +54,26 @@ func GenerateServiceTemplate(
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			serviceType := &servicetypes.ServiceType{}
 			helpers.DeepCopy(val, serviceType)
-			restoreResult, err := GenerateService(result, serviceType, serviceValues, labels, annotations, additionalLabels, additionalAnnotations)
+			service, err := GenerateService(serviceType, serviceValues, labels, annotations)
 			if err != nil {
 				return nil, err
 			}
-			result = append(result, restoreResult[:]...)
+			if service != nil {
+				services = append(services, *service)
+			}
 		}
 	}
-	return result, nil
+	return services, nil
 }
 
-func GenerateService(result []byte, serviceType *servicetypes.ServiceType, serviceValues generator.ServiceValues, labels, annotations, additionalLabels, additionalAnnotations map[string]string) ([]byte, error) {
+func GenerateService(serviceType *servicetypes.ServiceType, serviceValues generator.ServiceValues, labels, annotations map[string]string) (*corev1.Service, error) {
 	if serviceValues.AdditionalServicePorts == nil && serviceType.Ports.Ports == nil {
 		// there are no additional ports provided, and this servicetype has no default ports associated to it
 		// just drop out
 		return nil, nil
 	}
-	var serviceBytes []byte
+	additionalLabels := map[string]string{}
+	additionalAnnotations := map[string]string{}
 
 	additionalLabels["app.kubernetes.io/name"] = serviceType.Name
 	additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
@@ -91,15 +89,21 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 			Name: serviceValues.OverrideName,
 		},
 	}
-	service.ObjectMeta.Labels = labels
-	service.ObjectMeta.Annotations = annotations
+
+	labelsCopy := &map[string]string{}
+	helpers.DeepCopy(labels, labelsCopy)
+	annotationsCopy := &map[string]string{}
+	helpers.DeepCopy(annotations, annotationsCopy)
+
 	for key, value := range additionalLabels {
-		service.ObjectMeta.Labels[key] = value
+		(*labelsCopy)[key] = value
 	}
 	// add any additional annotations
 	for key, value := range additionalAnnotations {
-		service.ObjectMeta.Annotations[key] = value
+		(*annotationsCopy)[key] = value
 	}
+	service.ObjectMeta.Labels = *labelsCopy
+	service.ObjectMeta.Annotations = *annotationsCopy
 	// validate any annotations
 	if err := apivalidation.ValidateAnnotations(service.ObjectMeta.Annotations, nil); err != nil {
 		if len(err) != 0 {
@@ -164,17 +168,7 @@ func GenerateService(result []byte, serviceType *servicetypes.ServiceType, servi
 		"app.kubernetes.io/instance": serviceValues.OverrideName,
 	}
 	// end service template
-
-	serviceBytes, err = yaml.Marshal(service)
-	if err != nil {
-		return nil, err
-	}
-	// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-	// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-	// of the current build process
-	// join all dbaas-consumer templates together
-	restoreResult := append(separator[:], serviceBytes[:]...)
-	return restoreResult, nil
+	return service, nil
 }
 
 func GenerateServiceBackendPort(addPort generator.AdditionalServicePort) networkv1.ServiceBackendPort {

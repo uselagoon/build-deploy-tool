@@ -1,22 +1,26 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+var defaultMariaDBPort int32 = 3306
 
 var mariadbSingle = ServiceType{
 	Name: "mariadb-single",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 3306,
+				Port: defaultMariaDBPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 3306,
+					IntVal: defaultMariaDBPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "3306-tcp",
+				Name:     fmt.Sprintf("%d-tcp", defaultMariaDBPort),
 			},
 		},
 	},

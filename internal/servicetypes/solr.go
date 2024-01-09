@@ -1,23 +1,27 @@
 package servicetypes
 
 import (
+	"fmt"
+
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
+
+var defaultSolrPort int32 = 8983
 
 var solr = ServiceType{
 	Name: "solr-php-persistent", // this has to be like this because it is used in selectors, and is unchangeable now on existing deployed solr
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: 8983,
+				Port: defaultSolrPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: 8983,
+					IntVal: defaultSolrPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "tcp-8983",
+				Name:     fmt.Sprintf("%d-tcp", defaultSolrPort),
 			},
 		},
 	},
@@ -27,8 +31,8 @@ var solr = ServiceType{
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "tcp-8983",
-					ContainerPort: 8983,
+					Name:          fmt.Sprintf("%d-tcp", defaultSolrPort),
+					ContainerPort: defaultSolrPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -37,7 +41,7 @@ var solr = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 8983,
+							IntVal: defaultSolrPort,
 						},
 					},
 				},
@@ -49,7 +53,7 @@ var solr = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: 8983,
+							IntVal: defaultSolrPort,
 						},
 					},
 				},
