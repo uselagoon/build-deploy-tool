@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -188,11 +187,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 
-			files, err := ioutil.ReadDir(savedTemplates)
+			files, err := os.ReadDir(savedTemplates)
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 			}
-			results, err := ioutil.ReadDir(tt.want)
+			results, err := os.ReadDir(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", tt.want, err)
 			}
