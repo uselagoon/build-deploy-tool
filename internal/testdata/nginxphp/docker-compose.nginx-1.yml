@@ -5,7 +5,7 @@ services:
       - amazeeio-network
       - default
     build:
-      context: .
+      context: internal/testdata/nginxphp/docker
       dockerfile: nginx.dockerfile
     labels:
       lagoon.type: nginx-php
@@ -18,7 +18,7 @@ services:
 
   php:
     build:
-      context: .
+      context: internal/testdata/nginxphp/docker
       dockerfile: php.dockerfile
     depends_on:
       - cli

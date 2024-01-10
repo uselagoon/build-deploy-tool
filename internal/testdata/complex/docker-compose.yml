@@ -29,7 +29,7 @@ services:
 
   cli:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: .docker/Dockerfile.cli
       args:
         COMPOSER: ${COMPOSER:-composer.json}
@@ -49,7 +49,7 @@ services:
 
   nginx:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: .docker/Dockerfile.nginx-drupal
       args:
         CLI_IMAGE: *project
@@ -71,7 +71,7 @@ services:
       - "8080"
   php:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: .docker/Dockerfile.php
       args:
         CLI_IMAGE: *project
@@ -103,7 +103,7 @@ services:
 
   elasticsearch:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: .docker/Dockerfile.elasticsearch
       args:
         - ES_TPL=${ES_TPL:-elasticsearch.yml}

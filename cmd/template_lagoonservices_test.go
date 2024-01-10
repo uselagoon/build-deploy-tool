@@ -11,6 +11,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestTemplateLagoonServices(t *testing.T) {
@@ -28,13 +31,13 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					ImageReferences: map[string]string{
 						"node": "harbor.example/example-project/main/node:latest",
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service1",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/basic/service-templates/service1",
 		},
 		{
 			name: "test2a nginx-php deployment",
@@ -43,7 +46,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.varnish.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -52,8 +55,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish:latest",
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/service-templates/service1",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/complex/service-templates/service1",
 		},
 		{
 			name: "test2b nginx-php deployment - rootless",
@@ -62,7 +65,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.varnish.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -78,8 +81,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/service-templates/service2",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/complex/service-templates/service2",
 		},
 		{
 			name:        "test3 - funky pvcs",
@@ -89,7 +92,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.thunderhub.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub.yml",
 					ImageReferences: map[string]string{
 						"lnd":        "harbor.example/example-project/main/lnd:latest",
 						"thunderhub": "harbor.example/example-project/main/thunderhub:latest",
@@ -103,8 +106,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service2",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/basic/service-templates/service2",
 		},
 		{
 			name:        "test4 - basic-persistent with worker-persistent",
@@ -114,7 +117,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.thunderhub-2.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub-2.yml",
 					ImageReferences: map[string]string{
 						"lnd": "harbor.example/example-project/main/lnd:latest",
 						"tor": "harbor.example/example-project/main/tor:latest",
@@ -127,8 +130,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/basic/service-templates/service3",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/basic/service-templates/service3",
 		},
 	}
 	for _, tt := range tests {

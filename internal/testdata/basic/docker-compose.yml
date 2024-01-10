@@ -5,7 +5,7 @@ services:
       - amazeeio-network
       - default
     build:
-      context: .
+      context: internal/testdata/basic/docker
       dockerfile: basic.dockerfile
     labels:
       lagoon.type: basic

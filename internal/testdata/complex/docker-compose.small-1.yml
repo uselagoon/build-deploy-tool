@@ -2,7 +2,7 @@ version: '2'
 services:
   cli:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: builder.dockerfile
     image: builder
     labels:
@@ -19,7 +19,7 @@ services:
       - amazeeio-network
       - default
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: nginx.dockerfile
     labels:
       lagoon.type: nginx-php-persistent
@@ -37,7 +37,7 @@ services:
       LAGOON_LOCALDEV_URL: drupal9-mariadb.docker.amazee.io
   php:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: php.dockerfile
     labels:
       lagoon.type: nginx-php-persistent
@@ -50,7 +50,7 @@ services:
       - cli
   mariadb:
     build:
-      context: .
+      context: internal/testdata/complex/docker
       dockerfile: mariadb.dockerfile
     labels:
       lagoon.type: mariadb-single

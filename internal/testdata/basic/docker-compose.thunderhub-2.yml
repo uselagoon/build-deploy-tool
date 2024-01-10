@@ -5,7 +5,7 @@ services:
       - amazeeio-network
       - default
     build:
-      context: .
+      context: internal/testdata/basic/docker
       dockerfile: Dockerfile
     user: '10000'
     labels:
@@ -28,7 +28,7 @@ services:
       - amazeeio-network
       - default
     build:
-      context: tor
+      context: internal/testdata/basic/docker
       dockerfile: Dockerfile
     user: '10000'
     labels:

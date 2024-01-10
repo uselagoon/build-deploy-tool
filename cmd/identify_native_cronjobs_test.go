@@ -8,6 +8,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestIdentifyNativeCronjobs(t *testing.T) {
@@ -50,9 +53,9 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			want:         "[]",
 		},
 		{
@@ -62,7 +65,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -71,7 +74,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish:latest",
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			want:         `["cronjob-cli-drush-cron2"]`,
 		},
 		{
@@ -81,7 +84,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -97,7 +100,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			want:         `["cronjob-cli-drush-cron2"]`,
 		},
 	}

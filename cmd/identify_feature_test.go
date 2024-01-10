@@ -7,6 +7,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestIdentifyFeatureFlag(t *testing.T) {
@@ -51,7 +54,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -60,7 +63,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			want:         "enabled",
 		},
 		{
@@ -71,7 +74,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					EnvVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -80,7 +83,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			want:         "enabled",
 		},
 		{
@@ -91,9 +94,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -110,9 +113,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "test-resources/output",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -133,7 +136,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -162,7 +165,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",

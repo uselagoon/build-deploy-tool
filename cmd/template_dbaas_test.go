@@ -9,6 +9,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestDBaaSTemplateGeneration(t *testing.T) {
@@ -26,10 +29,10 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-1",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-1",
 		},
 	}
 	for _, tt := range tests {

@@ -9,6 +9,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestIdentifyLagoonServices(t *testing.T) {
@@ -25,7 +28,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					ImageReferences: map[string]string{
 						"node": "harbor.example/example-project/main/node:latest",
 					},
@@ -54,7 +57,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.varnish.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -126,7 +129,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.varnish.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
 						"nginx":   "harbor.example/example-project/main/nginx:latest",
 						"php":     "harbor.example/example-project/main/php:latest",
@@ -206,7 +209,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.thunderhub.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub.yml",
 					ImageReferences: map[string]string{
 						"lnd":        "harbor.example/example-project/main/lnd:latest",
 						"thunderhub": "harbor.example/example-project/main/thunderhub:latest",
@@ -269,7 +272,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/basic/lagoon.thunderhub-2.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub-2.yml",
 					ImageReferences: map[string]string{
 						"lnd": "harbor.example/example-project/main/lnd:latest",
 						"tor": "harbor.example/example-project/main/tor:latest",
@@ -308,7 +311,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
-			savedTemplates := "testdata/output"
+			savedTemplates := "test-resources/output"
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)

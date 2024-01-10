@@ -1,5 +1,5 @@
 ---
-docker-compose-yaml: ../internal/testdata/complex/docker-compose.varnish.yml
+docker-compose-yaml: internal/testdata/complex/docker-compose.varnish.yml
 
 project: example-com
 

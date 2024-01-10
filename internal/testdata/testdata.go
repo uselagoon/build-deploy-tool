@@ -44,6 +44,7 @@ type TestData struct {
 	Namespace             string
 	ImageReferences       map[string]string
 	ConfigMapSha          string
+	ImageRegistry         string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -130,6 +131,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
+	err = os.Setenv("REGISTRY", t.ImageRegistry)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
 
 	generator, err := generator.GenerateInput(rootCmd, false)
 	if err != nil {
@@ -169,8 +174,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 				Scope: "internal_system",
 			},
 		},
-		K8UPVersion:  "v1",
-		ConfigMapSha: "abcdefg1234567890",
+		K8UPVersion:   "v1",
+		ConfigMapSha:  "abcdefg1234567890",
+		ImageRegistry: "harbor.example",
 	}
 	if t.ProjectName != "" {
 		rt.ProjectName = t.ProjectName

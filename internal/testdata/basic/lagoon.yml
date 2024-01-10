@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/basic/docker-compose.yml
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
 
 environment_variables:
   git_sha: "true"

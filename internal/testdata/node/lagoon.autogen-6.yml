@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/node/docker-compose.none.yml
+docker-compose-yaml: internal/testdata/node/docker-compose.none.yml
 
 routes:
   autogenerate:

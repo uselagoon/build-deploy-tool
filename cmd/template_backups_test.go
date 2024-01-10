@@ -10,6 +10,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestBackupTemplateGeneration(t *testing.T) {
@@ -27,7 +30,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
@@ -36,8 +39,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/backup-templates/backup-1",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/complex/backup-templates/backup-1",
 		},
 		{
 			name: "test2 - custom dev only schedule but global config change enabled",
@@ -47,7 +50,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG",
@@ -61,8 +64,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-1",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-1",
 		},
 		{
 			name: "test3 - custom dev only schedule but global config change not configured (use defaults)",
@@ -72,7 +75,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_BACKUP_DEV_SCHEDULE",
@@ -81,8 +84,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-2",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-2",
 		},
 		{
 			name: "test4 - custom schedule and custom backup keys",
@@ -95,7 +98,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					PRNumber:        "123",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "main2",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG",
@@ -109,8 +112,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-3",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-3",
 		},
 		{
 			name: "test5 - custom schedule and custom restore keys",
@@ -123,7 +126,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					PRNumber:        "123",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "main2",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG",
@@ -137,8 +140,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-4",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-4",
 		},
 		{
 			name: "test6 - generic backup",
@@ -148,10 +151,10 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					EnvironmentType: "production",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-5",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-5",
 		},
 		{
 			name: "test7 - changed default backup schedule",
@@ -162,10 +165,10 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					Branch:                "main",
 					EnvironmentType:       "production",
 					DefaultBackupSchedule: "M */6 * * *",
-					LagoonYAML:            "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:            "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/backup-templates/backup-6",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/node/backup-templates/backup-6",
 		},
 		{
 			name: "test8 - change the image registry used for prebackup pods k8upv2",
@@ -175,7 +178,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					K8UPVersion:     "v2",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
@@ -184,8 +187,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/backup-templates/backup-2",
+			templatePath: "test-resources/output",
+			want:         "internal/testdata/complex/backup-templates/backup-2",
 		},
 	}
 	for _, tt := range tests {

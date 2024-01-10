@@ -77,7 +77,10 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identify
 				for _, p := range dc.Ports {
 					dcp = append(dcp, ports{Port: p.ContainerPort})
 				}
-				dcs = append(dcs, containers{Name: dc.Name, Ports: dcp})
+				dcs = append(dcs, containers{
+					Name:  dc.Name,
+					Ports: dcp,
+				})
 			}
 			lServices = append(lServices, identifyServices{
 				Name:       d.Name,
