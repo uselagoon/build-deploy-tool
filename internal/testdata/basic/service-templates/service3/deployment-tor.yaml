@@ -47,11 +47,12 @@ spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
+          value: abcdefg123456
         - name: CRONJOBS
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example/example-project/main/tor:latest
+        image: harbor.example/example-project/main/tor@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         name: worker
         readinessProbe:
           exec:
