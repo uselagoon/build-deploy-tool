@@ -14,37 +14,44 @@ import (
 
 // basic data structure for test data using the generator
 type TestData struct {
-	AlertContact          string
-	StatusPageID          string
-	ProjectName           string
-	EnvironmentName       string
-	Branch                string
-	PRNumber              string
-	PRHeadBranch          string
-	PRBaseBranch          string
-	EnvironmentType       string
-	BuildType             string
-	ActiveEnvironment     string
-	StandbyEnvironment    string
-	CacheNoCache          string
-	ServiceID             string
-	SecretPrefix          string
-	IngressClass          string
-	ProjectVars           string
-	EnvVars               string
-	ProjectVariables      []lagoon.EnvironmentVariable
-	EnvVariables          []lagoon.EnvironmentVariable
-	LagoonVersion         string
-	LagoonYAML            string
-	ValuesFilePath        string
-	K8UPVersion           string
-	DefaultBackupSchedule string
-	ControllerDevSchedule string
-	ControllerPRSchedule  string
-	Namespace             string
-	ImageReferences       map[string]string
-	ConfigMapSha          string
-	ImageRegistry         string
+	AlertContact               string
+	StatusPageID               string
+	BuildName                  string
+	SourceRepository           string
+	Kubernetes                 string
+	ProjectName                string
+	EnvironmentName            string
+	Branch                     string
+	GitSHA                     string
+	PRNumber                   string
+	PRHeadBranch               string
+	PRBaseBranch               string
+	PRHeadSHA                  string
+	PRBaseSHA                  string
+	EnvironmentType            string
+	BuildType                  string
+	ActiveEnvironment          string
+	StandbyEnvironment         string
+	CacheNoCache               string
+	ServiceID                  string
+	SecretPrefix               string
+	IngressClass               string
+	ProjectVars                string
+	EnvVars                    string
+	ProjectVariables           []lagoon.EnvironmentVariable
+	EnvVariables               []lagoon.EnvironmentVariable
+	LagoonVersion              string
+	LagoonYAML                 string
+	ValuesFilePath             string
+	K8UPVersion                string
+	DefaultBackupSchedule      string
+	ControllerDevSchedule      string
+	ControllerPRSchedule       string
+	Namespace                  string
+	ImageReferences            map[string]string
+	ConfigMapSha               string
+	ImageRegistry              string
+	PromotionSourceEnvironment string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -135,6 +142,34 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
+	err = os.Setenv("SOURCE_REPOSITORY", t.SourceRepository)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_BUILD_NAME", t.BuildName)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("KUBERNETES", t.Kubernetes)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PR_HEAD_SHA", t.PRHeadSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PR_BASE_SHA", t.PRBaseSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_GIT_SHA", t.GitSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PROMOTION_SOURCE_ENVIRONMENT", t.PromotionSourceEnvironment)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
 
 	generator, err := generator.GenerateInput(rootCmd, false)
 	if err != nil {
@@ -174,9 +209,13 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 				Scope: "internal_system",
 			},
 		},
-		K8UPVersion:   "v1",
-		ConfigMapSha:  "abcdefg1234567890",
-		ImageRegistry: "harbor.example",
+		K8UPVersion:      "v1",
+		ConfigMapSha:     "abcdefg1234567890",
+		ImageRegistry:    "harbor.example",
+		BuildName:        "lagoon-build-abcdefg",
+		SourceRepository: "ssh://git@example.com/lagoon-demo.git",
+		Kubernetes:       "remote-cluster1",
+		GitSHA:           "abcdefg123456",
 	}
 	if t.ProjectName != "" {
 		rt.ProjectName = t.ProjectName
@@ -193,6 +232,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	if t.BuildType != "" {
 		rt.BuildType = t.BuildType
 	}
+	if rt.BuildType == "promote" {
+		rt.PromotionSourceEnvironment = "promote-main"
+	}
 	if t.PRNumber != "" {
 		rt.PRNumber = t.PRNumber
 	}
@@ -201,6 +243,12 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.PRBaseBranch != "" {
 		rt.PRBaseBranch = t.PRBaseBranch
+	}
+	if t.PRHeadSHA != "" {
+		rt.PRHeadSHA = t.PRHeadSHA
+	}
+	if t.PRBaseSHA != "" {
+		rt.PRBaseSHA = t.PRBaseSHA
 	}
 	if t.LagoonVersion != "" {
 		rt.LagoonVersion = t.LagoonVersion
