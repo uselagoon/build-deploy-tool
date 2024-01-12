@@ -463,8 +463,6 @@ func TestMergeLagoonYAMLs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//fmt.Println(tt.args.left)
-			//fmt.Println(tt.args.right)
 			err := MergeLagoonYAMLs(tt.args.left, tt.args.right)
 			got := tt.args.left
 			if (err != nil) != tt.wantErr {

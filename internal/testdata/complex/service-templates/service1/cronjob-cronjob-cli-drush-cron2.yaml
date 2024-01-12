@@ -50,7 +50,7 @@ spec:
             - drush cron
             env:
             - name: LAGOON_GIT_SHA
-              value: abcdefg123456
+              value: "0000000000000000000000000000000000000000"
             - name: SERVICE_NAME
               value: cli
             envFrom:

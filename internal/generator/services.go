@@ -407,81 +407,89 @@ func composeToServiceValues(
 		if !helpers.Contains(ignoredImageTypes, lagoonType) {
 			// create a holder for all the docker related information, if this is a pull through image or a build image
 			imageBuild := ImageBuild{}
-			// handle extracting the built image name from the provided image references
-			if composeServiceValues.Build != nil {
-				// if a build spec is defined, consume it
-				// set the dockerfile
-				imageBuild.DockerFile = composeServiceValues.Build.Dockerfile
-				// set the context if found, otherwise set '.'
-				imageBuild.Context = func(s string) string {
-					if s == "" {
-						return "."
+			// if this is not a promote environment, then attempt to work out the image build information that is required for the builder
+			if buildValues.BuildType != "promote" {
+				// handle extracting the built image name from the provided image references
+				if composeServiceValues.Build != nil {
+					// if a build spec is defined, consume it
+					// set the dockerfile
+					imageBuild.DockerFile = composeServiceValues.Build.Dockerfile
+					// set the context if found, otherwise set '.'
+					imageBuild.Context = func(s string) string {
+						if s == "" {
+							return "."
+						}
+						return s
+					}(composeServiceValues.Build.Context)
+					// if there is a build target defined, set that here too
+					imageBuild.Target = composeServiceValues.Build.Target
+				}
+				// if there is a dockerfile defined in the
+				if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Dockerfile != "" {
+					imageBuild.DockerFile = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Dockerfile
+					if imageBuild.Context == "" {
+						// if we get here, it means that a dockerfile override was defined in the .lagoon.yml file
+						// but there was no `build` spec defined in the docker-compose file, so this just sets the context to the default `.`
+						// in the same way the legacy script used to do it
+						imageBuild.Context = "."
 					}
-					return s
-				}(composeServiceValues.Build.Context)
-				// if there is a build target defined, set that here too
-				imageBuild.Target = composeServiceValues.Build.Target
-			}
-			// if there is a dockerfile defined in the
-			if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Dockerfile != "" {
-				imageBuild.DockerFile = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Dockerfile
-				if imageBuild.Context == "" {
-					// if we get here, it means that a dockerfile override was defined in the .lagoon.yml file
-					// but there was no `build` spec defined in the docker-compose file, so this just sets the context to the default `.`
-					// in the same way the legacy script used to do it
-					imageBuild.Context = "."
 				}
-			}
-			if imageBuild.DockerFile == "" {
-				// no dockerfile determined, this must be a pull through image
-				if composeServiceValues.Image == "" {
-					return ServiceValues{}, fmt.Errorf(
-						"defined Dockerfile or Image for service %s defined", composeService,
-					)
-				}
-				// check docker-compose override image
-				pullImage := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.image")
-				// check lagoon.yml override image
-				if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Image != "" {
-					pullImage = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Image
-				}
-				if pullImage != "" {
-					// if an override image is provided, envsubst it
-					// not really sure why we do this, but legacy bash says `expand environment variables from ${OVERRIDE_IMAGE}`
-					// so there may be some undocumented functionality that allows people to use envvars in their image overrides?
-					evalImage, err := envsubst.EvalEnv(pullImage)
-					if err != nil {
+				if imageBuild.DockerFile == "" {
+					// no dockerfile determined, this must be a pull through image
+					if composeServiceValues.Image == "" {
 						return ServiceValues{}, fmt.Errorf(
-							"error evaluating override image %s with envsubst", pullImage,
+							"defined Dockerfile or Image for service %s defined", composeService,
 						)
 					}
-					// set the evalled image now
-					pullImage = evalImage
+					// check docker-compose override image
+					pullImage := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.image")
+					// check lagoon.yml override image
+					if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Image != "" {
+						pullImage = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Image
+					}
+					if pullImage != "" {
+						// if an override image is provided, envsubst it
+						// not really sure why we do this, but legacy bash says `expand environment variables from ${OVERRIDE_IMAGE}`
+						// so there may be some undocumented functionality that allows people to use envvars in their image overrides?
+						evalImage, err := envsubst.EvalEnv(pullImage)
+						if err != nil {
+							return ServiceValues{}, fmt.Errorf(
+								"error evaluating override image %s with envsubst", pullImage,
+							)
+						}
+						// set the evalled image now
+						pullImage = evalImage
+					} else {
+						// else set the pullimage to whatever is defined in the docker-compose file otherwise
+						pullImage = composeServiceValues.Image
+					}
+					// if the image just is an image name (like "alpine") we prefix it with `libary/` as the imagecache does not understand
+					// the magic `alpine` image
+					if !strings.Contains(pullImage, "/") {
+						imageBuild.PullImage = fmt.Sprintf("library/%s", pullImage)
+					} else {
+						imageBuild.PullImage = pullImage
+					}
+					if !helpers.ContainsR(buildValues.PrivateRegistryURLS, pullImage) {
+						if buildValues.ImageCache != "" {
+							imageBuild.PullImage = fmt.Sprintf("%s%s", buildValues.ImageCache, imageBuild.PullImage)
+						}
+					}
 				} else {
-					// else set the pullimage to whatever is defined in the docker-compose file otherwise
-					pullImage = composeServiceValues.Image
-				}
-				// if the image just is an image name (like "alpine") we prefix it with `libary/` as the imagecache does not understand
-				// the magic `alpine` image
-				if !strings.Contains(pullImage, "/") {
-					imageBuild.PullImage = fmt.Sprintf("library/%s", pullImage)
-				} else {
-					imageBuild.PullImage = pullImage
-				}
-			} else {
-				// otherwise this must be an image build
-				// set temporary image to prevent clashes?? not sure this is even required, the temporary name is just as unique as the final image name eventually is
-				// so clashing would occur in both situations
-				imageBuild.TemporaryImage = fmt.Sprintf("%s-%s", buildValues.Namespace, composeService) //@TODO maybe get rid of this
-				if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context != "" {
-					imageBuild.Context = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context
-				}
-				// check the dockerfile exists
-				if _, err := os.Stat(fmt.Sprintf("%s/%s", imageBuild.Context, imageBuild.DockerFile)); errors.Is(err, os.ErrNotExist) {
-					return ServiceValues{}, fmt.Errorf(
-						"defined Dockerfile %s for service %s not found",
-						fmt.Sprintf("%s/%s", imageBuild.Context, imageBuild.DockerFile), composeService,
-					)
+					// otherwise this must be an image build
+					// set temporary image to prevent clashes?? not sure this is even required, the temporary name is just as unique as the final image name eventually is
+					// so clashing would occur in both situations
+					imageBuild.TemporaryImage = fmt.Sprintf("%s-%s", buildValues.Namespace, composeService) //@TODO maybe get rid of this
+					if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context != "" {
+						imageBuild.Context = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context
+					}
+					// check the dockerfile exists
+					if _, err := os.Stat(fmt.Sprintf("%s/%s", imageBuild.Context, imageBuild.DockerFile)); errors.Is(err, os.ErrNotExist) {
+						return ServiceValues{}, fmt.Errorf(
+							"defined Dockerfile %s for service %s not found",
+							fmt.Sprintf("%s/%s", imageBuild.Context, imageBuild.DockerFile), composeService,
+						)
+					}
 				}
 			}
 			// since we know what the final build image will be, we can set it here, this is what all images will be built as during the build

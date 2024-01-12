@@ -136,7 +136,6 @@ func generateBackupValues(
 	// :end
 
 	if buildValues.LagoonYAML.BackupRetention.Production.Hourly != nil && buildValues.EnvironmentType == "production" {
-		fmt.Println(*buildValues.LagoonYAML.BackupRetention.Production.Hourly)
 		buildValues.Backup.PruneRetention.Hourly = *buildValues.LagoonYAML.BackupRetention.Production.Hourly
 	}
 	if buildValues.LagoonYAML.BackupRetention.Production.Daily != nil && buildValues.EnvironmentType == "production" {

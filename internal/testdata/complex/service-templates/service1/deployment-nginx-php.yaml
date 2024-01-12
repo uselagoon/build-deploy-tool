@@ -49,7 +49,7 @@ spec:
         - name: NGINX_FASTCGI_PASS
           value: 127.0.0.1
         - name: LAGOON_GIT_SHA
-          value: abcdefg123456
+          value: "0000000000000000000000000000000000000000"
         - name: CRONJOBS
         envFrom:
         - configMapRef:
@@ -84,7 +84,7 @@ spec:
         - name: NGINX_FASTCGI_PASS
           value: 127.0.0.1
         - name: LAGOON_GIT_SHA
-          value: abcdefg123456
+          value: "0000000000000000000000000000000000000000"
         envFrom:
         - configMapRef:
             name: lagoon-env

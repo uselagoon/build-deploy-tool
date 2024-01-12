@@ -64,9 +64,16 @@ func GenerateDeploymentTemplate(
 
 			templateAnnotations := make(map[string]string)
 			templateAnnotations["lagoon.sh/configMapSha"] = buildValues.ConfigMapSha
+			tpld := struct {
+				ServiceValues     interface{}
+				ServiceTypeValues interface{}
+			}{
+				serviceValues,
+				serviceTypeValues,
+			}
 			if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
 				bc := servicetypes.BackupConfiguration{}
-				helpers.TemplateThings(serviceValues, serviceTypeValues.Volumes.BackupConfiguration, &bc)
+				helpers.TemplateThings(tpld, serviceTypeValues.Volumes.BackupConfiguration, &bc)
 				templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
 				templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
 			}
@@ -238,12 +245,12 @@ func GenerateDeploymentTemplate(
 			// if there are any specific container volume overrides provided, handle those here
 			for _, pcv := range serviceTypeValues.PrimaryContainer.Volumes {
 				volume := corev1.Volume{}
-				helpers.TemplateThings(serviceValues, pcv, &volume)
+				helpers.TemplateThings(tpld, pcv, &volume)
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
 			for _, scv := range serviceTypeValues.SecondaryContainer.Volumes {
 				volume := corev1.Volume{}
-				helpers.TemplateThings(serviceValues, scv, &volume)
+				helpers.TemplateThings(tpld, scv, &volume)
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
 
@@ -277,13 +284,13 @@ func GenerateDeploymentTemplate(
 					// add any volume mounts to the init container as required
 					for _, svm := range serviceTypeValues.InitContainer.VolumeMounts {
 						volumeMount := corev1.VolumeMount{}
-						helpers.TemplateThings(serviceValues, svm, &volumeMount)
+						helpers.TemplateThings(tpld, svm, &volumeMount)
 						init.Container.VolumeMounts = append(init.Container.VolumeMounts, volumeMount)
 					}
 					cmd := []string{}
 					for _, c := range init.Command {
 						var c2 string
-						helpers.TemplateThings(serviceValues, c, &c2)
+						helpers.TemplateThings(tpld, c, &c2)
 						cmd = append(cmd, c2)
 					}
 					init.Container.Command = cmd
@@ -424,7 +431,7 @@ func GenerateDeploymentTemplate(
 			// create the container volume mounts
 			for _, svm := range serviceTypeValues.PrimaryContainer.VolumeMounts {
 				volumeMount := corev1.VolumeMount{}
-				helpers.TemplateThings(serviceValues, svm, &volumeMount)
+				helpers.TemplateThings(tpld, svm, &volumeMount)
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
 			// mount the default storage volume if one exists
@@ -520,7 +527,7 @@ func GenerateDeploymentTemplate(
 
 				for _, svm := range serviceTypeValues.SecondaryContainer.VolumeMounts {
 					volumeMount := corev1.VolumeMount{}
-					helpers.TemplateThings(serviceValues, svm, &volumeMount)
+					helpers.TemplateThings(tpld, svm, &volumeMount)
 					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
 				}
 				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, linkedContainer.Container)

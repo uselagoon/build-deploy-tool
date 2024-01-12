@@ -56,8 +56,8 @@ fi`,
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/usr/share/elasticsearch/data",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "tar -cf - -C /usr/share/elasticsearch/data ."`,
-			FileExtension: ".{{ .OverrideName }}.tar",
+			Command:       `/bin/sh -c "tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} ."`,
+			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},
 }

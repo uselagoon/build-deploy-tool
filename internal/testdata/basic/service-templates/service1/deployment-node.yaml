@@ -80,6 +80,7 @@ spec:
             memory: 100M
       enableServiceLinks: false
       imagePullSecrets:
+      - name: lagoon-private-registry-custom-secret
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
 status: {}

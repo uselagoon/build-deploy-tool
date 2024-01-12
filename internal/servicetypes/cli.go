@@ -63,14 +63,14 @@ var cliPersistent = ServiceType{
 		ImagePullPolicy: cli.PrimaryContainer.ImagePullPolicy,
 		Container:       cli.PrimaryContainer.Container,
 		Volumes: append(cli.PrimaryContainer.Volumes, corev1.Volume{
-			Name: "{{ .PersistentVolumeName }}-twig",
+			Name: "{{ .ServiceValues.PersistentVolumeName }}-twig",
 			VolumeSource: corev1.VolumeSource{
 				EmptyDir: &corev1.EmptyDirVolumeSource{},
 			},
 		}),
 		VolumeMounts: append(cli.PrimaryContainer.VolumeMounts, corev1.VolumeMount{
-			Name:      "{{ .PersistentVolumeName }}-twig",
-			MountPath: "{{ .PersistentVolumePath }}/php",
+			Name:      "{{ .ServiceValues.PersistentVolumeName }}-twig",
+			MountPath: "{{ .ServiceValues.PersistentVolumePath }}/php",
 		}),
 	},
 }

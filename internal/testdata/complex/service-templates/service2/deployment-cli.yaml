@@ -47,7 +47,7 @@ spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
-          value: abcdefg123456
+          value: "0000000000000000000000000000000000000000"
         - name: CRONJOBS
           value: |
             3,18,33,48 * * * * drush cron

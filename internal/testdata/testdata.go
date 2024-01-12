@@ -52,6 +52,7 @@ type TestData struct {
 	ConfigMapSha               string
 	ImageRegistry              string
 	PromotionSourceEnvironment string
+	PrivateRegistryURLS        []string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -297,6 +298,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.StatusPageID != "" {
 		rt.StatusPageID = t.StatusPageID
+	}
+	if t.PrivateRegistryURLS != nil {
+		rt.PrivateRegistryURLS = t.PrivateRegistryURLS
 	}
 	return rt
 }

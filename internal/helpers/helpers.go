@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"html/template"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -165,6 +166,17 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+// ContainsR checks if a string slice contains a specific string regex match.
+func ContainsR(regex []string, match string) bool {
+	for _, v := range regex {
+		m, _ := regexp.MatchString(v, match)
+		if m {
+			return true
+		}
+	}
+	return false
+}
+
 // WriteTemplateFile writes the template to a file.
 func WriteTemplateFile(templateOutputFile string, data []byte) {
 	err := os.WriteFile(templateOutputFile, data, 0644)
@@ -221,6 +233,7 @@ func UnsetEnvVars(localVars []EnvironmentVariable) {
 		"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
 		"DBAAS_OPERATOR_HTTP",
 		"CONFIG_MAP_SHA",
+		"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
 	}
 	for _, varName := range varNames {
 		os.Unsetenv(varName)

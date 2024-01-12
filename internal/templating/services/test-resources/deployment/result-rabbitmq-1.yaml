@@ -1,0 +1,98 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: rabbitmq
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: rabbitmq
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: rabbitmq
+    lagoon.sh/service-type: rabbitmq
+    lagoon.sh/template: rabbitmq-0.1.0
+  name: rabbitmq
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: rabbitmq
+      app.kubernetes.io/name: rabbitmq
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c 'tar -cf - -C "/var/lib/rabbitmq"
+          --exclude="lost\+found" . || [ $? -eq 1 ]'
+        k8up.syn.tools/file-extension: .rabbitmq.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: rabbitmq
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: rabbitmq
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: rabbitmq
+        lagoon.sh/service-type: rabbitmq
+        lagoon.sh/template: rabbitmq-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: RABBITMQ_NODENAME
+          value: rabbitmq@localhost
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/rabbitmq@latest
+        livenessProbe:
+          failureThreshold: 5
+          initialDelaySeconds: 90
+          tcpSocket:
+            port: 5672
+          timeoutSeconds: 3
+        name: rabbitmq
+        ports:
+        - containerPort: 5672
+          name: 5672-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          periodSeconds: 3
+          tcpSocket:
+            port: 5672
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /var/lib/rabbitmq
+          name: rabbitmq
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+      volumes:
+      - name: rabbitmq
+        persistentVolumeClaim:
+          claimName: rabbitmq
+status: {}

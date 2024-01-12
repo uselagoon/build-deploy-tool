@@ -1,0 +1,96 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: postgres
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: postgres-single
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: postgres
+    lagoon.sh/service-type: postgres-single
+    lagoon.sh/template: postgres-single-0.1.0
+  name: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: postgres
+      app.kubernetes.io/name: postgres-single
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "PGPASSWORD=$POSTGRES_PASSWORD pg_dump
+          --host=localhost --port=$POSTGRES_SERVICE_PORT --dbname=$POSTGRES_DB --username=$POSTGRES_USER
+          --format=t -w"
+        k8up.syn.tools/file-extension: .postgres.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: postgres
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: postgres-single
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: postgres
+        lagoon.sh/service-type: postgres-single
+        lagoon.sh/template: postgres-single-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/postgres@latest
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 5432
+        name: postgres
+        ports:
+        - containerPort: 5432
+          name: 5432-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 5432
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: postgres
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+      volumes:
+      - name: postgres
+        persistentVolumeClaim:
+          claimName: postgres
+status: {}

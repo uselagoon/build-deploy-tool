@@ -141,6 +141,12 @@ func GeneratePVCTemplate(
 				if serviceTypeValues.Volumes.PersistentVolumeType == corev1.ReadWriteMany {
 					pvc.Spec.StorageClassName = helpers.StrPtr("bulk")
 				}
+				if buildValues.RWX2RWO || buildValues.IsCI {
+					// this should be a rwo volume in CI and if the rwx2rwo flag is enabled
+					pvc.Spec.AccessModes = []corev1.PersistentVolumeAccessMode{
+						corev1.ReadWriteOnce,
+					}
+				}
 				// end PVC template
 				result = append(result, *pvc)
 			}

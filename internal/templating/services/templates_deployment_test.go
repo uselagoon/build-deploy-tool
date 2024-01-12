@@ -567,6 +567,348 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			},
 			want: "test-resources/deployment/result-nginx-2.yaml",
 		},
+		{
+			name: "test12 - worker",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"worker":         "harbor.example.com/example-project/environment-name/worker@latest",
+						"worker-persist": "harbor.example.com/example-project/environment-name/worker-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "worker",
+							OverrideName: "worker",
+							Type:         "worker",
+						},
+						{
+							Name:         "worker-persist",
+							OverrideName: "worker-persist",
+							Type:         "worker-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-worker-1.yaml",
+		},
+		{
+			name: "test13 - python",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"python":         "harbor.example.com/example-project/environment-name/python@latest",
+						"python-persist": "harbor.example.com/example-project/environment-name/python-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "python",
+							OverrideName: "python",
+							Type:         "python",
+						},
+						{
+							Name:         "python-persist",
+							OverrideName: "python-persist",
+							Type:         "python-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-python-1.yaml",
+		},
+		{
+			name: "test14 - node",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"node":         "harbor.example.com/example-project/environment-name/node@latest",
+						"node-persist": "harbor.example.com/example-project/environment-name/node-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "node",
+							OverrideName: "node",
+							Type:         "node",
+						},
+						{
+							Name:         "node-persist",
+							OverrideName: "node-persist",
+							Type:         "node-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-node-1.yaml",
+		},
+		{
+			name: "test15 - varnish",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"varnish":         "harbor.example.com/example-project/environment-name/varnish@latest",
+						"varnish-persist": "harbor.example.com/example-project/environment-name/varnish-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "varnish",
+							OverrideName: "varnish",
+							Type:         "varnish",
+						},
+						{
+							Name:         "varnish-persist",
+							OverrideName: "varnish-persist",
+							Type:         "varnish-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-varnish-1.yaml",
+		},
+		{
+			name: "test16 - redis",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"redis":         "harbor.example.com/example-project/environment-name/redis@latest",
+						"redis-persist": "harbor.example.com/example-project/environment-name/redis-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "redis",
+							OverrideName: "redis",
+							Type:         "redis",
+						},
+						{
+							Name:         "redis-persist",
+							OverrideName: "redis-persist",
+							Type:         "redis-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-redis-1.yaml",
+		},
+		{
+			name: "test17 - mariadb",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"mariadb": "harbor.example.com/example-project/environment-name/mariadb@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "mariadb",
+							OverrideName: "mariadb",
+							Type:         "mariadb-single",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-mariadb-1.yaml",
+		},
+		{
+			name: "test18 - mongodb",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"mongodb": "harbor.example.com/example-project/environment-name/mongodb@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "mongodb",
+							OverrideName: "mongodb",
+							Type:         "mongodb-single",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-mongodb-1.yaml",
+		},
+		{
+			name: "test19 - postgres",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"postgres": "harbor.example.com/example-project/environment-name/postgres@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "postgres",
+							OverrideName: "postgres",
+							Type:         "postgres-single",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-postgres-1.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -614,14 +956,12 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},
@@ -631,13 +971,11 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},
@@ -651,28 +989,24 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 					{
 						Name:             "nginx2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
 					},
 					{
 						Name:             "php2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
 					},
 				},
 			},
@@ -682,13 +1016,11 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 				{
@@ -696,13 +1028,11 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx2",
 					Type:             "nginx-php-persistent",
 					DBaaSEnvironment: "production",
-					// ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
 					},
 				},
 			},
@@ -716,21 +1046,18 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 					{
 						Name:             "normalnginx",
 						OverrideName:     "normalnginx",
 						Type:             "nginx",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
 					},
 				},
 			},
@@ -740,20 +1067,17 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "normalnginx",
 					Type:             "nginx",
 					DBaaSEnvironment: "production",
-					// ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
 				},
 				{
 					Name:             "nginx",
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},

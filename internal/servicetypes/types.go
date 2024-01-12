@@ -76,4 +76,5 @@ var ServiceTypes = map[string]ServiceType{
 	"solr":                 solr,
 	"worker":               worker,
 	"worker-persistent":    workerPersistent,
+	"rabbitmq":             rabbitmq,
 }

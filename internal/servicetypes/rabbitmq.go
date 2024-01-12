@@ -9,31 +9,41 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var defaultPostgresPort int32 = 5432
+var defaultRabbitMQPort int32 = 5672
+var defaultRabbitMQWebPort int32 = 15672
 
-var postgresSingle = ServiceType{
-	Name: "postgres-single",
+var rabbitmq = ServiceType{
+	Name: "rabbitmq",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
-				Port: defaultPostgresPort,
+				Port: defaultRabbitMQPort,
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.Int,
-					IntVal: defaultPostgresPort,
+					IntVal: defaultRabbitMQPort,
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     fmt.Sprintf("%d-tcp", defaultPostgresPort),
+				Name:     fmt.Sprintf("%d-tcp", defaultRabbitMQPort),
+			},
+			{
+				Port: defaultRabbitMQWebPort,
+				TargetPort: intstr.IntOrString{
+					Type:   intstr.Int,
+					IntVal: defaultRabbitMQWebPort,
+				},
+				Protocol: corev1.ProtocolTCP,
+				Name:     fmt.Sprintf("%d-tcp", defaultRabbitMQWebPort),
 			},
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "postgres",
+		Name:            "rabbitmq",
 		ImagePullPolicy: corev1.PullAlways,
 		Container: corev1.Container{
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          fmt.Sprintf("%d-tcp", defaultPostgresPort),
-					ContainerPort: defaultPostgresPort,
+					Name:          fmt.Sprintf("%d-tcp", defaultRabbitMQPort),
+					ContainerPort: defaultRabbitMQPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
 			},
@@ -42,24 +52,31 @@ var postgresSingle = ServiceType{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: defaultPostgresPort,
+							IntVal: defaultRabbitMQPort,
 						},
 					},
 				},
 				InitialDelaySeconds: 1,
-				TimeoutSeconds:      1,
+				PeriodSeconds:       3,
 			},
 			LivenessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					TCPSocket: &corev1.TCPSocketAction{
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
-							IntVal: defaultPostgresPort,
+							IntVal: defaultRabbitMQPort,
 						},
 					},
 				},
-				InitialDelaySeconds: 120,
-				PeriodSeconds:       5,
+				InitialDelaySeconds: 90,
+				TimeoutSeconds:      3,
+				FailureThreshold:    5,
+			},
+			Env: []corev1.EnvVar{
+				{
+					Name:  "RABBITMQ_NODENAME",
+					Value: "rabbitmq@localhost",
+				},
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
@@ -79,9 +96,9 @@ var postgresSingle = ServiceType{
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
-		PersistentVolumePath: "/var/lib/postgresql/data",
+		PersistentVolumePath: "/var/lib/rabbitmq",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "PGPASSWORD=${{ .ServiceValues.OverrideName | FixServiceName }}_PASSWORD pg_dump --host=localhost --port=${{ .ServiceValues.OverrideName | FixServiceName }}_SERVICE_PORT --dbname=${{ .ServiceValues.OverrideName | FixServiceName }}_DB --username=${{ .ServiceValues.OverrideName | FixServiceName }}_USER --format=t -w"`,
+			Command:       `/bin/sh -c 'tar -cf - -C "{{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}}" --exclude="lost\+found" . || [ $? -eq 1 ]'`,
 			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},

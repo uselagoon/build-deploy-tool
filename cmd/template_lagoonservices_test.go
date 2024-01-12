@@ -23,9 +23,16 @@ func TestTemplateLagoonServices(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		vars         []helpers.EnvironmentVariable
 	}{
 		{
 			name: "test1 basic deployment",
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "EXTERNAL_REGISTRY_SECRETS",
+					Value: "lagoon-private-registry-custom-secret",
+				},
+			},
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -165,6 +172,13 @@ func TestTemplateLagoonServices(t *testing.T) {
 					ImageReferences: map[string]string{
 						"node": "harbor.example/example-project/pr-123/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ISOLATION_NETWORK_POLICY",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
 				}, true),
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/service5",
@@ -172,6 +186,12 @@ func TestTemplateLagoonServices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			for _, envVar := range tt.vars {
+				err := os.Setenv(envVar.Name, envVar.Value)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+			}
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
@@ -246,7 +266,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars(tt.vars)
 			})
 		})
 	}

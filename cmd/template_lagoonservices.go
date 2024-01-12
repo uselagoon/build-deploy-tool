@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/templating/networkpolicy"
 	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	"sigs.k8s.io/yaml"
 )
@@ -122,6 +123,23 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 			}
 			helpers.WriteTemplateFile(fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name), restoreResult)
 		}
+	}
+	if lagoonBuild.BuildValues.IsolationNetworkPolicy {
+		// if isolation network policies are enabled, template that here
+		np, err := networkpolicy.GenerateNetworkPolicy(*lagoonBuild.BuildValues)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		npBytes, err := yaml.Marshal(np)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		separator := []byte("---\n")
+		restoreResult := append(separator[:], npBytes[:]...)
+		if g.Debug {
+			fmt.Println(fmt.Sprintf("Templating networkpolicy manifest %s", fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates)))
+		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates), restoreResult)
 	}
 	return nil
 }

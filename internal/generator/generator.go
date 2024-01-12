@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -61,11 +62,13 @@ type GeneratorInput struct {
 	Debug                      bool
 	DBaaSClient                *dbaasclient.Client
 	ImageReferences            map[string]string
-	ImagePullSecret            string
+	ImagePullSecrets           []string
 	Namespace                  string
 	DefaultBackupSchedule      string
 	ImageRegistry              string
 	Kubernetes                 string
+	CI                         bool
+	PrivateRegistryURLS        []string
 }
 
 func NewGenerator(
@@ -108,6 +111,40 @@ func NewGenerator(
 	gitSHA := helpers.GetEnv("LAGOON_GIT_SHA", generator.SourceRepository, generator.Debug)
 	prHeadSHA := helpers.GetEnv("PR_HEAD_SHA", generator.PRHeadSHA, generator.Debug)
 	prBaseSHA := helpers.GetEnv("PR_BASE_SHA", generator.PRBaseSHA, generator.Debug)
+	// get any external registry urls that this build has so we can update any pullthrough images accordingly
+	gExternalRegistryURLS := ""
+	if generator.PrivateRegistryURLS != nil {
+		gExternalRegistryURLS = strings.Join(generator.PrivateRegistryURLS, ",")
+	}
+	sExternalRegistryURLs := helpers.GetEnv("EXTERNAL_REGISTRY_URLS", gExternalRegistryURLS, generator.Debug)
+	if sExternalRegistryURLs != "" {
+		externalRegistryURLs := strings.Split(sExternalRegistryURLs, ",")
+		for _, eru := range externalRegistryURLs {
+			// strip the scheme, only provide the host
+			u, _ := url.Parse(eru)
+			if u.Host == "" {
+				eru = fmt.Sprintf("%s/", eru)
+				buildValues.PrivateRegistryURLS = append(buildValues.PrivateRegistryURLS, eru)
+			} else {
+				eru = fmt.Sprintf("%s/", u.Host)
+				buildValues.PrivateRegistryURLS = append(buildValues.PrivateRegistryURLS, eru)
+			}
+		}
+	}
+	// get any external registry secrets from the environment
+	gExternalRegistrySecrets := ""
+	if generator.PrivateRegistryURLS != nil {
+		gExternalRegistrySecrets = strings.Join(generator.ImagePullSecrets, ",")
+	}
+	sExternalRegistrySecrets := helpers.GetEnv("EXTERNAL_REGISTRY_SECRETS", gExternalRegistrySecrets, generator.Debug)
+	if sExternalRegistrySecrets != "" {
+		externalRegistrySecrets := strings.Split(sExternalRegistrySecrets, ",")
+		for _, ers := range externalRegistrySecrets {
+			buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: ers})
+		}
+	}
+	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
+	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 
 	buildValues.ConfigMapSha = configMapSha
 	buildValues.BuildName = buildName
@@ -146,6 +183,9 @@ func NewGenerator(
 		return nil, err
 	}
 	buildValues.LagoonYAML = *lYAML
+	if buildValues.LagoonYAML.EnvironmentVariables.GitSHA == nil || !*buildValues.LagoonYAML.EnvironmentVariables.GitSHA {
+		buildValues.GitSHA = "0000000000000000000000000000000000000000"
+	}
 
 	//add the dbaas client to build values too
 	buildValues.DBaaSClient = generator.DBaaSClient
@@ -231,13 +271,30 @@ func NewGenerator(
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	buildValues.EnvironmentVariables = lagoon.MergeVariables(mergedVariables, configVars)
 
+	// check for readwritemany to readwriteonce flag, disabled by default
+	rwx2rwo := CheckFeatureFlag("RWX_TO_RWO", buildValues.EnvironmentVariables, generator.Debug)
+	if rwx2rwo == "enabled" {
+		buildValues.RWX2RWO = true
+	}
+
+	// check for isolation network policy, disabled by default
+	isolationNetworkPolicy := CheckFeatureFlag("ISOLATION_NETWORK_POLICY", buildValues.EnvironmentVariables, generator.Debug)
+	if isolationNetworkPolicy == "enabled" {
+		buildValues.IsolationNetworkPolicy = true
+	}
+
+	// check for imagecache override, disabled by default
 	imageCache := CheckFeatureFlag("IMAGECACHE_REGISTRY", buildValues.EnvironmentVariables, generator.Debug)
 	if imageCache != "" {
-		if imageCache[len(imageCache)-1:] != "/" {
+		// strip the scheme, only provide the host
+		u, _ := url.Parse(imageCache)
+		if u.Host == "" {
 			imageCache = fmt.Sprintf("%s/", imageCache)
+		} else {
+			imageCache = fmt.Sprintf("%s/", u.Host)
 		}
+		buildValues.ImageCache = imageCache
 	}
-	buildValues.ImageCache = imageCache
 
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", buildValues.EnvironmentVariables, generator.Debug)
@@ -466,6 +523,9 @@ func collectImageBuildArguments(buildValues BuildValues) map[string]string {
 		}
 	}
 	// set the standard ones
+	if buildValues.IsCI {
+		buildArgs["IMAGE_REPO"] = "172.17.0.1:5000/lagoon"
+	}
 	buildArgs["LAGOON_PROJECT"] = buildValues.Project
 	buildArgs["LAGOON_ENVIRONMENT"] = buildValues.Environment
 	buildArgs["LAGOON_ENVIRONMENT_TYPE"] = buildValues.EnvironmentType

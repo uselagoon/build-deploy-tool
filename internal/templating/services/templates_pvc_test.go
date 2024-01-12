@@ -188,6 +188,31 @@ func TestGeneratePVCTemplate(t *testing.T) {
 			},
 			want: "test-resources/pvc/result-postgres-single-1.yaml",
 		},
+		{
+			name: "test7 - basic rwx2rwo",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					RWX2RWO:         true,
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice-persist",
+							OverrideName:     "myservice-persist",
+							Type:             "basic-persistent",
+							DBaaSEnvironment: "development",
+						},
+					},
+				},
+			},
+			want: "test-resources/pvc/result-basic-3.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

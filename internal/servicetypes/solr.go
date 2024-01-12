@@ -74,8 +74,8 @@ var solr = ServiceType{
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/var/solr",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c 'tar -cf - -C "/var/solr" --exclude="lost\+found" . || [ $? -eq 1 ]'`,
-			FileExtension: ".{{ .OverrideName }}.tar",
+			Command:       `/bin/sh -c 'tar -cf - -C "{{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}}" --exclude="lost\+found" . || [ $? -eq 1 ]'`,
+			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},
 }

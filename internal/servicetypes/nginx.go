@@ -198,7 +198,7 @@ var nginxPHPPersistent = ServiceType{
 			`set -e
 SENTINEL="/storage/.lagoon-rootless-migration-complete"
 if ! [ -f "$SENTINEL" ]; then
-	find /storage -exec chown {{ .PodSecurityContext.RunAsUser}}:0 {} +
+	find /storage -exec chown {{ .ServiceValues.PodSecurityContext.RunAsUser}}:0 {} +
 	find /storage -exec chmod a+r,u+w {} +
 	find /storage -type d -exec chmod a+x {} +
 	touch "$SENTINEL"
@@ -214,7 +214,7 @@ fi`,
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				Name:      "{{ .PersistentVolumeName }}",
+				Name:      "{{ .ServiceValues.PersistentVolumeName }}",
 				MountPath: "/storage",
 			},
 		},
@@ -230,7 +230,7 @@ fi`,
 		Container:       nginxPHP.SecondaryContainer.Container,
 		Volumes: []corev1.Volume{
 			{
-				Name: "{{ .PersistentVolumeName }}-twig",
+				Name: "{{ .ServiceValues.PersistentVolumeName }}-twig",
 				VolumeSource: corev1.VolumeSource{
 					EmptyDir: &corev1.EmptyDirVolumeSource{},
 				},
@@ -238,8 +238,8 @@ fi`,
 		},
 		VolumeMounts: []corev1.VolumeMount{
 			{
-				Name:      "{{ .PersistentVolumeName }}-twig",
-				MountPath: "{{ .PersistentVolumePath }}/php",
+				Name:      "{{ .ServiceValues.PersistentVolumeName }}-twig",
+				MountPath: "{{ .ServiceValues.PersistentVolumePath }}/php",
 			},
 		},
 	},

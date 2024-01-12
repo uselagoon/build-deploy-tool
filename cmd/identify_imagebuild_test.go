@@ -21,6 +21,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 		description string
 		args        testdata.TestData
 		want        imageBuild
+		vars        []helpers.EnvironmentVariable
 	}{
 		{
 			name: "test1 basic deployment",
@@ -79,7 +80,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":            "branch",
 					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":            "remote-cluster1",
-					"LAGOON_GIT_SHA":               "abcdefg123456",
+					"LAGOON_GIT_SHA":               "0000000000000000000000000000000000000000",
 					"LAGOON_GIT_BRANCH":            "main",
 					"CLI_IMAGE":                    "example-project-main-cli",
 					"NGINX_IMAGE":                  "example-project-main-nginx",
@@ -147,24 +148,30 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 							Value: "enabled",
 							Scope: "build",
 						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "build",
+						},
 					},
 				}, true),
 			want: imageBuild{
 				BuildKit: false,
 				BuildArguments: map[string]string{
-					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD": "enabled",
-					"LAGOON_BUILD_NAME":                     "lagoon-build-abcdefg",
-					"LAGOON_PROJECT":                        "example-project",
-					"LAGOON_ENVIRONMENT":                    "main",
-					"LAGOON_ENVIRONMENT_TYPE":               "production",
-					"LAGOON_BUILD_TYPE":                     "branch",
-					"LAGOON_GIT_SOURCE_REPOSITORY":          "ssh://git@example.com/lagoon-demo.git",
-					"LAGOON_KUBERNETES":                     "remote-cluster1",
-					"LAGOON_GIT_SHA":                        "abcdefg123456",
-					"LAGOON_GIT_BRANCH":                     "main",
-					"CLI_IMAGE":                             "example-project-main-cli",
-					"NGINX_IMAGE":                           "example-project-main-nginx",
-					"PHP_IMAGE":                             "example-project-main-php",
+					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD":   "enabled",
+					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":                          "example-project",
+					"LAGOON_ENVIRONMENT":                      "main",
+					"LAGOON_ENVIRONMENT_TYPE":                 "production",
+					"LAGOON_BUILD_TYPE":                       "branch",
+					"LAGOON_GIT_SOURCE_REPOSITORY":            "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":                       "remote-cluster1",
+					"LAGOON_GIT_SHA":                          "0000000000000000000000000000000000000000",
+					"LAGOON_GIT_BRANCH":                       "main",
+					"CLI_IMAGE":                               "example-project-main-cli",
+					"NGINX_IMAGE":                             "example-project-main-nginx",
+					"PHP_IMAGE":                               "example-project-main-php",
+					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
 				},
 				Images: []imageBuilds{
 					{
@@ -195,13 +202,13 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						Name: "redis",
 						ImageBuild: generator.ImageBuild{
 							BuildImage: "harbor.example/example-project/main/redis:latest",
-							PullImage:  "amazeeio/redis",
+							PullImage:  "imagecache.example.com/amazeeio/redis",
 						},
 					}, {
 						Name: "varnish",
 						ImageBuild: generator.ImageBuild{
 							BuildImage: "harbor.example/example-project/main/varnish:latest",
-							PullImage:  "uselagoon/varnish-5-drupal:latest",
+							PullImage:  "imagecache.example.com/uselagoon/varnish-5-drupal:latest",
 						},
 					},
 				},
@@ -235,7 +242,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":                     "branch",
 					"LAGOON_GIT_SOURCE_REPOSITORY":          "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":                     "remote-cluster1",
-					"LAGOON_GIT_SHA":                        "abcdefg123456",
+					"LAGOON_GIT_SHA":                        "0000000000000000000000000000000000000000",
 					"LAGOON_GIT_BRANCH":                     "main",
 					"LND_IMAGE":                             "example-project-main-lnd",
 					"THUNDERHUB_IMAGE":                      "example-project-main-thunderhub",
@@ -304,7 +311,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":                     "branch",
 					"LAGOON_GIT_SOURCE_REPOSITORY":          "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":                     "remote-cluster1",
-					"LAGOON_GIT_SHA":                        "abcdefg123456",
+					"LAGOON_GIT_SHA":                        "0000000000000000000000000000000000000000",
 					"LAGOON_GIT_BRANCH":                     "main",
 					"LND_IMAGE":                             "example-project-main-lnd",
 					"TOR_IMAGE":                             "example-project-main-tor",
@@ -351,17 +358,13 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":            "promote",
 					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":            "remote-cluster1",
-					"NODE_IMAGE":                   "example-project-main-node",
 				},
 				Images: []imageBuilds{
 					{
 						Name: "node",
 						ImageBuild: generator.ImageBuild{
-							BuildImage:     "harbor.example/example-project/main/node:latest",
-							PromoteImage:   "harbor.example/example-project/promote-main/node:latest",
-							Context:        "internal/testdata/basic/docker",
-							DockerFile:     "basic.dockerfile",
-							TemporaryImage: "example-project-main-node",
+							BuildImage:   "harbor.example/example-project/main/node:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/node:latest",
 						},
 					},
 				},
@@ -416,9 +419,156 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test7 nginx-php deployment promote",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					Namespace:       "example-project-main",
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "promote",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
+				}, true),
+			want: imageBuild{
+				BuildKit: false,
+				BuildArguments: map[string]string{
+					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":               "example-project",
+					"LAGOON_ENVIRONMENT":           "main",
+					"LAGOON_ENVIRONMENT_TYPE":      "production",
+					"LAGOON_BUILD_TYPE":            "promote",
+					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":            "remote-cluster1",
+				},
+				Images: []imageBuilds{
+					{
+						Name: "cli",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:   "harbor.example/example-project/main/cli:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/cli:latest",
+						},
+					}, {
+						Name: "nginx",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:   "harbor.example/example-project/main/nginx:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/nginx:latest",
+						},
+					}, {
+						Name: "php",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:   "harbor.example/example-project/main/php:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/php:latest",
+						},
+					}, {
+						Name: "redis",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:   "harbor.example/example-project/main/redis:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/redis:latest",
+						},
+					}, {
+						Name: "varnish",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:   "harbor.example/example-project/main/varnish:latest",
+							PromoteImage: "harbor.example/example-project/promote-main/varnish:latest",
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test8 nginx-php external pull images",
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "EXTERNAL_REGISTRY_URLS",
+					Value: "registry1.example.com",
+				},
+			},
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					Namespace:       "example-project-main",
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish2.yml",
+					// PrivateRegistryURLS: []string{
+					// 	"registry1.example.com",
+					// },
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: imageBuild{
+				BuildKit: false,
+				BuildArguments: map[string]string{
+					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":                          "example-project",
+					"LAGOON_ENVIRONMENT":                      "main",
+					"LAGOON_ENVIRONMENT_TYPE":                 "production",
+					"LAGOON_BUILD_TYPE":                       "branch",
+					"LAGOON_GIT_SOURCE_REPOSITORY":            "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":                       "remote-cluster1",
+					"LAGOON_GIT_SHA":                          "0000000000000000000000000000000000000000",
+					"LAGOON_GIT_BRANCH":                       "main",
+					"CLI_IMAGE":                               "example-project-main-cli",
+					"NGINX_IMAGE":                             "example-project-main-nginx",
+					"PHP_IMAGE":                               "example-project-main-php",
+					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+				},
+				Images: []imageBuilds{
+					{
+						Name: "cli",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/cli:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.cli",
+							TemporaryImage: "example-project-main-cli",
+						},
+					}, {
+						Name: "nginx",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/nginx:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.nginx-drupal",
+							TemporaryImage: "example-project-main-nginx",
+						},
+					}, {
+						Name: "php",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/php:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.php",
+							TemporaryImage: "example-project-main-php",
+						},
+					}, {
+						Name: "redis",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "harbor.example/example-project/main/redis:latest",
+							PullImage:  "registry1.example.com/amazeeio/redis",
+						},
+					}, {
+						Name: "varnish",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "harbor.example/example-project/main/varnish:latest",
+							PullImage:  "imagecache.example.com/uselagoon/varnish-5-drupal:latest",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			for _, envVar := range tt.vars {
+				err := os.Setenv(envVar.Name, envVar.Value)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+			}
 			// set the environment variables from args
 			savedTemplates := "testoutput"
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
@@ -451,7 +601,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 				t.Errorf("returned output %v doesn't match want %v", string(oJ), string(wJ))
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars(tt.vars)
 			})
 		})
 	}
