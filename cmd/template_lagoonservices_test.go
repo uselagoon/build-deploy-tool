@@ -157,7 +157,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 			want:         "internal/testdata/basic/service-templates/service4",
 		},
 		{
-			name: "test6 basic deployment pr",
+			name: "test6 basic deployment pr with isolation network policy",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
