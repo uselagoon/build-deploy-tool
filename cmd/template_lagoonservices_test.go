@@ -33,10 +33,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					ImageReferences: map[string]string{
-						"node": "harbor.example/example-project/main/node:latest",
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/service1",
 		},
 		{
@@ -48,14 +48,14 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service1",
 		},
 		{
@@ -67,11 +67,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -81,7 +81,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service2",
 		},
 		{
@@ -94,9 +94,9 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub.yml",
 					ImageReferences: map[string]string{
-						"lnd":        "harbor.example/example-project/main/lnd:latest",
-						"thunderhub": "harbor.example/example-project/main/thunderhub:latest",
-						"tor":        "harbor.example/example-project/main/tor:latest",
+						"lnd":        "harbor.example/example-project/main/lnd@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"thunderhub": "harbor.example/example-project/main/thunderhub@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"tor":        "harbor.example/example-project/main/tor@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -106,7 +106,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/service2",
 		},
 		{
@@ -119,8 +119,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub-2.yml",
 					ImageReferences: map[string]string{
-						"lnd": "harbor.example/example-project/main/lnd:latest",
-						"tor": "harbor.example/example-project/main/tor:latest",
+						"lnd": "harbor.example/example-project/main/lnd@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"tor": "harbor.example/example-project/main/tor@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -130,8 +130,44 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/service3",
+		},
+		{
+			name: "test5 basic deployment promote",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "promote",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service4",
+		},
+		{
+			name: "test6 basic deployment pr",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "pr-123",
+					BuildType:       "pullrequest",
+					PRNumber:        "123",
+					PRHeadBranch:    "pr-head",
+					PRBaseBranch:    "pr-base",
+					PRHeadSHA:       "123456",
+					PRBaseSHA:       "abcdef",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/pr-123/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service5",
 		},
 	}
 	for _, tt := range tests {

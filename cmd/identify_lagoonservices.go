@@ -41,8 +41,13 @@ var lagoonServiceIdentify = &cobra.Command{
 		var imageRefs struct {
 			Images map[string]string `json:"images"`
 		}
-		imagesStr, _ := base64.StdEncoding.DecodeString(images)
-		json.Unmarshal(imagesStr, &imageRefs)
+		imagesStr, err := base64.StdEncoding.DecodeString(images)
+		if err != nil {
+			return fmt.Errorf("error decoding images payload: %v", err)
+		}
+		if err := json.Unmarshal(imagesStr, &imageRefs); err != nil {
+			return fmt.Errorf("error unmarshalling images payload: %v", err)
+		}
 		gen.ImageReferences = imageRefs.Images
 		out, err := LagoonServiceTemplateIdentification(gen)
 		if err != nil {
@@ -53,7 +58,10 @@ var lagoonServiceIdentify = &cobra.Command{
 	},
 }
 
-// LagoonServiceTemplateIdentification .
+// LagoonServiceTemplateIdentification takes the output of the generator and returns a JSON payload that contains information
+// about the services that lagoon will be deploying (this will be kubernetes `kind: deployment`, but lagoon calls them services ¯\_(ツ)_/¯)
+// this command can be used to identify services that are deployed by the build, so that services that may remain in the environment can be identified
+// and eventually removed
 func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identifyServices, error) {
 
 	lServices := []identifyServices{}
@@ -64,7 +72,6 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identify
 		return nil, err
 	}
 
-	// generate the templates
 	deployments, err := servicestemplates.GenerateDeploymentTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)

@@ -55,7 +55,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "[]",
 		},
 		{
@@ -66,15 +66,8 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
-					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
-					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         `["cronjob-cli-drush-cron2"]`,
 		},
 		{
@@ -85,13 +78,6 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
-					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
-					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -100,7 +86,7 @@ func TestIdentifyNativeCronjobs(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         `["cronjob-cli-drush-cron2"]`,
 		},
 	}

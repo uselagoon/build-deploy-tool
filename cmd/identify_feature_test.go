@@ -63,7 +63,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "enabled",
 		},
 		{
@@ -83,7 +83,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "enabled",
 		},
 		{
@@ -96,7 +96,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -115,7 +115,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",

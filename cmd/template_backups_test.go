@@ -39,7 +39,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/backup-templates/backup-1",
 		},
 		{
@@ -64,7 +64,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-1",
 		},
 		{
@@ -84,7 +84,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-2",
 		},
 		{
@@ -98,6 +98,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					PRNumber:        "123",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "main2",
+					PRHeadSHA:       "a1b2c3",
+					PRBaseSHA:       "1a2b3c",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -112,7 +114,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-3",
 		},
 		{
@@ -126,6 +128,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					PRNumber:        "123",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "main2",
+					PRHeadSHA:       "a1b2c3",
+					PRBaseSHA:       "1a2b3c",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -140,7 +144,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-4",
 		},
 		{
@@ -153,7 +157,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentType: "production",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-5",
 		},
 		{
@@ -167,7 +171,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					DefaultBackupSchedule: "M */6 * * *",
 					LagoonYAML:            "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-6",
 		},
 		{
@@ -187,7 +191,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/backup-templates/backup-2",
 		},
 	}

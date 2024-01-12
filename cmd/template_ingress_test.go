@@ -38,7 +38,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-1",
 		},
 		{
@@ -57,7 +57,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-2",
 		},
 		{
@@ -76,7 +76,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-3",
 		},
 		{
@@ -88,7 +88,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-4",
 		},
 		{
@@ -100,7 +100,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "multiproject",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-5",
 		},
 		{
@@ -112,7 +112,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "multiproject",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-6",
 		},
 		{
@@ -124,7 +124,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "tworoutes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-7",
 		},
 		{
@@ -136,7 +136,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "branch/routes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-8",
 		},
 		{
@@ -150,7 +150,7 @@ func TestTemplateRoutes(t *testing.T) {
 					StandbyEnvironment: "main-sb",
 					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-9",
 		},
 		{
@@ -164,7 +164,7 @@ func TestTemplateRoutes(t *testing.T) {
 					StandbyEnvironment: "main-sb",
 					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-10",
 		},
 		{
@@ -176,7 +176,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "production",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/ingress-templates/ingress-1",
 		},
 		{
@@ -200,7 +200,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-11",
 		},
 		{
@@ -213,7 +213,7 @@ func TestTemplateRoutes(t *testing.T) {
 					IngressClass:    "nginx",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-12",
 		},
 		{
@@ -225,7 +225,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "ingressclass",
 					IngressClass:    "nginx",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
-				}, true), templatePath: "test-resources/output",
+				}, true), templatePath: "testoutput",
 			want: "internal/testdata/node/ingress-templates/ingress-13",
 		},
 		{
@@ -245,7 +245,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-14",
 		},
 		{
@@ -271,7 +271,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-15",
 		},
 		{
@@ -290,7 +290,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-16",
 		},
 		{
@@ -309,7 +309,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-17",
 		},
 		{
@@ -321,7 +321,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "tworoutes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-18",
 		},
 		{
@@ -334,10 +334,12 @@ func TestTemplateRoutes(t *testing.T) {
 					PRNumber:        "4841",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "my-branch",
+					PRHeadSHA:       "a1b2c3",
+					PRBaseSHA:       "1a2b3c",
 					EnvironmentType: "development",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-19",
 		},
 		{
@@ -350,10 +352,12 @@ func TestTemplateRoutes(t *testing.T) {
 					PRNumber:        "4841",
 					PRHeadBranch:    "main",
 					PRBaseBranch:    "my-branch",
+					PRHeadSHA:       "a1b2c3",
+					PRBaseSHA:       "1a2b3c",
 					EnvironmentType: "development",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite-pr.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-20",
 		},
 		{
@@ -365,7 +369,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "alternativename",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-21",
 		},
 		{
@@ -377,7 +381,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "wildcard",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-22",
 		},
 	}

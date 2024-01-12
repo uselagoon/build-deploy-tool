@@ -31,7 +31,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
-			templatePath: "test-resources/output",
+			templatePath: "testoutput",
 			want:         "internal/testdata/complex/dbaas-templates/dbaas-1",
 		},
 	}

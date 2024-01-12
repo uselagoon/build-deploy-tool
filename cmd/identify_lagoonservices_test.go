@@ -30,7 +30,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					ImageReferences: map[string]string{
-						"node": "harbor.example/example-project/main/node:latest",
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
 			want: []identifyServices{
@@ -59,11 +59,11 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
 			want: []identifyServices{
@@ -131,11 +131,11 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx:latest",
-						"php":     "harbor.example/example-project/main/php:latest",
-						"cli":     "harbor.example/example-project/main/cli:latest",
-						"redis":   "harbor.example/example-project/main/redis:latest",
-						"varnish": "harbor.example/example-project/main/varnish:latest",
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -211,9 +211,9 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub.yml",
 					ImageReferences: map[string]string{
-						"lnd":        "harbor.example/example-project/main/lnd:latest",
-						"thunderhub": "harbor.example/example-project/main/thunderhub:latest",
-						"tor":        "harbor.example/example-project/main/tor:latest",
+						"lnd":        "harbor.example/example-project/main/lnd@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"thunderhub": "harbor.example/example-project/main/thunderhub@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"tor":        "harbor.example/example-project/main/tor@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -274,8 +274,8 @@ func TestIdentifyLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.thunderhub-2.yml",
 					ImageReferences: map[string]string{
-						"lnd": "harbor.example/example-project/main/lnd:latest",
-						"tor": "harbor.example/example-project/main/tor:latest",
+						"lnd": "harbor.example/example-project/main/lnd@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"tor": "harbor.example/example-project/main/tor@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
@@ -311,7 +311,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
-			savedTemplates := "test-resources/output"
+			savedTemplates := "testoutput"
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)

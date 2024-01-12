@@ -28,8 +28,13 @@ var lagoonServiceGeneration = &cobra.Command{
 		var imageRefs struct {
 			Images map[string]string `json:"images"`
 		}
-		imagesStr, _ := base64.StdEncoding.DecodeString(images)
-		json.Unmarshal(imagesStr, &imageRefs)
+		imagesStr, err := base64.StdEncoding.DecodeString(images)
+		if err != nil {
+			return fmt.Errorf("error decoding images payload: %v", err)
+		}
+		if err := json.Unmarshal(imagesStr, &imageRefs); err != nil {
+			return fmt.Errorf("error unmarshalling images payload: %v", err)
+		}
 		gen.ImageReferences = imageRefs.Images
 		return LagoonServiceTemplateGeneration(gen)
 	},

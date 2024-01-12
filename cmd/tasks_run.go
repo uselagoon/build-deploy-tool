@@ -120,8 +120,8 @@ func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEn
 	}
 
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
-	if len(*lagoonBuild.LagoonEnvironmentVariables) > 0 {
-		for _, envVar := range *lagoonBuild.LagoonEnvironmentVariables {
+	if len(lagoonBuild.BuildValues.EnvironmentVariables) > 0 {
+		for _, envVar := range lagoonBuild.BuildValues.EnvironmentVariables {
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
