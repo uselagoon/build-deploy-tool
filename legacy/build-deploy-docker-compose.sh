@@ -350,8 +350,15 @@ declare -A MAP_SERVICE_NAME_TO_IMAGENAME
 declare -A MAP_SERVICE_NAME_TO_SERVICEBROKER_CLASS
 declare -A MAP_SERVICE_NAME_TO_SERVICEBROKER_PLAN
 declare -A MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT
+# this array stores the images that will need to be pulled from an external registry (private, dockerhub)
 declare -A IMAGES_PULL
+# this array stores the built images
 declare -A IMAGES_BUILD
+# this array stores the image names that will be pushed (registry/project/environment/service:tag)
+declare -A IMAGES_PUSH
+# this array stores the images from the source environment that will be pulled from
+declare -A IMAGES_PROMOTE
+# this array stores the hashes of the built images
 declare -A IMAGE_HASHES
 
 set +x
@@ -613,7 +620,7 @@ do
       [[ "$SERVICE_TYPE" != "postgres-dbaas" ]] &&
       [[ "$SERVICE_TYPE" != "mongodb-dbaas" ]] &&
       [[ "$SERVICE_TYPE" != "mongodb-shared" ]]; then
-    # Generate List of Images to build
+    # Generate list of images to build
     IMAGES+=("${IMAGE_NAME}")
   fi
 
@@ -676,174 +683,75 @@ set +x # reduce noise in build logs
   fi
 set -x
 
+# seed all the push images for use later on, push images relate to images that may not be built by this build
+# but are required from somewhere else like a promote environment or from another registry
+ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds | jq -r)
+for IMAGE_BUILD_DATA in $(echo $ENVIRONMENT_IMAGE_BUILD_DATA | jq -r '.images[]')
+do
+  # add the image name to the array of images to push. this is consumed later in the build process
+  IMAGES_PUSH["${SERVICE_NAME}"]="$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.buildImage')"
+  if [ "$BUILD_TYPE" == "promote" ]; then
+    # add the image name to the array of images to promote from. this is consumed later in the build process
+    IMAGES_PROMOTE["${SERVICE_NAME}"]="$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.promoteImage')"
+  fi
+done
+
 # we only need to build images for pullrequests and branches
 if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
-
-  BUILD_ARGS=()
-
-  set +x # reduce noise in build logs
-  # Add environment variables from lagoon API as build args
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    echo "LAGOON_PROJECT_VARIABLES are available from the API"
-    # multiline/spaced variables seem to break when being added from the API.
-    # this changes the way it works to create the variable in a similar way to how they are injected below
-    LAGOON_ENV_VARS=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | "\(.name)"')
-    for LAGOON_ENV_VAR in $LAGOON_ENV_VARS
-    do
-      BUILD_ARGS+=(--build-arg $(echo $LAGOON_ENV_VAR)="$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'$LAGOON_ENV_VAR'") | "\(.value)"')")
-    done
-  fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    echo "LAGOON_ENVIRONMENT_VARIABLES are available from the API"
-    # multiline/spaced variables seem to break when being added from the API.
-    # this changes the way it works to create the variable in a similar way to how they are injected below
-    LAGOON_ENV_VARS=$(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | "\(.name)"')
-    for LAGOON_ENV_VAR in $LAGOON_ENV_VARS
-    do
-      BUILD_ARGS+=(--build-arg $(echo $LAGOON_ENV_VAR)="$(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'$LAGOON_ENV_VAR'") | "\(.value)"')")
-    done
-  fi
-  set -x
-
-  BUILD_ARGS+=(--build-arg IMAGE_REPO="${CI_OVERRIDE_IMAGE_REPO}")
-  BUILD_ARGS+=(--build-arg LAGOON_PROJECT="${PROJECT}")
-  BUILD_ARGS+=(--build-arg LAGOON_ENVIRONMENT="${ENVIRONMENT}")
-  BUILD_ARGS+=(--build-arg LAGOON_ENVIRONMENT_TYPE="${ENVIRONMENT_TYPE}")
-  BUILD_ARGS+=(--build-arg LAGOON_BUILD_TYPE="${BUILD_TYPE}")
-  BUILD_ARGS+=(--build-arg LAGOON_GIT_SOURCE_REPOSITORY="${SOURCE_REPOSITORY}")
-  BUILD_ARGS+=(--build-arg LAGOON_KUBERNETES="${KUBERNETES}")
-
-  # Add in the cache args
-  for value in "${LAGOON_CACHE_BUILD_ARGS[@]}"
-  do
-        BUILD_ARGS+=(--build-arg $value)
+  # use the build-deploy-tool to seed the image build information
+  BUILD_ARGS=() # build args are now calculated in the build-deploy tool in the generator step
+  # this loop extracts the build arguments from the response from the build deploy tools previous identify image-builds call
+  for IMAGE_BUILD_ARGUMENTS in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -r '.buildArguments | to_entries[] | @base64'); do
+    BUILD_ARGS+=('--build-arg '$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .key')'="'$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .value')'"')
   done
 
-  set +x
-  BUILD_ARGS+=(--build-arg LAGOON_SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}")
-  set -x
-
-  if [ "$BUILD_TYPE" == "branch" ]; then
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_SHA="${LAGOON_GIT_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_BRANCH="${BRANCH}")
-  fi
-
-  if [ "$BUILD_TYPE" == "pullrequest" ]; then
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_SHA="${LAGOON_GIT_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_HEAD_BRANCH="${PR_HEAD_BRANCH}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_HEAD_SHA="${PR_HEAD_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_BASE_BRANCH="${PR_BASE_BRANCH}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_BASE_SHA="${PR_BASE_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_TITLE="${PR_TITLE}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_NUMBER="${PR_NUMBER}")
-  fi
-
-  # Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
-  BUILD_ARGS+=(--build-arg LAGOON_BUILD_NAME="${LAGOON_BUILD_NAME}")
-
-  for IMAGE_NAME in "${IMAGES[@]}"
+  # now we loop through the images in the build data and determine if they need to be pulled or build
+  for IMAGE_BUILD_DATA in $(echo $ENVIRONMENT_IMAGE_BUILD_DATA | jq -r '.images[]')
   do
-
-    DOCKERFILE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.dockerfile false)
-
-    # allow to overwrite build dockerfile for this environment and service
-    ENVIRONMENT_DOCKERFILE_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.dockerfile false)
-    if [ ! $ENVIRONMENT_DOCKERFILE_OVERRIDE == "false" ]; then
-      DOCKERFILE=$ENVIRONMENT_DOCKERFILE_OVERRIDE
-    fi
-
+    SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name' // false)
+    DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile' // false)
+    # if there is no dockerfile, then this image needs to be pulled from somewhere else
     if [ $DOCKERFILE == "false" ]; then
-      # No Dockerfile defined, assuming to download the Image directly
-
-      PULL_IMAGE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.image false)
-      if [ $PULL_IMAGE == "false" ]; then
-        echo "No Dockerfile or Image for service ${IMAGE_NAME} defined"; exit 1;
+      PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage' // false)
+      if [ "$PULL_IMAGE" != "false" ]; then
+        IMAGES_PULL["${SERVICE_NAME}"]="${PULL_IMAGE}"
       fi
-
-      # allow to overwrite image that we pull
-      OVERRIDE_IMAGE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.labels.lagoon\\.image false)
-
-      # allow to overwrite image that we pull for this environment and service
-      ENVIRONMENT_IMAGE_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.image false)
-      if [ ! $ENVIRONMENT_IMAGE_OVERRIDE == "false" ]; then
-        OVERRIDE_IMAGE=$ENVIRONMENT_IMAGE_OVERRIDE
-      fi
-
-      if [ ! $OVERRIDE_IMAGE == "false" ]; then
-        # expand environment variables from ${OVERRIDE_IMAGE}
-        PULL_IMAGE=$(echo "${OVERRIDE_IMAGE}" | envsubst)
-      fi
-
-      # if the image just is an image name (like "alpine") we prefix it with `libary/` as the imagecache does not understand
-      # the magic `alpine` images
-      if [[ ! "$PULL_IMAGE" =~ "/" ]]; then
-        PULL_IMAGE="library/$PULL_IMAGE"
-      fi
-
-      # Add the images we should pull to the IMAGES_PULL array, they will later be tagged from dockerhub
-      IMAGES_PULL["${IMAGE_NAME}"]="${PULL_IMAGE}"
-
     else
-      # Dockerfile defined, load the context and build it
-
-      # We need the Image Name uppercase sometimes, so we create that here
-      IMAGE_NAME_UPPERCASE=$(echo "$IMAGE_NAME" | tr '[:lower:]' '[:upper:]')
-
-
-      # To prevent clashes of ImageNames during parallel builds, we give all Images a Temporary name
-      TEMPORARY_IMAGE_NAME="${NAMESPACE}-${IMAGE_NAME}"
-
-      BUILD_CONTEXT=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.context .)
-
-      # Check to see if this service uses a build target
-      BUILD_TARGET=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.target false)
-
-      # allow to overwrite build context for this environment and service
-      ENVIRONMENT_BUILD_CONTEXT_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.context false)
-      if [ ! $ENVIRONMENT_BUILD_CONTEXT_OVERRIDE == "false" ]; then
-        BUILD_CONTEXT=$ENVIRONMENT_BUILD_CONTEXT_OVERRIDE
-      fi
-
-      if [ ! -f $BUILD_CONTEXT/$DOCKERFILE ]; then
-        echo "defined Dockerfile $DOCKERFILE for service $IMAGE_NAME not found"; exit 1;
-      fi
-
+      # otherwise extract build information from the image build data payload
+      # this is a temporary image name to use for the build, it is based on the namespace and service, this can probably be deprecated and the images could just be
+      # built with the name they are meant to be. only 1 build can run at a time within a namespace
+      # the temporary name would clash here as well if there were multiple builds (it could use the `imageBuild.buildImage` value)
+      TEMPORARY_IMAGE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.temporaryImage' // false)
+      # the context for this image build, the original source for this value is from the `docker-compose file`
+      BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context' // "")
+      # the build target for this image build, the original source for this value is from the `docker-compose file`
+      BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target' // false)
       set +x # reduce noise in build logs
-      # Decide whether to use BuildKit for Docker builds - disabled by default.
+      # determine if buildkit should be used for this build
       DOCKER_BUILDKIT=0
-
-      if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-        DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
-      fi
-      if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-        TEMP_DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
-        if [ ! -z $TEMP_DOCKER_BUILDKIT ]; then
-          DOCKER_BUILDKIT=$TEMP_DOCKER_BUILDKIT
-        fi
-      fi
-
-      case "$DOCKER_BUILDKIT" in
-        1|t|T|true|TRUE|True)
+      if [ "$(echo ${ENVIRONMENT_IMAGE_BUILD_DATA} | jq -r '.buildKit' // false)" == "true" ]; then
           DOCKER_BUILDKIT=1
           echo "Using BuildKit for $DOCKERFILE";
-        ;;
-        *)
-          DOCKER_BUILDKIT=0
-        ;;
-      esac
+      fi
+      done
+
+      # now do the actual image build
+      if [ $BUILD_TARGET == "false" ]; then
+          echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+      else
+          echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
+      fi
       set -x
 
-      . /kubectl-build-deploy/scripts/exec-build.sh
-
-      # Keep a list of the images we have built, as we need to push them to the OpenShift Registry later
-      IMAGES_BUILD["${IMAGE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
+      # Keep a list of the images we have built, as we need to push them to the registry later
+      IMAGES_BUILD["${SERVICE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
 
       # adding the build image to the list of arguments passed into the next image builds
-      BUILD_ARGS+=(--build-arg ${IMAGE_NAME_UPPERCASE}_IMAGE=${TEMPORARY_IMAGE_NAME})
+      SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
     fi
-
   done
-
 fi
 
 set +x
@@ -917,24 +825,9 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'gitSha' $LAGOON_GIT_SHA
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'buildType' $BUILD_TYPE
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'kubernetes' $KUBERNETES
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSION
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.memory' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT"
-fi
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.requests.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS"
-fi
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT"
-fi
 # check for ROOTLESS_WORKLOAD feature flag, disabled by default
 
 set +x
-if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then
-	yq3 merge -ix -- /kubectl-build-deploy/values.yaml /kubectl-build-deploy/rootless.values.yaml
-fi
-if [ "$(featureFlag FS_ON_ROOT_MISMATCH)" = enabled ]; then
-	yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroupChangePolicy' "OnRootMismatch"
-fi
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
@@ -943,18 +836,6 @@ if [ "${SCC_CHECK}" != "false" ]; then
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroup' $OPENSHIFT_SUPPLEMENTAL_GROUP
 fi
 set -x
-
-
-echo -e "\
-imagePullSecrets:\n\
-" >> /kubectl-build-deploy/values.yaml
-
-for REGISTRY_SECRET in "${REGISTRY_SECRETS[@]}"
-do
-  echo -e "\
-  - name: "${REGISTRY_SECRET}"\n\
-" >> /kubectl-build-deploy/values.yaml
-done
 
 echo -e "\
 LAGOON_PROJECT=${PROJECT}\n\
@@ -1441,85 +1322,65 @@ export CONFIG_MAP_SHA
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'configMapSha' $CONFIG_MAP_SHA
 
 ##############################################
-### PUSH IMAGES TO OPENSHIFT REGISTRY
+### PUSH IMAGES TO REGISTRY
 ##############################################
 
+# pullrequest/branch start
 if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
 
   # All images that should be pulled are copied to the harbor registry
   for IMAGE_NAME in "${!IMAGES_PULL[@]}"
   do
-    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}"
+    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
 
     # Try to handle private registries first
-    if [ $PRIVATE_REGISTRY_COUNTER -gt 0 ]; then
-      if [ $PRIVATE_EXTERNAL_REGISTRY ]; then
-        EXTERNAL_REGISTRY=0
-        for EXTERNAL_REGISTRY_URL in "${PRIVATE_REGISTRY_URLS[@]}"
-        do
-          # strip off "http://" or "https://" from registry url if present
-          bare_url="${EXTERNAL_REGISTRY_URL#http://}"
-          bare_url="${EXTERNAL_REGISTRY_URL#https://}"
 
-          # Test registry to see if image is from an external registry or just private docker hub
-          case $bare_url in
-            "$PULL_IMAGE"*)
-              EXTERNAL_REGISTRY=1
-              ;;
-          esac
-        done
+    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
+    # from being a promote image, or an image from an imagecache or from some other registry entirely
+    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
 
-        # If this image is hosted in an external registry, pull it from there
-        if [ $EXTERNAL_REGISTRY -eq 1 ]; then
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        # If this image is not from an external registry, but docker hub creds were supplied, pull it straight from Docker Hub
-        elif [ $PRIVATE_DOCKER_HUB_REGISTRY -eq 1 ]; then
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        # If image not from an external registry and no docker hub creds were supplied, pull image from the imagecache
-        else
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        fi
-      # If the private registry counter is 1 and no external registry was listed, we know a private docker hub was specified
-      else
-        skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-      fi
-    # If no private registries, use the imagecache
-    else
-      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-    fi
-
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    # store the resulting image hash
+    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
   done
 
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     # Before the push the temporary name is resolved to the future tag with the registry in the image name
     TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
 
     # This will actually not push any images and instead just add them to the file /kubectl-build-deploy/lagoon/push
-    . /kubectl-build-deploy/scripts/exec-push-parallel.sh
+    # this file is used to perform parallel image pushes next
+    docker tag ${TEMPORARY_IMAGE_NAME} ${PUSH_IMAGE}
+    echo "docker push ${PUSH_IMAGE}" >> /kubectl-build-deploy/lagoon/push
   done
 
-  # If we have Images to Push to the OpenRegistry, let's do so
+  # If we have images to push to the registry, let's do so
   if [ -f /kubectl-build-deploy/lagoon/push ]; then
     parallel --retries 4 < /kubectl-build-deploy/lagoon/push
   fi
 
-  # load the image hashes for just pushed Images
+  # load the image hashes for just pushed images
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
     JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
-    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
+    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
   done
 
+# pullrequest/branch end
+# promote start
 elif [ "$BUILD_TYPE" == "promote" ]; then
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
-    .  /kubectl-build-deploy/scripts/exec-kubernetes-promote.sh
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
-  done
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
 
+    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+  done
+# promote end
 fi
 
 set +x
@@ -1578,14 +1439,6 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
 else
   echo ">> Backup configurations disabled for this build"
 fi
-
-# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
-	# add namespace isolation network policy to deployment
-	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
-		-f /kubectl-build-deploy/values.yaml \
-		> $YAML_FOLDER/isolation-network-policy.yaml
-fi
 set -x
 
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
@@ -1631,17 +1484,6 @@ set -x
 
 set +x
 if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
-  if [ "$CI" == "true" ]; then
-    # During CI tests of Lagoon itself we only have a single compute node, so we change podAntiAffinity to podAffinity
-    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/podAntiAffinity/podAffinity/g
-    # During CI tests of Lagoon itself we only have a single compute node, so we change ReadWriteMany to ReadWriteOnce
-    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
-  fi
-  if [ "$(featureFlag RWX_TO_RWO)" = enabled ]; then
-    # If there is only a single compute node, this can be used to change RWX to RWO
-    find $LAGOON_SERVICES_YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
-  fi
-
   echo "=== deployment templates for services ==="
   ls -A $LAGOON_SERVICES_YAML_FOLDER
 
@@ -1804,9 +1646,7 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
 
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
-
-    IMAGE_TAG="${IMAGE_TAG:-latest}"
-    IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
+    IMAGE_FULL="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     . /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh
   done
 

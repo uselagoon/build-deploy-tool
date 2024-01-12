@@ -12,7 +12,6 @@ set -x
 
 REGISTRY=$REGISTRY
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
-REGISTRY_REPOSITORY=$NAMESPACE
 LAGOON_VERSION=$(cat /lagoon/version)
 
 set +x # reduce noise in build logs
@@ -22,12 +21,6 @@ if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   INTERNAL_REGISTRY_PASSWORD=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_PASSWORD") | .value')
 fi
 set -x
-
-if [ "$CI" == "true" ]; then
-  CI_OVERRIDE_IMAGE_REPO=172.17.0.1:5000/lagoon
-else
-  CI_OVERRIDE_IMAGE_REPO=""
-fi
 
 echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
@@ -44,13 +37,25 @@ if [ ! -f .lagoon.yml ]; then
   echo "no .lagoon.yml file found"; exit 1;
 fi
 
+##################
+# build deploy-tool can collect this value now from the lagoon.yml file
+# this means further use of `LAGOON_GIT_SHA` can eventually be
+# completely handled with build-deploy-tool wherever this value could be consumed
+# this logic can then just be replaced entirely with a single export so that the build-deploy-tool
+# will know what the value is, and performs the switch based on what the lagoon.yml provides
+# this is retained for now until the remaining functionality that uses it is moved to the build-deploy-tool
+#
+#   export LAGOON_GIT_SHA=`git rev-parse HEAD`
+#
 INJECT_GIT_SHA=$(cat .lagoon.yml | shyaml get-value environment_variables.git_sha false)
 if [ "$INJECT_GIT_SHA" == "true" ]
 then
-  LAGOON_GIT_SHA=`git rev-parse HEAD`
+  # export this so the build-deploy-tool can read it
+  export LAGOON_GIT_SHA=`git rev-parse HEAD`
 else
-  LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
+  export LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
 fi
+##################
 
 echo -e "##############################################\nBEGIN Kubernetes and Container Registry Setup\n##############################################"
 sleep 0.5s
@@ -220,6 +225,14 @@ do
   fi
 done
 if [ ! -z $PRIVATE_CONTAINER_REGISTRIES ]; then
+  if [ $PRIVATE_REGISTRY_COUNTER -gt 0 ]; then
+    if [ $PRIVATE_EXTERNAL_REGISTRY ]; then
+      # export the external registry urls so that the build-deploy-tool can consume it later on
+      export EXTERNAL_REGISTRY_URLS=$(echo ${PRIVATE_REGISTRY_URLS[*]} | tr ' ' ,)
+      # export all the external registry secret names so that the build-deploy-tool can consume it later on
+      export EXTERNAL_REGISTRY_SECRETS=$(echo ${REGISTRY_SECRETS[*]} | tr ' ' ,)
+    fi
+  fi
   echo -e "##############################################\nEND Custom Container Registries Setup\n##############################################"
   sleep 0.5s
 fi
