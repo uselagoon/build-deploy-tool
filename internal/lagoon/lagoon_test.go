@@ -317,6 +317,43 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test overrides",
+			args: args{
+				file: "test-resources/lagoon-yaml/test7/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				EnvironmentVariables: EnvironmentVariables{
+					GitSHA: helpers.BoolPtr(true),
+				},
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												TLSAcme: helpers.BoolPtr(true),
+											},
+										},
+									},
+								},
+							},
+						},
+						Overrides: map[string]Override{
+							"nginx": {
+								Build: Build{
+									Dockerfile: "test-resources/dockerfile.nginx",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

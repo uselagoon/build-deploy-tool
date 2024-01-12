@@ -24,6 +24,7 @@ type Environment struct {
 	Types              map[string]string    `json:"types"`
 	Routes             []map[string][]Route `json:"routes"`
 	Cronjobs           []Cronjob            `json:"cronjobs"`
+	Overrides          map[string]Override  `json:"overrides,omitempty"`
 }
 
 // Cronjob represents a Lagoon cronjob.
@@ -32,6 +33,16 @@ type Cronjob struct {
 	Service  string `json:"service"`
 	Schedule string `json:"schedule"`
 	Command  string `json:"command"`
+}
+
+type Override struct {
+	Build Build  `json:"build,omitempty"`
+	Image string `json:"image,omitempty"`
+}
+
+type Build struct {
+	Dockerfile string `json:"dockerfile,omitempty"`
+	Context    string `json:"context,omitempty"`
 }
 
 // Environments .
@@ -50,13 +61,18 @@ type Tasks struct {
 
 // YAML represents the .lagoon.yml file.
 type YAML struct {
-	DockerComposeYAML string            `json:"docker-compose-yaml"`
-	Environments      Environments      `json:"environments"`
-	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
-	Tasks             Tasks             `json:"tasks"`
-	Routes            Routes            `json:"routes"`
-	BackupRetention   BackupRetention   `json:"backup-retention"`
-	BackupSchedule    BackupSchedule    `json:"backup-schedule"`
+	DockerComposeYAML    string               `json:"docker-compose-yaml"`
+	Environments         Environments         `json:"environments"`
+	ProductionRoutes     *ProductionRoutes    `json:"production_routes"`
+	Tasks                Tasks                `json:"tasks"`
+	Routes               Routes               `json:"routes"`
+	BackupRetention      BackupRetention      `json:"backup-retention"`
+	BackupSchedule       BackupSchedule       `json:"backup-schedule"`
+	EnvironmentVariables EnvironmentVariables `json:"environment_variables,omitempty"`
+}
+
+type EnvironmentVariables struct {
+	GitSHA *bool `json:"git_sha"`
 }
 
 type BackupRetention struct {
@@ -101,6 +117,8 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["tls-acme"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["tls-acme"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["tls-acme"] = vBool
 				}
 			}
@@ -109,6 +127,8 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["enabled"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["enabled"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["enabled"] = vBool
 				}
 			}
@@ -117,12 +137,36 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["allowPullRequests"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["allowPullRequests"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["allowPullRequests"] = vBool
 				}
 			}
 		}
 		newData, _ := json.Marshal(value)
 		return json.Unmarshal(newData, &a.Autogenerate)
+	}
+	return nil
+}
+
+func (a *EnvironmentVariables) UnmarshalJSON(data []byte) error {
+	tmpMap := map[string]interface{}{}
+	json.Unmarshal(data, &tmpMap)
+	if value, ok := tmpMap["git_sha"]; ok {
+		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
+		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
+		// but types are more strict, so this unmarshaler attempts to change between the two types
+		// that can be bool or string
+		if reflect.TypeOf(value).Kind() == reflect.String {
+			vBool, err := strconv.ParseBool(value.(string))
+			if err == nil {
+				// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+				// this could warn in a yaml validation step at the start of builds
+				value = vBool
+			}
+		}
+		newData, _ := json.Marshal(value)
+		return json.Unmarshal(newData, &a.GitSHA)
 	}
 	return nil
 }
