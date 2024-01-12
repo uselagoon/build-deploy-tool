@@ -32,7 +32,7 @@ spec:
           . || [ $? -eq 1 ]'
         k8up.syn.tools/file-extension: .solr.tar
         lagoon.sh/branch: environment-name
-        lagoon.sh/configMapSha: ""
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
       creationTimestamp: null
       labels:
@@ -50,10 +50,12 @@ spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
+          value: "0"
         - name: CRONJOBS
         envFrom:
         - configMapRef:
             name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/solr@latest
         livenessProbe:
           failureThreshold: 5
           initialDelaySeconds: 90

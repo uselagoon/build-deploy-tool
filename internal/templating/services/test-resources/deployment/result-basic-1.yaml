@@ -230,6 +230,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist@latest
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:
@@ -315,6 +316,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist-po@latest
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:
@@ -355,22 +357,22 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice-persist-po
+    app.kubernetes.io/instance: myservice-persist-posize
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: basic-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: myservice-persist-po
+    lagoon.sh/service: myservice-persist-posize
     lagoon.sh/service-type: basic-persistent
     lagoon.sh/template: basic-persistent-0.1.0
-  name: myservice-persist-po
+  name: myservice-persist-posize
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: myservice-persist-po
+      app.kubernetes.io/instance: myservice-persist-posize
       app.kubernetes.io/name: basic-persistent
   strategy: {}
   template:
@@ -381,14 +383,14 @@ spec:
         lagoon.sh/version: v2.x.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: myservice-persist-po
+        app.kubernetes.io/instance: myservice-persist-posize
         app.kubernetes.io/managed-by: build-deploy-tool
         app.kubernetes.io/name: basic-persistent
         lagoon.sh/buildType: branch
         lagoon.sh/environment: environment-name
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: myservice-persist-po
+        lagoon.sh/service: myservice-persist-posize
         lagoon.sh/service-type: basic-persistent
         lagoon.sh/template: basic-persistent-0.1.0
     spec:
@@ -400,6 +402,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist-posize@latest
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:

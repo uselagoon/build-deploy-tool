@@ -136,7 +136,7 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example.com/example-project/environment-name/myservice-persistent@latest
+        image: harbor.example.com/example-project/environment-name/myservice-persist@latest
         name: cli
         readinessProbe:
           exec:

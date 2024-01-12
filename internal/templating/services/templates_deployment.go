@@ -364,8 +364,11 @@ func GenerateDeploymentTemplate(
 
 			// handle setting the rest of the containers specs with values from the service or build values
 			container.Container.Name = container.Name
-			container.Container.Image = serviceValues.ImageName
-
+			if val, ok := buildValues.ImageReferences[serviceValues.Name]; ok {
+				container.Container.Image = val
+			} else {
+				return nil, fmt.Errorf("no image reference was found for primary container of service %s", serviceValues.Name)
+			}
 			// set up cronjobs if required
 			cronjobs := ""
 			for _, cronjob := range serviceValues.InPodCronjobs {
@@ -374,7 +377,7 @@ func GenerateDeploymentTemplate(
 			envvars := []corev1.EnvVar{
 				{
 					Name:  "LAGOON_GIT_SHA",
-					Value: buildValues.GitSha,
+					Value: buildValues.GitSHA,
 				},
 				{
 					Name:  "CRONJOBS",
@@ -475,12 +478,16 @@ func GenerateDeploymentTemplate(
 
 				// handle setting the rest of the containers specs with values from the service or build values
 				linkedContainer.Container.Name = linkedContainer.Name
-				linkedContainer.Container.Image = serviceValues.LinkedService.ImageName
+				if val, ok := buildValues.ImageReferences[serviceValues.LinkedService.Name]; ok {
+					linkedContainer.Container.Image = val
+				} else {
+					return nil, fmt.Errorf("no image reference was found for secondary container %s of service %s", serviceValues.LinkedService.Name, serviceValues.Name)
+				}
 
 				envvars := []corev1.EnvVar{
 					{
 						Name:  "LAGOON_GIT_SHA",
-						Value: buildValues.GitSha,
+						Value: buildValues.GitSHA,
 					},
 				}
 				for _, envvar := range envvars {

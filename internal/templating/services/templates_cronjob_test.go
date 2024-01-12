@@ -38,7 +38,11 @@ func TestGenerateCronjobTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
-					GitSha:       "0",
+					ImageReferences: map[string]string{
+						"myservice":         "harbor.example.com/example-project/environment-name/myservice@latest",
+						"myservice-persist": "harbor.example.com/example-project/environment-name/myservice-persistent@latest",
+					},
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					Services: []generator.ServiceValues{
 						{
@@ -46,7 +50,6 @@ func TestGenerateCronjobTemplate(t *testing.T) {
 							OverrideName:     "myservice",
 							Type:             "cli",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice@latest",
 							NativeCronjobs: []lagoon.Cronjob{
 								{
 									Name:     "cronjob-myservice-my-cronjobbb",
@@ -67,7 +70,6 @@ func TestGenerateCronjobTemplate(t *testing.T) {
 							OverrideName:         "myservice-persist",
 							Type:                 "cli-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/myservice-persistent@latest",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx-php",
 							NativeCronjobs: []lagoon.Cronjob{

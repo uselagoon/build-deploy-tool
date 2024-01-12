@@ -40,15 +40,21 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice":                "harbor.example.com/example-project/environment-name/myservice@latest",
+						"myservice-po":             "harbor.example.com/example-project/environment-name/myservice-po@latest",
+						"myservice-persist":        "harbor.example.com/example-project/environment-name/myservice-persist@latest",
+						"myservice-persist-po":     "harbor.example.com/example-project/environment-name/myservice-persist-po@latest",
+						"myservice-persist-posize": "harbor.example.com/example-project/environment-name/myservice-persist-posize@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
 							OverrideName:     "myservice",
 							Type:             "basic",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice@latest",
 							InPodCronjobs: []lagoon.Cronjob{
 								{
 									Name:     "cron - inpod",
@@ -77,7 +83,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							OverrideName:     "myservice-po",
 							Type:             "basic",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice-po@latest",
 							ServicePort:      8080, // template should have port changed to 8080 from 3000
 							UseSpotInstances: true, // template should have spot instance label and toleration/selector/affinity
 							Replicas:         2,
@@ -100,8 +105,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							PersistentVolumeName: "basic",
 						},
 						{
-							Name:                 "myservice-persist-po",
-							OverrideName:         "myservice-persist-po",
+							Name:                 "myservice-persist-posize",
+							OverrideName:         "myservice-persist-posize",
 							Type:                 "basic-persistent",
 							DBaaSEnvironment:     "production",
 							ServicePort:          8080,
@@ -139,29 +144,32 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 						RunAsUser:  10000,
 						FsGroup:    10001,
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"nginx":  "harbor.example.com/example-project/environment-name/nginx@latest",
+						"php":    "harbor.example.com/example-project/environment-name/php@latest",
+						"nginx2": "harbor.example.com/example-project/environment-name/nginx2@latest",
+						"php2":   "harbor.example.com/example-project/environment-name/php2@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "nginx",
 							OverrideName:     "nginx",
 							Type:             "nginx-php",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 						},
 						{
 							Name:             "php",
 							OverrideName:     "nginx",
 							Type:             "nginx-php",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 						},
 						{
 							Name:                 "nginx2",
 							OverrideName:         "nginx-2",
 							Type:                 "nginx-php-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/nginx2@latest",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx2",
 						},
@@ -170,7 +178,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							OverrideName:         "nginx-2",
 							Type:                 "nginx-php-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/php2@latest",
 							PersistentVolumeSize: "10Gi",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx2",
@@ -197,22 +204,24 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice":         "harbor.example.com/example-project/environment-name/myservice@latest",
+						"myservice-persist": "harbor.example.com/example-project/environment-name/myservice-persist@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
 							OverrideName:     "myservice",
 							Type:             "cli",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice@latest",
 						},
 						{
 							Name:                 "myservice-persist",
 							OverrideName:         "myservice-persist",
 							Type:                 "cli-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/myservice-persistent@latest",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx-php",
 						},
@@ -238,6 +247,11 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice": "harbor.example.com/example-project/environment-name/myservice@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
@@ -262,6 +276,17 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice":      "harbor.example.com/example-project/environment-name/myservice@latest",
+						"myservice-size": "harbor.example.com/example-project/environment-name/myservice-size@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:                 "myservice",
@@ -294,6 +319,17 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
+					ImagePullSecrets: []generator.ImagePullSecrets{
+						{
+							Name: "lagoon-internal-registry-secret",
+						},
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice":      "harbor.example.com/example-project/environment-name/myservice@latest",
+						"myservice-size": "harbor.example.com/example-project/environment-name/myservice-size@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:                 "myservice",
@@ -331,15 +367,17 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice-po": "harbor.example.com/example-project/environment-name/myservice-po@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice-po",
 							OverrideName:     "myservice-po",
 							Type:             "basic",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice-po@latest",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
 								{
 									ServiceName: "myservice-po-8191",
@@ -381,6 +419,11 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							Name: "lagoon-internal-registry-secret",
 						},
 					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"solr": "harbor.example.com/example-project/environment-name/solr@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "solr",
@@ -419,15 +462,17 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							EphemeralStorage: "1Gi",
 						},
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice-po": "harbor.example.com/example-project/environment-name/myservice-po@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice-po",
 							OverrideName:     "myservice-po",
 							Type:             "basic",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/myservice-po@latest",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
 								{
 									ServiceName: "myservice-po-8191",
@@ -479,29 +524,32 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 						FsGroup:        10001,
 						OnRootMismatch: true,
 					},
-					GitSha:       "0",
+					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"nginx":  "harbor.example.com/example-project/environment-name/nginx@latest",
+						"php":    "harbor.example.com/example-project/environment-name/php@latest",
+						"nginx2": "harbor.example.com/example-project/environment-name/nginx2@latest",
+						"php2":   "harbor.example.com/example-project/environment-name/php2@latest",
+					},
 					Services: []generator.ServiceValues{
 						{
 							Name:             "nginx",
 							OverrideName:     "nginx",
 							Type:             "nginx-php",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 						},
 						{
 							Name:             "php",
 							OverrideName:     "nginx",
 							Type:             "nginx-php",
 							DBaaSEnvironment: "production",
-							ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 						},
 						{
 							Name:                 "nginx2",
 							OverrideName:         "nginx-2",
 							Type:                 "nginx-php-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/nginx2@latest",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx2",
 						},
@@ -510,7 +558,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 							OverrideName:         "nginx-2",
 							Type:                 "nginx-php-persistent",
 							DBaaSEnvironment:     "production",
-							ImageName:            "harbor.example.com/example-project/environment-name/php2@latest",
 							PersistentVolumeSize: "10Gi",
 							PersistentVolumePath: "/storage/data",
 							PersistentVolumeName: "nginx2",
@@ -567,14 +614,14 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},
@@ -584,13 +631,13 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},
@@ -604,28 +651,28 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 					{
 						Name:             "nginx2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
 					},
 					{
 						Name:             "php2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
 					},
 				},
 			},
@@ -635,13 +682,13 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 				{
@@ -649,13 +696,13 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "nginx2",
 					Type:             "nginx-php-persistent",
 					DBaaSEnvironment: "production",
-					ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
+					// ImageName:        "harbor.example.com/example-project/environment-name/nginx2@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php2",
 						OverrideName:     "nginx2",
 						Type:             "nginx-php-persistent",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php2@latest",
 					},
 				},
 			},
@@ -669,21 +716,21 @@ func TestLinkedServiceCalculator(t *testing.T) {
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					},
 					{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 					{
 						Name:             "normalnginx",
 						OverrideName:     "normalnginx",
 						Type:             "nginx",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
 					},
 				},
 			},
@@ -693,20 +740,20 @@ func TestLinkedServiceCalculator(t *testing.T) {
 					OverrideName:     "normalnginx",
 					Type:             "nginx",
 					DBaaSEnvironment: "production",
-					ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
+					// ImageName:        "harbor.example.com/example-project/environment-name/normalnginx@latest",
 				},
 				{
 					Name:             "nginx",
 					OverrideName:     "nginx",
 					Type:             "nginx-php",
 					DBaaSEnvironment: "production",
-					ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
+					// ImageName:        "harbor.example.com/example-project/environment-name/nginx@latest",
 					LinkedService: &generator.ServiceValues{
 						Name:             "php",
 						OverrideName:     "nginx",
 						Type:             "nginx-php",
 						DBaaSEnvironment: "production",
-						ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
+						// ImageName:        "harbor.example.com/example-project/environment-name/php@latest",
 					},
 				},
 			},

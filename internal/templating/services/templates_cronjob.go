@@ -290,7 +290,11 @@ func GenerateCronjobTemplate(
 
 				// handle setting the rest of the containers specs with values from the service or build values
 				container.Container.Name = nCronjob.Name
-				container.Container.Image = serviceValues.ImageName
+				if val, ok := buildValues.ImageReferences[serviceValues.Name]; ok {
+					container.Container.Image = val
+				} else {
+					return nil, fmt.Errorf("no image reference was found for primary container of service %s", serviceValues.Name)
+				}
 
 				// set up cronjobs if required
 				cronjobs := ""
@@ -300,7 +304,7 @@ func GenerateCronjobTemplate(
 				envvars := []corev1.EnvVar{
 					{
 						Name:  "LAGOON_GIT_SHA",
-						Value: buildValues.GitSha,
+						Value: buildValues.GitSHA,
 					},
 					{
 						Name:  "SERVICE_NAME",
