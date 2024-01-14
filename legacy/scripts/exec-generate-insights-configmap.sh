@@ -1,8 +1,6 @@
 #!/bin/bash
 
 TMP_DIR="${TMP_DIR:-/tmp}"
-#SBOM_OUTPUT="cyclonedx-json" -- This is the syft format
-# We're moving to trivy
 SBOM_OUTPUT="cyclonedx"
 
 SBOM_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.cyclonedx.json.gz"
@@ -45,10 +43,9 @@ processImageInspect() {
 
 processImageInspect
 
-echo "Running sbom scan using syft"
+echo "Running sbom scan using trivy"
 echo "Image being scanned: ${IMAGE_FULL}"
 
-#DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock imagecache.amazeeio.cloud/anchore/syft packages ${IMAGE_FULL} --quiet -o ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
 DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock imagecache.amazeeio.cloud/aquasec/trivy image ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
