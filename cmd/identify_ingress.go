@@ -19,7 +19,7 @@ var primaryIngressIdentify = &cobra.Command{
 	Aliases: []string{"pi"},
 	Short:   "Identify the primary ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(false)
+		generator, err := generator.GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}
@@ -37,7 +37,7 @@ var ingressIdentify = &cobra.Command{
 	Aliases: []string{"i"},
 	Short:   "Identify all ingress for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(false)
+		generator, err := generator.GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}
@@ -73,7 +73,7 @@ var autogenIngressIdentify = &cobra.Command{
 	Aliases: []string{"ci"},
 	Short:   "Identify all created ingress object names for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(false)
+		generator, err := generator.GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}

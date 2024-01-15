@@ -10,7 +10,6 @@ import (
 const (
 	defaultCheckSchedule          = "M H(5-8) * * 1"
 	defaultPruneSchedule          = "M H(3-5) * * 0"
-	defaultBackupSchedule         = "M H(22-2) * * *"
 	hourlyDefaultBackupRetention  = 0
 	dailyDefaultBackupRetention   = 7
 	weeklyDefaultBackupRetention  = 6
@@ -30,7 +29,7 @@ func generateBackupValues(
 	// builds need to calculate a new schedule from multiple places for backups
 	// create a new schedule placeholder set to the default value so it can be adjusted through this
 	// generator
-	newBackupSchedule := defaultBackupSchedule
+	newBackupSchedule := buildValues.DefaultBackupSchedule
 
 	customBackupConfig := CheckFeatureFlag("CUSTOM_BACKUP_CONFIG", mergedVariables, debug)
 	if customBackupConfig == "enabled" {

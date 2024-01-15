@@ -114,6 +114,24 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 						continue
 					}
 				}
+				match3, _ := regexp.MatchString("^(H|\\*)/([01]?[0-9]|2[0-3])$", val)
+				if match3 {
+					// An hour like H/15 or */15 is defined, create a list of hours with a random start
+					// like 1,7,13,19
+					params := getCaptureBlocks("^(?P<P1>H|\\*)/(?P<P2>[01]?[0-9]|2[0-3])$", val)
+					step, err := strconv.Atoi(params["P2"])
+					if err != nil {
+						return "", fmt.Errorf("cron definition '%s' is invalid, unable to determine hours value", cron)
+					}
+					counter := int(math.Mod(float64(seed), float64(step)))
+					var hoursArr []string
+					for counter < 24 {
+						hoursArr = append(hoursArr, fmt.Sprintf("%d", counter))
+						counter += step
+					}
+					hours = strings.Join(hoursArr, ",")
+					continue
+				}
 				if isInCSVRange(val, 0, 23) {
 					hours = val
 					continue
