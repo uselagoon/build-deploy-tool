@@ -234,6 +234,7 @@ func UnsetEnvVars(localVars []EnvironmentVariable) {
 		"DBAAS_OPERATOR_HTTP",
 		"CONFIG_MAP_SHA",
 		"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+		"CI",
 	}
 	for _, varName := range varNames {
 		os.Unsetenv(varName)
