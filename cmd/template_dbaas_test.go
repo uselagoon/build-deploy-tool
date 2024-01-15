@@ -9,6 +9,7 @@ import (
 
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
 
@@ -32,42 +33,33 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "../internal/testdata/complex/dbaas-templates/dbaas-1",
 		},
-		// {
-		// 	name: "test2 - mariadb-single to mariadb-dbaas (using mariadb-shared to mariadb-dbaas conversion)",
-		// 	args: args{
-		// 		alertContact:    "alertcontact",
-		// 		statusPageID:    "statuspageid",
-		// 		projectName:     "example-project",
-		// 		environmentName: "main",
-		// 		environmentType: "production",
-		// 		buildType:       "branch",
-		// 		lagoonVersion:   "v2.7.x",
-		// 		branch:          "main",
-		// 		projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_SERVICE_TYPES","value":"mariadb:mariadb-shared","scope":"build"}]`,
-		// 		envVars:         `[]`,
-		// 		lagoonYAML:      "../test-resources/template-dbaas/test2/lagoon.yml",
-		// 		templatePath:    "../test-resources/template-dbaas/output",
-		// 	},
-		// 	want: "../test-resources/template-dbaas/test2-results",
-		// },
-		// {
-		// 	name: "test3 - multiple mariadb",
-		// 	args: args{
-		// 		alertContact:    "alertcontact",
-		// 		statusPageID:    "statuspageid",
-		// 		projectName:     "example-project",
-		// 		environmentName: "main",
-		// 		environmentType: "production",
-		// 		buildType:       "branch",
-		// 		lagoonVersion:   "v2.7.x",
-		// 		branch:          "main",
-		// 		projectVars:     `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"}]`,
-		// 		envVars:         `[]`,
-		// 		lagoonYAML:      "../test-resources/template-dbaas/test3/lagoon.yml",
-		// 		templatePath:    "../test-resources/template-dbaas/output",
-		// 	},
-		// 	want: "../test-resources/template-dbaas/test3-results",
-		// },
+		{
+			name: "test2 - mariadb-single to mariadb-dbaas (using mariadb-shared to mariadb-dbaas conversion)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{Name: "LAGOON_SERVICE_TYPES", Value: "mariadb:mariadb-shared", Scope: "build"},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/complex/dbaas-templates/dbaas-2",
+		},
+		{
+			name: "test3 - multiple mariadb",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/complex/lagoon.multidb.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/complex/dbaas-templates/dbaas-3",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
