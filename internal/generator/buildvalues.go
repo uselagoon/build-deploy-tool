@@ -49,6 +49,7 @@ type BuildValues struct {
 	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
 	ImageCache                    string                      `json:"imageCache"`
 	BackupsEnabled                bool                        `json:"backupsEnabled"`
+	DefaultBackupSchedule         string                      `json:"defaultBackupSchedule"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
 }
 

@@ -122,6 +122,32 @@ do
   if [ $PRIVATE_CONTAINER_REGISTRY_USERNAME == "false" ]; then
     echo "No 'username' defined for registry $PRIVATE_CONTAINER_REGISTRY"; exit 1;
   fi
+  if [ $PRIVATE_CONTAINER_REGISTRY_USERNAME != "false" ]; then
+    # check if we have an override password defined anywhere in the api
+    PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=""
+    PRIVATE_CONTAINER_REGISTRY_USERNAME_OVERRIDE_KEY="REGISTRY_${PRIVATE_CONTAINER_REGISTRY}_USERNAME"
+
+    if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_USERNAME_OVERRIDE_KEY'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME" ]; then
+        PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME
+        PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE="Lagoon API project variable $PRIVATE_CONTAINER_REGISTRY_USERNAME_OVERRIDE_KEY"
+      fi
+    fi
+    if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+      TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "container_registry" and .name == "'$PRIVATE_CONTAINER_REGISTRY_USERNAME_OVERRIDE_KEY'") | "\(.value)"'))
+      if [ ! -z "$TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME" ]; then
+        PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$TEMP_PRIVATE_REGISTRY_CREDENTIAL_USERNAME
+        PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE="Lagoon API environment variable $PRIVATE_CONTAINER_REGISTRY_USERNAME_OVERRIDE_KEY"
+      fi
+    fi
+
+    if [ -z $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME ]; then
+      #if no password defined in the lagoon api, pass the one in `.lagoon.yml` as a password
+      PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$PRIVATE_CONTAINER_REGISTRY_USERNAME
+      PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE=".lagoon.yml"
+    fi
+  fi
   PRIVATE_CONTAINER_REGISTRY_PASSWORD=$(cat .lagoon.yml | shyaml get-value container-registries.$PRIVATE_CONTAINER_REGISTRY.password false)
   if [[ $PRIVATE_CONTAINER_REGISTRY_PASSWORD == "false" ]]; then
     echo "No 'password' defined for registry $PRIVATE_CONTAINER_REGISTRY"; exit 1;
@@ -173,17 +199,19 @@ do
       exit 1
     fi
     if [ $PRIVATE_CONTAINER_REGISTRY_URL != "false" ]; then
-      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_USERNAME; password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
-      docker login --username $PRIVATE_CONTAINER_REGISTRY_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL $PRIVATE_CONTAINER_REGISTRY_URL
-      kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server=$PRIVATE_CONTAINER_REGISTRY_URL --docker-username=$PRIVATE_CONTAINER_REGISTRY_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
+      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL $PRIVATE_CONTAINER_REGISTRY_URL
+      kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server=$PRIVATE_CONTAINER_REGISTRY_URL --docker-username=$PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
       REGISTRY_SECRETS+=("lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret")
       PRIVATE_REGISTRY_URLS+=($PRIVATE_CONTAINER_REGISTRY_URL)
       PRIVATE_EXTERNAL_REGISTRY=1
       let ++PRIVATE_REGISTRY_COUNTER
     else
-      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_USERNAME; password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
-      docker login --username $PRIVATE_CONTAINER_REGISTRY_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL
-      kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server="https://index.docker.io/v1/" --docker-username=$PRIVATE_CONTAINER_REGISTRY_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
+      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL
+      kubectl create secret docker-registry "lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret" --docker-server="https://index.docker.io/v1/" --docker-username=$PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --docker-password=$PRIVATE_REGISTRY_CREDENTIAL --dry-run -o yaml | kubectl apply -f -
       REGISTRY_SECRETS+=("lagoon-private-registry-${PRIVATE_REGISTRY_COUNTER}-secret")
       PRIVATE_REGISTRY_URLS+=("")
       PRIVATE_DOCKER_HUB_REGISTRY=1

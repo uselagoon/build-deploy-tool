@@ -39,6 +39,25 @@ var validateDockerCompose = &cobra.Command{
 	},
 }
 
+var validateDockerComposeWithErrors = &cobra.Command{
+	Use:     "docker-compose-with-errors",
+	Aliases: []string{"dcwe"},
+	Short:   "Verify docker-compose file for compatability with this tool with next versions of compose-go library",
+	Run: func(cmd *cobra.Command, args []string) {
+		dockerComposeFile, err := cmd.Flags().GetString("docker-compose")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			os.Exit(1)
+		}
+
+		err = validateDockerComposeWithError(dockerComposeFile)
+		if err != nil {
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+	},
+}
+
 // ValidateDockerCompose validate a docker-compose file
 func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) error {
 	_, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
@@ -48,8 +67,20 @@ func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) er
 	return nil
 }
 
+// validateDockerComposeWithErrors validate a docker-compose file yaml structure properly
+func validateDockerComposeWithError(file string) error {
+	err := lagoon.ValidateUnmarshalDockerComposeYAML(file)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func init() {
 	validateCmd.AddCommand(validateDockerCompose)
+	validateCmd.AddCommand(validateDockerComposeWithErrors)
 	validateDockerCompose.Flags().StringP("docker-compose", "", "docker-compose.yml",
+		"The docker-compose.yml file to read.")
+	validateDockerComposeWithErrors.Flags().StringP("docker-compose", "", "docker-compose.yml",
 		"The docker-compose.yml file to read.")
 }

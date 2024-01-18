@@ -136,6 +136,7 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 				for iName, ingress := range lagoonRoute.Ingresses {
 					newRoute.Domain = iName
 					newRoute.LagoonService = rName
+					newRoute.IngressName = iName
 					newRoute.IngressClass = defaultIngressClass
 					newRoute.Fastly = ingress.Fastly
 					if ingress.Annotations != nil {
@@ -185,6 +186,10 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 						if ingress.AlternativeNames != nil && *newRoute.Wildcard == true {
 							return fmt.Errorf("Route %s has wildcard: true and alternativenames defined, this is not supported", newRoute.Domain)
 						}
+						newRoute.IngressName = fmt.Sprintf("wildcard-%s", newRoute.Domain)
+						if err := validation.IsDNS1123Subdomain(strings.ToLower(newRoute.IngressName)); err != nil {
+							newRoute.IngressName = fmt.Sprintf("%s-%s", newRoute.IngressName[:len(newRoute.IngressName)-10], helpers.GetMD5HashWithNewLine(newRoute.Domain)[:5])
+						}
 					}
 				}
 			} else {
@@ -192,6 +197,7 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 				// keep the defaults, just set the name and service
 				newRoute.Domain = lagoonRoute.Name
 				newRoute.LagoonService = rName
+				newRoute.IngressName = lagoonRoute.Name
 			}
 			// generate the fastly configuration for this route
 			err := GenerateFastlyConfiguration(&newRoute.Fastly, "", newRoute.Fastly.ServiceID, newRoute.Domain, secretPrefix, variables)
@@ -289,6 +295,8 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 	routeAdd := apiRoute
 	// copy in the apiroute fastly configuration
 	routeAdd.Fastly = apiRoute.Fastly
+
+	routeAdd.IngressName = apiRoute.Domain
 	if apiRoute.TLSAcme != nil {
 		routeAdd.TLSAcme = apiRoute.TLSAcme
 	} else {
@@ -342,6 +350,10 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 		}
 		if apiRoute.AlternativeNames != nil && *routeAdd.Wildcard == true {
 			return routeAdd, fmt.Errorf("Route %s has wildcard=true and alternativenames defined, this is not supported", routeAdd.Domain)
+		}
+		apiRoute.IngressName = fmt.Sprintf("wildcard-%s", apiRoute.Domain)
+		if err := validation.IsDNS1123Subdomain(strings.ToLower(apiRoute.IngressName)); err != nil {
+			apiRoute.IngressName = fmt.Sprintf("%s-%s", apiRoute.IngressName[:len(apiRoute.IngressName)-10], helpers.GetMD5HashWithNewLine(apiRoute.Domain)[:5])
 		}
 	}
 	return routeAdd, nil

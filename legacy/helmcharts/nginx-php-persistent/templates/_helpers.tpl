@@ -135,3 +135,16 @@ Generate path for twig storage emptyDir
 {{- define "nginx-php-persistent.twig-storage.path" -}}
 {{- printf "%s/php" .Values.persistentStorage.path }}
 {{- end -}}
+
+{{/*
+Merge resources from global over resources defined in the values
+*/}}
+{{- define "resources" -}}
+{{- $value := dict -}}
+{{- range (rest .) -}}
+  {{- $value = merge $value . -}}
+{{- end -}}
+{{- if $value -}}
+{{- toYaml $value }}
+{{- end }}
+{{- end -}}
