@@ -8,7 +8,7 @@ SBOM_CONFIGMAP="lagoon-insights-sbom-${IMAGE_NAME}"
 IMAGE_INSPECT_CONFIGMAP="lagoon-insights-image-${IMAGE_NAME}"
 IMAGE_INSPECT_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.image-inspect.json.gz"
 
-# Here we give the user the ability to override the insights scan image
+# Here we give the cluster administrator the ability to override the insights scan image
 INSIGHTS_SCAN_IMAGE="aquasec/trivy"
   if [ "$ADMIN_LAGOON_FEATURE_FLAG_INSIGHTS_SCAN_IMAGE" ]; then
     INSIGHTS_SCAN_IMAGE="${ADMIN_LAGOON_FEATURE_FLAG_INSIGHTS_SCAN_IMAGE}"
