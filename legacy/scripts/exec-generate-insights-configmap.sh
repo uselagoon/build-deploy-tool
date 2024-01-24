@@ -1,11 +1,18 @@
 #!/bin/bash
 
 TMP_DIR="${TMP_DIR:-/tmp}"
-SBOM_OUTPUT="cyclonedx-json"
+SBOM_OUTPUT="cyclonedx"
+
 SBOM_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.cyclonedx.json.gz"
 SBOM_CONFIGMAP="lagoon-insights-sbom-${IMAGE_NAME}"
 IMAGE_INSPECT_CONFIGMAP="lagoon-insights-image-${IMAGE_NAME}"
 IMAGE_INSPECT_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.image-inspect.json.gz"
+
+# Here we give the cluster administrator the ability to override the insights scan image
+INSIGHTS_SCAN_IMAGE="aquasec/trivy"
+  if [ "$ADMIN_LAGOON_FEATURE_FLAG_INSIGHTS_SCAN_IMAGE" ]; then
+    INSIGHTS_SCAN_IMAGE="${ADMIN_LAGOON_FEATURE_FLAG_INSIGHTS_SCAN_IMAGE}"
+  fi
 
 set +x
 echo "Running image inspect on: ${IMAGE_FULL}"
@@ -42,10 +49,11 @@ processImageInspect() {
 
 processImageInspect
 
-echo "Running sbom scan using syft"
+echo "Running sbom scan using trivy"
 echo "Image being scanned: ${IMAGE_FULL}"
+echo "Using image for scan ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE}"
 
-DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock imagecache.amazeeio.cloud/anchore/syft packages ${IMAGE_FULL} --quiet -o ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
+DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
 echo "Size of ${SBOM_OUTPUT_FILE} = $FILESIZE bytes."

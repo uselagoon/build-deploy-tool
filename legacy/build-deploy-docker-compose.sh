@@ -1160,9 +1160,16 @@ if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
   CLEANUP_WARNINGS="true"
   ((++BUILD_WARNING_COUNT))
   echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
+  echo "> If you need these routes, you should update your .lagoon.yml file and make sure the routes exist."
   if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
-    echo "> You can remove these in the next build by setting the flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+    echo "> If you no longer need these routes, you can instruct Lagoon to remove it from the environment by setting the following variable"
+    echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+    echo "> You should remove this variable after the deployment has been completed, otherwise future route removals will happen automatically"
+  else
+    echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
+    echo "> You should remove this variable if you don't want routes to be removed automatically"
   fi
+  echo "> Futurue releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
   for DI in ${DELETE_INGRESS[@]}
   do
     if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then

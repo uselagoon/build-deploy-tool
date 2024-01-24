@@ -111,9 +111,6 @@ RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.
 #     | tar -xz -C /usr/local/bin build-deploy-tool
 COPY --from=golang /app/build-deploy-tool /usr/local/bin/build-deploy-tool
 
-RUN curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin > /dev/null 2>&1
-#curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b /usr/local/bin > /dev/null 2>&1
-
 # enable running unprivileged
 RUN fix-permissions /home && fix-permissions /kubectl-build-deploy
 
