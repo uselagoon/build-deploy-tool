@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/spf13/cobra"
@@ -8,11 +9,11 @@ import (
 )
 
 var imageBuildIdentify = &cobra.Command{
-	Use:     "image-build",
-	Aliases: []string{"ib"},
+	Use:     "image-builds",
+	Aliases: []string{"image-build", "img-build", "ib"},
 	Short:   "Identify the configuration for building images for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		gen, err := generator.GenerateInput(*rootCmd, true)
+		gen, err := generator.GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}
@@ -20,7 +21,11 @@ var imageBuildIdentify = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		fmt.Println(out)
+		bc, err := json.Marshal(out)
+		if err != nil {
+			return err
+		}
+		fmt.Println(string(bc))
 		return nil
 	},
 }

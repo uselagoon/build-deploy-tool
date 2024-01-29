@@ -57,7 +57,7 @@ var tasksPreRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
+		lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ var tasksPreRun = &cobra.Command{
 			os.Exit(1)
 		}
 
-		err = runTasks(taskIterator, lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(taskIterator, buildValues.LagoonYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -88,7 +88,7 @@ var tasksPostRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
+		lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
@@ -100,7 +100,7 @@ var tasksPostRun = &cobra.Command{
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
-		err = runTasks(taskIterator, lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(taskIterator, buildValues.LagoonYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -110,13 +110,13 @@ var tasksPostRun = &cobra.Command{
 	},
 }
 
-func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEnvironment, generator.BuildValues, error) {
+func getEnvironmentInfo(g generator.GeneratorInput) (tasklib.TaskEnvironment, generator.BuildValues, error) {
 	// read the .lagoon.yml file
 	lagoonBuild, err := generator.NewGenerator(
 		g,
 	)
 	if err != nil {
-		return lagoon.YAML{}, nil, generator.BuildValues{}, err
+		return nil, generator.BuildValues{}, err
 	}
 
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
@@ -125,7 +125,7 @@ func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEn
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
-	return *lagoonBuild.LagoonYAML, lagoonConditionalEvaluationEnvironment, *lagoonBuild.BuildValues, nil
+	return lagoonConditionalEvaluationEnvironment, *lagoonBuild.BuildValues, nil
 }
 
 // runTasks is essentially an interpreter. It takes in a runner function (that does the interpreting), the task list (a series of instructions)
