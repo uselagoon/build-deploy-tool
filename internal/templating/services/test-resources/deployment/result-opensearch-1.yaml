@@ -9,22 +9,23 @@ metadata:
   labels:
     app.kubernetes.io/instance: myservice
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: opensearch
+    app.kubernetes.io/name: opensearch-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice
-    lagoon.sh/service-type: opensearch
-    lagoon.sh/template: opensearch-0.1.0
+    lagoon.sh/service-type: opensearch-persistent
+    lagoon.sh/template: opensearch-persistent-0.1.0
   name: myservice
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: myservice
-      app.kubernetes.io/name: opensearch
-  strategy: {}
+      app.kubernetes.io/name: opensearch-persistent
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -38,14 +39,14 @@ spec:
       labels:
         app.kubernetes.io/instance: myservice
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: opensearch
+        app.kubernetes.io/name: opensearch-persistent
         lagoon.sh/buildType: branch
         lagoon.sh/environment: environment-name
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
         lagoon.sh/service: myservice
-        lagoon.sh/service-type: opensearch
-        lagoon.sh/template: opensearch-0.1.0
+        lagoon.sh/service-type: opensearch-persistent
+        lagoon.sh/template: opensearch-persistent-0.1.0
     spec:
       containers:
       - env:
@@ -56,8 +57,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 9200
         name: opensearch
-        resources: {}
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /usr/share/opensearch/data
           name: myservice
@@ -99,22 +118,23 @@ metadata:
   labels:
     app.kubernetes.io/instance: myservice-size
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: opensearch
+    app.kubernetes.io/name: opensearch-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice-size
-    lagoon.sh/service-type: opensearch
-    lagoon.sh/template: opensearch-0.1.0
+    lagoon.sh/service-type: opensearch-persistent
+    lagoon.sh/template: opensearch-persistent-0.1.0
   name: myservice-size
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: myservice-size
-      app.kubernetes.io/name: opensearch
-  strategy: {}
+      app.kubernetes.io/name: opensearch-persistent
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -128,14 +148,14 @@ spec:
       labels:
         app.kubernetes.io/instance: myservice-size
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: opensearch
+        app.kubernetes.io/name: opensearch-persistent
         lagoon.sh/buildType: branch
         lagoon.sh/environment: environment-name
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
         lagoon.sh/service: myservice-size
-        lagoon.sh/service-type: opensearch
-        lagoon.sh/template: opensearch-0.1.0
+        lagoon.sh/service-type: opensearch-persistent
+        lagoon.sh/template: opensearch-persistent-0.1.0
     spec:
       containers:
       - env:
@@ -146,8 +166,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice-size@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 9200
         name: opensearch
-        resources: {}
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /usr/share/opensearch/data
           name: myservice-size

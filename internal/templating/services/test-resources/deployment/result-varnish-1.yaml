@@ -53,6 +53,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/varnish@latest
+        imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:
@@ -117,7 +118,7 @@ spec:
       annotations:
         k8up.syn.tools/backupcommand: /bin/sh -c "/bin/busybox tar -cf - -C /var/cache/varnish
           ."
-        k8up.syn.tools/file-extension: .
+        k8up.syn.tools/file-extension: .varnish-persist.tar
         lagoon.sh/branch: environment-name
         lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
@@ -143,8 +144,29 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/varnish-persist@latest
-        name: ""
-        resources: {}
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 10
+        name: varnish
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 6082
+          name: controlport
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100M
         volumeMounts:
         - mountPath: /var/cache/varnish
           name: varnish-persist

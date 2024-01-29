@@ -24,9 +24,9 @@ var node = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "node",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "node",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -72,9 +72,8 @@ var nodePersistent = ServiceType{
 	Name:  "node-persistent",
 	Ports: node.Ports,
 	PrimaryContainer: ServiceContainer{
-		Name:            node.PrimaryContainer.Name,
-		ImagePullPolicy: node.PrimaryContainer.ImagePullPolicy,
-		Container:       node.PrimaryContainer.Container,
+		Name:      node.PrimaryContainer.Name,
+		Container: node.PrimaryContainer.Container,
 	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",

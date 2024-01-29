@@ -59,9 +59,8 @@ var cli = ServiceType{
 var cliPersistent = ServiceType{
 	Name: "cli-persistent",
 	PrimaryContainer: ServiceContainer{
-		Name:            cli.PrimaryContainer.Name,
-		ImagePullPolicy: cli.PrimaryContainer.ImagePullPolicy,
-		Container:       cli.PrimaryContainer.Container,
+		Name:      cli.PrimaryContainer.Name,
+		Container: cli.PrimaryContainer.Container,
 		Volumes: append(cli.PrimaryContainer.Volumes, corev1.Volume{
 			Name: "{{ .ServiceValues.PersistentVolumeName }}-twig",
 			VolumeSource: corev1.VolumeSource{

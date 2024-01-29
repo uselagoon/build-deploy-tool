@@ -55,6 +55,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/nginx@latest
+        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -86,6 +87,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/php@latest
+        imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
           periodSeconds: 10
@@ -172,6 +174,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/nginx2@latest
+        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 5
           httpGet:
@@ -206,6 +209,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/php2@latest
+        imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
           periodSeconds: 10

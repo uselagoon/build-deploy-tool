@@ -59,6 +59,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/rabbitmq@latest
+        imagePullPolicy: Always
         livenessProbe:
           failureThreshold: 5
           initialDelaySeconds: 90

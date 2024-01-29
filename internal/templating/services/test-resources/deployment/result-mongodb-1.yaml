@@ -24,13 +24,14 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: mongodb
       app.kubernetes.io/name: mongodb-single
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
         k8up.syn.tools/backupcommand: /bin/sh -c 'tar -cf - -C "/data/db" --exclude="lost\+found"
           . || [ $? -eq 1 ]'
-        k8up.syn.tools/file-extension: .
+        k8up.syn.tools/file-extension: .mongodb.tar
         lagoon.sh/branch: environment-name
         lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
@@ -56,8 +57,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/mongodb@latest
-        name: ""
-        resources: {}
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 27017
+        name: mongodb-single
+        ports:
+        - containerPort: 27017
+          name: 27017-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 27017
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /data/db
           name: mongodb

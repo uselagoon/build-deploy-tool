@@ -35,9 +35,9 @@ var varnish = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "varnish",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "varnish",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -87,13 +87,17 @@ var varnish = ServiceType{
 var varnishPersistent = ServiceType{
 	Name:  "varnish-persistent",
 	Ports: varnish.Ports,
+	PrimaryContainer: ServiceContainer{
+		Name:      varnish.PrimaryContainer.Name,
+		Container: varnish.PrimaryContainer.Container,
+	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/var/cache/varnish",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "/bin/busybox tar -cf - -C /var/cache/varnish ."`,
-			FileExtension: ".{{ .OverrideName }}.tar",
+			Command:       `/bin/sh -c "/bin/busybox tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} ."`,
+			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},
 }

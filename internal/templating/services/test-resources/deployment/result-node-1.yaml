@@ -53,6 +53,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/node@latest
+        imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:
@@ -137,6 +138,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/node-persist@latest
+        imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:

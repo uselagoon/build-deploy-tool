@@ -26,9 +26,9 @@ var basic = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "basic",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "basic",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "basic",
@@ -75,9 +75,8 @@ var basicPersistent = ServiceType{
 	Name:  "basic-persistent",
 	Ports: basic.Ports,
 	PrimaryContainer: ServiceContainer{
-		Name:            basic.PrimaryContainer.Name,
-		ImagePullPolicy: basic.PrimaryContainer.ImagePullPolicy,
-		Container:       basic.PrimaryContainer.Container,
+		Name:      basic.PrimaryContainer.Name,
+		Container: basic.PrimaryContainer.Container,
 	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",

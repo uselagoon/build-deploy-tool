@@ -24,9 +24,9 @@ var python = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "python",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "python",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -72,9 +72,8 @@ var pythonPersistent = ServiceType{
 	Name:  "python-persistent",
 	Ports: python.Ports,
 	PrimaryContainer: ServiceContainer{
-		Name:            python.PrimaryContainer.Name,
-		ImagePullPolicy: python.PrimaryContainer.ImagePullPolicy,
-		Container:       python.PrimaryContainer.Container,
+		Name:      python.PrimaryContainer.Name,
+		Container: python.PrimaryContainer.Container,
 	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",

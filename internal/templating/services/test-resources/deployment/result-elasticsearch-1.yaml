@@ -24,7 +24,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: myservice
       app.kubernetes.io/name: elasticsearch
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -56,8 +57,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 9200
         name: elasticsearch
-        resources: {}
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data
           name: myservice
@@ -114,7 +133,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: myservice-size
       app.kubernetes.io/name: elasticsearch
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -146,8 +166,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice-size@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 9200
         name: elasticsearch
-        resources: {}
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 9200
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /usr/share/elasticsearch/data
           name: myservice-size

@@ -26,9 +26,9 @@ var redis = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "redis",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "redis",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          fmt.Sprintf("%d-tcp", defaultRedisPort),
@@ -73,13 +73,17 @@ var redis = ServiceType{
 var redisPersistent = ServiceType{
 	Name:  "redis-persistent",
 	Ports: redis.Ports,
+	PrimaryContainer: ServiceContainer{
+		Name:      redis.PrimaryContainer.Name,
+		Container: redis.PrimaryContainer.Container,
+	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/data",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "/bin/busybox tar -cf - -C /data ."`,
-			FileExtension: ".{{ .OverrideName }}.tar",
+			Command:       `/bin/sh -c "/bin/busybox tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} ."`,
+			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},
 }

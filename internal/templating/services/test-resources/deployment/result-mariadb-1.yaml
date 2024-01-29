@@ -24,14 +24,15 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: mariadb
       app.kubernetes.io/name: mariadb-single
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
         k8up.syn.tools/backupcommand: /bin/sh -c 'mysqldump --max-allowed-packet=500M
           --events --routines --quick --add-locks --no-autocommit --single-transaction
           --all-databases'
-        k8up.syn.tools/file-extension: .
+        k8up.syn.tools/file-extension: .mariadb.sql
         lagoon.sh/branch: environment-name
         lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
@@ -57,8 +58,26 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/mariadb@latest
-        name: ""
-        resources: {}
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 3306
+        name: mariadb-single
+        ports:
+        - containerPort: 3306
+          name: 3306-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 3306
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
         volumeMounts:
         - mountPath: /var/lib/mysql
           name: mariadb

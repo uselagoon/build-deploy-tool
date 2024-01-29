@@ -37,9 +37,9 @@ var rabbitmq = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "rabbitmq",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "rabbitmq",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          fmt.Sprintf("%d-tcp", defaultRabbitMQPort),

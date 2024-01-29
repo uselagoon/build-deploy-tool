@@ -10,9 +10,9 @@ var defaultWorkerPort int32 = 3000
 var worker = ServiceType{
 	Name: "worker",
 	PrimaryContainer: ServiceContainer{
-		Name:            "worker",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "worker",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			ReadinessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
@@ -47,8 +47,7 @@ var worker = ServiceType{
 var workerPersistent = ServiceType{
 	Name: "worker-persistent",
 	PrimaryContainer: ServiceContainer{
-		Name:            worker.PrimaryContainer.Name,
-		ImagePullPolicy: worker.PrimaryContainer.ImagePullPolicy,
-		Container:       worker.PrimaryContainer.Container,
+		Name:      worker.PrimaryContainer.Name,
+		Container: worker.PrimaryContainer.Container,
 	},
 }

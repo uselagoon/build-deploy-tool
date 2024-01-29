@@ -26,9 +26,9 @@ var nginx = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "nginx",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "nginx",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -77,9 +77,9 @@ var nginxPHP = ServiceType{
 	Name:  "nginx-php",
 	Ports: nginx.Ports,
 	PrimaryContainer: ServiceContainer{
-		Name:            "nginx",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "nginx",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -129,9 +129,9 @@ var nginxPHP = ServiceType{
 		},
 	},
 	SecondaryContainer: ServiceContainer{
-		Name:            "php",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "php",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -220,14 +220,12 @@ fi`,
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            nginxPHP.PrimaryContainer.Name,
-		ImagePullPolicy: nginxPHP.PrimaryContainer.ImagePullPolicy,
-		Container:       nginxPHP.PrimaryContainer.Container,
+		Name:      nginxPHP.PrimaryContainer.Name,
+		Container: nginxPHP.PrimaryContainer.Container,
 	},
 	SecondaryContainer: ServiceContainer{
-		Name:            nginxPHP.SecondaryContainer.Name,
-		ImagePullPolicy: nginxPHP.SecondaryContainer.ImagePullPolicy,
-		Container:       nginxPHP.SecondaryContainer.Container,
+		Name:      nginxPHP.SecondaryContainer.Name,
+		Container: nginxPHP.SecondaryContainer.Container,
 		Volumes: []corev1.Volume{
 			{
 				Name: "{{ .ServiceValues.PersistentVolumeName }}-twig",

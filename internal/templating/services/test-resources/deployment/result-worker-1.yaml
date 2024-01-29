@@ -53,6 +53,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/worker@latest
+        imagePullPolicy: Always
         name: worker
         readinessProbe:
           exec:
@@ -137,6 +138,7 @@ spec:
         - configMapRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/worker-persist@latest
+        imagePullPolicy: Always
         name: worker
         readinessProbe:
           exec:

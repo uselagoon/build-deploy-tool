@@ -27,9 +27,9 @@ var postgresSingle = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name:            "postgres",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "postgres",
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          fmt.Sprintf("%d-tcp", defaultPostgresPort),
