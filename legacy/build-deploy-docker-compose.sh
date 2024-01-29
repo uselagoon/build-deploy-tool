@@ -2,7 +2,7 @@
 
 # get the buildname from the pod, $HOSTNAME contains this in the running pod, so we can use this
 # set it to something usable here
-LAGOON_BUILD_NAME=$HOSTNAME
+export LAGOON_BUILD_NAME=$HOSTNAME
 
 BUILD_WARNING_COUNT=0
 
@@ -685,9 +685,10 @@ set -x
 
 # seed all the push images for use later on, push images relate to images that may not be built by this build
 # but are required from somewhere else like a promote environment or from another registry
-ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds | jq -r)
-for IMAGE_BUILD_DATA in $(echo $ENVIRONMENT_IMAGE_BUILD_DATA | jq -r '.images[]')
+ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
 do
+  SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
   # add the image name to the array of images to push. this is consumed later in the build process
   IMAGES_PUSH["${SERVICE_NAME}"]="$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.buildImage')"
   if [ "$BUILD_TYPE" == "promote" ]; then
@@ -702,17 +703,19 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
   BUILD_ARGS=() # build args are now calculated in the build-deploy tool in the generator step
   # this loop extracts the build arguments from the response from the build deploy tools previous identify image-builds call
   for IMAGE_BUILD_ARGUMENTS in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -r '.buildArguments | to_entries[] | @base64'); do
-    BUILD_ARGS+=('--build-arg '$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .key')'="'$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .value')'"')
+    BUILD_ARG_NAME=$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .key')
+    BUILD_ARG_VALUE=$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .value')
+    BUILD_ARGS+=(--build-arg ${BUILD_ARG_NAME}="${BUILD_ARG_VALUE}")
   done
 
   # now we loop through the images in the build data and determine if they need to be pulled or build
-  for IMAGE_BUILD_DATA in $(echo $ENVIRONMENT_IMAGE_BUILD_DATA | jq -r '.images[]')
+  for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
   do
-    SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name' // false)
-    DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile' // false)
+    SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
+    DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile // false')
     # if there is no dockerfile, then this image needs to be pulled from somewhere else
     if [ $DOCKERFILE == "false" ]; then
-      PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage' // false)
+      PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage // false')
       if [ "$PULL_IMAGE" != "false" ]; then
         IMAGES_PULL["${SERVICE_NAME}"]="${PULL_IMAGE}"
       fi
@@ -721,19 +724,18 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       # this is a temporary image name to use for the build, it is based on the namespace and service, this can probably be deprecated and the images could just be
       # built with the name they are meant to be. only 1 build can run at a time within a namespace
       # the temporary name would clash here as well if there were multiple builds (it could use the `imageBuild.buildImage` value)
-      TEMPORARY_IMAGE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.temporaryImage' // false)
+      TEMPORARY_IMAGE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.temporaryImage // false')
       # the context for this image build, the original source for this value is from the `docker-compose file`
-      BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context' // "")
+      BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context // ""')
       # the build target for this image build, the original source for this value is from the `docker-compose file`
-      BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target' // false)
+      BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target // false')
       set +x # reduce noise in build logs
       # determine if buildkit should be used for this build
       DOCKER_BUILDKIT=0
-      if [ "$(echo ${ENVIRONMENT_IMAGE_BUILD_DATA} | jq -r '.buildKit' // false)" == "true" ]; then
+      if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit // false')" == "true" ]; then
           DOCKER_BUILDKIT=1
           echo "Using BuildKit for $DOCKERFILE";
       fi
-      done
 
       # now do the actual image build
       if [ $BUILD_TARGET == "false" ]; then
