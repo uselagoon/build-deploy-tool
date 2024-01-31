@@ -29,8 +29,8 @@ spec:
   template:
     metadata:
       annotations:
-        k8up.syn.tools/backupcommand: /bin/sh -c "PGPASSWORD=$MYSERVICE_PASSWORD pg_dump
-          --host=localhost --port=$MYSERVICE_SERVICE_PORT --dbname=$MYSERVICE_DB --username=$MYSERVICE_USER
+        k8up.syn.tools/backupcommand: /bin/sh -c "PGPASSWORD=$POSTGRES_PASSWORD pg_dump
+          --host=localhost --port=$MYSERVICE_SERVICE_PORT --dbname=$POSTGRES_DB --username=$POSTGRES_USER
           --format=t -w"
         k8up.syn.tools/file-extension: .myservice.tar
         lagoon.sh/branch: environment-name
@@ -81,7 +81,7 @@ spec:
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
           name: myservice
-      enableServiceLinks: false
+      enableServiceLinks: true
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production

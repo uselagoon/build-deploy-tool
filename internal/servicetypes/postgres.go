@@ -12,7 +12,8 @@ import (
 var defaultPostgresPort int32 = 5432
 
 var postgresSingle = ServiceType{
-	Name: "postgres-single",
+	Name:               "postgres-single",
+	EnableServiceLinks: true,
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
@@ -81,7 +82,7 @@ var postgresSingle = ServiceType{
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/var/lib/postgresql/data",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "PGPASSWORD=${{ .ServiceValues.OverrideName | FixServiceName }}_PASSWORD pg_dump --host=localhost --port=${{ .ServiceValues.OverrideName | FixServiceName }}_SERVICE_PORT --dbname=${{ .ServiceValues.OverrideName | FixServiceName }}_DB --username=${{ .ServiceValues.OverrideName | FixServiceName }}_USER --format=t -w"`,
+			Command:       `/bin/sh -c "PGPASSWORD=$POSTGRES_PASSWORD pg_dump --host=localhost --port=${{ .ServiceValues.OverrideName | FixServiceName }}_SERVICE_PORT --dbname=$POSTGRES_DB --username=$POSTGRES_USER --format=t -w"`,
 			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},

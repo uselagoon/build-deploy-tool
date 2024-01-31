@@ -187,6 +187,9 @@ func GenerateDeploymentTemplate(
 			// disable service links, this prevents some environment variables that confuse lagoon services being
 			// added to the containers
 			deployment.Spec.Template.Spec.EnableServiceLinks = helpers.BoolPtr(false)
+			if serviceTypeValues.EnableServiceLinks {
+				deployment.Spec.Template.Spec.EnableServiceLinks = helpers.BoolPtr(true)
+			}
 			// set the priority class
 			deployment.Spec.Template.Spec.PriorityClassName = fmt.Sprintf("lagoon-priority-%s", buildValues.EnvironmentType)
 

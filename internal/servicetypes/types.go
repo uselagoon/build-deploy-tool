@@ -14,6 +14,7 @@ type ServiceType struct {
 	InitContainer      ServiceContainer
 	SecondaryContainer ServiceContainer
 	PodSecurityContext ServicePodSecurityContext
+	EnableServiceLinks bool
 }
 
 type ServicePodSecurityContext struct {
