@@ -1,0 +1,142 @@
+version: '2.3'
+
+x-example-image-version: &example-image-version ${EXAMPLE_IMAGE_VERSION:-4.x}
+
+x-project: &project ${PROJECT_NAME:-mysite}
+
+x-volumes: &default-volumes
+  volumes:
+    - .:/app:${VOLUME_FLAGS:-delegated} ### Local overrides to mount host filesystem. Automatically removed in CI and PROD.
+    - ./docroot/sites/default/files:/app/docroot/sites/default/files:${VOLUME_FLAGS:-delegated} ### Local overrides to mount host filesystem. Automatically removed in CI and PROD.
+
+x-environment: &default-environment
+  LAGOON_PROJECT: *project
+  DRUPAL_HASH_SALT: fakehashsaltfakehashsaltfakehashsalt
+  LAGOON_LOCALDEV_URL: ${LOCALDEV_URL:-http://mysite.docker.amazee.io}
+  LAGOON_ROUTE: ${LOCALDEV_URL:-http://mysite.docker.amazee.io}
+  GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+  EXAMPLE_KEY: ${EXAMPLE_KEY:-}
+  EXAMPLE_IMAGE_VERSION: ${EXAMPLE_IMAGE_VERSION:-latest}
+  LAGOON_ENVIRONMENT_TYPE: ${LAGOON_ENVIRONMENT_TYPE:-local}
+  DRUPAL_REFRESH_SEARCHAPI: ${DRUPAL_REFRESH_SEARCHAPI:-}
+  EXAMPLE_INGRESS_PSK: ${EXAMPLE_INGRESS_PSK:-}
+  EXAMPLE_INGRESS_HEADER: ${EXAMPLE_INGRESS_HEADER:-}
+  EXAMPLE_INGRESS_ENABLED: ${EXAMPLE_INGRESS_ENABLED:-}
+  REDIS_CACHE_PREFIX: "tide_"
+  DB_ALIAS: ${DB_ALIAS:-bay.production}
+
+services:
+
+  cli:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.cli
+      args:
+        COMPOSER: ${COMPOSER:-composer.json}
+        EXAMPLE_IMAGE_VERSION: *example-image-version
+    image: *project
+    environment:
+      <<: *default-environment
+    <<: *default-volumes
+    volumes_from:
+      ### Local overrides to mount host SSH keys. Automatically removed in CI.
+      - container:amazeeio-ssh-agent ### Local overrides to mount host SSH keys. Automatically removed in CI.
+    labels:
+      lagoon.type: cli-persistent
+      lagoon.persistent: /app/docroot/sites/default/files/
+      lagoon.persistent.name: nginx-php
+      lagoon.persistent.size: 5Gi
+
+  nginx:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.nginx-drupal
+      args:
+        CLI_IMAGE: *project
+        EXAMPLE_IMAGE_VERSION: *example-image-version
+    <<: *default-volumes
+    environment:
+      <<: *default-environment
+    depends_on:
+      - cli
+    networks:
+      - amazeeio-network
+      - default
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/docroot/sites/default/files/
+      lagoon.persistent.size: 5Gi
+      lagoon.name: nginx-php
+      lagoon.workloadresource: nginx-php-performance
+    expose:
+      - "8080"
+  php:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.php
+      args:
+        CLI_IMAGE: *project
+        EXAMPLE_IMAGE_VERSION: *example-image-version
+    environment:
+      <<: *default-environment
+    <<: *default-volumes
+    depends_on:
+      - cli
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/docroot/sites/default/files/
+      lagoon.persistent.size: 5Gi
+      lagoon.name: nginx-php
+
+  mariadb:
+    image: amazeeio/mariadb-drupal
+    environment:
+      <<: *default-environment
+    ports:
+      - "3306" # Find port on host with `ahoy info` or `docker-compose port mariadb 3306`
+    labels:
+      lagoon.type: mariadb-shared
+
+  redis:
+    image: amazeeio/redis
+    labels:
+      lagoon.type: redis
+
+  elasticsearch:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.elasticsearch
+      args:
+        - ES_TPL=${ES_TPL:-elasticsearch.yml}
+    environment:
+      - discovery.type=single-node
+    labels:
+      lagoon.type: none
+
+  chrome:
+    image: selenium/standalone-chrome:3.141.59-oxygen
+    shm_size: '1gb'
+    environment:
+      <<: *default-environment
+    <<: *default-volumes
+    depends_on:
+      - cli
+    labels:
+      lagoon.type: none
+
+  clamav:
+    image: clamav/clamav:${EXAMPLE_IMAGE_VERSION:-4.x}
+    environment:
+      <<: *default-environment
+    ports:
+      - "3310"
+    labels:
+      lagoon.type: none
+
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  app: {}
+  files: {}

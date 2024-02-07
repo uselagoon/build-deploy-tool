@@ -1,0 +1,10 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.resources1.yml
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com

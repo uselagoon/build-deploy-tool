@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"testing"
@@ -58,11 +57,11 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			if err := DBaaSTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("DBaaSTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			files, err := ioutil.ReadDir(savedTemplates)
+			files, err := os.ReadDir(savedTemplates)
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 			}
-			results, err := ioutil.ReadDir(tt.want)
+			results, err := os.ReadDir(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", tt.want, err)
 			}

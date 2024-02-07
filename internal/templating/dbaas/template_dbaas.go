@@ -57,9 +57,9 @@ func GenerateDBaaSTemplate(
 		if helpers.Contains(dbaasTypes, serviceValues.Type) {
 			var consumerBytes []byte
 			additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
-			additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
+			additionalLabels["app.kubernetes.io/instance"] = serviceValues.OverrideName
 			additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceValues.Type, "0.1.0")
-			additionalLabels["lagoon.sh/service"] = serviceValues.Name
+			additionalLabels["lagoon.sh/service"] = serviceValues.OverrideName
 			additionalLabels["lagoon.sh/service-type"] = serviceValues.Type
 			switch serviceValues.Type {
 			case "mariadb-dbaas":
@@ -70,7 +70,7 @@ func GenerateDBaaSTemplate(
 							APIVersion: mariadbv1.GroupVersion.String(),
 						},
 						ObjectMeta: metav1.ObjectMeta{
-							Name: serviceValues.Name,
+							Name: serviceValues.OverrideName,
 						},
 						Spec: mariadbv1.MariaDBConsumerSpec{
 							Environment: serviceValues.DBaaSEnvironment,
@@ -88,13 +88,13 @@ func GenerateDBaaSTemplate(
 					// validate any annotations
 					if err := apivalidation.ValidateAnnotations(mariaDBConsumer.ObjectMeta.Annotations, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 					// validate any labels
 					if err := metavalidation.ValidateLabels(mariaDBConsumer.ObjectMeta.Labels, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 
@@ -116,7 +116,7 @@ func GenerateDBaaSTemplate(
 							APIVersion: mongodbv1.GroupVersion.String(),
 						},
 						ObjectMeta: metav1.ObjectMeta{
-							Name: serviceValues.Name,
+							Name: serviceValues.OverrideName,
 						},
 						Spec: mongodbv1.MongoDBConsumerSpec{
 							Environment: serviceValues.DBaaSEnvironment,
@@ -134,13 +134,13 @@ func GenerateDBaaSTemplate(
 					// validate any annotations
 					if err := apivalidation.ValidateAnnotations(mongodbConsumer.ObjectMeta.Annotations, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 					// validate any labels
 					if err := metavalidation.ValidateLabels(mongodbConsumer.ObjectMeta.Labels, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 					// check length of labels
@@ -161,7 +161,7 @@ func GenerateDBaaSTemplate(
 							APIVersion: postgresv1.GroupVersion.String(),
 						},
 						ObjectMeta: metav1.ObjectMeta{
-							Name: serviceValues.Name,
+							Name: serviceValues.OverrideName,
 						},
 						Spec: postgresv1.PostgreSQLConsumerSpec{
 							Environment: serviceValues.DBaaSEnvironment,
@@ -179,13 +179,13 @@ func GenerateDBaaSTemplate(
 					// validate any annotations
 					if err := apivalidation.ValidateAnnotations(postgresqlConsumer.ObjectMeta.Annotations, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 					// validate any labels
 					if err := metavalidation.ValidateLabels(postgresqlConsumer.ObjectMeta.Labels, nil); err != nil {
 						if len(err) != 0 {
-							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
+							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 						}
 					}
 

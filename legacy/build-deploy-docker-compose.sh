@@ -1769,6 +1769,8 @@ do
 
 done
 
+build-deploy-tool template resource-workloads --saved-templates-path $YAML_FOLDER
+
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"

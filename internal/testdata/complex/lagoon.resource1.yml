@@ -1,0 +1,43 @@
+---
+docker-compose-yaml: ../internal/testdata/complex/docker-compose.resource1.yml
+
+project: content-example-com
+
+environments:
+  production:
+    cronjobs:
+      - name: drush cron
+        schedule: "*/15 * * * *"
+        command: 'drush cron'
+        service: cli
+
+    routes:
+      - nginx-php:
+          - "content.example.com":
+              monitoring-path: "/api/v1"
+              tls-acme: 'false'
+              insecure: Allow
+  master:
+    cronjobs:
+      - name: drush cron
+        schedule: "0 1,4 * * *"
+        command: 'drush cron'
+        service: cli
+
+    routes:
+      - nginx-php:
+        - "master.content.example.com":
+            tls-acme: 'false'
+            insecure: Allow
+  develop:
+    cronjobs:
+      - name: drush cron
+        schedule: "0 1,4 * * *"
+        command: 'drush cron'
+        service: cli
+
+    routes:
+      - nginx-php:
+        - "develop.content.example.com":
+            tls-acme: 'false'
+            insecure: Allow
