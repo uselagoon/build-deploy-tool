@@ -1780,6 +1780,12 @@ set -x
 ### APPLY RESOURCES
 ##############################################
 
+# remove any storage calculator pods before applying deployments to prevent storage binding issues
+STORAGE_CALCULATOR_PODS=$(kubectl -n ${NAMESPACE} get pods -l lagoon.sh/storageCalculator=true --no-headers | cut -d " " -f 1 | xargs)
+for STORAGE_CALCULATOR_POD in $STORAGE_CALCULATOR_PODS; do
+  kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD}
+done
+
 set +x
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
   if [ "$CI" == "true" ]; then
