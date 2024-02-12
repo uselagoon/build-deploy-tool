@@ -1476,6 +1476,9 @@ do
   yq3 write -i -- /kubectl-build-deploy/images.yaml 'images.'$COMPOSE_SERVICE'' ${SERVICE_NAME_IMAGE_HASH}
 done
 
+# handle dynamic secret collection here, @TODO this will go into the state collector eventually
+export DYNAMIC_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l lagoon.sh/dynamic-secret -o json | jq -r '[.items[] | .metadata.name] | join(",")')
+
 echo "=== BEGIN deployment template for services ==="
 LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
 mkdir -p $LAGOON_SERVICES_YAML_FOLDER

@@ -69,6 +69,7 @@ type GeneratorInput struct {
 	Kubernetes                 string
 	CI                         bool
 	PrivateRegistryURLS        []string
+	DynamicSecrets             []string
 }
 
 func NewGenerator(
@@ -111,6 +112,7 @@ func NewGenerator(
 	gitSHA := helpers.GetEnv("LAGOON_GIT_SHA", generator.SourceRepository, generator.Debug)
 	prHeadSHA := helpers.GetEnv("PR_HEAD_SHA", generator.PRHeadSHA, generator.Debug)
 	prBaseSHA := helpers.GetEnv("PR_BASE_SHA", generator.PRBaseSHA, generator.Debug)
+	dynamicSecrets := helpers.GetEnv("DYNAMIC_SECRETS", strings.Join(generator.DynamicSecrets, ","), generator.Debug)
 	// get any external registry urls that this build has so we can update any pullthrough images accordingly
 	gExternalRegistryURLS := ""
 	if generator.PrivateRegistryURLS != nil {
@@ -256,6 +258,24 @@ func NewGenerator(
 		}
 		if environmentName == standbyEnvironment {
 			buildValues.IsStandbyEnvironment = true
+		}
+	}
+
+	// handle the dynamic secret volume creation from input secret names
+	if dynamicSecrets != "" {
+		for _, ds := range strings.Split(dynamicSecrets, ",") {
+			buildValues.DynamicSecretMounts = append(buildValues.DynamicSecretMounts, DynamicSecretMounts{
+				Name:      fmt.Sprintf("dynamic-%s", ds),
+				MountPath: fmt.Sprintf("/var/run/secrets/lagoon/dynamic/%s", ds),
+				ReadOnly:  true,
+			})
+			buildValues.DynamicSecretVolumes = append(buildValues.DynamicSecretVolumes, DynamicSecretVolumes{
+				Name: fmt.Sprintf("dynamic-%s", ds),
+				Secret: DynamicSecret{
+					SecretName: ds,
+					Optional:   false,
+				},
+			})
 		}
 	}
 

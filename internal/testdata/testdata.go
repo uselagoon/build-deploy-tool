@@ -3,6 +3,7 @@ package testdata
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -53,6 +54,7 @@ type TestData struct {
 	ImageRegistry              string
 	PromotionSourceEnvironment string
 	PrivateRegistryURLS        []string
+	DynamicSecrets             []string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -168,6 +170,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("PROMOTION_SOURCE_ENVIRONMENT", t.PromotionSourceEnvironment)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("DYNAMIC_SECRETS", strings.Join(t.DynamicSecrets, ","))
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -301,6 +307,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.PrivateRegistryURLS != nil {
 		rt.PrivateRegistryURLS = t.PrivateRegistryURLS
+	}
+	if t.DynamicSecrets != nil {
+		rt.DynamicSecrets = t.DynamicSecrets
 	}
 	return rt
 }
