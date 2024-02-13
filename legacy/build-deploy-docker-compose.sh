@@ -325,6 +325,26 @@ else
 	echo "lagoon-linter found no issues with the .lagoon.yml file"
 fi
 
+##################
+# build deploy-tool can collect this value now from the lagoon.yml file
+# this means further use of `LAGOON_GIT_SHA` can eventually be
+# completely handled with build-deploy-tool wherever this value could be consumed
+# this logic can then just be replaced entirely with a single export so that the build-deploy-tool
+# will know what the value is, and performs the switch based on what the lagoon.yml provides
+# this is retained for now until the remaining functionality that uses it is moved to the build-deploy-tool
+#
+#   export LAGOON_GIT_SHA=`git rev-parse HEAD`
+#
+INJECT_GIT_SHA=$(cat .lagoon.yml | shyaml get-value environment_variables.git_sha false)
+if [ "$INJECT_GIT_SHA" == "true" ]
+then
+  # export this so the build-deploy-tool can read it
+  export LAGOON_GIT_SHA=`git rev-parse HEAD`
+else
+  export LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
+fi
+##################
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
@@ -650,22 +670,8 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds" "buildingImages"
-set -x
-##############################################
-### CACHE IMAGE LIST GENERATION
-##############################################
+beginBuildStep "Container Regstiry Login" "registryLogin"
 
-LAGOON_CACHE_BUILD_ARGS=()
-readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o yaml -l 'lagoon.sh/service' | yq e '.items[].spec.template.spec.containers[].image | capture("^(?P<image>.+\/.+\/.+\/(?P<name>.+)\@.*)$") | "LAGOON_CACHE_" + .name + "=" + .image' -)
-
-
-
-##############################################
-### BUILD IMAGES
-##############################################
-
-set +x # reduce noise in build logs
 # Get the pre-rollout and post-rollout vars
   if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
     LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
@@ -686,6 +692,45 @@ set -x
 # seed all the push images for use later on, push images relate to images that may not be built by this build
 # but are required from somewhere else like a promote environment or from another registry
 ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+
+set +x # reduce noise in build logs
+# log in to any container registries before building or pulling images
+for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]')
+do
+  PRIVATE_CONTAINER_REGISTRY_URL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.url // false')
+  PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.username // false')
+  PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.usernameSource // false')
+  PRIVATE_REGISTRY_CREDENTIAL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.password // false')
+  PRIVATE_REGISTRY_CREDENTIAL_SOURCE=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.passwordSource // false')
+  if [ $PRIVATE_CONTAINER_REGISTRY_URL != "false" ]; then
+      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL $PRIVATE_CONTAINER_REGISTRY_URL
+  else
+      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL
+  fi
+done
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Regstiry Login" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Image Builds" "buildingImages"
+set -x
+
+##############################################
+### CACHE IMAGE LIST GENERATION
+##############################################
+
+LAGOON_CACHE_BUILD_ARGS=()
+readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o yaml -l 'lagoon.sh/service' | yq e '.items[].spec.template.spec.containers[].image | capture("^(?P<image>.+\/.+\/.+\/(?P<name>.+)\@.*)$") | "LAGOON_CACHE_" + .name + "=" + .image' -)
+
+
+##############################################
+### BUILD IMAGES
+##############################################
+
 for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
 do
   SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
@@ -1478,6 +1523,16 @@ done
 
 # handle dynamic secret collection here, @TODO this will go into the state collector eventually
 export DYNAMIC_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l lagoon.sh/dynamic-secret -o json | jq -r '[.items[] | .metadata.name] | join(",")')
+
+# delete any custom private registry secrets, they will get re-created by the lagoon-services templates
+EXISTING_REGISTRY_SECRETS=$(kubectl -n ${NAMESPACE} get secrets --no-headers | cut -d " " -f 1 | xargs)
+for EXISTING_REGISTRY_SECRET in ${EXISTING_REGISTRY_SECRETS}; do
+  if [[ "${EXISTING_REGISTRY_SECRET}" =~ "lagoon-private-registry-" ]]; then
+    if kubectl -n ${NAMESPACE} get secret ${EXISTING_REGISTRY_SECRET} &> /dev/null; then
+      kubectl -n ${NAMESPACE} delete secret ${EXISTING_REGISTRY_SECRET}
+    fi
+  fi
+done
 
 echo "=== BEGIN deployment template for services ==="
 LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
