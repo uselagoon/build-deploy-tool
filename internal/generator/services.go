@@ -470,7 +470,7 @@ func composeToServiceValues(
 					} else {
 						imageBuild.PullImage = pullImage
 					}
-					if !helpers.ContainsR(buildValues.PrivateRegistryURLS, pullImage) {
+					if !ContainsRegistry(buildValues.ContainerRegistry, pullImage) {
 						if buildValues.ImageCache != "" {
 							imageBuild.PullImage = fmt.Sprintf("%s%s", buildValues.ImageCache, imageBuild.PullImage)
 						}
@@ -605,4 +605,15 @@ func checkDuplicateCronjobs(cronjobs []lagoon.Cronjob) error {
 		return fmt.Errorf("duplicate named cronjobs detected: %v", string(b))
 	}
 	return nil
+}
+
+// ContainsR checks if a string slice contains a specific string regex match.
+func ContainsRegistry(regex []ContainerRegistry, match string) bool {
+	for _, v := range regex {
+		m, _ := regexp.MatchString(v.URL, match)
+		if m {
+			return true
+		}
+	}
+	return false
 }

@@ -35,13 +35,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice":                "harbor.example.com/example-project/environment-name/myservice@latest",
 						"myservice-po":             "harbor.example.com/example-project/environment-name/myservice-po@latest",
@@ -131,11 +126,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					FeatureFlags: map[string]bool{
 						"rootlessworkloads": true,
 					},
@@ -199,13 +189,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice":         "harbor.example.com/example-project/environment-name/myservice@latest",
 						"myservice-persist": "harbor.example.com/example-project/environment-name/myservice-persist@latest",
@@ -242,13 +227,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice": "harbor.example.com/example-project/environment-name/myservice@latest",
 					},
@@ -276,13 +256,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice":      "harbor.example.com/example-project/environment-name/myservice@latest",
 						"myservice-size": "harbor.example.com/example-project/environment-name/myservice-size@latest",
@@ -319,13 +294,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice":      "harbor.example.com/example-project/environment-name/myservice@latest",
 						"myservice-size": "harbor.example.com/example-project/environment-name/myservice-size@latest",
@@ -362,13 +332,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"myservice-po": "harbor.example.com/example-project/environment-name/myservice-po@latest",
 					},
@@ -414,13 +379,8 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					GitSHA:       "0",
-					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
 						"solr": "harbor.example.com/example-project/environment-name/solr@latest",
 					},
@@ -448,11 +408,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					Resources: generator.Resources{
 						Limits: generator.ResourceLimits{
 							Memory:           "16Gi",
@@ -509,12 +464,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
-					ImageCache: "imagecache.example.com/",
+					ImageCache:      "imagecache.example.com/",
 					FeatureFlags: map[string]bool{
 						"rootlessworkloads": true,
 					},
@@ -579,11 +529,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -624,11 +569,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -669,11 +609,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -714,11 +649,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -759,11 +689,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -804,11 +729,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -843,11 +763,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,
@@ -882,11 +797,6 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					PodSecurityContext: generator.PodSecurityContext{
 						RunAsGroup:     0,
 						RunAsUser:      10000,

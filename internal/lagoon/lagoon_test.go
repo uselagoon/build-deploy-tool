@@ -354,6 +354,40 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test container registries",
+			args: args{
+				file: "test-resources/lagoon-yaml/test8/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				ContainerRegistries: map[string]ContainerRegistry{
+					"my-custom-registry": {
+						Username: "myownregistryuser",
+						Password: "REGISTRY_PASSWORD",
+						URL:      "my.own.registry.com",
+					},
+				},
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												TLSAcme: helpers.BoolPtr(true),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -33,11 +33,6 @@ func TestGenerateCronjobTemplate(t *testing.T) {
 					LagoonVersion:   "v2.x.x",
 					Kubernetes:      "generator.local",
 					Branch:          "environment-name",
-					ImagePullSecrets: []generator.ImagePullSecrets{
-						{
-							Name: "lagoon-internal-registry-secret",
-						},
-					},
 					ImageReferences: map[string]string{
 						"myservice":         "harbor.example.com/example-project/environment-name/myservice@latest",
 						"myservice-persist": "harbor.example.com/example-project/environment-name/myservice-persistent@latest",

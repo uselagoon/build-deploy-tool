@@ -254,11 +254,16 @@ func GenerateCronjobTemplate(
 
 				// end set up any volumes this cronjob can use
 
-				// handle any image pull secrets
-				pullsecrets := []corev1.LocalObjectReference{}
-				for _, pullsecret := range buildValues.ImagePullSecrets {
+				// handle any image pull secrets, add the default one first
+				pullsecrets := []corev1.LocalObjectReference{
+					{
+						Name: generator.DefaultImagePullSecret,
+					},
+				}
+				// then consume any from the custom provided container registries
+				for _, pullsecret := range buildValues.ContainerRegistry {
 					pullsecrets = append(pullsecrets, corev1.LocalObjectReference{
-						Name: pullsecret.Name,
+						Name: pullsecret.SecretName,
 					})
 				}
 				cronjob.Spec.JobTemplate.Spec.Template.Spec.ImagePullSecrets = pullsecrets

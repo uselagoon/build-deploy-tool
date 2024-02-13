@@ -478,12 +478,6 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 		},
 		{
 			name: "test8 nginx-php external pull images",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "EXTERNAL_REGISTRY_URLS",
-					Value: "registry1.example.com",
-				},
-			},
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					Namespace:       "example-project-main",
@@ -491,9 +485,6 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish2.yml",
-					// PrivateRegistryURLS: []string{
-					// 	"registry1.example.com",
-					// },
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
@@ -518,6 +509,17 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"NGINX_IMAGE":                             "example-project-main-nginx",
 					"PHP_IMAGE":                               "example-project-main-php",
 					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+				},
+				ContainerRegistries: []generator.ContainerRegistry{
+					{
+						Name:           "my-custom-registry",
+						Username:       "registry_user",
+						Password:       "REGISTRY_PASSWORD",
+						SecretName:     "lagoon-private-registry-my-custom-registry",
+						URL:            "registry1.example.com",
+						UsernameSource: ".lagoon.yml",
+						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+					},
 				},
 				Images: []imageBuilds{
 					{

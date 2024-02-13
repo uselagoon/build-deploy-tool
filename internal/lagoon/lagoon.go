@@ -61,14 +61,21 @@ type Tasks struct {
 
 // YAML represents the .lagoon.yml file.
 type YAML struct {
-	DockerComposeYAML    string               `json:"docker-compose-yaml"`
-	Environments         Environments         `json:"environments"`
-	ProductionRoutes     *ProductionRoutes    `json:"production_routes"`
-	Tasks                Tasks                `json:"tasks"`
-	Routes               Routes               `json:"routes"`
-	BackupRetention      BackupRetention      `json:"backup-retention"`
-	BackupSchedule       BackupSchedule       `json:"backup-schedule"`
-	EnvironmentVariables EnvironmentVariables `json:"environment_variables,omitempty"`
+	DockerComposeYAML    string                       `json:"docker-compose-yaml"`
+	Environments         Environments                 `json:"environments"`
+	ProductionRoutes     *ProductionRoutes            `json:"production_routes"`
+	Tasks                Tasks                        `json:"tasks"`
+	Routes               Routes                       `json:"routes"`
+	BackupRetention      BackupRetention              `json:"backup-retention"`
+	BackupSchedule       BackupSchedule               `json:"backup-schedule"`
+	EnvironmentVariables EnvironmentVariables         `json:"environment_variables,omitempty"`
+	ContainerRegistries  map[string]ContainerRegistry `json:"container-registries,omitempty"`
+}
+
+type ContainerRegistry struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	URL      string `json:"url"`
 }
 
 type EnvironmentVariables struct {

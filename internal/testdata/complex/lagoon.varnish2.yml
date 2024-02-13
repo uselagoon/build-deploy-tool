@@ -3,6 +3,12 @@ docker-compose-yaml: internal/testdata/complex/docker-compose.varnish2.yml
 
 project: example-com
 
+container-registries:
+  my-custom-registry:
+    username: registry_user
+    password: REGISTRY_PASSWORD
+    url: registry1.example.com
+
 environments:
   main:
     routes:

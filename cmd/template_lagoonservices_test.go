@@ -27,18 +27,12 @@ func TestTemplateLagoonServices(t *testing.T) {
 	}{
 		{
 			name: "test1 basic deployment",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "EXTERNAL_REGISTRY_SECRETS",
-					Value: "lagoon-private-registry-custom-secret",
-				},
-			},
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.container-registry.yml",
 					ImageReferences: map[string]string{
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
@@ -185,18 +179,12 @@ func TestTemplateLagoonServices(t *testing.T) {
 		},
 		{
 			name: "test7 basic deployment with dynamic secrets",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "EXTERNAL_REGISTRY_SECRETS",
-					Value: "lagoon-private-registry-custom-secret",
-				},
-			},
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.container-registry.yml",
 					ImageReferences: map[string]string{
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},

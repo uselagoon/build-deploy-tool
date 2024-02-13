@@ -32,13 +32,8 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 				LagoonVersion:   "v2.x.x",
 				Kubernetes:      "generator.local",
 				Branch:          "environment-name",
-				ImagePullSecrets: []generator.ImagePullSecrets{
-					{
-						Name: "lagoon-internal-registry-secret",
-					},
-				},
-				GitSHA:       "0",
-				ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+				GitSHA:          "0",
+				ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 				ImageReferences: map[string]string{
 					"myservice":                "harbor.example.com/example-project/environment-name/myservice@latest",
 					"myservice-po":             "harbor.example.com/example-project/environment-name/myservice-po@latest",

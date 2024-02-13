@@ -1,20 +1,15 @@
 package generator
 
 import (
-	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/url"
-	"os"
 	"strconv"
 	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"k8s.io/apimachinery/pkg/api/resource"
-	"sigs.k8s.io/yaml"
 )
 
 type Generator struct {
@@ -62,13 +57,11 @@ type GeneratorInput struct {
 	Debug                      bool
 	DBaaSClient                *dbaasclient.Client
 	ImageReferences            map[string]string
-	ImagePullSecrets           []string
 	Namespace                  string
 	DefaultBackupSchedule      string
 	ImageRegistry              string
 	Kubernetes                 string
 	CI                         bool
-	PrivateRegistryURLS        []string
 	DynamicSecrets             []string
 }
 
@@ -113,38 +106,6 @@ func NewGenerator(
 	prHeadSHA := helpers.GetEnv("PR_HEAD_SHA", generator.PRHeadSHA, generator.Debug)
 	prBaseSHA := helpers.GetEnv("PR_BASE_SHA", generator.PRBaseSHA, generator.Debug)
 	dynamicSecrets := helpers.GetEnv("DYNAMIC_SECRETS", strings.Join(generator.DynamicSecrets, ","), generator.Debug)
-	// get any external registry urls that this build has so we can update any pullthrough images accordingly
-	gExternalRegistryURLS := ""
-	if generator.PrivateRegistryURLS != nil {
-		gExternalRegistryURLS = strings.Join(generator.PrivateRegistryURLS, ",")
-	}
-	sExternalRegistryURLs := helpers.GetEnv("EXTERNAL_REGISTRY_URLS", gExternalRegistryURLS, generator.Debug)
-	if sExternalRegistryURLs != "" {
-		externalRegistryURLs := strings.Split(sExternalRegistryURLs, ",")
-		for _, eru := range externalRegistryURLs {
-			// strip the scheme, only provide the host
-			u, _ := url.Parse(eru)
-			if u.Host == "" {
-				eru = fmt.Sprintf("%s/", eru)
-				buildValues.PrivateRegistryURLS = append(buildValues.PrivateRegistryURLS, eru)
-			} else {
-				eru = fmt.Sprintf("%s/", u.Host)
-				buildValues.PrivateRegistryURLS = append(buildValues.PrivateRegistryURLS, eru)
-			}
-		}
-	}
-	// get any external registry secrets from the environment
-	gExternalRegistrySecrets := ""
-	if generator.PrivateRegistryURLS != nil {
-		gExternalRegistrySecrets = strings.Join(generator.ImagePullSecrets, ",")
-	}
-	sExternalRegistrySecrets := helpers.GetEnv("EXTERNAL_REGISTRY_SECRETS", gExternalRegistrySecrets, generator.Debug)
-	if sExternalRegistrySecrets != "" {
-		externalRegistrySecrets := strings.Split(sExternalRegistrySecrets, ",")
-		for _, ers := range externalRegistrySecrets {
-			buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: ers})
-		}
-	}
 	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
 	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 
@@ -157,9 +118,6 @@ func NewGenerator(
 	buildValues.PromotionSourceEnvironment = promotionSourceEnvironment
 	// get the image references values from the build images output
 	buildValues.ImageReferences = generator.ImageReferences
-	// add standard lagoon imagepull secret name
-	buildValues.ImagePullSecrets = append(buildValues.ImagePullSecrets, ImagePullSecrets{Name: "lagoon-internal-registry-secret"})
-
 	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", generator.DefaultBackupSchedule, generator.Debug)
 	if defaultBackupSchedule == "" {
 		defaultBackupSchedule = "M H(22-2) * * *"
@@ -290,6 +248,11 @@ func NewGenerator(
 	// add the calculated build runtime variables into the existing variable slice
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	buildValues.EnvironmentVariables = lagoon.MergeVariables(mergedVariables, configVars)
+
+	// handle generating the container registry login generation here, extract from the `.lagoon.yml` firstly
+	if err := configureContainerRegistries(&buildValues); err != nil {
+		return nil, err
+	}
 
 	// check for readwritemany to readwriteonce flag, disabled by default
 	rwx2rwo := CheckFeatureFlag("RWX_TO_RWO", buildValues.EnvironmentVariables, generator.Debug)
@@ -442,7 +405,9 @@ func NewGenerator(
 	}
 	/* end route generation configuration */
 
-	// finally return the generator values
+	// finally return the generator values, this should be a mostly complete version of the resulting data needed for a build
+	// another step will collect the current or known state of a build.
+	// the output of the generator and the output of that state collector will eventually replace a lot of the legacy BASH script
 	return &Generator{
 		BuildValues:         &buildValues,
 		ActiveEnvironment:   &buildValues.IsActiveEnvironment,
@@ -451,186 +416,4 @@ func NewGenerator(
 		MainRoutes:          mainRoutes,
 		ActiveStandbyRoutes: activeStandbyRoutes,
 	}, nil
-}
-
-func LoadAndUnmarshalLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlOverrideEnvVarName string, lYAML *lagoon.YAML, projectName string, debug bool) error {
-
-	// First we load the primary file
-	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, projectName); err != nil {
-		return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYml, err)
-	}
-
-	// Here we try and merge in .lagoon.yml override
-	if _, err := os.Stat(lagoonYmlOverride); err == nil {
-		overLagoonYaml := &lagoon.YAML{}
-		if err := lagoon.UnmarshalLagoonYAML(lagoonYmlOverride, overLagoonYaml, projectName); err != nil {
-			return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYmlOverride, err)
-		}
-		//now we merge
-		if err := lagoon.MergeLagoonYAMLs(lYAML, overLagoonYaml); err != nil {
-			return fmt.Errorf("unable to merge %v over %v: %v", lagoonYmlOverride, lagoonYml, err)
-		}
-	}
-	// Now we see if there are any environment vars set for .lagoon.yml overrides
-	envLagoonYamlStringBase64 := helpers.GetEnv(lagoonYmlOverrideEnvVarName, "", debug)
-	if envLagoonYamlStringBase64 != "" {
-		//Decode it
-		envLagoonYamlString, err := base64.StdEncoding.DecodeString(envLagoonYamlStringBase64)
-		if err != nil {
-			return fmt.Errorf("Unable to decode %v - is it base64 encoded?", lagoonYmlOverrideEnvVarName)
-		}
-		envLagoonYaml := &lagoon.YAML{}
-		lEnvLagoonPolysite := make(map[string]interface{})
-
-		err = yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
-		if err != nil {
-			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
-		}
-		err = yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
-		if err != nil {
-			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
-		}
-
-		if _, ok := lEnvLagoonPolysite[projectName]; ok {
-			s, _ := yaml.Marshal(lEnvLagoonPolysite[projectName])
-			_ = yaml.Unmarshal(s, &envLagoonYaml)
-		}
-		//now we merge
-		if err := lagoon.MergeLagoonYAMLs(lYAML, envLagoonYaml); err != nil {
-			return fmt.Errorf("unable to merge LAGOON_YAML_OVERRIDE over %v: %v", lagoonYml, err)
-		}
-	}
-	return nil
-}
-
-// this creates a bunch of standard environment variables that are injected into the `lagoon-env` configmap normally
-func collectBuildVariables(buildValues BuildValues) []lagoon.EnvironmentVariable {
-	vars := []lagoon.EnvironmentVariable{}
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PROJECT", Value: buildValues.Project, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT", Value: buildValues.Environment, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: buildValues.EnvironmentType, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: buildValues.GitSHA, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: buildValues.Kubernetes, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: buildValues.Environment, Scope: "runtime"}) //deprecated??? (https://github.com/uselagoon/lagoon/blob/1053965321495213591f4c9110f90a9d9dcfc946/images/kubectl-build-deploy-dind/build-deploy-docker-compose.sh#L748)
-	if buildValues.BuildType == "branch" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_BRANCH", Value: buildValues.Branch, Scope: "runtime"})
-	}
-	if buildValues.BuildType == "pullrequest" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_HEAD_BRANCH", Value: buildValues.PRHeadBranch, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_BASE_BRANCH", Value: buildValues.PRBaseBranch, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_TITLE", Value: buildValues.PRTitle, Scope: "runtime"})
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_PR_NUMBER", Value: buildValues.PRNumber, Scope: "runtime"})
-	}
-	if buildValues.ActiveEnvironment != "" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ACTIVE_ENVIRONMENT", Value: buildValues.ActiveEnvironment, Scope: "runtime"})
-	}
-	if buildValues.StandbyEnvironment != "" {
-		vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_STANDBY_ENVIRONMENT", Value: buildValues.StandbyEnvironment, Scope: "runtime"})
-	}
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTE", Value: buildValues.Route, Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ROUTES", Value: strings.Join(buildValues.Routes, ","), Scope: "runtime"})
-	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_AUTOGENERATED_ROUTES", Value: strings.Join(buildValues.AutogeneratedRoutes, ","), Scope: "runtime"})
-	return vars
-}
-
-// this creates all the build arguments that an image build can consume
-func collectImageBuildArguments(buildValues BuildValues) map[string]string {
-	buildArgs := map[string]string{}
-	// source any from the environment variables in the project/environment that are `global` or `build` scoped
-	for _, envvar := range buildValues.EnvironmentVariables {
-		if helpers.Contains([]string{"global", "build"}, envvar.Scope) {
-			buildArgs[envvar.Name] = envvar.Value
-		}
-	}
-	// set the standard ones
-	if buildValues.IsCI {
-		buildArgs["IMAGE_REPO"] = "172.17.0.1:5000/lagoon"
-	}
-	buildArgs["LAGOON_PROJECT"] = buildValues.Project
-	buildArgs["LAGOON_ENVIRONMENT"] = buildValues.Environment
-	buildArgs["LAGOON_ENVIRONMENT_TYPE"] = buildValues.EnvironmentType
-	buildArgs["LAGOON_BUILD_TYPE"] = buildValues.BuildType
-	buildArgs["LAGOON_GIT_SOURCE_REPOSITORY"] = buildValues.SourceRepository
-	buildArgs["LAGOON_KUBERNETES"] = buildValues.Kubernetes
-	// set any specific build type overrides
-	if buildValues.BuildType == "branch" {
-		buildArgs["LAGOON_GIT_SHA"] = buildValues.GitSHA
-		buildArgs["LAGOON_GIT_BRANCH"] = buildValues.Branch
-	}
-	if buildValues.BuildType == "pullrequest" {
-		buildArgs["LAGOON_GIT_SHA"] = buildValues.GitSHA
-		buildArgs["LAGOON_PR_HEAD_BRANCH"] = buildValues.PRHeadBranch
-		buildArgs["LAGOON_PR_HEAD_SHA"] = buildValues.PRHeadSHA
-		buildArgs["LAGOON_PR_BASE_BRANCH"] = buildValues.PRBaseBranch
-		buildArgs["LAGOON_PR_BASE_SHA"] = buildValues.PRBaseSHA
-		buildArgs["LAGOON_PR_TITLE"] = buildValues.PRTitle
-		buildArgs["LAGOON_PR_NUMBER"] = buildValues.PRNumber
-	}
-	// Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
-	buildArgs["LAGOON_BUILD_NAME"] = buildValues.BuildName
-	// and now that we know the temporary image names upfront, they can be passed to all image build steps without
-	// needing to wait for the other images to be built
-	for _, service := range buildValues.Services {
-		if service.ImageBuild != nil && service.ImageBuild.TemporaryImage != "" {
-			// add the temporary image name to the payload
-			buildArgs[fmt.Sprintf("%s_IMAGE", strings.ToUpper(service.Name))] = service.ImageBuild.TemporaryImage
-		}
-	}
-	return buildArgs
-}
-
-// checks the provided environment variables looking for feature flag based variables
-func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, debug bool) string {
-	// check for force value
-	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {
-		if debug {
-			fmt.Println(fmt.Sprintf("Using forced flag value from build variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)))
-		}
-		return value
-	}
-	// check lagoon environment variables
-	for _, lVar := range envVariables {
-		if strings.Contains(lVar.Name, fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key)) {
-			if debug {
-				fmt.Println(fmt.Sprintf("Using flag value from Lagoon environment variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key)))
-			}
-			return lVar.Value
-		}
-	}
-	// return default
-	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key)); ok {
-		if debug {
-			fmt.Println(fmt.Sprintf("Using default flag value from build variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key)))
-		}
-		return value
-	}
-	// otherwise nothing
-	return ""
-}
-
-func CheckAdminFeatureFlag(key string, debug bool) string {
-	if value, ok := os.LookupEnv(fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)); ok {
-		if debug {
-			fmt.Println(fmt.Sprintf("Using admin feature flag value from build variable %s", fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)))
-		}
-		return value
-	}
-	return ""
-}
-
-func ValidateResourceQuantity(s string) (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			switch x := r.(type) {
-			case string:
-				err = errors.New(x)
-			case error:
-				err = x
-			default:
-				err = errors.New(fmt.Sprint(x))
-			}
-		}
-	}()
-	resource.MustParse(s)
-	return nil
 }

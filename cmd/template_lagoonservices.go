@@ -9,6 +9,7 @@ import (
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/templating/networkpolicy"
+	"github.com/uselagoon/build-deploy-tool/internal/templating/registrysecret"
 	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	"sigs.k8s.io/yaml"
 )
@@ -52,6 +53,22 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	savedTemplates := g.SavedTemplatesPath
 
 	// generate the templates
+	secrets, err := registrysecret.GenerateRegistrySecretTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	for _, secret := range secrets {
+		serviceBytes, err := yaml.Marshal(secret)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		separator := []byte("---\n")
+		restoreResult := append(separator[:], serviceBytes[:]...)
+		if g.Debug {
+			fmt.Println(fmt.Sprintf("Templating registry secret manifests %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, secret.Name)))
+		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, secret.Name), restoreResult)
+	}
 	services, err := servicestemplates.GenerateServiceTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)

@@ -31,9 +31,10 @@ var imageBuildIdentify = &cobra.Command{
 }
 
 type imageBuild struct {
-	BuildKit       bool              `json:"buildKit"`
-	Images         []imageBuilds     `json:"images"`
-	BuildArguments map[string]string `json:"buildArguments"`
+	BuildKit            bool                          `json:"buildKit"`
+	Images              []imageBuilds                 `json:"images"`
+	BuildArguments      map[string]string             `json:"buildArguments"`
+	ContainerRegistries []generator.ContainerRegistry `json:"containerRegistries,omitempty"`
 }
 
 type imageBuilds struct {
@@ -68,6 +69,7 @@ func ImageBuildConfigurationIdentification(g generator.GeneratorInput) (imageBui
 			})
 		}
 	}
+	lServices.ContainerRegistries = lagoonBuild.BuildValues.ContainerRegistry
 	return lServices, nil
 }
 

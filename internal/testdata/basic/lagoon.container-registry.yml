@@ -1,0 +1,16 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
+
+container-registries:
+  my-custom-registry:
+    username: myownregistryuser
+    password: REGISTRY_PASSWORD
+    url: my.own.registry.com
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com
