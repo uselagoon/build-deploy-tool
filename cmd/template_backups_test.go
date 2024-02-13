@@ -19,6 +19,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		emptyDir     bool // if no templates are generated, then there will be a .gitkeep file in there
 		wantErr      bool
 	}{
 		{
@@ -188,6 +189,27 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "../internal/testdata/complex/backup-templates/backup-2",
 		},
+		{
+			name: "test9 - nothing to backup so no schedule",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					K8UPVersion:     "v2",
+					LagoonYAML:      "../internal/testdata/node/lagoon.nostorage.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "global",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			emptyDir:     true,
+			want:         "../internal/testdata/node/backup-templates/backup-7",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -221,7 +243,16 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", tt.want, err)
 			}
-			if len(files) != len(results) {
+			resultSize := 0
+			if !tt.emptyDir {
+				results, err = ioutil.ReadDir(tt.want)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", tt.want, err)
+				}
+				// .gitkeep file needs to be subtracted to equal 0
+				resultSize = len(results)
+			}
+			if len(files) != resultSize {
 				for _, f := range files {
 					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
 					if err != nil {
