@@ -48,6 +48,62 @@ var ignoredImageTypes = []string{
 	"mongodb-dbaas",
 }
 
+// these are lagoon types that come with resources requiring backups
+var typesWithBackups = []string{
+	"basic-persistent",
+	"node-persistent",
+	"nginx-php-persistent",
+	"python-persistent",
+	"varnish-persistent",
+	"redis-persistent",
+	"solr",
+	"elasticsearch",
+	"opensearch",
+	"rabbitmq",
+	"mongodb-dbaas",
+	"mariadb-dbaas",
+	"postgres-dbaas",
+	"mariadb-single",
+	"postgres-single",
+	"mongodb-single",
+}
+
+// just some default values for services
+var defaultServiceValues = map[string]map[string]string{
+	"elasticsearch": {
+		"persistentPath": "/usr/share/elasticsearch/data",
+		"persistentSize": "5Gi",
+	},
+	"opensearch": {
+		"persistentPath": "/usr/share/opensearch/data",
+		"persistentSize": "5Gi",
+	},
+	"mariadb-single": {
+		"persistentPath": "/var/lib/mysql",
+		"persistentSize": "5Gi",
+	},
+	"postgres-single": {
+		"persistentPath": "/var/lib/postgresql/data",
+		"persistentSize": "5Gi",
+	},
+	"mongodb-single": {
+		"persistentPath": "/data/db",
+		"persistentSize": "5Gi",
+	},
+	"varnish-persistent": {
+		"persistentPath": "/var/cache/varnish",
+		"persistentSize": "5Gi",
+	},
+	"rabbitmq": {
+		"persistentPath": "/var/lib/rabbitmq",
+		"persistentSize": "5Gi",
+	},
+	"redis-persistent": {
+		"persistentPath": "/data",
+		"persistentSize": "5Gi",
+	},
+}
+
 // generateServicesFromDockerCompose unmarshals the docker-compose file and processes the services using composeToServiceValues
 func generateServicesFromDockerCompose(
 	buildValues *BuildValues,
@@ -76,6 +132,9 @@ func generateServicesFromDockerCompose(
 				cService, err := composeToServiceValues(buildValues, composeServiceValues.Name, composeServiceValues, debug)
 				if err != nil {
 					return err
+				}
+				if cService.BackupsEnabled {
+					buildValues.BackupsEnabled = true
 				}
 				buildValues.Services = append(buildValues.Services, cService)
 			}
@@ -381,6 +440,13 @@ func composeToServiceValues(
 			autogenTLSAcmeEnabled = false
 		}
 
+		// check if this service is one that supports backups
+		backupsEnabled := false
+		if helpers.Contains(typesWithBackups, lagoonType) {
+			backupsEnabled = true
+
+		}
+
 		// create the service values
 		cService := ServiceValues{
 			Name:                       composeService,
@@ -400,6 +466,7 @@ func composeToServiceValues(
 			InPodCronjobs:              inpodcronjobs,
 			NativeCronjobs:             nativecronjobs,
 			PodSecurityContext:         buildValues.PodSecurityContext,
+			BackupsEnabled:             backupsEnabled,
 		}
 
 		// work out the images here and the associated dockerfile and contexts

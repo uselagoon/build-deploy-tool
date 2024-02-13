@@ -161,6 +161,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					DockerFile:     "../testdata/basic/docker/basic.dockerfile",
 					BuildImage:     "harbor.example/example-project/main/nginx:latest",
 				},
+				BackupsEnabled: true,
 			},
 		},
 		{
@@ -208,6 +209,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					DockerFile:     "../testdata/basic/docker/basic.dockerfile",
 					BuildImage:     "harbor.example/example-project/main/nginx:latest",
 				},
+				BackupsEnabled: true,
 			},
 		},
 		{
@@ -471,6 +473,7 @@ func Test_composeToServiceValues(t *testing.T) {
 				DBaaSEnvironment:           "development",
 				InPodCronjobs:              []lagoon.Cronjob{},
 				NativeCronjobs:             []lagoon.Cronjob{},
+				BackupsEnabled:             true,
 			},
 		},
 		{
@@ -525,6 +528,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					PullImage:  "uselagoon/fake-mariadb:latest",
 					BuildImage: "harbor.example/example-project/main/mariadb:latest",
 				},
+				BackupsEnabled: true,
 			},
 		},
 		{
@@ -570,6 +574,7 @@ func Test_composeToServiceValues(t *testing.T) {
 				DBaaSEnvironment:           "development",
 				InPodCronjobs:              []lagoon.Cronjob{},
 				NativeCronjobs:             []lagoon.Cronjob{},
+				BackupsEnabled:             true,
 			},
 		},
 		{

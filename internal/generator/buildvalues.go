@@ -73,6 +73,8 @@ type BuildValues struct {
 	RWX2RWO                       bool                         `json:"RWX2RWO" description:"this controls whether the ReadWriteMany to ReadWriteOnce override should be used"`
 	IsolationNetworkPolicy        bool                         `json:"isolationNetworkPolicy" description:"this controls whether isolation network policies should be enabled"`
 	ContainerRegistry             []ContainerRegistry          `json:"containerRegistry" description:"this contains any private container registries that may exist within the environment that need to be logged into"`
+	RoutesAutogeneratePrefixes    []string                     `json:"routesAutogeneratePrefixes"`
+	BackupsEnabled                bool                         `json:"backupsEnabled"`
 }
 
 type Resources struct {
@@ -167,6 +169,7 @@ type ServiceValues struct {
 	CronjobAffinity               *corev1.Affinity        `json:"cronjobAffinity"`
 	DBaasReadReplica              bool                    `json:"dBaasReadReplica"`
 	ImageBuild                    *ImageBuild             `json:"docker,omitempty"`
+	BackupsEnabled                bool                    `json:"backupsEnabled"`
 }
 
 type ImageBuild struct {
