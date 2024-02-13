@@ -67,35 +67,35 @@ var typesWithBackups = []string{
 
 // just some default values for services
 var defaultServiceValues = map[string]map[string]string{
-	"elasticsearch": map[string]string{
+	"elasticsearch": {
 		"persistentPath": "/usr/share/elasticsearch/data",
 		"persistentSize": "5Gi",
 	},
-	"opensearch": map[string]string{
+	"opensearch": {
 		"persistentPath": "/usr/share/opensearch/data",
 		"persistentSize": "5Gi",
 	},
-	"mariadb-single": map[string]string{
+	"mariadb-single": {
 		"persistentPath": "/var/lib/mysql",
 		"persistentSize": "5Gi",
 	},
-	"postgres-single": map[string]string{
+	"postgres-single": {
 		"persistentPath": "/var/lib/postgresql/data",
 		"persistentSize": "5Gi",
 	},
-	"mongodb-single": map[string]string{
+	"mongodb-single": {
 		"persistentPath": "/data/db",
 		"persistentSize": "5Gi",
 	},
-	"varnish-persistent": map[string]string{
+	"varnish-persistent": {
 		"persistentPath": "/var/cache/varnish",
 		"persistentSize": "5Gi",
 	},
-	"rabbitmq": map[string]string{
+	"rabbitmq": {
 		"persistentPath": "/var/lib/rabbitmq",
 		"persistentSize": "5Gi",
 	},
-	"redis-persistent": map[string]string{
+	"redis-persistent": {
 		"persistentPath": "/data",
 		"persistentSize": "5Gi",
 	},
