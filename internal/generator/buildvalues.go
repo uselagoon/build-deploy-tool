@@ -48,6 +48,7 @@ type BuildValues struct {
 	TaskScaleMaxIterations        int                         `json:"taskScaleMaxIterations"`
 	TaskScaleWaitTime             int                         `json:"taskScaleWaitTime"`
 	ImageCache                    string                      `json:"imageCache"`
+	BackupsEnabled                bool                        `json:"backupsEnabled"`
 	DefaultBackupSchedule         string                      `json:"defaultBackupSchedule"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
 }
@@ -91,6 +92,7 @@ type ServiceValues struct {
 	CronjobTolerations            *[]corev1.Toleration     `json:"cronjobTolerations"`
 	CronjobAffinity               *corev1.Affinity         `json:"cronjobAffinity"`
 	DBaasReadReplica              bool                     `json:"dBaasReadReplica"`
+	BackupsEnabled                bool                     `json:"backupsEnabled"`
 }
 
 // CronjobValues is the values for cronjobs
