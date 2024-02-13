@@ -203,7 +203,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentName: "main",
 					Branch:          "main",
 					K8UPVersion:     "v2",
-					LagoonYAML:      "../internal/testdata/node/lagoon.nostorage.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.nostorage.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
@@ -214,7 +214,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				}, true),
 			templatePath: "testdata/output",
 			emptyDir:     true,
-			want:         "../internal/testdata/node/backup-templates/backup-7",
+			want:         "internal/testdata/node/backup-templates/backup-7",
 		},
 	}
 	for _, tt := range tests {
@@ -252,7 +252,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			}
 			resultSize := 0
 			if !tt.emptyDir {
-				results, err = ioutil.ReadDir(tt.want)
+				results, err = os.ReadDir(tt.want)
 				if err != nil {
 					t.Errorf("couldn't read directory %v: %v", tt.want, err)
 				}
