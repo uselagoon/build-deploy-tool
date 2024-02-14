@@ -1,5 +1,6 @@
 #!/bin/bash
 
+set +x
 # get the buildname from the pod, $HOSTNAME contains this in the running pod, so we can use this
 # set it to something usable here
 export LAGOON_BUILD_NAME=$HOSTNAME
@@ -95,9 +96,7 @@ function projectEnvironmentVariableCheck() {
 	echo "$2"
 }
 
-set +x
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
-set -x
 
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
@@ -145,17 +144,13 @@ function patchBuildStep() {
 ### PREPARATION
 ##############################################
 
-set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
-set -x
 
 ##############################################
 ### PUSH the latest .lagoon.yml into lagoon-yaml configmap as a pre-deploy field
 ##############################################
-
-set +x
 
 # set the imagecache registry if it is provided
 IMAGECACHE_REGISTRY=""
@@ -349,7 +344,7 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
-set -x
+
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
 # Load all Services that are defined
@@ -381,15 +376,12 @@ declare -A IMAGES_PROMOTE
 # this array stores the hashes of the built images
 declare -A IMAGE_HASHES
 
-set +x
 HELM_ARGUMENTS=()
 . /kubectl-build-deploy/scripts/kubectl-get-cluster-capabilities.sh
 for CAPABILITIES in "${CAPABILITIES[@]}"; do
   HELM_ARGUMENTS+=(-a "${CAPABILITIES}")
 done
-set -x
 
-set +x # reduce noise in build logs
 # Allow the servicetype be overridden by the lagoon API
 # This accepts colon separated values like so `SERVICE_NAME:SERVICE_TYPE_OVERRIDE`, and multiple overrides
 # separated by commas
@@ -418,7 +410,6 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
     LAGOON_DBAAS_ENVIRONMENT_TYPES=$TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES
   fi
 fi
-set -x
 
 for COMPOSE_SERVICE in "${COMPOSE_SERVICES[@]}"
 do
@@ -728,7 +719,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Regstiry Login" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
-set -x
 
 ##############################################
 ### CACHE IMAGE LIST GENERATION
@@ -785,7 +775,6 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context // ""')
       # the build target for this image build, the original source for this value is from the `docker-compose file`
       BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target // false')
-      set +x # reduce noise in build logs
       # determine if buildkit should be used for this build
       DOCKER_BUILDKIT=0
       if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit // false')" == "true" ]; then
@@ -801,7 +790,6 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
           echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
           DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
       fi
-      set -x
 
       # Keep a list of the images we have built, as we need to push them to the registry later
       IMAGES_BUILD["${SERVICE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
@@ -812,7 +800,6 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
   done
 fi
 
-set +x
 # print information about built image sizes
 function printBytes {
     local -i bytes=$1;
@@ -828,14 +815,11 @@ do
   TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
   echo -e "Image ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
 done
-set -x
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
-set -x
 
 ##############################################
 ### RUN PRE-ROLLOUT tasks defined in .lagoon.yml
@@ -845,18 +829,13 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
     build-deploy-tool tasks pre-rollout
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
-  set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
-  set -x
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
-set -x
-
 
 ##############################################
 ### CONFIGURE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
@@ -885,7 +864,6 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'kubernetes' $KUBERNETES
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSION
 # check for ROOTLESS_WORKLOAD feature flag, disabled by default
 
-set +x
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
@@ -893,7 +871,6 @@ if [ "${SCC_CHECK}" != "false" ]; then
   echo "Setting openshift fsGroup to ${OPENSHIFT_SUPPLEMENTAL_GROUP}"
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroup' $OPENSHIFT_SUPPLEMENTAL_GROUP
 fi
-set -x
 
 echo -e "\
 LAGOON_PROJECT=${PROJECT}\n\
@@ -932,12 +909,10 @@ LAGOON_PR_NUMBER=${PR_NUMBER}\n\
 " >> /kubectl-build-deploy/values.env
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
-set -x
 
 ##############################################
 ### CUSTOM FASTLY API SECRETS .lagoon.yml
@@ -964,7 +939,6 @@ FASTLY_API_SECRET_PREFIX="fastly-api-"
 
 FASTLY_API_SECRETS_COUNTER=0
 FASTLY_API_SECRETS=()
-set +x # reduce noise in build logs
 if [ -n "$(cat .lagoon.yml | shyaml keys fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER 2> /dev/null)" ]; then
   while [ -n "$(cat .lagoon.yml | shyaml get-value fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER 2> /dev/null)" ]; do
     FASTLY_API_SECRET_NAME=$FASTLY_API_SECRET_PREFIX$(cat .lagoon.yml | shyaml get-value fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER.name 2> /dev/null)
@@ -1002,13 +976,12 @@ if [ -n "$(cat .lagoon.yml | shyaml keys fastly.api-secrets.$FASTLY_API_SECRETS_
 
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
+    set +x
 
     let FASTLY_API_SECRETS_COUNTER=FASTLY_API_SECRETS_COUNTER+1
   done
 fi
-set -x
 
-set +x # reduce noise in build logs
 # FASTLY API SECRETS FROM LAGOON API VARIABLE
 # Allow for defining fastly api secrets using lagoon api variables
 # This accepts colon separated values like so `SECRET_NAME:FASTLY_API_TOKEN:FASTLY_PLATFORMTLS_CONFIGURATION_ID`, and multiple overrides
@@ -1042,11 +1015,10 @@ if [ ! -z "$LAGOON_FASTLY_API_SECRETS" ]; then
     FASTLY_API_PLATFORMTLS_CONFIGURATION=${LAGOON_FASTLY_API_SECRET_SPLIT[2]}
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
+    set +x
   done
 fi
-set -x
 
-set +x # reduce noise in build logs
 # FASTLY SERVICE ID PER INGRESS OVERRIDE FROM LAGOON API VARIABLE
 # Allow the fastly serviceid for specific ingress to be overridden by the lagoon API
 # This accepts colon separated values like so `INGRESS_DOMAIN:FASTLY_SERVICE_ID:WATCH_STATUS:SECRET_NAME(OPTIONAL)`, and multiple overrides
@@ -1067,7 +1039,6 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
     LAGOON_FASTLY_SERVICE_IDS=$TEMP_LAGOON_FASTLY_SERVICE_IDS
   fi
 fi
-set -x
 
 ##############################################
 ### CREATE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
@@ -1141,7 +1112,6 @@ do
   fi
 done
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
 previousStepEnd=${currentStepEnd}
@@ -1189,7 +1159,6 @@ beginBuildStep "Route/Ingress Cleanup" "cleanupRoutes"
 ### CLEANUP Ingress/routes which have been removed from .lagoon.yml
 ##############################################s
 
-set +x
 # collect the current routes excluding any certmanager requests.
 # its also possible to exclude ingress by adding a label 'route.lagoon.sh/remove=false', this is then used to skip this from the removal checks
 CURRENT_ROUTES=$(kubectl -n ${NAMESPACE} get ingress  -l "lagoon.sh/autogenerated!=true"  -l "acme.cert-manager.io/http01-solver!=true" --no-headers | cut -d " " -f 1 | xargs)
@@ -1351,7 +1320,6 @@ LAGOON_AUTOGENERATED_ROUTES=${AUTOGENERATED_ROUTES}\n\
 # Generate a Config Map with project wide env variables
 kubectl -n ${NAMESPACE} create configmap lagoon-env -o yaml --dry-run=client --from-env-file=/kubectl-build-deploy/values.env | kubectl apply -n ${NAMESPACE} -f -
 
-set +x # reduce noise in build logs
 # Add environment variables from lagoon API
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   HAS_PROJECT_RUNTIME_VARS=$(echo $LAGOON_PROJECT_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") )')
@@ -1395,14 +1363,17 @@ do
 
     mariadb-dbaas)
         . /kubectl-build-deploy/scripts/exec-kubectl-mariadb-dbaas.sh
+        set +x
         ;;
 
     postgres-dbaas)
         . /kubectl-build-deploy/scripts/exec-kubectl-postgres-dbaas.sh
+        set +x
         ;;
 
     mongodb-dbaas)
         . /kubectl-build-deploy/scripts/exec-kubectl-mongodb-dbaas.sh
+        set +x
         ;;
 
     *)
@@ -1415,7 +1386,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateConfigmapComplete" "Update Configmap" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Push to Registry" "pushingImages"
-set -x
 
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
@@ -1489,12 +1459,10 @@ elif [ "$BUILD_TYPE" == "promote" ]; then
 # promote end
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
-set -x
 
 # Run the backup generation script
 
@@ -1545,24 +1513,20 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
 else
   echo ">> Backup configurations disabled for this build"
 fi
-set -x
 
 if [ "$(ls -A $YAML_FOLDER/)" ]; then
   find $YAML_FOLDER -type f -exec cat {} \;
   kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
-set -x
 
 ##############################################
 ### CREATE PVC, DEPLOYMENTS AND CRONJOBS
 ##############################################
-set +x
 
 # generate a map of servicename>imagename+hash json for the build-deploy-tool to use when templating
 # this reduces the need for the crazy logic with how services are currently mapped together in the case of nginx-php type deploymentss
@@ -1595,7 +1559,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Applying Deployments" "applyingDeployments"
-set -x
 
 ##############################################
 ### APPLY RESOURCES
@@ -1607,7 +1570,6 @@ for STORAGE_CALCULATOR_POD in $STORAGE_CALCULATOR_PODS; do
   kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD}
 done
 
-set +x
 if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
   echo "=== deployment templates for services ==="
   ls -A $LAGOON_SERVICES_YAML_FOLDER
@@ -1621,7 +1583,6 @@ if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
     kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/
   fi
 fi
-set -x
 
 ##############################################
 ### WAIT FOR POST-ROLLOUT TO BE FINISHED
@@ -1657,15 +1618,14 @@ do
 
   elif [ ! $SERVICE_ROLLOUT_TYPE == "false" ]; then
     . /kubectl-build-deploy/scripts/exec-monitor-deploy.sh
+    set +x
   fi
 done
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
-set -x
 
 ##############################################
 ### CLEANUP NATIVE CRONJOBS which have been removed from .lagoon.yml or modified to run more frequently than every 15 minutes
@@ -1695,12 +1655,10 @@ for DC in ${!DELETE_CRONJOBS[@]}; do
   fi
 done
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
-set -x
 
 ##############################################
 ### RUN POST-ROLLOUT tasks defined in .lagoon.yml
@@ -1711,23 +1669,18 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
   build-deploy-tool tasks post-rollout
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
-  set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
-  set -x
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Build and Deploy" "finalizingBuild"
-set -x
 
 ##############################################
 ### PUSH the latest .lagoon.yml into lagoon-yaml configmap
 ##############################################
 
-set +x
 echo "Updating lagoon-yaml configmap with a post-deploy version of the .lagoon.yml file"
 if kubectl -n ${NAMESPACE} get configmap lagoon-yaml &> /dev/null; then
   # replace it, no need to check if the key is different, as that will happen in the pre-deploy phase
@@ -1760,9 +1713,7 @@ for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
     fi
   done
 done
-set -x
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
 previousStepEnd=${currentStepEnd}
@@ -1777,6 +1728,7 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   do
     IMAGE_FULL="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     . /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh
+    set +x
   done
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1811,4 +1763,3 @@ else
     fi
   fi
 fi
-set -x
