@@ -673,29 +673,27 @@ previousStepEnd=${currentStepEnd}
 beginBuildStep "Container Regstiry Login" "registryLogin"
 
 # Get the pre-rollout and post-rollout vars
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-    LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+  LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+  LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+fi
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+  TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+    LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
   fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-    TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-    if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-      LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-    fi
-    if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-      LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-    fi
+  if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+    LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
   fi
-set -x
+fi
 
 # seed all the push images for use later on, push images relate to images that may not be built by this build
 # but are required from somewhere else like a promote environment or from another registry
 ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
 
-set +x # reduce noise in build logs
 # log in to any container registries before building or pulling images
-for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]')
+for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]?')
 do
   PRIVATE_CONTAINER_REGISTRY_URL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.url // false')
   PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.username // false')
