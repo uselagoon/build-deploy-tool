@@ -666,12 +666,6 @@ do
 
 done
 
-set +x
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Container Regstiry Login" "registryLogin"
-
 # Get the pre-rollout and post-rollout vars
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
@@ -688,9 +682,28 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
   fi
 fi
 
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Container Regstiry Login" "registryLogin"
+
 # seed all the push images for use later on, push images relate to images that may not be built by this build
 # but are required from somewhere else like a promote environment or from another registry
 ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+
+# log in to the provided registry if details are provided
+if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
+  echo "Logging in to Lagoon main registry"
+  if [ ! -z ${INTERNAL_REGISTRY_USERNAME} ] && [ ! -z ${INTERNAL_REGISTRY_PASSWORD} ] ; then
+    echo "docker login -u '${INTERNAL_REGISTRY_USERNAME}' -p '${INTERNAL_REGISTRY_PASSWORD}' ${INTERNAL_REGISTRY_URL}" | /bin/bash
+    # create lagoon-internal-registry-secret if it does not exist yet 
+    # TODO: remove this, the secret is created by the remote-controller, builds only need to log in to it now
+    # if ! kubectl -n ${NAMESPACE} get secret lagoon-internal-registry-secret &> /dev/null; then
+    #   kubectl create secret docker-registry lagoon-internal-registry-secret --docker-server=${INTERNAL_REGISTRY_URL} --docker-username=${INTERNAL_REGISTRY_USERNAME} --docker-password=${INTERNAL_REGISTRY_PASSWORD} --dry-run -o yaml | kubectl apply -f -
+    # fi
+    echo "Set internal registry secrets for token ${INTERNAL_REGISTRY_USERNAME} in ${REGISTRY}"
+  fi
+fi
 
 # log in to any container registries before building or pulling images
 for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]?')
