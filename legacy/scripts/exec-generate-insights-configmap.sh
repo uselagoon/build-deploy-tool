@@ -44,7 +44,8 @@ processImageInspect() {
       lagoon.sh/buildName=${LAGOON_BUILD_NAME} \
       lagoon.sh/project=${PROJECT} \
       lagoon.sh/environment=${ENVIRONMENT} \
-      lagoon.sh/service=${IMAGE_NAME}
+      lagoon.sh/service=${IMAGE_NAME} \
+      insights.lagoon.sh/type=inspect
 }
 
 processImageInspect
@@ -88,7 +89,8 @@ processSbom() {
         lagoon.sh/buildName=${LAGOON_BUILD_NAME} \
         lagoon.sh/project=${PROJECT} \
         lagoon.sh/environment=${ENVIRONMENT} \
-        lagoon.sh/service=${IMAGE_NAME}
+        lagoon.sh/service=${IMAGE_NAME} \
+        insights.lagoon.sh/type=sbom
   fi
 }
 
