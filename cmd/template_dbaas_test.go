@@ -60,6 +60,33 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "../internal/testdata/complex/dbaas-templates/dbaas-3",
 		},
+		{
+			name: "test4 - mongo",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/dbaas-templates/dbaas-1",
+		},
+		{
+			name: "test5 - mongo override (the mongo should not generate because it has a mongodb-single override)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{Name: "LAGOON_SERVICE_TYPES", Value: "mongo:mongodb-single", Scope: "build"},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/dbaas-templates/dbaas-2",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

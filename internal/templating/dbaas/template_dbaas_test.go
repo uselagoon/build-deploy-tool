@@ -92,6 +92,30 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 			},
 			want: "test-resources/result-postgres-1.yaml",
 		},
+		{
+			name: "test4 - mongo",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "mongo",
+							OverrideName:     "mongo",
+							Type:             "mongodb-dbaas",
+							DBaaSEnvironment: "development",
+						},
+					},
+				},
+			},
+			want: "test-resources/result-mongodb-2.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
