@@ -1303,6 +1303,8 @@ do
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+  # remove the image from images to pull
+  unset IMAGES_PULL[$SERVICE_NAME]
 
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 
