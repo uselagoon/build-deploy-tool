@@ -335,15 +335,11 @@ DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.d
 # Load all Services that are defined
 COMPOSE_SERVICES=($(cat $DOCKER_COMPOSE_YAML | shyaml keys services))
 
-# Default shared mariadb service broker
-MARIADB_SHARED_DEFAULT_CLASS="lagoon-dbaas-mariadb-apb"
-MONGODB_SHARED_DEFAULT_CLASS="lagoon-maas-mongodb-apb"
 
 # Figure out which services should we handle
 SERVICE_TYPES=()
 IMAGES=()
 NATIVE_CRONJOB_CLEANUP_ARRAY=()
-DBAAS=()
 declare -A MAP_DEPLOYMENT_SERVICETYPE_TO_IMAGENAME
 declare -A MAP_SERVICE_TYPE_TO_COMPOSE_SERVICE
 declare -A MAP_SERVICE_NAME_TO_IMAGENAME
@@ -421,51 +417,6 @@ do
     done
   fi
 
-  # functions used to check dbaas providers
-  ####
-  function checkDBaaSHealth() {
-    response_code=$(curl --write-out "%{http_code}\n" --silent --output /dev/null "${DBAAS_OPERATOR_HTTP}/healthz")
-    if [ "$response_code" == "200" ]; then
-      return 0
-    else
-      return 1
-    fi
-  }
-
-  function checkDBaaSProvider() {
-    response_json=$(curl --silent "${DBAAS_OPERATOR_HTTP}/$1/$2")
-    response_found=$(echo ${response_json} | jq -r '.result.found')
-    response_error=$(echo ${response_json} | jq -r '.error')
-    if [ "${response_error}" == "null" ]; then
-      return 0
-    else
-      echo $response_error 1>&2
-      return 1
-    fi
-  }
-
-  function getDBaaSEnvironment() {
-    dbaas_environment=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.$1\\.environment "${ENVIRONMENT_TYPE}")
-    # Allow the dbaas shared servicebroker plan to be overriden by environment in .lagoon.yml
-    environment_dbaas_override=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$SERVICE_NAME.$1\\.environment false)
-    if [ ! $environment_dbaas_override == "false" ]; then
-      dbaas_environment=$environment_dbaas_override
-    fi
-    # If we have a dbaas environment type override in the api, consume it here
-    if [ ! -z "$LAGOON_DBAAS_ENVIRONMENT_TYPES" ]; then
-      IFS=',' read -ra LAGOON_DBAAS_ENVIRONMENT_TYPES_SPLIT <<< "$LAGOON_DBAAS_ENVIRONMENT_TYPES"
-      for LAGOON_DBAAS_ENVIRONMENT_TYPE in "${LAGOON_DBAAS_ENVIRONMENT_TYPES_SPLIT[@]}"
-      do
-        IFS=':' read -ra LAGOON_DBAAS_ENVIRONMENT_TYPE_SPLIT <<< "$LAGOON_DBAAS_ENVIRONMENT_TYPE"
-        if [ "${LAGOON_DBAAS_ENVIRONMENT_TYPE_SPLIT[0]}" == "$SERVICE_NAME" ]; then
-          dbaas_environment=${LAGOON_DBAAS_ENVIRONMENT_TYPE_SPLIT[1]}
-        fi
-      done
-    fi
-    echo $dbaas_environment
-  }
-  ####
-
   # Previous versions of Lagoon used "python-ckandatapusher", this should be mapped to "python"
   if [[ "$SERVICE_TYPE" == "python-ckandatapusher" ]]; then
     SERVICE_TYPE="python"
@@ -477,119 +428,6 @@ do
         kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod"
       fi
     fi
-  fi
-
-  # "mariadb" is a meta service, which allows lagoon to decide itself which of the services to use:
-  # - mariadb-single (a single mariadb pod)
-  # - mariadb-dbaas (use the dbaas shared operator)
-  if [ "$SERVICE_TYPE" == "mariadb" ]; then
-    # if there is already a service existing with the service_name we assume that for this project there has been a
-    # mariadb-single deployed (probably from the past where there was no mariadb-shared yet, or mariadb-dbaas) and use that one
-    if kubectl -n ${NAMESPACE} get service "$SERVICE_NAME" &> /dev/null; then
-      SERVICE_TYPE="mariadb-single"
-    elif checkDBaaSHealth; then
-      # check if the dbaas operator responds to a health check
-      # if it does, then check if the dbaas operator has a provider matching the provider type that is expected
-      if checkDBaaSProvider mariadb $(getDBaaSEnvironment mariadb-dbaas); then
-        SERVICE_TYPE="mariadb-dbaas"
-      else
-        SERVICE_TYPE="mariadb-single"
-      fi
-    elif [[ "${CAPABILITIES[@]}" =~ "mariadb.amazee.io/v1/MariaDBConsumer" ]] && ! checkDBaaSHealth ; then
-      # check if this cluster supports the default one, if not we assume that this cluster is not capable of shared mariadbs and we use a mariadb-single
-      # real basic check to see if the mariadbconsumer exists as a kind
-      SERVICE_TYPE="mariadb-dbaas"
-    else
-      SERVICE_TYPE="mariadb-single"
-    fi
-
-  fi
-
-  # Previous versions of Lagoon supported "mariadb-shared", this has been superseeded by "mariadb-dbaas"
-  if [[ "$SERVICE_TYPE" == "mariadb-shared" ]]; then
-    SERVICE_TYPE="mariadb-dbaas"
-  fi
-
-  if [[ "$SERVICE_TYPE" == "mariadb-dbaas" ]]; then
-    # Default plan is the enviroment type
-    DBAAS_ENVIRONMENT=$(getDBaaSEnvironment mariadb-dbaas)
-
-    MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT["${SERVICE_NAME}"]="${DBAAS_ENVIRONMENT}"
-  fi
-
-  # "postgres" is a meta service, which allows lagoon to decide itself which of the services to use:
-  # - postgres-single (a single postgres pod)
-  # - postgres-dbaas (use the dbaas shared operator)
-  if [ "$SERVICE_TYPE" == "postgres" ]; then
-    # if there is already a service existing with the service_name we assume that for this project there has been a
-    # postgres-single deployed (probably from the past where there was no postgres-shared yet, or postgres-dbaas) and use that one
-    if kubectl -n ${NAMESPACE} get service "$SERVICE_NAME" &> /dev/null; then
-      SERVICE_TYPE="postgres-single"
-    elif checkDBaaSHealth; then
-      # check if the dbaas operator responds to a health check
-      # if it does, then check if the dbaas operator has a provider matching the provider type that is expected
-      if checkDBaaSProvider postgres $(getDBaaSEnvironment postgres-dbaas); then
-        SERVICE_TYPE="postgres-dbaas"
-      else
-        SERVICE_TYPE="postgres-single"
-      fi
-    # heck if this cluster supports the default one, if not we assume that this cluster is not capable of shared PostgreSQL and we use a postgres-single
-    # real basic check to see if the postgreSQLConsumer exists as a kind
-    elif [[ "${CAPABILITIES[@]}" =~ "postgres.amazee.io/v1/PostgreSQLConsumer" ]] && ! checkDBaaSHealth; then
-      SERVICE_TYPE="postgres-dbaas"
-    else
-      SERVICE_TYPE="postgres-single"
-    fi
-
-  fi
-
-  # Previous versions of Lagoon supported "postgres-shared", this has been superseeded by "postgres-dbaas"
-  if [[ "$SERVICE_TYPE" == "postgres-shared" ]]; then
-    SERVICE_TYPE="postgres-dbaas"
-  fi
-
-  if [[ "$SERVICE_TYPE" == "postgres-dbaas" ]]; then
-    # Default plan is the enviroment type
-    DBAAS_ENVIRONMENT=$(getDBaaSEnvironment postgres-dbaas)
-
-    MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT["${SERVICE_NAME}"]="${DBAAS_ENVIRONMENT}"
-  fi
-
-  # "mongo" is a meta service, which allows lagoon to decide itself which of the services to use:
-  # - mongodb-single (a single mongodb pod)
-  # - mongodb-dbaas (use the dbaas shared operator)
-  if [ "$SERVICE_TYPE" == "mongo" ]; then
-    # if there is already a service existing with the service_name we assume that for this project there has been a
-    # mongodb-single deployed (probably from the past where there was no mongodb-shared yet, or mongodb-dbaas) and use that one
-    if kubectl -n ${NAMESPACE} get service "$SERVICE_NAME" &> /dev/null; then
-      SERVICE_TYPE="mongodb-single"
-    elif checkDBaaSHealth; then
-      # check if the dbaas operator responds to a health check
-      # if it does, then check if the dbaas operator has a provider matching the provider type that is expected
-      if checkDBaaSProvider mongodb $(getDBaaSEnvironment mongodb-dbaas); then
-        SERVICE_TYPE="mongodb-dbaas"
-      else
-        SERVICE_TYPE="mongodb-single"
-      fi
-    # heck if this cluster supports the default one, if not we assume that this cluster is not capable of shared MongoDB and we use a mongodb-single
-    # real basic check to see if the MongoDBConsumer exists as a kind
-    elif [[ "${CAPABILITIES[@]}" =~ "mongodb.amazee.io/v1/MongoDBConsumer" ]] && ! checkDBaaSHealth; then
-      SERVICE_TYPE="mongodb-dbaas"
-    else
-      SERVICE_TYPE="mongodb-single"
-    fi
-
-  fi
-
-  # Previous versions of Lagoon supported "mongo-shared", this has been superseeded by "mongodb-dbaas"
-  if [[ "$SERVICE_TYPE" == "mongo-shared" ]]; then
-    SERVICE_TYPE="mongodb-dbaas"
-  fi
-
-  if [[ "$SERVICE_TYPE" == "mongodb-dbaas" ]]; then
-    DBAAS_ENVIRONMENT=$(getDBaaSEnvironment mongodb-dbaas)
-
-    MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT["${SERVICE_NAME}"]="${DBAAS_ENVIRONMENT}"
   fi
 
   if [ "$SERVICE_TYPE" == "none" ]; then
@@ -1145,6 +983,7 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
   fi
 fi
 
+# generate the autogenerated ingress
 if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
   build-deploy-tool template autogenerated-ingress
 else
@@ -1206,19 +1045,10 @@ do
     cat /kubectl-build-deploy/values.yaml
     helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${SERVICE_OVERRIDES[@]}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
   fi
-
-  HELM_DBAAS_TEMPLATE="templates/dbaas.yaml"
-  if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_DBAAS_TEMPLATE ]; then
-    # Load the requested class and plan for this service
-    DBAAS_ENVIRONMENT="${MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT["${SERVICE_NAME}"]}"
-    yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'environment' $DBAAS_ENVIRONMENT
-    if [ ! -z "$IMAGECACHE_REGISTRY" ]; then
-      yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'imageCache' $IMAGECACHE_REGISTRY
-    fi
-    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_DBAAS_TEMPLATE -f /kubectl-build-deploy/values.yaml -f /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
-    DBAAS+=("${SERVICE_NAME}:${SERVICE_TYPE}")
-  fi
 done
+
+# generate the dbaas templates if any
+build-deploy-tool template dbaas
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1465,13 +1295,16 @@ if [ "$BUILD_TYPE" == "pullrequest" ]; then
     -p "{\"data\":{\"LAGOON_PR_HEAD_BRANCH\":\"${PR_HEAD_BRANCH}\", \"LAGOON_PR_BASE_BRANCH\":\"${PR_BASE_BRANCH}\", \"LAGOON_PR_TITLE\":$(echo $PR_TITLE | jq -R)}}"
 fi
 
-# loop through created DBAAS
+# loop through created DBAAS templates
+DBAAS=($(build-deploy-tool identify dbaas))
 for DBAAS_ENTRY in "${DBAAS[@]}"
 do
   IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+  # remove the image from images to pull
+  unset IMAGES_PULL[$SERVICE_NAME]
 
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 
@@ -1869,6 +1702,17 @@ do
   if [ ! $ENVIRONMENT_SERVICE_ROLLOUT_TYPE == "false" ]; then
     SERVICE_ROLLOUT_TYPE=$ENVIRONMENT_SERVICE_ROLLOUT_TYPE
   fi
+
+  # check if this service is a dbaas service and transform the service_type accordingly
+  for DBAAS_ENTRY in "${DBAAS[@]}"
+  do
+    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
+    DB_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
+    DB_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+    if [ $SERVICE_NAME == $DB_SERVICE_NAME ]; then
+      SERVICE_TYPE=$DB_SERVICE_TYPE
+    fi
+  done
 
   if [ $SERVICE_TYPE == "mariadb-dbaas" ]; then
 

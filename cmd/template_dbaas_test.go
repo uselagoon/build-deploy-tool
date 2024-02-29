@@ -9,6 +9,7 @@ import (
 
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
 
@@ -31,6 +32,60 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				}, true),
 			templatePath: "testdata/output",
 			want:         "../internal/testdata/complex/dbaas-templates/dbaas-1",
+		},
+		{
+			name: "test2 - mariadb-single to mariadb-dbaas (using mariadb-shared to mariadb-dbaas conversion)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{Name: "LAGOON_SERVICE_TYPES", Value: "mariadb:mariadb-shared", Scope: "build"},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/complex/dbaas-templates/dbaas-2",
+		},
+		{
+			name: "test3 - multiple mariadb",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/complex/lagoon.multidb.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/complex/dbaas-templates/dbaas-3",
+		},
+		{
+			name: "test4 - mongo",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/dbaas-templates/dbaas-1",
+		},
+		{
+			name: "test5 - mongo override (the mongo should not generate because it has a mongodb-single override)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{Name: "LAGOON_SERVICE_TYPES", Value: "mongo:mongodb-single", Scope: "build"},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/dbaas-templates/dbaas-2",
 		},
 	}
 	for _, tt := range tests {
