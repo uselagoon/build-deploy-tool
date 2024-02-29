@@ -120,5 +120,6 @@ func CreatedIngressIdentification(g generator.GeneratorInput) ([]string, []strin
 func init() {
 	identifyCmd.AddCommand(primaryIngressIdentify)
 	identifyCmd.AddCommand(ingressIdentify)
+	identifyCmd.AddCommand(dbaasIdentify)
 	identifyCmd.AddCommand(autogenIngressIdentify)
 }

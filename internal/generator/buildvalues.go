@@ -170,6 +170,7 @@ type ServiceValues struct {
 	DBaasReadReplica              bool                    `json:"dBaasReadReplica"`
 	ImageBuild                    *ImageBuild             `json:"docker,omitempty"`
 	BackupsEnabled                bool                    `json:"backupsEnabled"`
+	IsDBaaS                       bool                    `json:"isDBaaS"`
 }
 
 type ImageBuild struct {
