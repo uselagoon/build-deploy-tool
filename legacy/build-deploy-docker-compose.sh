@@ -1150,7 +1150,7 @@ if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
     echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
     echo "> You should remove this variable if you don't want routes to be removed automatically"
   fi
-  echo "> Futurue releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
+  echo "> Future releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
   for DI in ${DELETE_INGRESS[@]}
   do
     if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
