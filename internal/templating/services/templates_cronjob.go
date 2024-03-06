@@ -323,9 +323,7 @@ func GenerateCronjobTemplate(
 						Value: serviceValues.OverrideName,
 					},
 				}
-				for _, envvar := range envvars {
-					container.Container.Env = append(container.Container.Env, envvar)
-				}
+				container.Container.Env = append(container.Container.Env, envvars...)
 				container.Container.EnvFrom = []corev1.EnvFromSource{
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -334,6 +332,15 @@ func GenerateCronjobTemplate(
 							},
 						},
 					},
+				}
+				for _, dds := range buildValues.DynamicDBaaSSecrets {
+					container.Container.EnvFrom = append(container.Container.EnvFrom, corev1.EnvFromSource{
+						SecretRef: &corev1.SecretEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dds,
+							},
+						},
+					})
 				}
 
 				// mount the volumes in the primary container

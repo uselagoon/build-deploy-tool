@@ -1380,6 +1380,9 @@ done
 # handle dynamic secret collection here, @TODO this will go into the state collector eventually
 export DYNAMIC_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l lagoon.sh/dynamic-secret -o json | jq -r '[.items[] | .metadata.name] | join(",")')
 
+# label subject to change
+export DYNAMIC_DBAAS_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l secret.lagoon.sh/dbaas=true -o json | jq -r '[.items[] | .metadata.name] | join(",")')
+
 # delete any custom private registry secrets, they will get re-created by the lagoon-services templates
 EXISTING_REGISTRY_SECRETS=$(kubectl -n ${NAMESPACE} get secrets --no-headers | cut -d " " -f 1 | xargs)
 for EXISTING_REGISTRY_SECRET in ${EXISTING_REGISTRY_SECRETS}; do

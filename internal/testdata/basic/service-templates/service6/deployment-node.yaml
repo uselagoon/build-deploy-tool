@@ -52,6 +52,8 @@ spec:
         envFrom:
         - configMapRef:
             name: lagoon-env
+        - secretRef:
+            name: mariadb-dbaas-a4hs12h3
         image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
         livenessProbe:

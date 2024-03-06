@@ -55,6 +55,7 @@ type TestData struct {
 	PromotionSourceEnvironment string
 	PrivateRegistryURLS        []string
 	DynamicSecrets             []string
+	DynamicDBaaSSecrets        []string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -174,6 +175,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("DYNAMIC_SECRETS", strings.Join(t.DynamicSecrets, ","))
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("DYNAMIC_DBAAS_SECRETS", strings.Join(t.DynamicDBaaSSecrets, ","))
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -310,6 +315,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.DynamicSecrets != nil {
 		rt.DynamicSecrets = t.DynamicSecrets
+	}
+	if t.DynamicDBaaSSecrets != nil {
+		rt.DynamicDBaaSSecrets = t.DynamicDBaaSSecrets
 	}
 	return rt
 }

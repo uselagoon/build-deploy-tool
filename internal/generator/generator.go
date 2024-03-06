@@ -63,6 +63,7 @@ type GeneratorInput struct {
 	Kubernetes                 string
 	CI                         bool
 	DynamicSecrets             []string
+	DynamicDBaaSSecrets        []string
 }
 
 func NewGenerator(
@@ -106,6 +107,7 @@ func NewGenerator(
 	prHeadSHA := helpers.GetEnv("PR_HEAD_SHA", generator.PRHeadSHA, generator.Debug)
 	prBaseSHA := helpers.GetEnv("PR_BASE_SHA", generator.PRBaseSHA, generator.Debug)
 	dynamicSecrets := helpers.GetEnv("DYNAMIC_SECRETS", strings.Join(generator.DynamicSecrets, ","), generator.Debug)
+	dynamicDBaaSSecrets := helpers.GetEnv("DYNAMIC_DBAAS_SECRETS", strings.Join(generator.DynamicDBaaSSecrets, ","), generator.Debug)
 	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
 	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 
@@ -235,6 +237,10 @@ func NewGenerator(
 				},
 			})
 		}
+	}
+	if dynamicDBaaSSecrets != "" {
+		// if there are any dynamic dbaas secrets defined, send them here
+		buildValues.DynamicDBaaSSecrets = strings.Split(dynamicDBaaSSecrets, ",")
 	}
 
 	// unmarshal and then merge the two so there is only 1 set of variables to iterate over

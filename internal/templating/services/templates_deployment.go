@@ -400,9 +400,7 @@ func GenerateDeploymentTemplate(
 				},
 			}
 			// expose any container envvars as required here
-			for _, envvar := range envvars {
-				container.Container.Env = append(container.Container.Env, envvar)
-			}
+			container.Container.Env = append(container.Container.Env, envvars...)
 			// consume the lagoon-env configmap here
 			container.Container.EnvFrom = []corev1.EnvFromSource{
 				{
@@ -412,6 +410,15 @@ func GenerateDeploymentTemplate(
 						},
 					},
 				},
+			}
+			for _, dds := range buildValues.DynamicDBaaSSecrets {
+				container.Container.EnvFrom = append(container.Container.EnvFrom, corev1.EnvFromSource{
+					SecretRef: &corev1.SecretEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: dds,
+						},
+					},
+				})
 			}
 
 			// mount the volumes in the primary container
@@ -505,9 +512,7 @@ func GenerateDeploymentTemplate(
 						Value: buildValues.GitSHA,
 					},
 				}
-				for _, envvar := range envvars {
-					linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvar)
-				}
+				linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvars...)
 				linkedContainer.Container.EnvFrom = []corev1.EnvFromSource{
 					{
 						ConfigMapRef: &corev1.ConfigMapEnvSource{
@@ -516,6 +521,15 @@ func GenerateDeploymentTemplate(
 							},
 						},
 					},
+				}
+				for _, dds := range buildValues.DynamicDBaaSSecrets {
+					linkedContainer.Container.EnvFrom = append(linkedContainer.Container.EnvFrom, corev1.EnvFromSource{
+						SecretRef: &corev1.SecretEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: dds,
+							},
+						},
+					})
 				}
 				for _, dsm := range buildValues.DynamicSecretMounts {
 					volumeMount := corev1.VolumeMount{

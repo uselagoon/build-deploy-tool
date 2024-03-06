@@ -56,6 +56,7 @@ type BuildValues struct {
 	TaskScaleWaitTime             int                          `json:"taskScaleWaitTime" description:"the time to wait for pods to scale for pre and post rollout tasks"`
 	DynamicSecretMounts           []DynamicSecretMounts        `json:"dynamicSecretMounts" description:"stores any dynamic secret mount definitions"`
 	DynamicSecretVolumes          []DynamicSecretVolumes       `json:"dynamicSecretVolumes" description:"stores any dynamic secret volume definitions"`
+	DynamicDBaaSSecrets           []string                     `json:"dynamicDBaaSSecrets" description:"stores any dynamic dbaas secret definitions"`
 	ImageCache                    string                       `json:"imageCache" description:"if an imagecache has been provided for images outside of the imageregistry"`
 	DefaultBackupSchedule         string                       `json:"defaultBackupSchedule" description:"the default backup scheduled"`
 	DBaaSClient                   *dbaasclient.Client          `json:"-" description:"used to store connection information for the dbaas operator endpoint"`
