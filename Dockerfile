@@ -96,7 +96,6 @@ WORKDIR /kubectl-build-deploy/git
 COPY legacy/docker-entrypoint.sh /lagoon/entrypoints/100-docker-entrypoint.sh
 COPY legacy/build-deploy.sh /kubectl-build-deploy/build-deploy.sh
 COPY legacy/build-deploy-docker-compose.sh /kubectl-build-deploy/build-deploy-docker-compose.sh
-COPY legacy/rootless.values.yaml /kubectl-build-deploy/rootless.values.yaml
 
 COPY legacy/scripts /kubectl-build-deploy/scripts
 

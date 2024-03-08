@@ -6,13 +6,15 @@ require (
 	dario.cat/mergo v1.0.0
 	github.com/PaesslerAG/gval v1.2.2
 	github.com/amazeeio/dbaas-operator v0.3.0
+	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
+	github.com/drone/envsubst v1.0.3
 	github.com/google/go-cmp v0.5.9
 	github.com/hashicorp/go-retryablehttp v0.7.5
 	github.com/k8up-io/k8up/v2 v2.7.2
 	github.com/spf13/cobra v1.8.0
-	github.com/uselagoon/machinery v0.0.12
+	github.com/uselagoon/machinery v0.0.16
 	github.com/vshn/k8up v1.99.99
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -52,6 +54,7 @@ require (
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
+	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shopspring/decimal v1.3.1 // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
@@ -62,8 +65,8 @@ require (
 	golang.org/x/net v0.18.0 // indirect
 	golang.org/x/oauth2 v0.14.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.14.0 // indirect
-	golang.org/x/term v0.14.0 // indirect
+	golang.org/x/sys v0.15.0 // indirect
+	golang.org/x/term v0.15.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.4.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect

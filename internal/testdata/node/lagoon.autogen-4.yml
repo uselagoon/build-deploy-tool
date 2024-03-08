@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/node/docker-compose.autogen-2.yml
+docker-compose-yaml: internal/testdata/node/docker-compose.autogen-2.yml
 
 routes:
   autogenerate:

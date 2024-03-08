@@ -2,7 +2,7 @@ version: '2'
 services:
   nginx:
     build:
-      context: .
+      context: internal/testdata/nginxphp/docker
       dockerfile: nginx.dockerfile
     labels:
       lagoon.type: nginx-php-persistent
@@ -11,7 +11,7 @@ services:
 
   php:
     build:
-      context: .
+      context: internal/testdata/nginxphp/docker
       dockerfile: php.dockerfile
     labels:
       lagoon.type: nginx-php-persistent

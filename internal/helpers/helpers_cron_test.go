@@ -170,3 +170,49 @@ func TestConvertCrontab(t *testing.T) {
 		})
 	}
 }
+
+func Test_isInPodCronjob(t *testing.T) {
+	type args struct {
+		cron string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    bool
+		wantErr bool
+	}{
+		{
+			name: "test1 - every 15 minutes, should be inpod",
+			args: args{
+				cron: "M/15 * * 11 0-5",
+			},
+			want: true,
+		},
+		{
+			name: "test2 - every minute, should be in pod",
+			args: args{
+				cron: "* * * 11 0-5",
+			},
+			want: true,
+		},
+		{
+			name: "test3 - on the 15 minute mark, should not be in pod",
+			args: args{
+				cron: "15 * * 11 0-5",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := IsInPodCronjob(tt.args.cron)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("IsInPodCronjob() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if got != tt.want {
+				t.Errorf("IsInPodCronjob() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

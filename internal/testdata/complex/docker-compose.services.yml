@@ -9,8 +9,8 @@ volumes:
 services:
   web:
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: internal/testdata/complex/docker
+      dockerfile: web.dockerfile
     labels:
       lagoon.type: basic-persistent
       lagoon.persistent: /app/files

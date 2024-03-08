@@ -9,6 +9,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	networkv1 "k8s.io/api/networking/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -237,16 +238,20 @@ func GenerateIngressTemplate(
 		Name: "http",
 	}
 
-	// if a port number is provided, use it
-	if route.ServicePortNumber != nil {
-		servicePort = networkv1.ServiceBackendPort{
-			Number: *route.ServicePortNumber,
-		}
-	}
-	// if a different port name is provided use it above all else
-	if route.ServicePortName != nil {
-		servicePort = networkv1.ServiceBackendPort{
-			Name: *route.ServicePortName,
+	backendService := route.LagoonService
+	// check the additional service ports if they are there, and check if the provided route service is in this list of additional ports
+	// and use the name in the ingress
+	for _, service := range lValues.Services {
+		for idx, addPort := range service.AdditionalServicePorts {
+			if addPort.ServiceName == route.LagoonService {
+				servicePort = services.GenerateServiceBackendPort(addPort)
+				backendService = service.OverrideName
+			}
+			// if this service is for the default named lagoonservice
+			if service.OverrideName == route.LagoonService && idx == 0 {
+				// and set the portname to the name of the first service in the list
+				servicePort = services.GenerateServiceBackendPort(addPort)
+			}
 		}
 	}
 
@@ -264,7 +269,7 @@ func GenerateIngressTemplate(
 							PathType: &pt,
 							Backend: networkv1.IngressBackend{
 								Service: &networkv1.IngressServiceBackend{
-									Name: route.LagoonService,
+									Name: backendService,
 									Port: servicePort,
 								},
 							},
@@ -287,7 +292,7 @@ func GenerateIngressTemplate(
 							PathType: &pt,
 							Backend: networkv1.IngressBackend{
 								Service: &networkv1.IngressServiceBackend{
-									Name: route.LagoonService,
+									Name: backendService,
 									Port: servicePort,
 								},
 							},

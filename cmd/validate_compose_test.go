@@ -3,6 +3,9 @@ package cmd
 import (
 	"strings"
 	"testing"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestValidateDockerCompose(t *testing.T) {
@@ -20,31 +23,31 @@ func TestValidateDockerCompose(t *testing.T) {
 		{
 			name: "test1 complex docker-compose",
 			args: args{
-				file: "../test-resources/docker-compose/test3/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test3/docker-compose.yml",
 			},
 		},
 		{
 			name: "test2 complex docker-compose",
 			args: args{
-				file: "../test-resources/docker-compose/test4/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test4/docker-compose.yml",
 			},
 		},
 		{
 			name: "test3 complex docker-compose",
 			args: args{
-				file: "../test-resources/docker-compose/test5/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test5/docker-compose.yml",
 			},
 		},
 		{
 			name: "test4 complex docker-compose",
 			args: args{
-				file: "../test-resources/docker-compose/test6/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test6/docker-compose.yml",
 			},
 		},
 		{
 			name: "test5 check an invalid docker-compose",
 			args: args{
-				file: "../test-resources/docker-compose/test7/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test7/docker-compose.yml",
 			},
 			wantErr:    true,
 			wantErrMsg: "Non-string key in x-site-branch: <nil>",
@@ -52,14 +55,14 @@ func TestValidateDockerCompose(t *testing.T) {
 		{
 			name: "test6 check an invalid docker-compose (same as test5 but ignoring the errors)",
 			args: args{
-				file:                     "../test-resources/docker-compose/test8/docker-compose.yml",
+				file:                     "internal/testdata/docker-compose/test8/docker-compose.yml",
 				ignoreNonStringKeyErrors: true,
 			},
 		},
 		{
 			name: "test7 check an valid docker-compose with missing env_files ",
 			args: args{
-				file: "../test-resources/docker-compose/test10/docker-compose.yml",
+				file: "internal/testdata/docker-compose/test10/docker-compose.yml",
 			},
 			wantErr:    true,
 			wantErrMsg: "no such file or directory",
@@ -67,7 +70,7 @@ func TestValidateDockerCompose(t *testing.T) {
 		{
 			name: "test8 check an valid docker-compose with missing env_files (same as test7 but ignoring the missing file errors)",
 			args: args{
-				file:                     "../test-resources/docker-compose/test9/docker-compose.yml",
+				file:                     "internal/testdata/docker-compose/test9/docker-compose.yml",
 				ignoreNonStringKeyErrors: true,
 				ignoreMissingEnvFiles:    true,
 			},

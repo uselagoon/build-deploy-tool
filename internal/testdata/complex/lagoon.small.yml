@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/complex/docker-compose.small-1.yml
+docker-compose-yaml: internal/testdata/complex/docker-compose.small-1.yml
 
 ssh: lagoon-core-ssh.lagoon.svc:2020
 api: http://lagoon-core-api.lagoon.svc:80/graphql
