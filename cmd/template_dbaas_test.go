@@ -96,13 +96,13 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.services.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.services.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_DBAAS_ENVIRONMENT_TYPES", Value: "postgres-15:production-postgres,mongo-4:production-mongo", Scope: "build"},
 					},
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-4",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-4",
 		},
 	}
 	for _, tt := range tests {

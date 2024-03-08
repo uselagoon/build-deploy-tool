@@ -1,0 +1,91 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: mongo-4
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mongodb-single
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: mongo-4
+    lagoon.sh/service-type: mongodb-single
+    lagoon.sh/template: mongodb-single-0.1.0
+  name: mongo-4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: mongo-4
+      app.kubernetes.io/name: mongodb-single
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c 'tar -cf - -C "/data/db" --exclude="lost\+found"
+          . || [ $? -eq 1 ]'
+        k8up.syn.tools/file-extension: .mongo-4.tar
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.7.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: mongo-4
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: mongodb-single
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: mongo-4
+        lagoon.sh/service-type: mongodb-single
+        lagoon.sh/template: mongodb-single-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: abcdefg123456
+        - name: CRONJOBS
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example/example-project/main/mongo-4@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 27017
+        name: mongodb-single
+        ports:
+        - containerPort: 27017
+          name: 27017-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 27017
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        volumeMounts:
+        - mountPath: /data/db
+          name: mongo-4
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: mongo-4
+        persistentVolumeClaim:
+          claimName: mongo-4
+status: {}
