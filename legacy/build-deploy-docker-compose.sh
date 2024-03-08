@@ -407,6 +407,8 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
   fi
 fi
 
+# loop through created DBAAS templates
+DBAAS=($(build-deploy-tool identify dbaas))
 for COMPOSE_SERVICE in "${COMPOSE_SERVICES[@]}"
 do
   # The name of the service can be overridden, if not we use the actual servicename
@@ -461,6 +463,34 @@ do
 
   # The ImageName is the same as the Name of the Docker Compose ServiceName
   IMAGE_NAME=$COMPOSE_SERVICE
+
+  for DBAAS_ENTRY in "${DBAAS[@]}"
+  do
+    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
+    DBAAS_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
+    DBAAS_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+    if [ "$SERVICE_TYPE" == "mariadb" ]; then
+      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+        SERVICE_TYPE=$DBAAS_SERVICE_TYPE
+      else
+        SERVICE_TYPE="mariadb-single"
+      fi
+    fi
+    if [ "$SERVICE_TYPE" == "postgres" ]; then
+      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+        SERVICE_TYPE=$DBAAS_SERVICE_TYPE
+      else
+        SERVICE_TYPE="postgres-single"
+      fi
+    fi
+    if [ "$SERVICE_TYPE" == "mongo" ]; then
+      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+        SERVICE_TYPE=$DBAAS_SERVICE_TYPE
+      else
+        SERVICE_TYPE="mongodb-single"
+      fi
+    fi
+  done
 
   # Do not handle images for shared services
   if  [[ "$SERVICE_TYPE" != "mariadb-dbaas" ]] &&
@@ -1042,7 +1072,7 @@ if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
     echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
     echo "> You should remove this variable if you don't want routes to be removed automatically"
   fi
-  echo "> Futurue releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
+  echo "> Future releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
   for DI in ${DELETE_INGRESS[@]}
   do
     if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
@@ -1194,8 +1224,6 @@ do
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-  # remove the image from images to pull
-  unset IMAGES_PULL[$SERVICE_NAME]
 
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 
