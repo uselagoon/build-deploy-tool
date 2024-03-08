@@ -1,0 +1,5 @@
+---
+docker-compose-yaml: ../internal/testdata/complex/docker-compose.services.yml
+
+environment_variables:
+  git_sha: 'true'
