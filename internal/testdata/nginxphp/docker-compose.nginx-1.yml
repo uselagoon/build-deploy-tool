@@ -20,8 +20,6 @@ services:
     build:
       context: internal/testdata/nginxphp/docker
       dockerfile: php.dockerfile
-    depends_on:
-      - cli
     labels:
       lagoon.type: nginx-php
       lagoon.name: nginx-php
