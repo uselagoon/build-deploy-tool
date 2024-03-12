@@ -248,6 +248,8 @@ You can run docker compose config locally to check that your docker-compose file
 "
   if [[ "${dccOutput}" =~ "no such file or directory" ]]; then
     echo "> an env_file is defined in your docker-compose file, but no matching file found."
+    echo ">> See https://docs.docker.com/compose/compose-file/05-services/#env_file if and the new env_file attributes for 'required' env_files."
+    echo ">> Consider setting these files to 'required: false' when using Lagoon to prevent this warning from appearing again"
   fi
   if [[ "${dccOutput}" =~ "Non-string key" ]]; then
     echo "> an invalid string key was detected in your docker-compose file."
