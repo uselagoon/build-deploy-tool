@@ -1763,6 +1763,84 @@ set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
+beginBuildStep "Service/Deployment Cleanup" "cleanupServices"
+
+##############################################
+### CLEANUP services which have been removed from docker-compose.yaml
+##############################################s
+
+set +x
+# collect the current routes, its possible to exclude ingress by adding a label 'route.lagoon.sh/remove=false' and it won't get deleted
+CURRENT_SERVICES=$(kubectl -n ${NAMESPACE} get deployments -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
+# collect the routes that Lagoon thinks it should have based on the .lagoon.yml and any routes that have come from the api
+# using the build-deploy-tool generator
+SERVICES_TO_JSON=$(build-deploy-tool identify services | jq -r '.[]')
+
+MATCHED_SERVICE=false
+DELETE_SERVICE=()
+# loop over the routes from kubernetes
+for EXIST_SERVICE in ${CURRENT_SERVICES}; do
+  # loop over the routes that Lagoon thinks it should have
+  for SERVICE in ${SERVICES_TO_JSON}; do
+    if [ "${EXIST_SERVICE}" == "${SERVICE}" ]; then
+      MATCHED_SERVICE=true
+      continue
+    fi
+  done
+  if [ "${MATCHED_SERVICE}" != "true" ]; then
+    DELETE_SERVICE+=($EXIST_SERVICE)
+  fi
+  MATCHED_SERVICE=false
+done
+
+SERVICE_CLEANUP_WARNINGS="false"
+if [ ${#DELETE_SERVICE[@]} -ne 0 ]; then
+  SERVICE_CLEANUP_WARNINGS="true"
+  ((++BUILD_WARNING_COUNT))
+  echo ">> Lagoon detected services that have been removed from the docker-compose file"
+  if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" != enabled ]; then
+    echo "> You can remove these in the next build by setting the flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_SERVICES=enabled' as a GLOBAL scoped variable to this environment or project"
+  fi
+  for DS in ${DELETE_SERVICE[@]}
+  do
+    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
+      echo ">> Removing deployment ${DS}"
+      if kubectl -n ${NAMESPACE} get deployments ${DS} &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete deployment ${DS}
+      fi
+      if kubectl -n ${NAMESPACE} get service ${DS} &> /dev/null; then
+        echo ">>> Removing associated service ${DS}"
+        kubectl -n ${NAMESPACE} delete service ${DS}
+      fi
+      if kubectl -n ${NAMESPACE} get ingress ${DS} &> /dev/null; then
+        echo ">>> Removing associated ingress ${DS}"
+        kubectl -n ${NAMESPACE} delete ingress ${DS}
+      fi
+      if kubectl -n ${NAMESPACE} get pvc ${DS} &> /dev/null; then
+        echo ">>> Removing associated persistent volume ${DS}"
+        kubectl -n ${NAMESPACE} delete pvc ${DS}
+      fi
+      #delete anything else?
+    else
+        echo ">> The deployment '${DS}' would be removed"
+        if kubectl -n ${NAMESPACE} get service ${DS} &> /dev/null; then
+          echo ">>> The associated service '${DS}' would be removed"
+        fi
+        if kubectl -n ${NAMESPACE} get ingress ${DS} &> /dev/null; then
+          echo ">>> The associated ingress '${DS}' would be removed"
+        fi
+        if kubectl -n ${NAMESPACE} get pvc ${DS} &> /dev/null; then
+          echo ">>> The associated persistent volume '${DS}' would be removed"
+        fi
+    fi
+  done
+else
+  echo "No service cleanup required"
+fi
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceCleanupComplete" "Service/Deployment Cleanup" "${SERVICE_CLEANUP_WARNINGS}"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 set -x
 

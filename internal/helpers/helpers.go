@@ -236,3 +236,12 @@ func DeepCopy(src, dist interface{}) (err error) {
 	}
 	return gob.NewDecoder(&buf).Decode(dist)
 }
+
+func AppendIfMissing(slice []string, i string) []string {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
+}
