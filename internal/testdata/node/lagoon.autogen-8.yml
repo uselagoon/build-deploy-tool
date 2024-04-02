@@ -1,0 +1,14 @@
+docker-compose-yaml: ../internal/testdata/node/docker-compose.autogen-3.yml
+
+routes:
+  autogenerate:
+    insecure: Redirect
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com

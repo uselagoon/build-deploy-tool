@@ -49,7 +49,7 @@ spec:
         # This init container sets the appropriate limits for mmap counts on the hosting node.
         # https://opensearch.org/docs/latest/opensearch/install/important-settings/
         - name: set-max-map-count
-          image: busybox:latest
+          image: {{ .Values.imageCache }}library/busybox:latest
           imagePullPolicy: {{ .Values.imagePullPolicy }}
           securityContext:
             privileged: true

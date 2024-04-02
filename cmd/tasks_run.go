@@ -4,17 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
+
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
-	"io/ioutil"
-	"os"
-	"strings"
 )
 
 var runPreRollout, runPostRollout, outOfClusterConfig bool
-var namespace string
 
 const (
 	preRolloutTasks = iota
@@ -31,7 +29,7 @@ var taskCmd = &cobra.Command{
 // unidleThenRun is a wrapper around 'runCleanTaskInEnvironment' used for pre-rollout tasks
 // We actually want to unidle the namespace before running pre-rollout tasks,
 // so we wrap the usual task runner before calling it.
-func unidleThenRun(namespace string, incoming lagoon.Task) error {
+func unidleThenRun(namespace string, prePost string, incoming lagoon.Task) error {
 	fmt.Printf("Unidling namespace with RequiresEnvironment: %v, ScaleMaxIterations:%v and ScaleWaitTime:%v\n", incoming.RequiresEnvironment, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	err := lagoon.UnidleNamespace(context.TODO(), namespace, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	if err != nil {
@@ -47,7 +45,7 @@ func unidleThenRun(namespace string, incoming lagoon.Task) error {
 			return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
 		}
 	}
-	return runCleanTaskInEnvironment(namespace, incoming)
+	return runCleanTaskInEnvironment(namespace, prePost, incoming)
 }
 
 var tasksPreRun = &cobra.Command{
@@ -55,7 +53,7 @@ var tasksPreRun = &cobra.Command{
 	Aliases: []string{"pre"},
 	Short:   "Will run pre rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}
@@ -65,7 +63,7 @@ var tasksPreRun = &cobra.Command{
 		}
 		fmt.Println("Executing Pre-rollout Tasks")
 
-		taskIterator, err := iterateTaskGenerator(true, unidleThenRun, buildValues, true)
+		taskIterator, err := iterateTaskGenerator(true, unidleThenRun, buildValues, "Pre-Rollout", true)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -86,7 +84,7 @@ var tasksPostRun = &cobra.Command{
 	Aliases: []string{"post"},
 	Short:   "Will run post rollout tasks defined in .lagoon.yml",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generatorInput(true)
+		generator, err := generator.GenerateInput(*rootCmd, true)
 		if err != nil {
 			return err
 		}
@@ -97,7 +95,7 @@ var tasksPostRun = &cobra.Command{
 
 		fmt.Println("Executing Post-rollout Tasks")
 
-		taskIterator, err := iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, true)
+		taskIterator, err := iterateTaskGenerator(false, runCleanTaskInEnvironment, buildValues, "Post-Rollout", true)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -159,21 +157,8 @@ type iterateTaskFuncType func(tasklib.TaskEnvironment, []lagoon.Task) (bool, err
 // that lets the resulting function reference values as part of the closure, thereby cleaning up the definition a bit.
 // so, the variables passed into the factor (eg. allowDeployMissingErrors, etc.) determine the way the function behaves,
 // without needing to pass those into the call to the returned function itself.
-func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, debug bool) (iterateTaskFuncType, error) {
+func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnvironmentFuncType, buildValues generator.BuildValues, prePost string, debug bool) (iterateTaskFuncType, error) {
 	var retErr error
-	namespace := buildValues.Namespace
-	if namespace == "" {
-		//Try load from file
-		const filename = "/var/run/secrets/kubernetes.io/serviceaccount/namespace"
-		if _, err := os.Stat(filename); errors.Is(err, os.ErrNotExist) {
-			retErr = fmt.Errorf("A target namespace is required to run pre/post-rollout tasks")
-		}
-		nsb, err := ioutil.ReadFile(filename)
-		if err != nil {
-			retErr = err
-		}
-		namespace = strings.Trim(string(nsb), "\n ")
-	}
 	return func(lagoonConditionalEvaluationEnvironment tasklib.TaskEnvironment, tasks []lagoon.Task) (bool, error) {
 		for _, task := range tasks {
 			// set the iterations and wait times here
@@ -188,7 +173,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 				return true, err
 			}
 			if runTask {
-				err := taskRunner(namespace, task)
+				err := taskRunner(buildValues.Namespace, prePost, task)
 				if err != nil {
 					switch e := err.(type) {
 					case *lagoon.DeploymentMissingError:
@@ -242,12 +227,12 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	return retBool, nil
 }
 
-type runTaskInEnvironmentFuncType func(namespace string, incoming lagoon.Task) error
+type runTaskInEnvironmentFuncType func(namespace string, prePost string, incoming lagoon.Task) error
 
 // runCleanTaskInEnvironment implements runTaskInEnvironmentFuncType and will
 // 1. make sure the task we pass to the execution environment is free of any data we don't want (hence the new task)
 // 2. will actually execute the task in the environment.
-func runCleanTaskInEnvironment(namespace string, incoming lagoon.Task) error {
+func runCleanTaskInEnvironment(namespace string, prePost string, incoming lagoon.Task) error {
 	task := lagoon.NewTask()
 	task.Command = incoming.Command
 	task.Namespace = namespace
@@ -257,7 +242,7 @@ func runCleanTaskInEnvironment(namespace string, incoming lagoon.Task) error {
 	task.Name = incoming.Name
 	task.ScaleMaxIterations = incoming.ScaleMaxIterations
 	task.ScaleWaitTime = incoming.ScaleWaitTime
-	err := lagoon.ExecuteTaskInEnvironment(task)
+	err := lagoon.ExecuteTaskInEnvironment(task, prePost)
 	return err
 }
 
@@ -266,7 +251,7 @@ func init() {
 	taskCmd.AddCommand(tasksPostRun)
 
 	addArgs := func(command *cobra.Command) {
-		command.Flags().StringVarP(&namespace, "namespace", "n", "",
+		command.Flags().StringP("namespace", "n", "",
 			"The environments environment variables JSON payload")
 	}
 	addArgs(tasksPreRun)

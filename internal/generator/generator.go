@@ -10,6 +10,8 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"github.com/uselagoon/machinery/utils/conversion"
+	corev1 "k8s.io/api/core/v1"
 	"sigs.k8s.io/yaml"
 )
 
@@ -46,10 +48,13 @@ type GeneratorInput struct {
 	FastlyCacheNoCahce       string
 	FastlyAPISecretPrefix    string
 	SavedTemplatesPath       string
+	BackupConfiguration      BackupConfiguration
 	IgnoreNonStringKeyErrors bool
 	IgnoreMissingEnvFiles    bool
 	Debug                    bool
 	DBaaSClient              *dbaasclient.Client
+	Namespace                string
+	DefaultBackupSchedule    string
 }
 
 func NewGenerator(
@@ -84,6 +89,22 @@ func NewGenerator(
 	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 
+	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", generator.DefaultBackupSchedule, generator.Debug)
+	if defaultBackupSchedule == "" {
+		defaultBackupSchedule = "M H(22-2) * * *"
+	}
+
+	// try source the namespace from the generator, but whatever is defined in the service account location
+	// should be used if one exists, falls back to whatever came in via generator
+	namespace := helpers.GetEnv("NAMESPACE", generator.Namespace, generator.Debug)
+	namespace, err := helpers.GetNamespace(namespace, "/var/run/secrets/kubernetes.io/serviceaccount/namespace")
+	if err != nil {
+		// a file was found, but there was an issue accessing it
+		return nil, err
+	}
+
+	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
+
 	// get the project and environment variables
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
 	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", generator.EnvironmentVariables, generator.Debug)
@@ -96,6 +117,8 @@ func NewGenerator(
 	//add the dbaas client to build values too
 	buildValues.DBaaSClient = generator.DBaaSClient
 
+	buildValues.DefaultBackupSchedule = defaultBackupSchedule
+
 	// set the task scale iterations/wait times
 	// these are not user modifiable flags, but are injectable by the controller so individual clusters can
 	// set these on their `remote-controller` deployments to be injected to builds.
@@ -105,6 +128,7 @@ func NewGenerator(
 	// start saving values into the build values variable
 	buildValues.Project = projectName
 	buildValues.Environment = environmentName
+	buildValues.Namespace = namespace
 	buildValues.EnvironmentType = environmentType
 	buildValues.BuildType = buildType
 	buildValues.LagoonVersion = lagoonVersion
@@ -172,6 +196,14 @@ func NewGenerator(
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	lagoonEnvVars = lagoon.MergeVariables(mergedVariables, configVars)
 
+	imageCache := CheckFeatureFlag("IMAGECACHE_REGISTRY", lagoonEnvVars, generator.Debug)
+	if imageCache != "" {
+		if imageCache[len(imageCache)-1:] != "/" {
+			imageCache = fmt.Sprintf("%s/", imageCache)
+		}
+	}
+	buildValues.ImageCache = imageCache
+
 	// check the environment for INGRESS_CLASS flag, will be "" if there are none found
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", lagoonEnvVars, generator.Debug)
 	buildValues.IngressClass = ingressClass
@@ -200,12 +232,21 @@ func NewGenerator(
 		}
 	}
 
+	rootlessWorkloads := CheckFeatureFlag("ROOTLESS_WORKLOAD", lagoonEnvVars, generator.Debug)
+	if rootlessWorkloads == "enabled" {
+		buildValues.PodSecurityContext = &corev1.PodSecurityContext{
+			FSGroup:    conversion.Int64Ptr(10001),
+			RunAsGroup: conversion.Int64Ptr(0),
+			RunAsUser:  conversion.Int64Ptr(10000),
+		}
+	}
+
 	// @TODO: eventually fail builds if this is not set https://github.com/uselagoon/build-deploy-tool/issues/56
 	// lagoonDBaaSFallbackSingle, _ := lagoon.GetLagoonVariable("LAGOON_FEATURE_FLAG_DBAAS_FALLBACK_SINGLE", nil, lagoonEnvVars)
 	// buildValues.DBaaSFallbackSingle = helpers.StrToBool(lagoonDBaaSFallbackSingle.Value)
 
 	/* start backups configuration */
-	err := generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
+	err = generateBackupValues(&buildValues, lYAML, lagoonEnvVars, generator.Debug)
 	if err != nil {
 		return nil, err
 	}
@@ -341,7 +382,7 @@ func collectBuildVariables(buildValues BuildValues) []lagoon.EnvironmentVariable
 	return vars
 }
 
-// GetEnv gets an environment variable
+// checks the provided environment variables looking for feature flag based variables
 func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, debug bool) string {
 	// check for force value
 	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {

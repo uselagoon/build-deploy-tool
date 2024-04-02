@@ -28,21 +28,26 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test1",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -56,23 +61,29 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test2 - dev schedule from lagoon api variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_DEV_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -86,24 +97,31 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test3 - dev schedule from build pod variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
-				lYAML:           &lagoon.YAML{},
-				mergedVariables: []lagoon.EnvironmentVariable{},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
+				},
 			},
 			vars: []helpers.EnvironmentVariable{
 				{Name: "LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", Value: "1,16,31,46 23 * * 0-5"},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -117,23 +135,29 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test4- pr schedule from lagoon api variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "pullrequest",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "pullrequest",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "pullrequest",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "pullrequest",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -147,24 +171,31 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test5 - pr schedule from build pod variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "pullrequest",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "pullrequest",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
-				lYAML:           &lagoon.YAML{},
-				mergedVariables: []lagoon.EnvironmentVariable{},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
+				},
 			},
 			vars: []helpers.EnvironmentVariable{
 				{Name: "LAGOON_FEATURE_BACKUP_PR_SCHEDULE", Value: "1,16,31,46 23 * * 0-5"},
 			},
 			want: &BuildValues{
-				BuildType:       "pullrequest",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "pullrequest",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -178,23 +209,29 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test6 - pr env with dev schedule from lagoon api variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "pullrequest",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "pullrequest",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_DEV_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "pullrequest",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "pullrequest",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -208,24 +245,31 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test7 - pr env with dev schedule from build pod variable",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "pullrequest",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "pullrequest",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
-				lYAML:           &lagoon.YAML{},
-				mergedVariables: []lagoon.EnvironmentVariable{},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
+				},
 			},
 			vars: []helpers.EnvironmentVariable{
 				{Name: "LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", Value: "1,16,31,46 23 * * 0-5"},
 			},
 			want: &BuildValues{
-				BuildType:       "pullrequest",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "pullrequest",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 23 * * 0-5",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -239,9 +283,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test8 - production with lagoon yaml overrides",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "production",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "production",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{
 					BackupRetention: lagoon.BackupRetention{
@@ -259,13 +305,16 @@ func Test_generateBackupValues(t *testing.T) {
 				mergedVariables: []lagoon.EnvironmentVariable{},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "production",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "production",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 0-23 1-31 1-12 0-6",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  10,
 						Daily:   10,
@@ -279,9 +328,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test9 - custom backup configuration",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
@@ -290,17 +341,20 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					S3SecretName: "lagoon-baas-custom-backup-credentials",
+					S3BucketName: "baas-example-project",
 					CustomLocation: CustomBackupRestoreLocation{
 						BackupLocationAccessKey: "abcdefg",
 						BackupLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -315,9 +369,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test10 - custom backup configuration with endpoint and bucket",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
@@ -328,9 +384,11 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					S3SecretName: "lagoon-baas-custom-backup-credentials",
 					S3Endpoint:   "https://minio.example.com",
@@ -340,7 +398,7 @@ func Test_generateBackupValues(t *testing.T) {
 						BackupLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -355,9 +413,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test11 - custom restore configuration",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
@@ -366,17 +426,20 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					CustomLocation: CustomBackupRestoreLocation{
 						RestoreLocationAccessKey: "abcdefg",
 						RestoreLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -390,9 +453,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test12 - custom restore and backup configuration with endpoint and bucket",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
@@ -405,9 +470,11 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					S3SecretName: "lagoon-baas-custom-backup-credentials",
 					S3Endpoint:   "https://minio.example.com",
@@ -419,7 +486,7 @@ func Test_generateBackupValues(t *testing.T) {
 						RestoreLocationSecretKey: "a1b2c3d4e5f6g7h8i9",
 					},
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
@@ -434,9 +501,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test13 - K8UP_WEEKLY_RANDOM_FEATURE_FLAG enabled",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
@@ -445,13 +514,16 @@ func Test_generateBackupValues(t *testing.T) {
 				{Name: "K8UP_WEEKLY_RANDOM_FEATURE_FLAG", Value: "enabled"},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
 					CheckSchedule:  "@weekly-random",
 					PruneSchedule:  "@weekly-random",
+					S3BucketName:   "baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,
@@ -465,9 +537,11 @@ func Test_generateBackupValues(t *testing.T) {
 			name: "test14 - K8UP_WEEKLY_RANDOM_FEATURE_FLAG set but not enabled/valid",
 			args: args{
 				buildValues: &BuildValues{
-					BuildType:       "branch",
-					EnvironmentType: "development",
-					Namespace:       "example-com-main",
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
 				},
 				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
@@ -476,13 +550,138 @@ func Test_generateBackupValues(t *testing.T) {
 				{Name: "K8UP_WEEKLY_RANDOM_FEATURE_FLAG", Value: "jkhk"},
 			},
 			want: &BuildValues{
-				BuildType:       "branch",
-				EnvironmentType: "development",
-				Namespace:       "example-com-main",
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "31 1 * * *",
-					CheckSchedule:  "31 4 * * 0",
+					CheckSchedule:  "31 6 * * 1",
 					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test15 - baas bucket name",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_BAAS_BUCKET_NAME",
+						Value: "mybucket",
+						Scope: "global",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 6 * * 1",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "mybucket",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test16 - baas bucket name with shared",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_BAAS_BUCKET_NAME",
+						Value: "mybucket",
+						Scope: "global",
+					},
+					{
+						Name:  "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET",
+						Value: "baas-cluster-bucket",
+						Scope: "internal_system",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 6 * * 1",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "mybucket",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test17 - shared baas bucket name",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+				},
+				lYAML: &lagoon.YAML{},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{
+						Name:  "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET",
+						Value: "baas-cluster-bucket",
+						Scope: "internal_system",
+					},
+				},
+			},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 6 * * 1",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-cluster-bucket/baas-example-project",
 					PruneRetention: PruneRetention{
 						Hourly:  0,
 						Daily:   7,

@@ -22,7 +22,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-strings",
 			args: args{
-				file: "../../test-resources/lagoon-yaml/test1/lagoon.yml",
+				file: "test-resources/lagoon-yaml/test1/lagoon.yml",
 				l:    &YAML{},
 				p:    &map[string]interface{}{},
 			},
@@ -90,7 +90,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-booleans",
 			args: args{
-				file: "../../test-resources/lagoon-yaml/test2/lagoon.yml",
+				file: "test-resources/lagoon-yaml/test2/lagoon.yml",
 				l:    &YAML{},
 				p:    &map[string]interface{}{},
 			},
@@ -158,7 +158,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-strings-and-booleans",
 			args: args{
-				file: "../../test-resources/lagoon-yaml/test3/lagoon.yml",
+				file: "test-resources/lagoon-yaml/test3/lagoon.yml",
 				l:    &YAML{},
 				p:    &map[string]interface{}{},
 			},
@@ -226,7 +226,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-backup-retention",
 			args: args{
-				file: "../../test-resources/lagoon-yaml/test4/lagoon.yml",
+				file: "test-resources/lagoon-yaml/test4/lagoon.yml",
 				l:    &YAML{},
 				p:    &map[string]interface{}{},
 			},
