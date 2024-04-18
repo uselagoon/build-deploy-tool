@@ -451,26 +451,14 @@ do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
     DBAAS_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
     DBAAS_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-    if [ "$SERVICE_TYPE" == "mariadb" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+    if [[ "$SERVICE_TYPE" == "mariadb" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="mariadb-single"
-      fi
     fi
-    if [ "$SERVICE_TYPE" == "postgres" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+    if [[ "$SERVICE_TYPE" == "postgres" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="postgres-single"
-      fi
     fi
-    if [ "$SERVICE_TYPE" == "mongo" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+    if [[ "$SERVICE_TYPE" == "mongo" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="mongodb-single"
-      fi
     fi
   done
 
@@ -1333,6 +1321,8 @@ do
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+  # remove the image from images to pull
+  unset IMAGES_PULL[$SERVICE_NAME]
 
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 
