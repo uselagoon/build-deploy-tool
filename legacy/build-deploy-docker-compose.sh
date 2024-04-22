@@ -1323,22 +1323,28 @@ do
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-  # remove the image from images to pull
-  unset IMAGES_PULL[$SERVICE_NAME]
-
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-
+  if [[ "$SERVICE_TYPE}" =~ "-single" ]]; then
+    # skip to next if this type is a single
+    continue
+  fi
   case "$SERVICE_TYPE" in
 
     mariadb-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mariadb-dbaas.sh
         ;;
 
     postgres-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-postgres-dbaas.sh
         ;;
 
     mongodb-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mongodb-dbaas.sh
         ;;
 
