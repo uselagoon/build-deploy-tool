@@ -38,7 +38,7 @@ func IdentifyDBaaSConsumers(g generator.GeneratorInput) ([]string, error) {
 	}
 	ret := []string{}
 	for _, svc := range lagoonBuild.BuildValues.Services {
-		if svc.IsDBaaS {
+		if svc.IsDBaaS || svc.IsSingle {
 			ret = append(ret, fmt.Sprintf("%s:%s", svc.Name, svc.Type))
 		}
 	}

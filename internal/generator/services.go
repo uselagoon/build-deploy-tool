@@ -286,6 +286,7 @@ func composeToServiceValues(
 		// handle dbaas operator checks here
 		dbaasEnvironment := buildValues.EnvironmentType
 		svcIsDBaaS := false
+		svcIsSingle := false
 		if helpers.Contains(supportedDBTypes, lagoonType) {
 			// strip the dbaas off the supplied type for checking against providers, it gets added again later
 			lagoonType = strings.Split(lagoonType, "-dbaas")[0]
@@ -339,6 +340,7 @@ func composeToServiceValues(
 				} else {
 					// otherwise fallback to -single (if DBaaSFallbackSingle is enabled, otherwise it will error out prior)
 					lagoonType = fmt.Sprintf("%s-single", lagoonType)
+					svcIsSingle = true
 				}
 			}
 		}
@@ -368,6 +370,7 @@ func composeToServiceValues(
 			PersistentVolumeName:       servicePersistentName,
 			PersistentVolumeSize:       servicePersistentSize,
 			IsDBaaS:                    svcIsDBaaS,
+			IsSingle:                   svcIsSingle,
 			BackupsEnabled:             backupsEnabled,
 		}
 		// check if the service has a service port override (this only applies to basic(-persistent))

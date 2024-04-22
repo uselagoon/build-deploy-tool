@@ -451,14 +451,16 @@ do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
     DBAAS_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
     DBAAS_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-    if [[ "$SERVICE_TYPE" == "mariadb" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
+    if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+      if [ "$SERVICE_TYPE" == "mariadb" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-    fi
-    if [[ "$SERVICE_TYPE" == "postgres" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
+      fi
+      if [ "$SERVICE_TYPE" == "postgres" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-    fi
-    if [[ "$SERVICE_TYPE" == "mongo" ]] && [[ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]]; then
+      fi
+      if [ "$SERVICE_TYPE" == "mongo" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
+      fi
     fi
   done
 

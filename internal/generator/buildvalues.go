@@ -94,6 +94,7 @@ type ServiceValues struct {
 	DBaasReadReplica              bool                     `json:"dBaasReadReplica"`
 	DBaaSEnvironment              string                   `json:"dbaasEnvironment"`
 	IsDBaaS                       bool                     `json:"isDBaaS"`
+	IsSingle                      bool                     `json:"isSingle"`
 	BackupsEnabled                bool                     `json:"backupsEnabled"`
 }
 
