@@ -2,6 +2,7 @@ package services
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
@@ -269,6 +270,9 @@ func GenerateDeploymentTemplate(
 				},
 			}
 			// then consume any from the custom provided container registries
+			sort.Slice(buildValues.ContainerRegistry, func(i, j int) bool {
+				return buildValues.ContainerRegistry[i].Name < buildValues.ContainerRegistry[j].Name
+			})
 			for _, pullsecret := range buildValues.ContainerRegistry {
 				pullsecrets = append(pullsecrets, corev1.LocalObjectReference{
 					Name: pullsecret.SecretName,

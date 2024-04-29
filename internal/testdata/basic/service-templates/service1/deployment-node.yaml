@@ -82,6 +82,9 @@ spec:
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
+      - name: lagoon-private-registry-dockerhub
       - name: lagoon-private-registry-my-custom-registry
+      - name: lagoon-private-registry-my-hardcode-registry
+      - name: lagoon-private-registry-my-other-registry
       priorityClassName: lagoon-priority-production
 status: {}

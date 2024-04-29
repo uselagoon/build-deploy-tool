@@ -9,13 +9,13 @@ metadata:
   labels:
     app.kubernetes.io/instance: internal-registry-secret
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: my-custom-registry
+    app.kubernetes.io/name: my-other-registry
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/template: internal-registry-secret-0.1.0
-  name: lagoon-private-registry-my-custom-registry
+  name: lagoon-private-registry-my-other-registry
 stringData:
-  .dockerconfigjson: eyJhdXRocyI6eyJteS5vd24ucmVnaXN0cnkuY29tIjp7InVzZXJuYW1lIjoibXlvd25yZWdpc3RyeXVzZXIiLCJwYXNzd29yZCI6Im15ZW52dmFycmVnaXN0cnlwYXNzd29yZCIsImF1dGgiOiJiWGx2ZDI1eVpXZHBjM1J5ZVhWelpYSTZiWGxsYm5aMllYSnlaV2RwYzNSeWVYQmhjM04zYjNKayJ9fX0=
+  .dockerconfigjson: eyJhdXRocyI6eyJteS5vdGhlci5yZWdpc3RyeS5jb20iOnsidXNlcm5hbWUiOiJvdGhlcnVzZXJuYW1lIiwicGFzc3dvcmQiOiJvdGhlcnBhc3N3b3JkIiwiYXV0aCI6ImIzUm9aWEoxYzJWeWJtRnRaVHB2ZEdobGNuQmhjM04zYjNKayJ9fX0=
 type: kubernetes.io/dockerconfigjson

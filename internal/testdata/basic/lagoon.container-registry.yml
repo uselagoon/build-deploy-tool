@@ -2,6 +2,7 @@ docker-compose-yaml: internal/testdata/basic/docker-compose.yml
 
 container-registries:
   my-custom-registry:
+    description: "passwords in variable"
     username: myownregistryuser
     password: REGISTRY_PASSWORD
     url: my.own.registry.com

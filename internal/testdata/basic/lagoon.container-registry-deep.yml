@@ -1,4 +1,4 @@
-docker-compose-yaml: docker-compose.yml
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
 
 container-registries:
   my-custom-registry:
@@ -17,9 +17,11 @@ container-registries:
   dockerhub:
     description: "password and username in variable, default docker.io url"
 
+environment_variables:
+  git_sha: "true"
+
 environments:
   main:
     routes:
-      - nginx:
-        - a.example.com:
-            tls-acme: true
+      - node:
+          - example.com

@@ -368,6 +368,15 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 						Password: "REGISTRY_PASSWORD",
 						URL:      "my.own.registry.com",
 					},
+					"my-hardcode-registry": {
+						Username: "myhardcoderegistryuser",
+						Password: "myhardcoderegistrypassword",
+						URL:      "my.hardcode.registry.com",
+					},
+					"my-other-registry": {
+						URL: "my.other.registry.com",
+					},
+					"dockerhub": {},
 				},
 				Environments: Environments{
 					"main": Environment{
