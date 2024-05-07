@@ -51,6 +51,7 @@ type BuildValues struct {
 	BackupsEnabled                bool                        `json:"backupsEnabled"`
 	DefaultBackupSchedule         string                      `json:"defaultBackupSchedule"`
 	DBaaSClient                   *dbaasclient.Client         `json:"-"`
+	RouteQuota                    *int                        `json:"routeQuota"`
 }
 
 type Fastly struct {
