@@ -89,7 +89,9 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testdata/output",
-			want:         []string{},
+			want: []string{
+				"mariadb:mariadb-single",
+			},
 		},
 		{
 			name: "test4 - mariadb-single to mariadb-dbaas (using mariadb-shared to mariadb-dbaas conversion)",
