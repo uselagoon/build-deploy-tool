@@ -469,25 +469,15 @@ do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
     DBAAS_SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
     DBAAS_SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-    if [ "$SERVICE_TYPE" == "mariadb" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+    if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+      if [ "$SERVICE_TYPE" == "mariadb" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="mariadb-single"
       fi
-    fi
-    if [ "$SERVICE_TYPE" == "postgres" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+      if [ "$SERVICE_TYPE" == "postgres" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="postgres-single"
       fi
-    fi
-    if [ "$SERVICE_TYPE" == "mongo" ]; then
-      if [ "$DBAAS_SERVICE_NAME" == "$SERVICE_NAME" ]; then
+      if [ "$SERVICE_TYPE" == "mongo" ]; then
         SERVICE_TYPE=$DBAAS_SERVICE_TYPE
-      else
-        SERVICE_TYPE="mongodb-single"
       fi
     fi
   done
@@ -1224,22 +1214,30 @@ do
 
   SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
-
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-
+  if [[ "$SERVICE_TYPE}" =~ "-single" ]]; then
+    # skip to next if this type is a single
+    continue
+  fi
   case "$SERVICE_TYPE" in
 
     mariadb-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mariadb-dbaas.sh
         set +x
         ;;
 
     postgres-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-postgres-dbaas.sh
         set +x
         ;;
 
     mongodb-dbaas)
+        # remove the image from images to pull
+        unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mongodb-dbaas.sh
         set +x
         ;;

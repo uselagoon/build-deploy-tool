@@ -3,8 +3,10 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -21,6 +23,8 @@ func TestTemplateRoutes(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		wantErr      bool
+		wantErrMsg   string
 	}{
 		{
 			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
@@ -384,6 +388,26 @@ func TestTemplateRoutes(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-22",
 		},
+		{
+			name: "test23 exceed route quota",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "tworoutes",
+					Branch:          "tworoutes",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ROUTE_QUOTA",
+							Value: "1",
+							Scope: "internal_system",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			wantErr:      true,
+			wantErrMsg:   "this environment requests 2 custom routes, this would exceed the route quota of 1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -402,58 +426,65 @@ func TestTemplateRoutes(t *testing.T) {
 
 			defer os.RemoveAll(savedTemplates)
 
-			err = IngressTemplateGeneration(generator)
-			if err != nil {
-				t.Errorf("%v", err)
+			if err := IngressTemplateGeneration(generator); (err != nil) != tt.wantErr {
+				t.Errorf("IngressTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
+			} else {
+				if err != nil && tt.wantErr {
+					if !strings.Contains(err.Error(), tt.wantErrMsg) {
+						t.Errorf("IngressTemplateGeneration() error = %v, wantErr %v", err.Error(), tt.wantErrMsg)
+					}
+				}
 			}
 
-			files, err := os.ReadDir(savedTemplates)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
-			}
-			results, err := os.ReadDir(tt.want)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", tt.want, err)
-			}
-			if len(files) != len(results) {
-				for _, f := range files {
-					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
-					if err != nil {
-						t.Errorf("couldn't read file %v: %v", savedTemplates, err)
-					}
-					fmt.Println(string(f1))
+			if !tt.wantErr {
+				files, err := ioutil.ReadDir(savedTemplates)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 				}
-				t.Errorf("number of generated templates doesn't match results %v/%v: %v", len(files), len(results), err)
-			}
-			fCount := 0
-			for _, f := range files {
-				for _, r := range results {
-					if f.Name() == r.Name() {
-						fCount++
+				results, err := ioutil.ReadDir(tt.want)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", tt.want, err)
+				}
+				if len(files) != len(results) {
+					for _, f := range files {
 						f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
 						if err != nil {
 							t.Errorf("couldn't read file %v: %v", savedTemplates, err)
 						}
-						r1, err := os.ReadFile(fmt.Sprintf("%s/%s", tt.want, f.Name()))
-						if err != nil {
-							t.Errorf("couldn't read file %v: %v", tt.want, err)
-						}
-						if !reflect.DeepEqual(f1, r1) {
-							fmt.Println(string(f1))
-							t.Errorf("resulting templates do not match")
-						}
+						fmt.Println(string(f1))
 					}
+					t.Errorf("number of generated templates doesn't match results %v/%v: %v", len(files), len(results), err)
 				}
-			}
-			if fCount != len(files) {
+				fCount := 0
 				for _, f := range files {
-					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
-					if err != nil {
-						t.Errorf("couldn't read file %v: %v", savedTemplates, err)
+					for _, r := range results {
+						if f.Name() == r.Name() {
+							fCount++
+							f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
+							if err != nil {
+								t.Errorf("couldn't read file %v: %v", savedTemplates, err)
+							}
+							r1, err := os.ReadFile(fmt.Sprintf("%s/%s", tt.want, f.Name()))
+							if err != nil {
+								t.Errorf("couldn't read file %v: %v", tt.want, err)
+							}
+							if !reflect.DeepEqual(f1, r1) {
+								fmt.Println(string(f1))
+								t.Errorf("resulting templates do not match")
+							}
+						}
 					}
-					fmt.Println(string(f1))
 				}
-				t.Errorf("resulting templates do not match")
+				if fCount != len(files) {
+					for _, f := range files {
+						f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
+						if err != nil {
+							t.Errorf("couldn't read file %v: %v", savedTemplates, err)
+						}
+						fmt.Println(string(f1))
+					}
+					t.Errorf("resulting templates do not match")
+				}
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(nil)

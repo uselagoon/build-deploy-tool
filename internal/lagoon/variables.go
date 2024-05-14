@@ -22,7 +22,10 @@ func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVar
 	for _, pVar := range project {
 		add := EnvironmentVariable{}
 		for _, eVar := range environment {
-			if eVar.Name == pVar.Name {
+			// internal_system scoped variables are only added to the projects variabled during a build
+			// this make sure that any that may exist in the environment variables are not merged
+			// and also makes sure that internal_system variables are not replaced by other scopes
+			if eVar.Name == pVar.Name && pVar.Scope != "internal_system" && eVar.Scope != "internal_system" {
 				existsInEnvironment = true
 				add = eVar
 			}
@@ -35,15 +38,16 @@ func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVar
 		}
 	}
 	// add any that exist in the environment only to the final variables list
+	existsInProject := false
 	for _, eVar := range environment {
 		add := eVar
 		for _, aVar := range allVars {
 			if eVar.Name == aVar.Name {
-				existsInEnvironment = true
+				existsInProject = true
 			}
 		}
-		if existsInEnvironment {
-			existsInEnvironment = false
+		if existsInProject {
+			existsInProject = false
 		} else {
 			allVars = append(allVars, add)
 		}

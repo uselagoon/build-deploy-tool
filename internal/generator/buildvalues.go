@@ -76,6 +76,7 @@ type BuildValues struct {
 	ContainerRegistry             []ContainerRegistry          `json:"containerRegistry" description:"this contains any private container registries that may exist within the environment that need to be logged into"`
 	RoutesAutogeneratePrefixes    []string                     `json:"routesAutogeneratePrefixes"`
 	BackupsEnabled                bool                         `json:"backupsEnabled"`
+	RouteQuota                    *int                         `json:"routeQuota"`
 }
 
 type Resources struct {
@@ -172,6 +173,7 @@ type ServiceValues struct {
 	ImageBuild                    *ImageBuild             `json:"docker,omitempty"`
 	BackupsEnabled                bool                    `json:"backupsEnabled"`
 	IsDBaaS                       bool                    `json:"isDBaaS"`
+	IsSingle                      bool                    `json:"isSingle"`
 }
 
 type ImageBuild struct {

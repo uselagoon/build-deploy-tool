@@ -102,6 +102,48 @@ func TestMergeVariables(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test4 internal system not unsettable",
+			args: args{
+				project: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_ROUTE_QUOTA",
+						Value: "1234",
+						Scope: "internal_system",
+					},
+					{
+						Name:  "LAGOON_ROUTE_QUOTA",
+						Value: "4321",
+						Scope: "global",
+					},
+				},
+				environment: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_ROUTE_QUOTA",
+						Value: "123",
+						Scope: "build",
+					},
+					{
+						// this will be ignored
+						Name:  "LAGOON_ROUTE_QUOTA",
+						Value: "321",
+						Scope: "internal_system",
+					},
+				},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "LAGOON_ROUTE_QUOTA",
+					Value: "1234",
+					Scope: "internal_system",
+				},
+				{
+					Name:  "LAGOON_ROUTE_QUOTA",
+					Value: "123",
+					Scope: "build",
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

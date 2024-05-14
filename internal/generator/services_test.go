@@ -530,6 +530,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					BuildImage: "harbor.example/example-project/main/mariadb:latest",
 				},
 				BackupsEnabled: true,
+				IsSingle:       true,
 			},
 		},
 		{
