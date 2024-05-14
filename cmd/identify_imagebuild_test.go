@@ -115,7 +115,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						Name: "redis",
 						ImageBuild: generator.ImageBuild{
 							BuildImage: "harbor.example/example-project/main/redis:latest",
-							PullImage:  "amazeeio/redis",
+							PullImage:  "quay.io/notlagoon/redis",
 						},
 					}, {
 						Name: "varnish",
@@ -202,7 +202,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						Name: "redis",
 						ImageBuild: generator.ImageBuild{
 							BuildImage: "harbor.example/example-project/main/redis:latest",
-							PullImage:  "imagecache.example.com/amazeeio/redis",
+							PullImage:  "quay.io/notlagoon/redis",
 						},
 					}, {
 						Name: "varnish",

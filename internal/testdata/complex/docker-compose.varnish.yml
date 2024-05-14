@@ -101,7 +101,7 @@ services:
       lagoon.type: mariadb
 
   redis:
-    image: amazeeio/redis
+    image: quay.io/notlagoon/redis
     labels:
       lagoon.type: redis
 
