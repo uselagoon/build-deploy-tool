@@ -668,7 +668,7 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
       set +x # reduce noise in build logs
       # Decide whether to use BuildKit for Docker builds - disabled by default.
-      DOCKER_BUILDKIT=0
+      DOCKER_BUILDKIT=1
 
       if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
         DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
@@ -681,12 +681,13 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       fi
 
       case "$DOCKER_BUILDKIT" in
-        1|t|T|true|TRUE|True)
-          DOCKER_BUILDKIT=1
-          echo "Using BuildKit for $DOCKERFILE";
+        0|f|F|false|FALSE|False)
+          DOCKER_BUILDKIT=0
+          echo "Disabling BuildKit for $DOCKERFILE";
         ;;
         *)
-          DOCKER_BUILDKIT=0
+          DOCKER_BUILDKIT=1
+          echo "Using BuildKit for $DOCKERFILE";
         ;;
       esac
       set -x
