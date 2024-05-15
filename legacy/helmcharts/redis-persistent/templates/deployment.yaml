@@ -26,7 +26,7 @@ spec:
         {{- end }}
       annotations:
         {{- include "redis-persistent.annotations" . | nindent 8 }}
-        k8up.syn.tools/backupcommand: /bin/sh -c "/bin/busybox tar -cf - -C {{ .Values.persistentStorage.path }} ."
+        k8up.syn.tools/backupcommand: /bin/sh -c "timeout 14400 /bin/busybox tar -cf - -C {{ .Values.persistentStorage.path }} ."
         k8up.syn.tools/file-extension: .{{ include "redis-persistent.fullname" . }}.tar
         lagoon.sh/configMapSha: {{ .Values.configMapSha | quote }}
     spec:
