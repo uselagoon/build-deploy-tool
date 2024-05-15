@@ -2,7 +2,7 @@ ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
-FROM golang:${GO_VER:-1.21}-alpine3.18 as golang
+FROM golang:${GO_VER:-1.22}-alpine3.19 as golang
 
 RUN apk add --no-cache git
 RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:20.10.24
+FROM docker:25.0.5-alpine3.19
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/lagoon-images" repository="https://github.com/uselagoon/lagoon-images"
@@ -65,8 +65,8 @@ ENV TMPDIR=/tmp \
     BASH_ENV=/home/.bashrc
 
 # Defining Versions
-ENV KUBECTL_VERSION=v1.27.6 \
-    HELM_VERSION=v3.13.0 \
+ENV KUBECTL_VERSION=v1.29.2 \
+    HELM_VERSION=v3.14.4 \
     HELM_SHA256=138676351483e61d12dfade70da6c03d471bbdcac84eaadeb5e1d06fa114a24f
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
