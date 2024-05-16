@@ -5,18 +5,19 @@
 # the rollout has failed
 stream_logs_deployment() {
   set +x
-  # load the version of the new pods
-  LATEST_POD_TEMPLATE_HASH=$(kubectl get replicaset -l app.kubernetes.io/instance=${SERVICE_NAME} --sort-by=.metadata.creationTimestamp -o=json | jq -r '.items[-1].metadata.labels."pod-template-hash"')
   mkdir -p /tmp/kubectl-build-deploy/logs/container/${SERVICE_NAME}
 
   # this runs in a loop forever (until killed)
   while [ 1 ]
   do
-    # Gather all pods and their containers for the current rollout and stream their logs into files
-    kubectl -n ${NAMESPACE} get pods -l pod-template-hash=${LATEST_POD_TEMPLATE_HASH} -o json | jq -r '.items[] | .metadata.name + " " + .spec.containers[].name' |
+    # Gather all pods and their containers that are not running/ready for this service
+    kubectl -n ${NAMESPACE} get pods -l app.kubernetes.io/instance=${SERVICE_NAME} -o custom-columns="POD:metadata.name,CONTAINER:.spec.containers[*].name,STATE:status.containerStatuses[*].state.waiting.reason" --no-headers | grep -v "<none>" |
     {
-      while read -r POD CONTAINER ; do
+      while read -r POD CONTAINERS STATUS ; do
+        IFS=',' read -ra CONTAINER_SPLIT <<< "$CONTAINERS"
+        for CONTAINER in "${CONTAINER_SPLIT[@]}"; do
           kubectl -n ${NAMESPACE} logs --timestamps -f $POD -c $CONTAINER $SINCE_TIME 2> /dev/null > /tmp/kubectl-build-deploy/logs/container/${SERVICE_NAME}/$POD-$CONTAINER.log &
+        done
       done
 
       # this will wait for all log streaming we started to finish
