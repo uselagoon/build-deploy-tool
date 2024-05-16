@@ -54,7 +54,7 @@ echo "Running sbom scan using trivy"
 echo "Image being scanned: ${IMAGE_FULL}"
 echo "Using image for scan ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE}"
 
-DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
+DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image --skip-java-db-update ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
 echo "Size of ${SBOM_OUTPUT_FILE} = $FILESIZE bytes."
