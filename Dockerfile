@@ -2,7 +2,7 @@ ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
-FROM golang:${GO_VER:-1.21}-alpine3.18 as golang
+FROM golang:${GO_VER:-1.22}-alpine3.19 as golang
 
 RUN apk add --no-cache git
 RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
@@ -35,7 +35,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:20.10.24
+FROM docker:25.0.5-alpine3.19
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/lagoon-images" repository="https://github.com/uselagoon/lagoon-images"
@@ -65,15 +65,15 @@ ENV TMPDIR=/tmp \
     BASH_ENV=/home/.bashrc
 
 # Defining Versions
-ENV KUBECTL_VERSION=v1.27.6 \
-    HELM_VERSION=v3.13.0 \
-    HELM_SHA256=138676351483e61d12dfade70da6c03d471bbdcac84eaadeb5e1d06fa114a24f
+ENV KUBECTL_VERSION=v1.29.2 \
+    HELM_VERSION=v3.14.4 \
+    HELM_SHA256=a5844ef2c38ef6ddf3b5a8f7d91e7e0e8ebc39a38bb3fc8013d629c1ef29c259
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
     && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
     && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
-    && pip install shyaml yq \
+    && pip install --break-system-packages shyaml yq \
     && curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
     && chmod +x /usr/bin/kubectl \
     && curl -Lo /usr/bin/yq3 https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 \

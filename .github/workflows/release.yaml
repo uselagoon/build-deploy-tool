@@ -20,7 +20,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v4
       with:
-        go-version: "^1.21"
+        go-version: "^1.22"
     - name: Install ccv
       run: >
         curl -sSL https://github.com/smlx/ccv/releases/download/v0.3.2/ccv_0.3.2_linux_amd64.tar.gz
@@ -49,7 +49,7 @@ jobs:
     - name: Install Go
       uses: actions/setup-go@v4
       with:
-        go-version: "^1.21"
+        go-version: "^1.22"
     - name: Set up environment
       run: echo "GOVERSION=$(go version)" >> $GITHUB_ENV
     - name: Run GoReleaser
