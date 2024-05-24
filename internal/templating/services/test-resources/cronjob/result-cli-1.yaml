@@ -7,9 +7,7 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: cli
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -33,9 +31,7 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
-            app.kubernetes.io/instance: myservice
             app.kubernetes.io/managed-by: build-deploy-tool
-            app.kubernetes.io/name: cli
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production
@@ -95,9 +91,7 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: cli
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -121,9 +115,7 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
-            app.kubernetes.io/instance: myservice
             app.kubernetes.io/managed-by: build-deploy-tool
-            app.kubernetes.io/name: cli
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production
@@ -183,9 +175,7 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice-persist
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: cli-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -209,9 +199,7 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
-            app.kubernetes.io/instance: myservice-persist
             app.kubernetes.io/managed-by: build-deploy-tool
-            app.kubernetes.io/name: cli-persistent
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production

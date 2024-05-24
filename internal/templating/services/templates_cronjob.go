@@ -34,15 +34,17 @@ func GenerateCronjobTemplate(
 				// add the default labels
 				labels := map[string]string{
 					"app.kubernetes.io/managed-by": "build-deploy-tool",
-					"app.kubernetes.io/name":       serviceTypeValues.Name,
-					"app.kubernetes.io/instance":   serviceValues.OverrideName,
-					"lagoon.sh/project":            buildValues.Project,
-					"lagoon.sh/environment":        buildValues.Environment,
-					"lagoon.sh/environmentType":    buildValues.EnvironmentType,
-					"lagoon.sh/buildType":          buildValues.BuildType,
-					"lagoon.sh/template":           fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
-					"lagoon.sh/service":            serviceValues.OverrideName,
-					"lagoon.sh/service-type":       serviceTypeValues.Name,
+					// @TODO: these are removed for now to resolve a deployment label matching issue
+					// that can crop up
+					// "app.kubernetes.io/name":       serviceTypeValues.Name,
+					// "app.kubernetes.io/instance":   serviceValues.OverrideName,
+					"lagoon.sh/project":         buildValues.Project,
+					"lagoon.sh/environment":     buildValues.Environment,
+					"lagoon.sh/environmentType": buildValues.EnvironmentType,
+					"lagoon.sh/buildType":       buildValues.BuildType,
+					"lagoon.sh/template":        fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
+					"lagoon.sh/service":         serviceValues.OverrideName,
+					"lagoon.sh/service-type":    serviceTypeValues.Name,
 				}
 
 				// add the default annotations

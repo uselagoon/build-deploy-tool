@@ -7,9 +7,7 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: cli
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: cli-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
@@ -33,9 +31,7 @@ spec:
             lagoon.sh/version: v2.7.x
           creationTimestamp: null
           labels:
-            app.kubernetes.io/instance: cli
             app.kubernetes.io/managed-by: build-deploy-tool
-            app.kubernetes.io/name: cli-persistent
             lagoon.sh/buildType: branch
             lagoon.sh/environment: main
             lagoon.sh/environmentType: production
