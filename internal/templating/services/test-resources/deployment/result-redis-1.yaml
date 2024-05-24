@@ -113,7 +113,7 @@ spec:
   template:
     metadata:
       annotations:
-        k8up.syn.tools/backupcommand: /bin/sh -c "/bin/busybox tar -cf - -C /data
+        k8up.syn.tools/backupcommand: /bin/sh -c "timeout 5400 tar -cf - -C /data
           ."
         k8up.syn.tools/file-extension: .redis-persist.tar
         lagoon.sh/branch: environment-name
