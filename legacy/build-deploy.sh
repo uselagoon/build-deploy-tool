@@ -213,19 +213,19 @@ do
   echo "> Checking details for ${PRIVATE_CONTAINER_REGISTRY}"
   PRIVATE_CONTAINER_REGISTRY_SAFE=$(echo ${PRIVATE_CONTAINER_REGISTRY} | tr '[:lower:]' '[:upper:]' | tr '-' '_')
   # check if a url is set, if none set proceed against docker hub
-  PRIVATE_CONTAINER_REGISTRY_URL=$(cat .lagoon.yml | shyaml get-value container-registries.$PRIVATE_CONTAINER_REGISTRY.url 2>/dev/null)
-
-  if [ -z $PRIVATE_CONTAINER_REGISTRY_URL ]; then
+  PRIVATE_CONTAINER_REGISTRY_URL=$(yq e '.container-registries.'$PRIVATE_CONTAINER_REGISTRY'.url' .lagoon.yml)
+  if [ "$PRIVATE_CONTAINER_REGISTRY_URL" == "null" ]; then
     echo "No 'url' defined for registry $PRIVATE_CONTAINER_REGISTRY, will proceed against docker hub";
+    PRIVATE_CONTAINER_REGISTRY_URL=""
   fi
   # check the username and passwords are defined in yaml
   PRIVATE_CONTAINER_REGISTRY_USERNAME=""
-  PRIVATE_CONTAINER_REGISTRY_USERNAME=$(cat .lagoon.yml | shyaml get-value container-registries.$PRIVATE_CONTAINER_REGISTRY.username 2>/dev/null)
+  PRIVATE_CONTAINER_REGISTRY_USERNAME=$(yq e '.container-registries.'$PRIVATE_CONTAINER_REGISTRY'.username' .lagoon.yml)
   
   PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=""
   getRegistryUsernameFromEnvironmentVariables
 
-  if [ -z $PRIVATE_CONTAINER_REGISTRY_USERNAME ] && [ -z $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME ]; then
+  if [ "$PRIVATE_CONTAINER_REGISTRY_USERNAME" == "null" ] && [ -z $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME ]; then
     echo "No 'username' defined for registry $PRIVATE_CONTAINER_REGISTRY"; exit 1;
   fi
   if [ -z $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME ]; then
@@ -234,11 +234,11 @@ do
     PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE=".lagoon.yml"
   fi
   PRIVATE_CONTAINER_REGISTRY_PASSWORD=""
-  PRIVATE_CONTAINER_REGISTRY_PASSWORD=$(cat .lagoon.yml | shyaml get-value container-registries.$PRIVATE_CONTAINER_REGISTRY.password 2>/dev/null)
+  PRIVATE_CONTAINER_REGISTRY_PASSWORD=$(yq e '.container-registries.'$PRIVATE_CONTAINER_REGISTRY'.password' .lagoon.yml)
   PRIVATE_REGISTRY_CREDENTIAL=""
   getRegistryPasswordFromEnvironmentVariables
 
-  if [ -z $PRIVATE_CONTAINER_REGISTRY_PASSWORD ] && [ -z $PRIVATE_REGISTRY_CREDENTIAL ]; then
+  if [ "$PRIVATE_CONTAINER_REGISTRY_PASSWORD" == "null" ] && [ -z $PRIVATE_REGISTRY_CREDENTIAL ]; then
     echo "No 'password' defined for registry $PRIVATE_CONTAINER_REGISTRY"; exit 1;
   fi
   # if we have everything we need, we can proceed to logging in
