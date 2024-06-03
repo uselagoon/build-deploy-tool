@@ -1104,9 +1104,7 @@ patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${N
 ### Report any ingress that have stale or stalled acme challenges, this accordion will only show if there are stale challenges
 ##############################################s
 # collect any current challenge routes in the namespace that are older than 1 hour (to ignore current build ones or pending ones)
-CURRENT_CHALLENGE_ROUTES=$(kubectl -n ${NAMESPACE} get ingress -l "acme.cert-manager.io/http01-solver=true" -o jsonpath='{range .items[*]}{.spec.rules[0].host} {.metadata.creationTimestamp}{"\n"}{end}' | while read -r name timestamp; do
-        echo "$name" | awk -v current_time=$(date +%s) -v hours_back=$(date +%s -d "1 hour ago") -v ns_time=$(date --date="${timestamp}" +%s) '(current_time - ns_time) >(current_time - hours_back){print $0}';
-done)
+CURRENT_CHALLENGE_ROUTES=$(kubectl -n ${NAMESPACE} get ingress -l "acme.cert-manager.io/http01-solver=true" 2> /dev/null | awk 'match($7,/[0-9]+d|[0-9]+h|[0-9][0-9][0-9]m|[6-9][0-9]m/) {print $1}')
 if [ "${CURRENT_CHALLENGE_ROUTES[@]}" != "" ]; then
   previousStepEnd=${currentStepEnd}
   beginBuildStep "Route/Ingress Certificate Challenges" "staleChallenges"
@@ -1632,7 +1630,7 @@ for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
   for TLS_SECRET in $TLS_SECRETS; do
     echo ">> Cleaning up certificate for ${TLS_SECRET} as tls-acme is set to false"
     # check if it is a lets encrypt certificate
-    if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET}-tls -o json | jq -r '.data."tls.crt"' | base64 --decode) -text -noout | grep -o -q "Let's Encrypt" s &> /dev/null; then
+    if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET}-tls -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
       kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET}-tls
     fi
     if kubectl -n ${NAMESPACE} get certificates.cert-manager.io ${TLS_SECRET} &> /dev/null; then

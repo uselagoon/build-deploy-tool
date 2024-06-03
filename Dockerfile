@@ -66,22 +66,22 @@ ENV TMPDIR=/tmp \
 
 # Defining Versions
 ENV KUBECTL_VERSION=v1.27.6 \
-    HELM_VERSION=v3.13.0 \
-    HELM_SHA256=138676351483e61d12dfade70da6c03d471bbdcac84eaadeb5e1d06fa114a24f
+    HELM_VERSION=v3.13.0
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
     && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
     && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
-    && pip install shyaml yq \
-    && curl -Lo /usr/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/${KUBECTL_VERSION}/bin/linux/amd64/kubectl \
+    && pip install shyaml yq
+
+RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
+    && curl -Lo /usr/bin/kubectl https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/${architecture}/kubectl \
     && chmod +x /usr/bin/kubectl \
-    && curl -Lo /usr/bin/yq3 https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_amd64 \
+    && curl -Lo /usr/bin/yq3 https://github.com/mikefarah/yq/releases/download/3.3.2/yq_linux_${architecture} \
     && chmod +x /usr/bin/yq3 \
-    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_amd64 \
+    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_${architecture} \
     && chmod +x /usr/bin/yq \
-    && curl -Lo /tmp/helm.tar.gz https://get.helm.sh/helm-${HELM_VERSION}-linux-amd64.tar.gz \
-    && echo "${HELM_SHA256}  /tmp/helm.tar.gz" | sha256sum -c -  \
+    && curl -Lo /tmp/helm.tar.gz https://get.helm.sh/helm-${HELM_VERSION}-linux-${architecture}.tar.gz \
     && mkdir /tmp/helm \
     && tar -xzf /tmp/helm.tar.gz -C /tmp/helm --strip-components=1 \
     && mv /tmp/helm/helm /usr/bin/helm \
@@ -103,7 +103,8 @@ COPY legacy/helmcharts  /kubectl-build-deploy/helmcharts
 
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
 
-RUN curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_amd64.tar.gz \
+RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
+    && curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_${architecture}.tar.gz \
     | tar -xz -C /usr/local/bin lagoon-linter
 
 # RUN curl -sSL https://github.com/uselagoon/build-deploy-tool/releases/download/v0.11.0/build-deploy-tool_0.11.0_linux_amd64.tar.gz \
