@@ -1,13 +1,16 @@
 package lagoon
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 
-	"github.com/compose-spec/compose-go/cli"
-	"github.com/compose-spec/compose-go/loader"
-	composetypes "github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/cli"
+	"github.com/compose-spec/compose-go/v2/loader"
+	composetypes "github.com/compose-spec/compose-go/v2/types"
+	"github.com/sirupsen/logrus"
 	goyaml "gopkg.in/yaml.v2"
 	goyamlv3 "gopkg.in/yaml.v3"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
@@ -20,6 +23,8 @@ type OriginalServiceOrder struct {
 
 // UnmarshaDockerComposeYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
 func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles bool, envvars map[string]string) (*composetypes.Project, []OriginalServiceOrder, error) {
+	// disable logging output for now, maybe capture this in a buffer for later analysis
+	logrus.SetOutput(io.Discard)
 	options, err := cli.NewProjectOptions([]string{file},
 		cli.WithResolvedPaths(false),
 		cli.WithLoadOptions(
@@ -31,8 +36,11 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 			},
 		),
 	)
+	if err != nil {
+		return nil, nil, err
+	}
 	options.Environment = envvars
-	l, err := cli.ProjectFromOptions(options)
+	l, err := cli.ProjectFromOptions(context.Background(), options)
 	if err != nil {
 		return nil, nil, err
 	}
