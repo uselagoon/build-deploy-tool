@@ -12,8 +12,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
 
-var runPreRollout, runPostRollout, outOfClusterConfig bool
-
 const (
 	preRolloutTasks = iota
 	postRolloutTasks
@@ -38,11 +36,11 @@ func unidleThenRun(namespace string, prePost string, incoming lagoon.Task) error
 			if !incoming.RequiresEnvironment { // we don't have to kill this build if we can't bring the services up, so we just note the issue and continue
 				fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
 			} else {
-				return fmt.Errorf("Unable to unidle the environment for pre-rollout tasks in time (waited %v seconds, retried %v times) - exiting as the task is defined as requiring the environment to be up.",
+				return fmt.Errorf("unable to unidle the environment for pre-rollout tasks in time (waited %v seconds, retried %v times) - exiting as the task is defined as requiring the environment to be up",
 					incoming.ScaleWaitTime, incoming.ScaleMaxIterations)
 			}
 		default:
-			return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
+			return fmt.Errorf("there was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
 		}
 	}
 	return runCleanTaskInEnvironment(namespace, prePost, incoming)
@@ -218,7 +216,7 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	}
 	retBool, okay := ret.(bool)
 	if !okay {
-		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
+		err := fmt.Errorf("expression doesn't evaluate to a boolean")
 		if debug {
 			fmt.Println(err.Error())
 		}

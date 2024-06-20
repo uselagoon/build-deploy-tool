@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"reflect"
 	"testing"
@@ -21,6 +22,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		emptyDir     bool // if no templates are generated, then there will be a .gitkeep file in there
 		wantErr      bool
 	}{
 		{
@@ -104,6 +106,19 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "internal/testdata/complex/dbaas-templates/dbaas-4",
 		},
+		{
+			name: "test7 - basic - no dbaas",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			emptyDir:     true,
+			want:         "internal/testdata/basic/dbaas-templates/dbaas-1",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -135,11 +150,17 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 			}
-			results, err := os.ReadDir(tt.want)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", tt.want, err)
+			resultSize := 0
+			results := []fs.DirEntry{}
+			if !tt.emptyDir {
+				results, err = os.ReadDir(tt.want)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", tt.want, err)
+				}
+				// .gitkeep file needs to be subtracted to equal 0
+				resultSize = len(results)
 			}
-			if len(files) != len(results) {
+			if len(files) != resultSize {
 				for _, f := range files {
 					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
 					if err != nil {

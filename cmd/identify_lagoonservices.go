@@ -76,25 +76,23 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identify
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	if deployments != nil {
-		for _, d := range deployments {
-			dcs := []containers{}
-			for _, dc := range d.Spec.Template.Spec.Containers {
-				dcp := []ports{}
-				for _, p := range dc.Ports {
-					dcp = append(dcp, ports{Port: p.ContainerPort})
-				}
-				dcs = append(dcs, containers{
-					Name:  dc.Name,
-					Ports: dcp,
-				})
+	for _, d := range deployments {
+		dcs := []containers{}
+		for _, dc := range d.Spec.Template.Spec.Containers {
+			dcp := []ports{}
+			for _, p := range dc.Ports {
+				dcp = append(dcp, ports{Port: p.ContainerPort})
 			}
-			lServices = append(lServices, identifyServices{
-				Name:       d.Name,
-				Type:       d.ObjectMeta.Labels["lagoon.sh/service-type"],
-				Containers: dcs,
+			dcs = append(dcs, containers{
+				Name:  dc.Name,
+				Ports: dcp,
 			})
 		}
+		lServices = append(lServices, identifyServices{
+			Name:       d.Name,
+			Type:       d.ObjectMeta.Labels["lagoon.sh/service-type"],
+			Containers: dcs,
+		})
 	}
 	return lServices, nil
 }

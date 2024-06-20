@@ -14,32 +14,6 @@ import (
 )
 
 func TestIdentifyNativeCronjobs(t *testing.T) {
-	type args struct {
-		alertContact       string
-		statusPageID       string
-		projectName        string
-		environmentName    string
-		branch             string
-		prNumber           string
-		prHeadBranch       string
-		prBaseBranch       string
-		environmentType    string
-		buildType          string
-		activeEnvironment  string
-		standbyEnvironment string
-		cacheNoCache       string
-		serviceID          string
-		secretPrefix       string
-		ingressClass       string
-		rootlessWorkloads  string
-		projectVars        string
-		envVars            string
-		lagoonVersion      string
-		lagoonYAML         string
-		valuesFilePath     string
-		templatePath       string
-		imageReferences    map[string]string
-	}
 	tests := []struct {
 		name         string
 		args         testdata.TestData

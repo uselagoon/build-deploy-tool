@@ -87,7 +87,7 @@ var versionCmd = &cobra.Command{
 }
 
 func displayVersionInfo() {
-	fmt.Println(fmt.Sprintf("%s %s (built: %s / go %s)", bdtName, bdtVersion, bdtBuild, goVersion))
+	fmt.Printf("%s %s (built: %s / go %s)\n", bdtName, bdtVersion, bdtBuild, goVersion)
 }
 
 func init() {
