@@ -29,7 +29,7 @@ spec:
   template:
     metadata:
       annotations:
-        k8up.syn.tools/backupcommand: /bin/sh -c 'mysqldump --max-allowed-packet=500M
+        k8up.syn.tools/backupcommand: /bin/sh -c 'mysqldump --max-allowed-packet=1G
           --events --routines --quick --add-locks --no-autocommit --single-transaction
           --all-databases'
         k8up.syn.tools/file-extension: .mariadb-10-5.sql

@@ -280,7 +280,7 @@ var preBackupPodSpecs = PreBackupPods{
   BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
   fi &&
   dump=$(mktemp)
-  && mysqldump --max-allowed-packet=500M --events --routines --quick
+  && mysqldump --max-allowed-packet=1G --events --routines --quick
   --add-locks --no-autocommit --single-transaction --no-create-db
   --no-data --no-tablespaces
   -h $BACKUP_DB_HOST
@@ -288,7 +288,7 @@ var preBackupPodSpecs = PreBackupPods{
   -p$BACKUP_DB_PASSWORD
   $BACKUP_DB_DATABASE
   > $dump
-  && mysqldump --max-allowed-packet=500M --events --routines --quick
+  && mysqldump --max-allowed-packet=1G --events --routines --quick
   --add-locks --no-autocommit --single-transaction --no-create-db
   --ignore-table=$BACKUP_DB_DATABASE.watchdog
   --no-create-info --no-tablespaces --skip-triggers
