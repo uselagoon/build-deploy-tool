@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 )
@@ -378,6 +379,9 @@ func TestIdentifyRoute(t *testing.T) {
 			if string(retJSON) != tt.wantJSON {
 				t.Errorf("returned autogen %v doesn't match want %v", string(retJSON), tt.wantJSON)
 			}
+			t.Cleanup(func() {
+				helpers.UnsetEnvVars(nil)
+			})
 		})
 	}
 }
