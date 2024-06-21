@@ -23,6 +23,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		imageData    string
 		vars         []helpers.EnvironmentVariable
 	}{
 		{
@@ -83,6 +84,19 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/service1",
+		},
+		{
+			name: "test2a1 nginx-php deployment using images from images.yaml file (same as test2a result)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
+				}, true),
+			imageData:    "internal/testdata/complex/images-service1.yaml",
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service1",
 		},
@@ -295,6 +309,13 @@ func TestTemplateLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 
+			if tt.imageData != "" {
+				imageRefs, err := loadImagesFromFile(tt.imageData)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+				generator.ImageReferences = imageRefs.Images
+			}
 			err = LagoonServiceTemplateGeneration(generator)
 			if err != nil {
 				t.Errorf("%v", err)

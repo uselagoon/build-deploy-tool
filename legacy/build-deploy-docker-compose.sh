@@ -1349,6 +1349,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
   # load the image hashes for just pushed images
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
     IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
   done
@@ -1445,7 +1446,7 @@ touch /kubectl-build-deploy/images.yaml
 for COMPOSE_SERVICE in "${COMPOSE_SERVICES[@]}"
 do
   SERVICE_NAME_IMAGE_HASH="${IMAGE_HASHES[${COMPOSE_SERVICE}]}"
-  yq3 write -i -- /kubectl-build-deploy/images.yaml 'images.'$COMPOSE_SERVICE'' ${SERVICE_NAME_IMAGE_HASH}
+  yq -i '.images.'$COMPOSE_SERVICE' = "'${SERVICE_NAME_IMAGE_HASH}'"' /kubectl-build-deploy/images.yaml
 done
 
 # handle dynamic secret collection here, @TODO this will go into the state collector eventually
@@ -1467,7 +1468,7 @@ done
 echo "=== BEGIN deployment template for services ==="
 LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
 mkdir -p $LAGOON_SERVICES_YAML_FOLDER
-build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images $(yq3 r -j /kubectl-build-deploy/images.yaml | jq -M -c | base64 -w0)
+build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images /kubectl-build-deploy/images.yaml
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"

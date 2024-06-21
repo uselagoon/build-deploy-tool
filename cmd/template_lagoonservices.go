@@ -1,9 +1,8 @@
 package cmd
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
@@ -13,6 +12,10 @@ import (
 	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	"sigs.k8s.io/yaml"
 )
+
+type ImageReferences struct {
+	Images map[string]string `json:"images"`
+}
 
 var lagoonServiceGeneration = &cobra.Command{
 	Use:     "lagoon-services",
@@ -27,19 +30,25 @@ var lagoonServiceGeneration = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("error reading images flag: %v", err)
 		}
-		var imageRefs struct {
-			Images map[string]string `json:"images"`
-		}
-		imagesStr, err := base64.StdEncoding.DecodeString(images)
+		imageRefs, err := loadImagesFromFile(images)
 		if err != nil {
-			return fmt.Errorf("error decoding images payload: %v", err)
-		}
-		if err := json.Unmarshal(imagesStr, &imageRefs); err != nil {
-			return fmt.Errorf("error unmarshalling images payload: %v", err)
+			return err
 		}
 		gen.ImageReferences = imageRefs.Images
 		return LagoonServiceTemplateGeneration(gen)
 	},
+}
+
+func loadImagesFromFile(file string) (*ImageReferences, error) {
+	imageRefs := &ImageReferences{}
+	imageYAML, err := os.ReadFile(file)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't read file %v: %v", file, err)
+	}
+	if err := yaml.Unmarshal(imageYAML, imageRefs); err != nil {
+		return nil, fmt.Errorf("error unmarshalling images payload: %v", err)
+	}
+	return imageRefs, nil
 }
 
 // LagoonServiceTemplateGeneration .
