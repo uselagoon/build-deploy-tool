@@ -1,0 +1,20 @@
+version: '2'
+services:
+  nginx:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.usecomposeports: true
+    volumes:
+      - .:/app:delegated
+    ports:
+      - '8080'
+
+networks:
+  amazeeio-network:
+    external: true
