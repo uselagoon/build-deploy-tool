@@ -76,6 +76,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
@@ -166,6 +167,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
@@ -253,6 +255,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
           name: basic
@@ -340,6 +343,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
           name: basic
@@ -427,6 +431,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
           name: basic

@@ -78,6 +78,7 @@ spec:
           requests:
             cpu: 10m
             memory: 10M
+        securityContext: {}
       - env:
         - name: NGINX_FASTCGI_PASS
           value: 127.0.0.1
@@ -107,6 +108,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
@@ -196,6 +198,7 @@ spec:
           requests:
             cpu: 10m
             memory: 10M
+        securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
           name: nginx2
@@ -228,6 +231,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
           name: nginx2

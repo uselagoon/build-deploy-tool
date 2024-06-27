@@ -78,6 +78,7 @@ spec:
           requests:
             cpu: 10m
             memory: 10M
+        securityContext: {}
         volumeMounts:
         - mountPath: /app/docroot/sites/default/files/
           name: nginx-php
@@ -110,6 +111,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /app/docroot/sites/default/files/
           name: nginx-php

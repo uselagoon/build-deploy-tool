@@ -10,8 +10,7 @@ import (
 var cli = ServiceType{
 	Name: "cli",
 	PrimaryContainer: ServiceContainer{
-		Name:            "cli",
-		ImagePullPolicy: corev1.PullAlways,
+		Name: "cli",
 		Volumes: []corev1.Volume{
 			{
 				Name: "lagoon-sshkey",
@@ -24,6 +23,8 @@ var cli = ServiceType{
 			},
 		},
 		Container: corev1.Container{
+			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			VolumeMounts: []corev1.VolumeMount{
 				{
 					Name:      "lagoon-sshkey",

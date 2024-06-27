@@ -73,6 +73,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /data
           name: lnd

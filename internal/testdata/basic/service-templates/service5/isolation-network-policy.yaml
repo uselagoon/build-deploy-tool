@@ -18,9 +18,9 @@ metadata:
 spec:
   ingress:
   - from:
+    - podSelector: {}
     - namespaceSelector:
         matchExpressions:
         - key: lagoon.sh/environment
           operator: DoesNotExist
-      podSelector: {}
   podSelector: {}

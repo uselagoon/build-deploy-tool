@@ -5,14 +5,13 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-var defaultWorkerPort int32 = 3000
-
 var worker = ServiceType{
 	Name: "worker",
 	PrimaryContainer: ServiceContainer{
 		Name: "worker",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			ReadinessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{

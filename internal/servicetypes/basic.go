@@ -29,6 +29,7 @@ var basic = ServiceType{
 		Name: "basic",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "basic",

@@ -78,6 +78,7 @@ spec:
           requests:
             cpu: 10m
             memory: 10Mi
+        securityContext: {}
         volumeMounts:
         - mountPath: /var/lib/mysql
           name: mariadb-10-5

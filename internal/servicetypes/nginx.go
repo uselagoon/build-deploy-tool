@@ -29,6 +29,7 @@ var nginx = ServiceType{
 		Name: "nginx",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -80,6 +81,7 @@ var nginxPHP = ServiceType{
 		Name: "nginx",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",
@@ -132,6 +134,7 @@ var nginxPHP = ServiceType{
 		Name: "php",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          "http",

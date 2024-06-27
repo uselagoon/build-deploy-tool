@@ -3,6 +3,7 @@ package servicetypes
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -29,6 +30,7 @@ var redis = ServiceType{
 		Name: "redis",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          fmt.Sprintf("%d-tcp", defaultRedisPort),
@@ -85,5 +87,8 @@ var redisPersistent = ServiceType{
 			Command:       `/bin/sh -c "timeout 5400 tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} ."`,
 			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
+	},
+	Strategy: appsv1.DeploymentStrategy{
+		Type: appsv1.RecreateDeploymentStrategyType,
 	},
 }

@@ -73,6 +73,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
@@ -109,7 +110,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: redis-persist
       app.kubernetes.io/name: redis-persistent
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -161,6 +163,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /data
           name: redis-persist

@@ -30,6 +30,7 @@ var mariadbSingle = ServiceType{
 		Name: "mariadb-single",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
+			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
 					Name:          fmt.Sprintf("%d-tcp", defaultMariaDBPort),

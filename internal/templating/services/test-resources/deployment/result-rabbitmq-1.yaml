@@ -80,6 +80,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /var/lib/rabbitmq
           name: rabbitmq

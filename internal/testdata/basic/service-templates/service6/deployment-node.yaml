@@ -81,6 +81,7 @@ spec:
           requests:
             cpu: 10m
             memory: 100M
+        securityContext: {}
         volumeMounts:
         - mountPath: /var/run/secrets/lagoon/dynamic/insights-token
           name: dynamic-insights-token
