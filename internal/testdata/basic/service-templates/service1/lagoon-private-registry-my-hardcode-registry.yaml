@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: internal-registry-secret
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: my-hardcode-registry
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/template: internal-registry-secret-0.1.0
+  name: lagoon-private-registry-my-hardcode-registry
+stringData:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS5oYXJkY29kZS5yZWdpc3RyeS5jb20iOnsidXNlcm5hbWUiOiJteWhhcmRjb2RlcmVnaXN0cnl1c2VyIiwicGFzc3dvcmQiOiJteWhhcmRjb2RlcmVnaXN0cnlwYXNzd29yZCIsImF1dGgiOiJiWGxvWVhKa1kyOWtaWEpsWjJsemRISjVkWE5sY2pwdGVXaGhjbVJqYjJSbGNtVm5hWE4wY25sd1lYTnpkMjl5WkE9PSJ9fX0=
+type: kubernetes.io/dockerconfigjson

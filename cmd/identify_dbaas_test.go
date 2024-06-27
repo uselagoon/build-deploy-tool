@@ -13,30 +13,6 @@ import (
 
 // these tests uses the same files as the dbaas templates
 func TestIdentifyDBaaSConsumers(t *testing.T) {
-	type args struct {
-		name               string
-		alertContact       string
-		statusPageID       string
-		projectName        string
-		environmentName    string
-		branch             string
-		prNumber           string
-		prHeadBranch       string
-		prBaseBranch       string
-		environmentType    string
-		buildType          string
-		activeEnvironment  string
-		standbyEnvironment string
-		cacheNoCache       string
-		serviceID          string
-		secretPrefix       string
-		projectVars        string
-		envVars            string
-		lagoonVersion      string
-		lagoonYAML         string
-		valuesFilePath     string
-		templatePath       string
-	}
 	tests := []struct {
 		name         string
 		args         testdata.TestData
@@ -52,7 +28,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
 			templatePath: "testdata/output",
 			want: []string{
@@ -66,7 +42,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_SERVICE_TYPES", Value: "mariadb:mariadb-shared", Scope: "build"},
 					},
@@ -83,7 +59,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_DBAAS_ENVIRONMENT_TYPES", Value: "mariadb:development2", Scope: "build"},
 					},
@@ -100,7 +76,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_SERVICE_TYPES", Value: "mariadb:mariadb-shared", Scope: "build"},
 					},
@@ -117,7 +93,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.multidb.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multidb.yml",
 				}, true),
 			templatePath: "testdata/output",
 			want: []string{

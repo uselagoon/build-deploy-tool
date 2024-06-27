@@ -7,33 +7,12 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestIdentifyFeatureFlag(t *testing.T) {
-	type args struct {
-		name               string
-		alertContact       string
-		statusPageID       string
-		projectName        string
-		environmentName    string
-		branch             string
-		prNumber           string
-		prHeadBranch       string
-		prBaseBranch       string
-		environmentType    string
-		buildType          string
-		activeEnvironment  string
-		standbyEnvironment string
-		cacheNoCache       string
-		serviceID          string
-		secretPrefix       string
-		projectVars        string
-		envVars            string
-		lagoonVersion      string
-		lagoonYAML         string
-		valuesFilePath     string
-		templatePath       string
-	}
 	tests := []struct {
 		name         string
 		args         testdata.TestData
@@ -51,7 +30,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -60,7 +39,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "enabled",
 		},
 		{
@@ -71,7 +50,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					EnvVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -80,7 +59,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "enabled",
 		},
 		{
@@ -91,9 +70,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -110,9 +89,9 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -133,7 +112,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -162,7 +141,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -182,6 +161,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			helpers.UnsetEnvVars(tt.vars) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)

@@ -95,3 +95,123 @@ func TestCheckFeatureFlag(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckAdminFeatureFlag(t *testing.T) {
+	type args struct {
+		key   string
+		debug bool
+	}
+	tests := []struct {
+		name string
+		vars []helpers.EnvironmentVariable
+		args args
+		want string
+	}{
+		{
+			name: "test1 - container memory limit",
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT",
+					Value: "16Gi",
+				},
+			},
+			args: args{
+				key: "CONTAINER_MEMORY_LIMIT",
+			},
+			want: "16Gi",
+		},
+		{
+			name: "test2 - ephemeral storage requests",
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS",
+					Value: "16Gi",
+				},
+			},
+			args: args{
+				key: "EPHEMERAL_STORAGE_REQUESTS",
+			},
+			want: "16Gi",
+		},
+		{
+			name: "test2 - ephemeral storage limit",
+			vars: []helpers.EnvironmentVariable{
+				{
+					Name:  "ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT",
+					Value: "disabled",
+				},
+				{
+					Name:  "ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT",
+					Value: "160Gi",
+				},
+			},
+			args: args{
+				key: "EPHEMERAL_STORAGE_LIMIT",
+			},
+			want: "160Gi",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			for _, envVar := range tt.vars {
+				err := os.Setenv(envVar.Name, envVar.Value)
+				if err != nil {
+					t.Errorf("%v", err)
+				}
+			}
+			if got := CheckAdminFeatureFlag(tt.args.key, tt.args.debug); got != tt.want {
+				t.Errorf("CheckAdminFeatureFlag() = %v, want %v", got, tt.want)
+			}
+			t.Cleanup(func() {
+				helpers.UnsetEnvVars(tt.vars)
+			})
+		})
+	}
+}
+
+func TestValidateResourceQuantity(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				s: "100m",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test2",
+			args: args{
+				s: "100M",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test3",
+			args: args{
+				s: "10Gi",
+			},
+			wantErr: false,
+		},
+		{
+			name: "test4",
+			args: args{
+				s: "aa11",
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := ValidateResourceQuantity(tt.args.s); (err != nil) != tt.wantErr {
+				t.Errorf("ValidateResourceQuantity() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}

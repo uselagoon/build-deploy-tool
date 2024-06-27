@@ -615,3 +615,45 @@ func TestGetNamespace(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsR(t *testing.T) {
+	type args struct {
+		s     []string
+		match string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "test1",
+			args: args{
+				s: []string{
+					"registry1.example.com",
+					"registry2.example.com",
+				},
+				match: "registry2.example.com/image/name/cli:latest",
+			},
+			want: true,
+		},
+		{
+			name: "test2",
+			args: args{
+				s: []string{
+					"registry1.example.com",
+					"registry2.example.com",
+				},
+				match: "image/name/cli:latest",
+			},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := ContainsR(tt.args.s, tt.args.match); got != tt.want {
+				t.Errorf("ContainsR() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -1,0 +1,39 @@
+version: '2'
+
+services:
+  mariadb-10-5:
+    image: uselagoon/mariadb-10.5:latest
+    labels:
+      lagoon.type: mariadb-single
+      lagoon.persistent.size: 100Mi
+    ports:
+      - '3306'
+
+  mariadb-10-11:
+    image: uselagoon/mariadb-10.11:latest
+    labels:
+      lagoon.type: mariadb
+    ports:
+      - '3306'
+
+  postgres-11:
+    image: uselagoon/postgres-11:latest
+    labels:
+      lagoon.type: postgres-single
+      lagoon.persistent.size: 100Mi
+    ports:
+      - '5432'
+
+  postgres-15:
+    image: uselagoon/postgres-15:latest
+    labels:
+      lagoon.type: postgres
+    ports:
+      - '5432'
+
+  mongo-4:
+    image: uselagoon/mongo-4:latest
+    labels:
+      lagoon.type: mongo
+    ports:
+      - '27017'

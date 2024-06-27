@@ -1,17 +1,20 @@
 package helpers
 
 import (
-	"bytes"
 	"crypto/md5"
 	"crypto/sha256"
 	"encoding/base32"
-	"encoding/gob"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"html/template"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+
+	"sigs.k8s.io/yaml"
 )
 
 // StrPtr .
@@ -33,6 +36,11 @@ func IntPtr(i int) *int {
 
 // Int32Ptr
 func Int32Ptr(i int32) *int32 {
+	return &i
+}
+
+// Int64Ptr
+func Int64Ptr(i int64) *int64 {
 	return &i
 }
 
@@ -158,6 +166,17 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+// ContainsR checks if a string slice contains a specific string regex match.
+func ContainsR(regex []string, match string) bool {
+	for _, v := range regex {
+		m, _ := regexp.MatchString(v, match)
+		if m {
+			return true
+		}
+	}
+	return false
+}
+
 // WriteTemplateFile writes the template to a file.
 func WriteTemplateFile(templateOutputFile string, data []byte) {
 	err := os.WriteFile(templateOutputFile, data, 0644)
@@ -211,6 +230,11 @@ func UnsetEnvVars(localVars []EnvironmentVariable) {
 		"LAGOON_FEATURE_BACKUP_DEV_SCHEDULE",
 		"LAGOON_FEATURE_BACKUP_PR_SCHEDULE",
 		"LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS",
+		"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+		"DBAAS_OPERATOR_HTTP",
+		"CONFIG_MAP_SHA",
+		"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+		"CI",
 	}
 	for _, varName := range varNames {
 		os.Unsetenv(varName)
@@ -230,9 +254,41 @@ func CheckLabelLength(labels map[string]string) error {
 }
 
 func DeepCopy(src, dist interface{}) (err error) {
-	buf := bytes.Buffer{}
-	if err = gob.NewEncoder(&buf).Encode(src); err != nil {
-		return
+	origJSON, err := json.Marshal(src)
+	if err != nil {
+		return err
 	}
-	return gob.NewDecoder(&buf).Decode(dist)
+	if err = json.Unmarshal(origJSON, &dist); err != nil {
+		return err
+	}
+	return nil
+}
+
+// just a generic anything template helper
+func TemplateThings(values, src, dist interface{}) {
+	yb, _ := yaml.Marshal(src)
+	tmpl, _ := template.New("").Funcs(funcMap).Parse(string(yb))
+	queryBuilder := strings.Builder{}
+	tmpl.Execute(&queryBuilder, values)
+	yaml.Unmarshal([]byte(queryBuilder.String()), &dist)
+}
+
+var funcMap = template.FuncMap{
+	"ToUpper":        strings.ToUpper,
+	"ToLower":        strings.ToLower,
+	"FixServiceName": FixServiceName,
+}
+
+func FixServiceName(str string) string {
+	replaceHyphen := strings.ReplaceAll(str, "-", "_")
+	return strings.ToUpper(replaceHyphen)
+}
+
+func AppendIfMissing(slice []string, i string) []string {
+	for _, ele := range slice {
+		if ele == i {
+			return slice
+		}
+	}
+	return append(slice, i)
 }

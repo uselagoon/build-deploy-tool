@@ -12,8 +12,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/tasklib"
 )
 
-var runPreRollout, runPostRollout, outOfClusterConfig bool
-
 const (
 	preRolloutTasks = iota
 	postRolloutTasks
@@ -38,11 +36,11 @@ func unidleThenRun(namespace string, prePost string, incoming lagoon.Task) error
 			if !incoming.RequiresEnvironment { // we don't have to kill this build if we can't bring the services up, so we just note the issue and continue
 				fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
 			} else {
-				return fmt.Errorf("Unable to unidle the environment for pre-rollout tasks in time (waited %v seconds, retried %v times) - exiting as the task is defined as requiring the environment to be up.",
+				return fmt.Errorf("unable to unidle the environment for pre-rollout tasks in time (waited %v seconds, retried %v times) - exiting as the task is defined as requiring the environment to be up",
 					incoming.ScaleWaitTime, incoming.ScaleMaxIterations)
 			}
 		default:
-			return fmt.Errorf("There was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
+			return fmt.Errorf("there was a problem when unidling the environment for pre-rollout tasks: %v", err.Error())
 		}
 	}
 	return runCleanTaskInEnvironment(namespace, prePost, incoming)
@@ -57,7 +55,7 @@ var tasksPreRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
+		lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
@@ -69,7 +67,7 @@ var tasksPreRun = &cobra.Command{
 			os.Exit(1)
 		}
 
-		err = runTasks(taskIterator, lYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(taskIterator, buildValues.LagoonYAML.Tasks.Prerollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -88,7 +86,7 @@ var tasksPostRun = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		lYAML, lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
+		lagoonConditionalEvaluationEnvironment, buildValues, err := getEnvironmentInfo(generator)
 		if err != nil {
 			return err
 		}
@@ -100,7 +98,7 @@ var tasksPostRun = &cobra.Command{
 			fmt.Println("Pre-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
 		}
-		err = runTasks(taskIterator, lYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
+		err = runTasks(taskIterator, buildValues.LagoonYAML.Tasks.Postrollout, lagoonConditionalEvaluationEnvironment)
 		if err != nil {
 			fmt.Println("Post-rollout Tasks Failed with the following error: ", err.Error())
 			os.Exit(1)
@@ -110,22 +108,22 @@ var tasksPostRun = &cobra.Command{
 	},
 }
 
-func getEnvironmentInfo(g generator.GeneratorInput) (lagoon.YAML, tasklib.TaskEnvironment, generator.BuildValues, error) {
+func getEnvironmentInfo(g generator.GeneratorInput) (tasklib.TaskEnvironment, generator.BuildValues, error) {
 	// read the .lagoon.yml file
 	lagoonBuild, err := generator.NewGenerator(
 		g,
 	)
 	if err != nil {
-		return lagoon.YAML{}, nil, generator.BuildValues{}, err
+		return nil, generator.BuildValues{}, err
 	}
 
 	lagoonConditionalEvaluationEnvironment := tasklib.TaskEnvironment{}
-	if len(*lagoonBuild.LagoonEnvironmentVariables) > 0 {
-		for _, envVar := range *lagoonBuild.LagoonEnvironmentVariables {
+	if len(lagoonBuild.BuildValues.EnvironmentVariables) > 0 {
+		for _, envVar := range lagoonBuild.BuildValues.EnvironmentVariables {
 			lagoonConditionalEvaluationEnvironment[envVar.Name] = envVar.Value
 		}
 	}
-	return *lagoonBuild.LagoonYAML, lagoonConditionalEvaluationEnvironment, *lagoonBuild.BuildValues, nil
+	return lagoonConditionalEvaluationEnvironment, *lagoonBuild.BuildValues, nil
 }
 
 // runTasks is essentially an interpreter. It takes in a runner function (that does the interpreting), the task list (a series of instructions)
@@ -218,7 +216,7 @@ func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironm
 	}
 	retBool, okay := ret.(bool)
 	if !okay {
-		err := fmt.Errorf("Expression doesn't evaluate to a boolean")
+		err := fmt.Errorf("expression doesn't evaluate to a boolean")
 		if debug {
 			fmt.Println(err.Error())
 		}

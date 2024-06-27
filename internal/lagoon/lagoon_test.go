@@ -9,9 +9,9 @@ import (
 
 func TestUnmarshalLagoonYAML(t *testing.T) {
 	type args struct {
-		file string
-		l    *YAML
-		p    *map[string]interface{}
+		file    string
+		project string
+		l       *YAML
 	}
 	tests := []struct {
 		name    string
@@ -24,7 +24,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "test-resources/lagoon-yaml/test1/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -92,7 +91,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "test-resources/lagoon-yaml/test2/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -160,7 +158,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "test-resources/lagoon-yaml/test3/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -228,7 +225,6 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			args: args{
 				file: "test-resources/lagoon-yaml/test4/lagoon.yml",
 				l:    &YAML{},
-				p:    &map[string]interface{}{},
 			},
 			want: &YAML{
 				DockerComposeYAML: "docker-compose.yml",
@@ -258,10 +254,153 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-cronjobs",
+			args: args{
+				file: "test-resources/lagoon-yaml/test5/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/15 * * * *",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test-polysite",
+			args: args{
+				file:    "test-resources/lagoon-yaml/test6/lagoon.yml",
+				l:       &YAML{},
+				project: "multiproject1",
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/15 * * * *",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test overrides",
+			args: args{
+				file: "test-resources/lagoon-yaml/test7/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				EnvironmentVariables: EnvironmentVariables{
+					GitSHA: helpers.BoolPtr(true),
+				},
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												TLSAcme: helpers.BoolPtr(true),
+											},
+										},
+									},
+								},
+							},
+						},
+						Overrides: map[string]Override{
+							"nginx": {
+								Build: Build{
+									Dockerfile: "test-resources/dockerfile.nginx",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test container registries",
+			args: args{
+				file: "test-resources/lagoon-yaml/test8/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				ContainerRegistries: map[string]ContainerRegistry{
+					"my-custom-registry": {
+						Username: "myownregistryuser",
+						Password: "REGISTRY_PASSWORD",
+						URL:      "my.own.registry.com",
+					},
+					"my-hardcode-registry": {
+						Username: "myhardcoderegistryuser",
+						Password: "myhardcoderegistrypassword",
+						URL:      "my.hardcode.registry.com",
+					},
+					"my-other-registry": {
+						URL: "my.other.registry.com",
+					},
+					"dockerhub": {},
+				},
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												TLSAcme: helpers.BoolPtr(true),
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := UnmarshalLagoonYAML(tt.args.file, tt.args.l, tt.args.p); (err != nil) != tt.wantErr {
+			if err := UnmarshalLagoonYAML(tt.args.file, tt.args.l, tt.args.project); (err != nil) != tt.wantErr {
 				t.Errorf("UnmarshalLagoonYAML() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !reflect.DeepEqual(tt.args.l, tt.want) {
@@ -367,8 +506,6 @@ func TestMergeLagoonYAMLs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			//fmt.Println(tt.args.left)
-			//fmt.Println(tt.args.right)
 			err := MergeLagoonYAMLs(tt.args.left, tt.args.right)
 			got := tt.args.left
 			if (err != nil) != tt.wantErr {

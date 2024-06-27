@@ -1,0 +1,28 @@
+---
+docker-compose-yaml: docker-compose.yml
+
+project: content-example-com
+
+multiproject1:
+  environments:
+    main:
+      cronjobs:
+        - name: drush cron
+          schedule: "*/15 * * * *"
+          command: 'drush cron'
+          service: cli
+      routes:
+      -   nginx:
+          - a.example.com
+
+multiproject2:
+  environments:
+    main:
+      cronjobs:
+        - name: notdrush cron
+          schedule: "*/15 * * * *"
+          command: 'notdrush cron'
+          service: cli
+      routes:
+      -   nginx:
+          - a.example.com

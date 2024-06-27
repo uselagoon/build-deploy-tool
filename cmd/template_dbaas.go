@@ -37,9 +37,11 @@ func DBaaSTemplateGeneration(g generator.GeneratorInput,
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas"), templateYAML)
-	if g.Debug {
-		fmt.Println(fmt.Sprintf("Templating dbaas consumers to %s", fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas")))
+	if len(templateYAML) > 0 {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas"), templateYAML)
+		if g.Debug {
+			fmt.Printf("Templating dbaas consumers to %s\n", fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas"))
+		}
 	}
 	return nil
 }

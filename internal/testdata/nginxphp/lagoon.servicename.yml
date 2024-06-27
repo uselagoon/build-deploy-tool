@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/nginxphp/docker-compose.servicename.yml
+docker-compose-yaml: internal/testdata/nginxphp/docker-compose.servicename.yml
 
 routes:
   autogenerate:

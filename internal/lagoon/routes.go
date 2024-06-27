@@ -29,8 +29,6 @@ type RouteV2 struct {
 	Annotations           map[string]string `json:"annotations"`
 	Labels                map[string]string `json:"labels"`
 	AlternativeNames      []string          `json:"alternativeNames"`
-	ServicePortNumber     *int32            `json:"servicePortNumber"`
-	ServicePortName       *string           `json:"servicePortName"`
 	IngressName           string            `json:"ingressName"`
 	IngressClass          string            `json:"ingressClass"`
 	HSTSEnabled           *bool             `json:"hstsEnabled,omitempty"`

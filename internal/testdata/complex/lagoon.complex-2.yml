@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/complex/docker-compose.complex-1.yml
+docker-compose-yaml: internal/testdata/complex/docker-compose.complex-1.yml
 
 environments:
   main:
