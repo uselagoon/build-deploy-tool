@@ -49,6 +49,8 @@ func GenerateNetworkPolicy(
 					From: []networkv1.NetworkPolicyPeer{
 						{
 							PodSelector: &metav1.LabelSelector{},
+						},
+						{
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchExpressions: []metav1.LabelSelectorRequirement{
 									{
