@@ -59,6 +59,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-po
         envFrom:
         - configMapRef:
             name: lagoon-env

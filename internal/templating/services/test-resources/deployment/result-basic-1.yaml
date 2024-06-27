@@ -52,6 +52,8 @@ spec:
           value: |
             M/5 * * * * drush cron
             M/15 * * * * other cronjob
+        - name: SERVICE_NAME
+          value: myservice
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -143,6 +145,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-po
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -231,6 +235,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -319,6 +325,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist-po
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -407,6 +415,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist-posize
         envFrom:
         - configMapRef:
             name: lagoon-env

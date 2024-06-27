@@ -49,6 +49,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: redis
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -139,6 +141,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: redis-persist
         envFrom:
         - configMapRef:
             name: lagoon-env

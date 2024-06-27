@@ -55,6 +55,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: rabbitmq
         envFrom:
         - configMapRef:
             name: lagoon-env

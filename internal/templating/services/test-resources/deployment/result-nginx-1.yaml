@@ -51,6 +51,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: nginx
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -84,6 +86,8 @@ spec:
           value: 127.0.0.1
         - name: LAGOON_GIT_SHA
           value: "0"
+        - name: SERVICE_NAME
+          value: nginx
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -171,6 +175,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: nginx-2
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -207,6 +213,8 @@ spec:
           value: 127.0.0.1
         - name: LAGOON_GIT_SHA
           value: "0"
+        - name: SERVICE_NAME
+          value: nginx-2
         envFrom:
         - configMapRef:
             name: lagoon-env

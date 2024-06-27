@@ -54,6 +54,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: abcdefg123456
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: postgres-11
         envFrom:
         - configMapRef:
             name: lagoon-env

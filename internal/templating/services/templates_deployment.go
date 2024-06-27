@@ -402,6 +402,10 @@ func GenerateDeploymentTemplate(
 					Name:  "CRONJOBS",
 					Value: cronjobs,
 				},
+				{
+					Name:  "SERVICE_NAME",
+					Value: serviceValues.OverrideName,
+				},
 			}
 			// expose any container envvars as required here
 			container.Container.Env = append(container.Container.Env, envvars...)
@@ -514,6 +518,10 @@ func GenerateDeploymentTemplate(
 					{
 						Name:  "LAGOON_GIT_SHA",
 						Value: buildValues.GitSHA,
+					},
+					{
+						Name:  "SERVICE_NAME",
+						Value: serviceValues.OverrideName,
 					},
 				}
 				linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvars...)

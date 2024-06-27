@@ -49,6 +49,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0000000000000000000000000000000000000000"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: thunderhub
         envFrom:
         - configMapRef:
             name: lagoon-env

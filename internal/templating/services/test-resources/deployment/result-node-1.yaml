@@ -49,6 +49,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: node
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -135,6 +137,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: node-persist
         envFrom:
         - configMapRef:
             name: lagoon-env

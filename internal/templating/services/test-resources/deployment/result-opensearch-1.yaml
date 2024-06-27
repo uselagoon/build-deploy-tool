@@ -53,6 +53,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice
         envFrom:
         - configMapRef:
             name: lagoon-env
@@ -163,6 +165,8 @@ spec:
         - name: LAGOON_GIT_SHA
           value: "0"
         - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-size
         envFrom:
         - configMapRef:
             name: lagoon-env

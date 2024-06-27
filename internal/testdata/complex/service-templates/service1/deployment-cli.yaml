@@ -51,6 +51,8 @@ spec:
         - name: CRONJOBS
           value: |
             3,18,33,48 * * * * drush cron
+        - name: SERVICE_NAME
+          value: cli
         envFrom:
         - configMapRef:
             name: lagoon-env

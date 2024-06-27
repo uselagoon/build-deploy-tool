@@ -14,8 +14,6 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-var separator = []byte("---\n")
-
 // GenerateServiceTemplate generates the lagoon template to apply.
 func GenerateServiceTemplate(
 	buildValues generator.BuildValues,
