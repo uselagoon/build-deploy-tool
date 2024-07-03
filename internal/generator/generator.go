@@ -189,16 +189,16 @@ func NewGenerator(
 
 	// break out of the generator if these requirements are missing
 	if projectName == "" || environmentName == "" || environmentType == "" || buildType == "" {
-		return nil, fmt.Errorf("Missing arguments: project-name, environment-name, environment-type, or build-type not defined")
+		return nil, fmt.Errorf("missing arguments: project-name, environment-name, environment-type, or build-type not defined")
 	}
 	switch buildType {
 	case "branch", "promote":
 		if branch == "" {
-			return nil, fmt.Errorf("Missing arguments: branch not defined")
+			return nil, fmt.Errorf("missing arguments: branch not defined")
 		}
 	case "pullrequest":
 		if prNumber == "" || prHeadBranch == "" || prBaseBranch == "" {
-			return nil, fmt.Errorf("Missing arguments: pullrequest-number, pullrequest-head-branch, or pullrequest-base-branch not defined")
+			return nil, fmt.Errorf("missing arguments: pullrequest-number, pullrequest-head-branch, or pullrequest-base-branch not defined")
 		}
 	}
 

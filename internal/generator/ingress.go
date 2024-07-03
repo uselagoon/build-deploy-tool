@@ -247,7 +247,7 @@ func generateActiveStandbyRoutes(
 ) (lagoon.RoutesV2, error) {
 	activeStanbyRoutes := &lagoon.RoutesV2{}
 	if buildValues.LagoonYAML.ProductionRoutes != nil {
-		if buildValues.IsActiveEnvironment == true {
+		if buildValues.IsActiveEnvironment {
 			if buildValues.LagoonYAML.ProductionRoutes.Active != nil {
 				if buildValues.LagoonYAML.ProductionRoutes.Active.Routes != nil {
 					for _, routeMap := range buildValues.LagoonYAML.ProductionRoutes.Active.Routes {
@@ -259,7 +259,7 @@ func generateActiveStandbyRoutes(
 				}
 			}
 		}
-		if buildValues.IsStandbyEnvironment == true {
+		if buildValues.IsStandbyEnvironment {
 			if buildValues.LagoonYAML.ProductionRoutes.Standby != nil {
 				if buildValues.LagoonYAML.ProductionRoutes.Standby.Routes != nil {
 					for _, routeMap := range buildValues.LagoonYAML.ProductionRoutes.Standby.Routes {

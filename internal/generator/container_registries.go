@@ -71,10 +71,8 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 		}
 		eru := cr.URL
 		u, _ := url.Parse(eru)
-		if u.Host == "" {
-			eru = fmt.Sprintf("%s", eru)
-		} else {
-			eru = fmt.Sprintf("%s", u.Host)
+		if u.Host != "" {
+			eru = u.Host
 		}
 		// truncate the secret name to fit within the DNS1123subdomain spec before creating it
 		secretName := fmt.Sprintf("lagoon-private-registry-%s", machinerynamespace.MakeSafe(n))

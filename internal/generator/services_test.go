@@ -17,7 +17,6 @@ func Test_composeToServiceValues(t *testing.T) {
 		buildValues          *BuildValues
 		composeService       string
 		composeServiceValues composetypes.ServiceConfig
-		lagoonEnvVars        []lagoon.EnvironmentVariable
 	}
 	tests := []struct {
 		name    string

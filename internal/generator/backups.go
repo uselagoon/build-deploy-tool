@@ -94,44 +94,46 @@ func generateBackupValues(
 
 	buildValues.Backup.BackupSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, newBackupSchedule)
 	if err != nil {
-		return fmt.Errorf("Unable to convert crontab for default backup schedule: %v", err)
+		return fmt.Errorf("unable to convert crontab for default backup schedule: %v", err)
 	}
 
 	// start: get variables from the build pod that may have been added by the controller
 	flagCheckSchedule := helpers.GetEnv("K8UP_WEEKLY_RANDOM_FEATURE_FLAG", defaultCheckSchedule, debug)
-	if flagCheckSchedule == "enabled" {
+	lffCheckSchedule := CheckFeatureFlag("K8UP_WEEKLY_RANDOM_CHECK", mergedVariables, debug)
+	if flagCheckSchedule == "enabled" || lffCheckSchedule == "enabled" {
 		buildValues.Backup.CheckSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.CheckSchedule, err = helpers.ConvertCrontab(fmt.Sprintf("%s", buildValues.Namespace), defaultCheckSchedule)
+		buildValues.Backup.CheckSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, defaultCheckSchedule)
 		if err != nil {
-			return fmt.Errorf("Unable to convert crontab for default check schedule: %v", err)
+			return fmt.Errorf("unable to convert crontab for default check schedule: %v", err)
 		}
 	}
 	flagPruneSchedule := helpers.GetEnv("K8UP_WEEKLY_RANDOM_FEATURE_FLAG", defaultPruneSchedule, debug)
-	if flagPruneSchedule == "enabled" {
+	lffPruneSchedule := CheckFeatureFlag("K8UP_WEEKLY_RANDOM_PRUNE", mergedVariables, debug)
+	if flagPruneSchedule == "enabled" || lffPruneSchedule == "enabled" {
 		buildValues.Backup.PruneSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.PruneSchedule, err = helpers.ConvertCrontab(fmt.Sprintf("%s", buildValues.Namespace), defaultPruneSchedule)
+		buildValues.Backup.PruneSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, defaultPruneSchedule)
 		if err != nil {
-			return fmt.Errorf("Unable to convert crontab for default prune schedule: %v", err)
+			return fmt.Errorf("unable to convert crontab for default prune schedule: %v", err)
 		}
 	}
 
 	buildValues.Backup.PruneRetention.Hourly, err = helpers.EGetEnvInt("HOURLY_BACKUP_DEFAULT_RETENTION", hourlyDefaultBackupRetention, debug)
 	if err != nil {
-		return fmt.Errorf("Unable to convert hourly retention provided in the environment variable to integer")
+		return fmt.Errorf("unable to convert hourly retention provided in the environment variable to integer")
 	}
 	buildValues.Backup.PruneRetention.Daily, err = helpers.EGetEnvInt("DAILY_BACKUP_DEFAULT_RETENTION", dailyDefaultBackupRetention, debug)
 	if err != nil {
-		return fmt.Errorf("Unable to convert daily retention provided in the environment variable to integer")
+		return fmt.Errorf("unable to convert daily retention provided in the environment variable to integer")
 	}
 	buildValues.Backup.PruneRetention.Weekly, err = helpers.EGetEnvInt("WEEKLY_BACKUP_DEFAULT_RETENTION", weeklyDefaultBackupRetention, debug)
 	if err != nil {
-		return fmt.Errorf("Unable to convert weekly retention provided in the environment variable to integer")
+		return fmt.Errorf("unable to convert weekly retention provided in the environment variable to integer")
 	}
 	buildValues.Backup.PruneRetention.Monthly, err = helpers.EGetEnvInt("MONTHLY_BACKUP_DEFAULT_RETENTION", monthlyDefaultBackupRetention, debug)
 	if err != nil {
-		return fmt.Errorf("Unable to convert monthly retention provided in the environment variable to integer")
+		return fmt.Errorf("unable to convert monthly retention provided in the environment variable to integer")
 	}
 	// :end
 
@@ -150,7 +152,7 @@ func generateBackupValues(
 	if buildValues.LagoonYAML.BackupSchedule.Production != "" && buildValues.EnvironmentType == "production" {
 		buildValues.Backup.BackupSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, buildValues.LagoonYAML.BackupSchedule.Production)
 		if err != nil {
-			return fmt.Errorf("Unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
+			return fmt.Errorf("unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}
 	}
 

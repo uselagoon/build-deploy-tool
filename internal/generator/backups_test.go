@@ -703,6 +703,78 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test18 - LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_CHECK enabled",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
+				},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_CHECK", Value: "enabled", Scope: "global"},
+				},
+			},
+			vars: []helpers.EnvironmentVariable{},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "@weekly-random",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
+		{
+			name: "test19 - LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_PRUNE enabled",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "development",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
+				},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_PRUNE", Value: "enabled", Scope: "global"},
+				},
+			},
+			vars: []helpers.EnvironmentVariable{},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "development",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "31 1 * * *",
+					CheckSchedule:  "31 6 * * 1",
+					PruneSchedule:  "@weekly-random",
+					S3BucketName:   "baas-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 1,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

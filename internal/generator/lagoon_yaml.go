@@ -34,18 +34,18 @@ func LoadAndUnmarshalLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoo
 		//Decode it
 		envLagoonYamlString, err := base64.StdEncoding.DecodeString(envLagoonYamlStringBase64)
 		if err != nil {
-			return fmt.Errorf("Unable to decode %v - is it base64 encoded?", lagoonYmlOverrideEnvVarName)
+			return fmt.Errorf("unable to decode %v - is it base64 encoded?", lagoonYmlOverrideEnvVarName)
 		}
 		envLagoonYaml := &lagoon.YAML{}
 		lEnvLagoonPolysite := make(map[string]interface{})
 
 		err = yaml.Unmarshal(envLagoonYamlString, envLagoonYaml)
 		if err != nil {
-			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+			return fmt.Errorf("unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
 		}
 		err = yaml.Unmarshal(envLagoonYamlString, lEnvLagoonPolysite)
 		if err != nil {
-			return fmt.Errorf("Unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
+			return fmt.Errorf("unable to unmarshal env var %v: %v", lagoonYmlOverrideEnvVarName, err)
 		}
 
 		if _, ok := lEnvLagoonPolysite[projectName]; ok {

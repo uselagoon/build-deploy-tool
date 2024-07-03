@@ -148,7 +148,7 @@ func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, deb
 	// check for force value
 	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {
 		if debug {
-			fmt.Println(fmt.Sprintf("Using forced flag value from build variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)))
+			fmt.Printf("Using forced flag value from build variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key))
 		}
 		return value
 	}
@@ -156,7 +156,7 @@ func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, deb
 	for _, lVar := range envVariables {
 		if strings.Contains(lVar.Name, fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key)) {
 			if debug {
-				fmt.Println(fmt.Sprintf("Using flag value from Lagoon environment variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key)))
+				fmt.Printf("Using flag value from Lagoon environment variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key))
 			}
 			return lVar.Value
 		}
@@ -164,7 +164,7 @@ func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, deb
 	// return default
 	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key)); ok {
 		if debug {
-			fmt.Println(fmt.Sprintf("Using default flag value from build variable %s", fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key)))
+			fmt.Printf("Using default flag value from build variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key))
 		}
 		return value
 	}
@@ -175,7 +175,7 @@ func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, deb
 func CheckAdminFeatureFlag(key string, debug bool) string {
 	if value, ok := os.LookupEnv(fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)); ok {
 		if debug {
-			fmt.Println(fmt.Sprintf("Using admin feature flag value from build variable %s", fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)))
+			fmt.Printf("Using admin feature flag value from build variable %s\n", fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key))
 		}
 		return value
 	}
