@@ -210,6 +210,31 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			emptyDir:     true,
 			want:         "../internal/testdata/node/backup-templates/backup-7",
 		},
+		{
+			name: "test10 - generic backup with random check prune feature flags",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "production",
+					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					EnvVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_CHECK",
+							Value: "enabled",
+							Scope: "global",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_PRUNE",
+							Value: "enabled",
+							Scope: "global",
+						},
+					},
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/backup-templates/backup-8",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
