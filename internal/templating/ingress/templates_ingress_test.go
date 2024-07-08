@@ -458,6 +458,45 @@ func TestGenerateKubeTemplate(t *testing.T) {
 			},
 			want: "test-resources/result-wildcard-ingress2.yaml",
 		},
+		{
+			name: "custom-ingress7",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					RequestVerification: helpers.BoolPtr(true),
+					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress7.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

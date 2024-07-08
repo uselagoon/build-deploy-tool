@@ -401,6 +401,18 @@ func TestTemplateRoutes(t *testing.T) {
 			wantErr:      true,
 			wantErrMsg:   "this environment requests 2 custom routes, this would exceed the route quota of 1",
 		},
+		{
+			name: "test24 unidler request verification disable",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "../internal/testdata/node/lagoon.unidler.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "../internal/testdata/node/ingress-templates/ingress-23",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

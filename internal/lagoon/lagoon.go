@@ -79,12 +79,13 @@ type Routes struct {
 
 // Autogenerate .
 type Autogenerate struct {
-	Enabled           *bool    `json:"enabled"`
-	AllowPullRequests *bool    `json:"allowPullRequests"`
-	Insecure          string   `json:"insecure"`
-	Prefixes          []string `json:"prefixes"`
-	TLSAcme           *bool    `json:"tls-acme,omitempty"`
-	IngressClass      string   `json:"ingressClass"`
+	Enabled             *bool    `json:"enabled"`
+	AllowPullRequests   *bool    `json:"allowPullRequests"`
+	Insecure            string   `json:"insecure"`
+	Prefixes            []string `json:"prefixes"`
+	TLSAcme             *bool    `json:"tls-acme,omitempty"`
+	IngressClass        string   `json:"ingressClass"`
+	RequestVerification *bool    `json:"disableRequestVerification,omitempty"`
 }
 
 func (a *Routes) UnmarshalJSON(data []byte) error {
