@@ -5,6 +5,7 @@ metadata:
   annotations:
     fastly.amazee.io/service-id: service-id
     fastly.amazee.io/watch: "true"
+    idling.amazee.io/disable-request-verification: "false"
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: main

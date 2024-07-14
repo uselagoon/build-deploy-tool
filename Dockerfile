@@ -102,6 +102,7 @@ COPY legacy/scripts /kubectl-build-deploy/scripts
 COPY legacy/helmcharts  /kubectl-build-deploy/helmcharts
 
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
+ENV DOCKER_HOST=docker-host.lagoon.svc
 
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_${architecture}.tar.gz \

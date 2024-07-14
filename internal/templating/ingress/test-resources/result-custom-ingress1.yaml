@@ -5,6 +5,7 @@ metadata:
   annotations:
     custom-annotation: custom annotation value
     fastly.amazee.io/watch: "false"
+    idling.amazee.io/disable-request-verification: "false"
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "true"
     lagoon.sh/branch: environment-with-really-really-reall-3fdb

@@ -6,6 +6,7 @@ metadata:
     acme.cert-manager.io/http01-ingress-class: nginx
     custom-annotation: custom annotation value
     fastly.amazee.io/watch: "false"
+    idling.amazee.io/disable-request-verification: "false"
     ingress.kubernetes.io/ssl-redirect: "true"
     kubernetes.io/tls-acme: "false"
     lagoon.sh/branch: environment

@@ -4,6 +4,7 @@ kind: Ingress
 metadata:
   annotations:
     fastly.amazee.io/watch: "false"
+    idling.amazee.io/disable-request-verification: "false"
     ingress.kubernetes.io/ssl-redirect: "false"
     kubernetes.io/tls-acme: "false"
     lagoon.sh/branch: production
