@@ -61,20 +61,20 @@ spec:
         image: harbor.example.com/example-project/environment-name/myservice@latest
         imagePullPolicy: Always
         livenessProbe:
-          initialDelaySeconds: 120
-          periodSeconds: 5
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
+          initialDelaySeconds: 120
         name: elasticsearch
         ports:
         - containerPort: 9200
           name: 9200-tcp
           protocol: TCP
         readinessProbe:
-          initialDelaySeconds: 1
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
-          timeoutSeconds: 1
+          initialDelaySeconds: 20
         resources:
           requests:
             cpu: 10m
@@ -173,20 +173,20 @@ spec:
         image: harbor.example.com/example-project/environment-name/myservice-size@latest
         imagePullPolicy: Always
         livenessProbe:
-          initialDelaySeconds: 120
-          periodSeconds: 5
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
+          initialDelaySeconds: 120
         name: elasticsearch
         ports:
         - containerPort: 9200
           name: 9200-tcp
           protocol: TCP
         readinessProbe:
-          initialDelaySeconds: 1
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
-          timeoutSeconds: 1
+          initialDelaySeconds: 20
         resources:
           requests:
             cpu: 10m

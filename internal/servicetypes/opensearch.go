@@ -41,19 +41,20 @@ var opensearch = ServiceType{
 			},
 			ReadinessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
-					TCPSocket: &corev1.TCPSocketAction{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/_cluster/health?local=true",
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
 							IntVal: defaultOpensearchPort,
 						},
 					},
 				},
-				InitialDelaySeconds: 1,
-				TimeoutSeconds:      1,
+				InitialDelaySeconds: 20,
 			},
 			LivenessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
-					TCPSocket: &corev1.TCPSocketAction{
+					HTTPGet: &corev1.HTTPGetAction{
+						Path: "/_cluster/health?local=true",
 						Port: intstr.IntOrString{
 							Type:   intstr.Int,
 							IntVal: defaultOpensearchPort,
@@ -61,7 +62,6 @@ var opensearch = ServiceType{
 					},
 				},
 				InitialDelaySeconds: 120,
-				PeriodSeconds:       5,
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{

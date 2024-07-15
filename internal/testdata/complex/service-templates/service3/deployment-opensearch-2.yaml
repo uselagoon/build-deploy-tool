@@ -61,20 +61,20 @@ spec:
         image: harbor.example/example-project/main/opensearch-2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
         livenessProbe:
-          initialDelaySeconds: 120
-          periodSeconds: 5
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
+          initialDelaySeconds: 120
         name: opensearch
         ports:
         - containerPort: 9200
           name: 9200-tcp
           protocol: TCP
         readinessProbe:
-          initialDelaySeconds: 1
-          tcpSocket:
+          httpGet:
+            path: /_cluster/health?local=true
             port: 9200
-          timeoutSeconds: 1
+          initialDelaySeconds: 20
         resources:
           requests:
             cpu: 10m
