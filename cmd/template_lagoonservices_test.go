@@ -273,6 +273,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_DBAAS_ENVIRONMENT_TYPES", Value: "postgres-15:production-postgres,mongo-4:production-mongo,mariadb-10-11:production-mariadb", Scope: "build"},
+						{
+							Name:  "LAGOON_SYSTEM_CORE_VERSION",
+							Value: "v2.19.0",
+							Scope: "internal_system",
+						},
 					},
 				}, true),
 			templatePath: "testoutput",

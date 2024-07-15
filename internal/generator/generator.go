@@ -255,6 +255,12 @@ func NewGenerator(
 	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
 	buildValues.EnvironmentVariables = lagoon.MergeVariables(mergedVariables, configVars)
 
+	// if the core version is provided from the API, set the buildvalues LagoonVersion to this instead
+	lagoonCoreVersion, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_CORE_VERSION", []string{"internal_system"}, buildValues.EnvironmentVariables)
+	if lagoonCoreVersion != nil {
+		buildValues.LagoonVersion = lagoonCoreVersion.Value
+	}
+
 	// handle generating the container registry login generation here, extract from the `.lagoon.yml` firstly
 	if err := configureContainerRegistries(&buildValues); err != nil {
 		return nil, err
