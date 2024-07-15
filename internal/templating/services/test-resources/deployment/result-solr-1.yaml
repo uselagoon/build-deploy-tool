@@ -24,7 +24,8 @@ spec:
     matchLabels:
       app.kubernetes.io/instance: solr
       app.kubernetes.io/name: solr-php-persistent
-  strategy: {}
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
@@ -78,7 +79,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /var/solr

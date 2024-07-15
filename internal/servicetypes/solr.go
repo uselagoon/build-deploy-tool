@@ -3,6 +3,7 @@ package servicetypes
 import (
 	"fmt"
 
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -65,10 +66,13 @@ var solr = ServiceType{
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse("10m"),
-					corev1.ResourceMemory: resource.MustParse("100M"),
+					corev1.ResourceMemory: resource.MustParse("10Mi"),
 				},
 			},
 		},
+	},
+	Strategy: appsv1.DeploymentStrategy{
+		Type: appsv1.RecreateDeploymentStrategyType,
 	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
