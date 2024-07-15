@@ -18,10 +18,10 @@ var basic = ServiceType{
 				Port: defaultBasicPort, // this is the default port for basic service type
 				TargetPort: intstr.IntOrString{
 					Type:   intstr.String,
-					StrVal: "basic",
+					StrVal: "http",
 				},
 				Protocol: corev1.ProtocolTCP,
-				Name:     "basic",
+				Name:     "http",
 			},
 		},
 	},
@@ -32,7 +32,7 @@ var basic = ServiceType{
 			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "basic",
+					Name:          "http",
 					ContainerPort: defaultBasicPort,
 					Protocol:      corev1.ProtocolTCP,
 				},

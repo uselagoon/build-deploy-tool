@@ -35,7 +35,7 @@ spec:
       paths:
       - backend:
           service:
-            name: nginx
+            name: node
             port:
               name: http
         path: /

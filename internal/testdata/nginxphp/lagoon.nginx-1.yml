@@ -12,5 +12,5 @@ environment_variables:
 environments:
   main:
     routes:
-      - node:
+      - nginx-php:
           - example.com

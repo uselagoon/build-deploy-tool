@@ -20,10 +20,10 @@ metadata:
   name: web
 spec:
   ports:
-  - name: basic
+  - name: http
     port: 3000
     protocol: TCP
-    targetPort: basic
+    targetPort: http
   selector:
     app.kubernetes.io/instance: web
     app.kubernetes.io/name: basic-persistent

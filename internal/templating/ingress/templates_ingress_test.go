@@ -58,6 +58,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: true,
@@ -95,6 +102,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -134,6 +148,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
@@ -172,6 +193,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -213,6 +241,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -258,6 +293,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
@@ -297,6 +339,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 				},
 				activeStandby: false,
@@ -377,6 +426,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 				},
 				activeStandby: false,
 			},
@@ -416,6 +472,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 				},
 				activeStandby: false,
 			},
@@ -454,6 +517,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 				},
 				activeStandby: false,
@@ -498,6 +568,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						{
 							Name:         "myservice-po",
 							OverrideName: "myservice-po",
+							Type:         "basic",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
 								{
 									ServiceName: "myservice-po-8192",
@@ -559,6 +630,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						{
 							Name:         "myservice-po",
 							OverrideName: "myservice-po",
+							Type:         "basic",
 							AdditionalServicePorts: []generator.AdditionalServicePort{
 								{
 									ServiceName: "myservice-po-8192",
@@ -614,6 +686,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "basic",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},

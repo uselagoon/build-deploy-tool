@@ -67,7 +67,7 @@ spec:
         name: basic
         ports:
         - containerPort: 3000
-          name: basic
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
@@ -160,7 +160,7 @@ spec:
         name: basic
         ports:
         - containerPort: 8080
-          name: basic
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
@@ -250,7 +250,7 @@ spec:
         name: basic
         ports:
         - containerPort: 3000
-          name: basic
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
@@ -340,7 +340,7 @@ spec:
         name: basic
         ports:
         - containerPort: 8080
-          name: basic
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
@@ -430,7 +430,7 @@ spec:
         name: basic
         ports:
         - containerPort: 8080
-          name: basic
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1

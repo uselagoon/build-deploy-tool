@@ -19,7 +19,7 @@ example-project:
           - app.develop.example.com
     pr-4841:
       routes:
-        - nginx:
+        - node:
           - performance.example.com
 
 example-project2:

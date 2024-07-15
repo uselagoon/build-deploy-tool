@@ -47,6 +47,8 @@ type BackupConfiguration struct {
 	FileExtension string
 }
 
+// when defining default ServicePorts for a service, the first port in the list should be the port that could be associated to an ingress
+// the name of this port must be `http`
 type ServicePorts struct {
 	CanChangePort bool
 	Ports         []corev1.ServicePort

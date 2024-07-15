@@ -199,7 +199,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 						{
 							Name:  "LAGOON_ROUTES_JSON",
-							Value: base64.StdEncoding.EncodeToString([]byte(`{"routes":[{"domain":"test1.example.com","service":"nginx","tls-acme":false,"monitoring-path":"/bypass-cache"}]}`)),
+							Value: base64.StdEncoding.EncodeToString([]byte(`{"routes":[{"domain":"test1.example.com","service":"node","tls-acme":false,"monitoring-path":"/bypass-cache"}]}`)),
 							Scope: "build",
 						},
 					},
