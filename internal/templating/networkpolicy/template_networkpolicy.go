@@ -13,10 +13,15 @@ func GenerateNetworkPolicy(
 	// add the default labels
 	labels := map[string]string{
 		"app.kubernetes.io/managed-by": "build-deploy-tool",
+		"app.kubernetes.io/instance":   "isolation-network-policy",
+		"app.kubernetes.io/name":       "isolation-network-policy",
+		"lagoon.sh/template":           "isolation-network-policy-0.1.0",
 		"lagoon.sh/project":            buildValues.Project,
 		"lagoon.sh/environment":        buildValues.Environment,
 		"lagoon.sh/environmentType":    buildValues.EnvironmentType,
 		"lagoon.sh/buildType":          buildValues.BuildType,
+		"lagoon.sh/service":            "isolation-network-policy",
+		"lagoon.sh/service-type":       "isolation-network-policy",
 	}
 
 	// add the default annotations
