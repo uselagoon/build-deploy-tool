@@ -83,7 +83,7 @@ spec:
         volumeMounts:
         - mountPath: /data/db
           name: mongo-4
-      enableServiceLinks: false
+      enableServiceLinks: true
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production

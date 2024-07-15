@@ -12,7 +12,8 @@ import (
 var defaultMariaDBPort int32 = 3306
 
 var mariadbSingle = ServiceType{
-	Name: "mariadb-single",
+	Name:               "mariadb-single",
+	EnableServiceLinks: true,
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{

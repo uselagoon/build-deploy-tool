@@ -12,7 +12,8 @@ import (
 var defaultMongoDBPort int32 = 27017
 
 var mongodbSingle = ServiceType{
-	Name: "mongodb-single",
+	Name:               "mongodb-single",
+	EnableServiceLinks: true,
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{

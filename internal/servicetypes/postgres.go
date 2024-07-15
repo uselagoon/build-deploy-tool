@@ -28,7 +28,7 @@ var postgresSingle = ServiceType{
 		},
 	},
 	PrimaryContainer: ServiceContainer{
-		Name: "postgres",
+		Name: "postgres-single",
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
 			SecurityContext: &corev1.SecurityContext{},
@@ -66,7 +66,7 @@ var postgresSingle = ServiceType{
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{
 					corev1.ResourceCPU:    resource.MustParse("10m"),
-					corev1.ResourceMemory: resource.MustParse("100M"),
+					corev1.ResourceMemory: resource.MustParse("10Mi"),
 				},
 			},
 		},

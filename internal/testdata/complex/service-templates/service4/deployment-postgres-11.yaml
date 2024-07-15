@@ -66,7 +66,7 @@ spec:
           periodSeconds: 5
           tcpSocket:
             port: 5432
-        name: postgres
+        name: postgres-single
         ports:
         - containerPort: 5432
           name: 5432-tcp
@@ -79,7 +79,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /var/lib/postgresql/data
