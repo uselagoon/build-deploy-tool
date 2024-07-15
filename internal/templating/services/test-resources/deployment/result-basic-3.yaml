@@ -91,7 +91,7 @@ spec:
           requests:
             cpu: 10m
             ephemeral-storage: 1Gi
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:

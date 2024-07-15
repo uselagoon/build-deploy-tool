@@ -74,7 +74,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 100Mi
         securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
@@ -162,7 +162,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 100Mi
         securityContext: {}
         volumeMounts:
         - mountPath: ""

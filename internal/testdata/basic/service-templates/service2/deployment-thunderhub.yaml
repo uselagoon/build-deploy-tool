@@ -74,7 +74,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /data

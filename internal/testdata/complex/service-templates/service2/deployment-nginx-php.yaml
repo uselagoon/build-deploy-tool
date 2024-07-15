@@ -79,7 +79,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 10M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /app/docroot/sites/default/files/
@@ -114,7 +114,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 100Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /app/docroot/sites/default/files/

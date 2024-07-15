@@ -79,7 +79,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 10M
+            memory: 10Mi
         securityContext: {}
       - env:
         - name: NGINX_FASTCGI_PASS
@@ -111,7 +111,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 100Mi
         securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
@@ -203,7 +203,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 10M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
@@ -238,7 +238,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 100Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /storage/data
