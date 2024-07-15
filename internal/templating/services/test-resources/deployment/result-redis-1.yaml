@@ -60,7 +60,7 @@ spec:
           initialDelaySeconds: 120
           tcpSocket:
             port: 6379
-          timeoutSeconds: 10
+          timeoutSeconds: 1
         name: redis
         ports:
         - containerPort: 6379
@@ -74,7 +74,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
       enableServiceLinks: false
       imagePullSecrets:
@@ -152,7 +152,7 @@ spec:
           initialDelaySeconds: 120
           tcpSocket:
             port: 6379
-          timeoutSeconds: 10
+          timeoutSeconds: 1
         name: redis
         ports:
         - containerPort: 6379
@@ -166,7 +166,7 @@ spec:
         resources:
           requests:
             cpu: 10m
-            memory: 100M
+            memory: 10Mi
         securityContext: {}
         volumeMounts:
         - mountPath: /data
