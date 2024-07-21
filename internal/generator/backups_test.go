@@ -13,7 +13,6 @@ import (
 func Test_generateBackupValues(t *testing.T) {
 	type args struct {
 		buildValues     *BuildValues
-		lYAML           *lagoon.YAML
 		mergedVariables []lagoon.EnvironmentVariable
 		debug           bool
 	}
@@ -33,8 +32,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
 			},
 			want: &BuildValues{
@@ -66,8 +65,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_DEV_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
@@ -102,8 +101,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 				},
@@ -140,8 +139,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
@@ -176,8 +175,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 				},
@@ -214,8 +213,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 					{Name: "LAGOON_BACKUP_DEV_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
@@ -250,8 +249,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
 				},
@@ -288,8 +287,29 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML: lagoon.YAML{
+						BackupRetention: lagoon.BackupRetention{
+							Production: lagoon.Retention{
+								Hourly:  helpers.IntPtr(10),
+								Daily:   helpers.IntPtr(10),
+								Weekly:  helpers.IntPtr(10),
+								Monthly: helpers.IntPtr(10),
+							},
+						},
+						BackupSchedule: lagoon.BackupSchedule{
+							Production: "*/15 0-23 1-31 1-12 0-6",
+						},
+					},
 				},
-				lYAML: &lagoon.YAML{
+				mergedVariables: []lagoon.EnvironmentVariable{},
+			},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "production",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				LagoonYAML: lagoon.YAML{
 					BackupRetention: lagoon.BackupRetention{
 						Production: lagoon.Retention{
 							Hourly:  helpers.IntPtr(10),
@@ -302,14 +322,6 @@ func Test_generateBackupValues(t *testing.T) {
 						Production: "*/15 0-23 1-31 1-12 0-6",
 					},
 				},
-				mergedVariables: []lagoon.EnvironmentVariable{},
-			},
-			want: &BuildValues{
-				BuildType:             "branch",
-				EnvironmentType:       "production",
-				Project:               "example-project",
-				Namespace:             "example-com-main",
-				DefaultBackupSchedule: "M H(22-2) * * *",
 				Backup: BackupConfiguration{
 					BackupSchedule: "1,16,31,46 0-23 1-31 1-12 0-6",
 					CheckSchedule:  "31 6 * * 1",
@@ -333,8 +345,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY", Value: "abcdefg", Scope: "build"},
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY", Value: "a1b2c3d4e5f6g7h8i9", Scope: "build"},
@@ -374,8 +386,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY", Value: "abcdefg", Scope: "build"},
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY", Value: "a1b2c3d4e5f6g7h8i9", Scope: "build"},
@@ -418,8 +430,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY", Value: "abcdefg", Scope: "build"},
 					{Name: "LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY", Value: "a1b2c3d4e5f6g7h8i9", Scope: "build"},
@@ -458,8 +470,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY", Value: "abcdefg", Scope: "build"},
 					{Name: "LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY", Value: "a1b2c3d4e5f6g7h8i9", Scope: "build"},
@@ -506,8 +518,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
 			},
 			vars: []helpers.EnvironmentVariable{
@@ -542,8 +554,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML:           &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{},
 			},
 			vars: []helpers.EnvironmentVariable{
@@ -578,8 +590,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{
 						Name:  "LAGOON_BAAS_BUCKET_NAME",
@@ -617,8 +629,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{
 						Name:  "LAGOON_BAAS_BUCKET_NAME",
@@ -661,8 +673,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{
 						Name:  "LAGOON_SYSTEM_PROJECT_SHARED_BUCKET",
@@ -700,8 +712,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_CHECK", Value: "enabled", Scope: "global"},
 				},
@@ -736,8 +748,8 @@ func Test_generateBackupValues(t *testing.T) {
 					Project:               "example-project",
 					Namespace:             "example-com-main",
 					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
 				},
-				lYAML: &lagoon.YAML{},
 				mergedVariables: []lagoon.EnvironmentVariable{
 					{Name: "LAGOON_FEATURE_FLAG_K8UP_WEEKLY_RANDOM_PRUNE", Value: "enabled", Scope: "global"},
 				},
@@ -772,7 +784,7 @@ func Test_generateBackupValues(t *testing.T) {
 					t.Errorf("%v", err)
 				}
 			}
-			if err := generateBackupValues(tt.args.buildValues, tt.args.lYAML, tt.args.mergedVariables, tt.args.debug); (err != nil) != tt.wantErr {
+			if err := generateBackupValues(tt.args.buildValues, tt.args.mergedVariables, tt.args.debug); (err != nil) != tt.wantErr {
 				t.Errorf("generateBackupValues() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			lValues, _ := json.Marshal(tt.args.buildValues)

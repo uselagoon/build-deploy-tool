@@ -18,18 +18,31 @@ type ProductionRoutes struct {
 	Standby *Environment `json:"standby"`
 }
 
-// Cronjob represents a Lagoon cronjob.
-type Cronjob struct {
-	Name    string `json:"name"`
-	Command string `json:"command"`
-}
-
 // Environment represents a Lagoon environment.
 type Environment struct {
 	AutogenerateRoutes *bool                `json:"autogenerateRoutes"`
 	Types              map[string]string    `json:"types"`
 	Routes             []map[string][]Route `json:"routes"`
 	Cronjobs           []Cronjob            `json:"cronjobs"`
+	Overrides          map[string]Override  `json:"overrides,omitempty"`
+}
+
+// Cronjob represents a Lagoon cronjob.
+type Cronjob struct {
+	Name     string `json:"name"`
+	Service  string `json:"service"`
+	Schedule string `json:"schedule"`
+	Command  string `json:"command"`
+}
+
+type Override struct {
+	Build Build  `json:"build,omitempty"`
+	Image string `json:"image,omitempty"`
+}
+
+type Build struct {
+	Dockerfile string `json:"dockerfile,omitempty"`
+	Context    string `json:"context,omitempty"`
 }
 
 // Environments .
@@ -48,13 +61,25 @@ type Tasks struct {
 
 // YAML represents the .lagoon.yml file.
 type YAML struct {
-	DockerComposeYAML string            `json:"docker-compose-yaml"`
-	Environments      Environments      `json:"environments"`
-	ProductionRoutes  *ProductionRoutes `json:"production_routes"`
-	Tasks             Tasks             `json:"tasks"`
-	Routes            Routes            `json:"routes"`
-	BackupRetention   BackupRetention   `json:"backup-retention"`
-	BackupSchedule    BackupSchedule    `json:"backup-schedule"`
+	DockerComposeYAML    string                       `json:"docker-compose-yaml"`
+	Environments         Environments                 `json:"environments"`
+	ProductionRoutes     *ProductionRoutes            `json:"production_routes"`
+	Tasks                Tasks                        `json:"tasks"`
+	Routes               Routes                       `json:"routes"`
+	BackupRetention      BackupRetention              `json:"backup-retention"`
+	BackupSchedule       BackupSchedule               `json:"backup-schedule"`
+	EnvironmentVariables EnvironmentVariables         `json:"environment_variables,omitempty"`
+	ContainerRegistries  map[string]ContainerRegistry `json:"container-registries,omitempty"`
+}
+
+type ContainerRegistry struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	URL      string `json:"url"`
+}
+
+type EnvironmentVariables struct {
+	GitSHA *bool `json:"git_sha"`
 }
 
 type BackupRetention struct {
@@ -100,6 +125,8 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["tls-acme"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["tls-acme"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["tls-acme"] = vBool
 				}
 			}
@@ -108,6 +135,8 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["enabled"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["enabled"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["enabled"] = vBool
 				}
 			}
@@ -116,6 +145,8 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 			if reflect.TypeOf(value.(map[string]interface{})["allowPullRequests"]).Kind() == reflect.String {
 				vBool, err := strconv.ParseBool(value.(map[string]interface{})["allowPullRequests"].(string))
 				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["allowPullRequests"] = vBool
 				}
 			}
@@ -126,8 +157,30 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+func (a *EnvironmentVariables) UnmarshalJSON(data []byte) error {
+	tmpMap := map[string]interface{}{}
+	json.Unmarshal(data, &tmpMap)
+	if value, ok := tmpMap["git_sha"]; ok {
+		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
+		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
+		// but types are more strict, so this unmarshaler attempts to change between the two types
+		// that can be bool or string
+		if reflect.TypeOf(value).Kind() == reflect.String {
+			vBool, err := strconv.ParseBool(value.(string))
+			if err == nil {
+				// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+				// this could warn in a yaml validation step at the start of builds
+				value = vBool
+			}
+		}
+		newData, _ := json.Marshal(value)
+		return json.Unmarshal(newData, &a.GitSHA)
+	}
+	return nil
+}
+
 // UnmarshalLagoonYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
-func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error {
+func UnmarshalLagoonYAML(file string, l *YAML, project string) error {
 	rawYAML, err := os.ReadFile(file)
 	if err != nil {
 		return fmt.Errorf("couldn't read %v: %v", file, err)
@@ -137,10 +190,23 @@ func UnmarshalLagoonYAML(file string, l *YAML, p *map[string]interface{}) error 
 	if err != nil {
 		return err
 	}
-	// polysite
-	err = yaml.Unmarshal(rawYAML, p)
+
+	// if this is a polysite, then unmarshal the polysite data into a normal lagoon environments yaml
+	// this is done so that all other generators only need to know how to interact with one type of environment
+	p := map[string]interface{}{}
+	err = yaml.Unmarshal(rawYAML, &p)
 	if err != nil {
 		return err
+	}
+	if _, ok := p[project]; ok {
+		s, err := yaml.Marshal(p[project])
+		if err != nil {
+			return err
+		}
+		err = yaml.Unmarshal(s, l)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }

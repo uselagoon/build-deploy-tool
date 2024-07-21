@@ -1,0 +1,224 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: opensearch-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: opensearch-persistent
+    lagoon.sh/template: opensearch-persistent-0.1.0
+  name: myservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/name: opensearch-persistent
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "tar -cf - -C /usr/share/opensearch/data
+          ."
+        k8up.syn.tools/file-extension: .myservice.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: opensearch-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice
+        lagoon.sh/service-type: opensearch-persistent
+        lagoon.sh/template: opensearch-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: 9200
+          initialDelaySeconds: 120
+        name: opensearch
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: 9200
+          initialDelaySeconds: 20
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /usr/share/opensearch/data
+          name: myservice
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |-
+          set -xe
+          DESIRED="262144"
+          CURRENT=$(sysctl -n vm.max_map_count)
+          if [ "$DESIRED" -gt "$CURRENT" ]; then
+            sysctl -w vm.max_map_count=$DESIRED
+          fi
+        image: library/busybox:latest
+        imagePullPolicy: IfNotPresent
+        name: set-max-map-count
+        resources: {}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: myservice
+        persistentVolumeClaim:
+          claimName: myservice
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-size
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: opensearch-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-size
+    lagoon.sh/service-type: opensearch-persistent
+    lagoon.sh/template: opensearch-persistent-0.1.0
+  name: myservice-size
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-size
+      app.kubernetes.io/name: opensearch-persistent
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "tar -cf - -C /usr/share/opensearch/data
+          ."
+        k8up.syn.tools/file-extension: .myservice-size.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-size
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: opensearch-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-size
+        lagoon.sh/service-type: opensearch-persistent
+        lagoon.sh/template: opensearch-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-size
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-size@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: 9200
+          initialDelaySeconds: 120
+        name: opensearch
+        ports:
+        - containerPort: 9200
+          name: 9200-tcp
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health?local=true
+            port: 9200
+          initialDelaySeconds: 20
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /usr/share/opensearch/data
+          name: myservice-size
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - |-
+          set -xe
+          DESIRED="262144"
+          CURRENT=$(sysctl -n vm.max_map_count)
+          if [ "$DESIRED" -gt "$CURRENT" ]; then
+            sysctl -w vm.max_map_count=$DESIRED
+          fi
+        image: library/busybox:latest
+        imagePullPolicy: IfNotPresent
+        name: set-max-map-count
+        resources: {}
+        securityContext:
+          privileged: true
+          runAsUser: 0
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: myservice-size
+        persistentVolumeClaim:
+          claimName: myservice-size
+status: {}

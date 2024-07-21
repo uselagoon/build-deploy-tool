@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    k8up.io/backup: "true"
+    k8up.syn.tools/backup: "true"
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: bulk
+status: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    k8up.io/backup: "true"
+    k8up.syn.tools/backup: "true"
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist-po
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist-po
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist-po
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+  storageClassName: bulk
+status: {}
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    k8up.io/backup: "true"
+    k8up.syn.tools/backup: "true"
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist-po
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist-po
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist-po
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: bulk
+status: {}

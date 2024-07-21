@@ -35,7 +35,7 @@ func IngressTemplateGeneration(g generator.GeneratorInput) error {
 	// generate the templates
 	for _, route := range lagoonBuild.MainRoutes.Routes {
 		if g.Debug {
-			fmt.Println(fmt.Sprintf("Templating ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
+			fmt.Printf("Templating ingress manifest for %s to %s\n", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain))
 		}
 		templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
 		if err != nil {
@@ -51,7 +51,7 @@ func IngressTemplateGeneration(g generator.GeneratorInput) error {
 		// generate the templates for active/standby routes separately to normal routes
 		for _, route := range lagoonBuild.ActiveStandbyRoutes.Routes {
 			if g.Debug {
-				fmt.Println(fmt.Sprintf("Templating active/standby ingress manifest for %s to %s", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain)))
+				fmt.Printf("Templating active/standby ingress manifest for %s to %s\n", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain))
 			}
 			templateYAML, err := ingresstemplate.GenerateIngressTemplate(route, *lagoonBuild.BuildValues)
 			if err != nil {

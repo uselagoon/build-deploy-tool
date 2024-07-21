@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/andreyvit/diff"
+	"github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -56,6 +58,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: true,
@@ -93,6 +102,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -132,6 +148,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
@@ -170,6 +193,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -211,6 +241,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
@@ -256,6 +293,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
@@ -295,6 +339,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 				},
 				activeStandby: false,
@@ -375,6 +426,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 				},
 				activeStandby: false,
 			},
@@ -413,6 +471,13 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						AlertContact: "abcdefg",
 						StatusPageID: "12345",
 						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
 					},
 				},
 				activeStandby: false,
@@ -453,13 +518,144 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
 				},
 				activeStandby: false,
 			},
 			want: "test-resources/result-wildcard-ingress2.yaml",
 		},
 		{
-			name: "custom-ingress7",
+			name: "custom-ingress1 with specific port service",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "myservice-po",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					RequestVerification: helpers.BoolPtr(true),
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
+					Services: []generator.ServiceValues{
+						{
+							Name:         "myservice-po",
+							OverrideName: "myservice-po",
+							Type:         "basic",
+							AdditionalServicePorts: []generator.AdditionalServicePort{
+								{
+									ServiceName: "myservice-po-8192",
+									ServicePort: types.ServicePortConfig{
+										Target:   8192,
+										Protocol: "tcp",
+									},
+								},
+								{
+									ServiceName: "myservice-po-8211",
+									ServicePort: types.ServicePortConfig{
+										Target:   8211,
+										Protocol: "tcp",
+									},
+								},
+							},
+						},
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress7.yaml",
+		},
+		{
+			name: "custom-ingress1 with specific port service 2",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "myservice-po-8192",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					RequestVerification: helpers.BoolPtr(true),
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
+					Services: []generator.ServiceValues{
+						{
+							Name:         "myservice-po",
+							OverrideName: "myservice-po",
+							Type:         "basic",
+							AdditionalServicePorts: []generator.AdditionalServicePort{
+								{
+									ServiceName: "myservice-po-8192",
+									ServicePort: types.ServicePortConfig{
+										Target:   8192,
+										Protocol: "tcp",
+									},
+								},
+								{
+									ServiceName: "myservice-po-8211",
+									ServicePort: types.ServicePortConfig{
+										Target:   8211,
+										Protocol: "tcp",
+									},
+								},
+							},
+						},
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/result-custom-ingress8.yaml",
+		},
+		{
+			name: "custom-ingress9",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
@@ -491,11 +687,18 @@ func TestGenerateKubeTemplate(t *testing.T) {
 						StatusPageID: "12345",
 						Enabled:      true,
 					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "basic",
+						},
+					},
 					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress7.yaml",
+			want: "test-resources/result-custom-ingress9.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -521,7 +724,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 					t.Errorf("couldn't read file %v: %v", tt.want, err)
 				}
 				if !reflect.DeepEqual(string(got), string(r1)) {
-					t.Errorf("GenerateIngressTemplate() = %v, want %v", string(got), string(r1))
+					t.Errorf("GenerateIngressTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
 				}
 			}
 		})

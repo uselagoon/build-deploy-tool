@@ -1,0 +1,95 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.19.0
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: mariadb-10-5
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: mariadb-single
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: mariadb-10-5
+    lagoon.sh/service-type: mariadb-single
+    lagoon.sh/template: mariadb-single-0.1.0
+  name: mariadb-10-5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: mariadb-10-5
+      app.kubernetes.io/name: mariadb-single
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c 'mysqldump --max-allowed-packet=1G
+          --events --routines --quick --add-locks --no-autocommit --single-transaction
+          --all-databases'
+        k8up.syn.tools/file-extension: .mariadb-10-5.sql
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.19.0
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: mariadb-10-5
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: mariadb-single
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: mariadb-10-5
+        lagoon.sh/service-type: mariadb-single
+        lagoon.sh/template: mariadb-single-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: abcdefg123456
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: mariadb-10-5
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example/example-project/main/mariadb-10-5@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          periodSeconds: 5
+          tcpSocket:
+            port: 3306
+        name: mariadb-single
+        ports:
+        - containerPort: 3306
+          name: 3306-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 3306
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /var/lib/mysql
+          name: mariadb-10-5
+      enableServiceLinks: true
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: mariadb-10-5
+        persistentVolumeClaim:
+          claimName: mariadb-10-5
+status: {}

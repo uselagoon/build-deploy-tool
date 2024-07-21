@@ -1,10 +1,15 @@
 package generator
 
 import (
+	"errors"
 	"fmt"
+	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
+	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"k8s.io/apimachinery/pkg/api/resource"
 )
 
 // helper function that reads flag overrides and retruns a generated input dataset
@@ -136,4 +141,60 @@ func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 		DBaaSClient:              dbaas,
 		DefaultBackupSchedule:    defaultBackupSchedule,
 	}, nil
+}
+
+// checks the provided environment variables looking for feature flag based variables
+func CheckFeatureFlag(key string, envVariables []lagoon.EnvironmentVariable, debug bool) string {
+	// check for force value
+	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key)); ok {
+		if debug {
+			fmt.Printf("Using forced flag value from build variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_FORCE_%s", key))
+		}
+		return value
+	}
+	// check lagoon environment variables
+	for _, lVar := range envVariables {
+		if strings.Contains(lVar.Name, fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key)) {
+			if debug {
+				fmt.Printf("Using flag value from Lagoon environment variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_%s", key))
+			}
+			return lVar.Value
+		}
+	}
+	// return default
+	if value, ok := os.LookupEnv(fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key)); ok {
+		if debug {
+			fmt.Printf("Using default flag value from build variable %s\n", fmt.Sprintf("LAGOON_FEATURE_FLAG_DEFAULT_%s", key))
+		}
+		return value
+	}
+	// otherwise nothing
+	return ""
+}
+
+func CheckAdminFeatureFlag(key string, debug bool) string {
+	if value, ok := os.LookupEnv(fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key)); ok {
+		if debug {
+			fmt.Printf("Using admin feature flag value from build variable %s\n", fmt.Sprintf("ADMIN_LAGOON_FEATURE_FLAG_%s", key))
+		}
+		return value
+	}
+	return ""
+}
+
+func ValidateResourceQuantity(s string) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			switch x := r.(type) {
+			case string:
+				err = errors.New(x)
+			case error:
+				err = x
+			default:
+				err = errors.New(fmt.Sprint(x))
+			}
+		}
+	}()
+	resource.MustParse(s)
+	return nil
 }

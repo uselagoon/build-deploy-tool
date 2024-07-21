@@ -1,8 +1,9 @@
 #!/bin/bash
 
+set +x
 # get the buildname from the pod, $HOSTNAME contains this in the running pod, so we can use this
 # set it to something usable here
-LAGOON_BUILD_NAME=$HOSTNAME
+export LAGOON_BUILD_NAME=$HOSTNAME
 
 BUILD_WARNING_COUNT=0
 
@@ -95,9 +96,7 @@ function projectEnvironmentVariableCheck() {
 	echo "$2"
 }
 
-set +x
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
-set -x
 
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
@@ -145,17 +144,13 @@ function patchBuildStep() {
 ### PREPARATION
 ##############################################
 
-set +x
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
-set -x
 
 ##############################################
 ### PUSH the latest .lagoon.yml into lagoon-yaml configmap as a pre-deploy field
 ##############################################
-
-set +x
 
 # set the imagecache registry if it is provided
 IMAGECACHE_REGISTRY=""
@@ -325,11 +320,31 @@ else
 	echo "lagoon-linter found no issues with the .lagoon.yml file"
 fi
 
+##################
+# build deploy-tool can collect this value now from the lagoon.yml file
+# this means further use of `LAGOON_GIT_SHA` can eventually be
+# completely handled with build-deploy-tool wherever this value could be consumed
+# this logic can then just be replaced entirely with a single export so that the build-deploy-tool
+# will know what the value is, and performs the switch based on what the lagoon.yml provides
+# this is retained for now until the remaining functionality that uses it is moved to the build-deploy-tool
+#
+#   export LAGOON_GIT_SHA=`git rev-parse HEAD`
+#
+INJECT_GIT_SHA=$(cat .lagoon.yml | shyaml get-value environment_variables.git_sha false)
+if [ "$INJECT_GIT_SHA" == "true" ]
+then
+  # export this so the build-deploy-tool can read it
+  export LAGOON_GIT_SHA=`git rev-parse HEAD`
+else
+  export LAGOON_GIT_SHA="0000000000000000000000000000000000000000"
+fi
+##################
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
-set -x
+
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
 # Load all Services that are defined
@@ -346,19 +361,23 @@ declare -A MAP_SERVICE_NAME_TO_IMAGENAME
 declare -A MAP_SERVICE_NAME_TO_SERVICEBROKER_CLASS
 declare -A MAP_SERVICE_NAME_TO_SERVICEBROKER_PLAN
 declare -A MAP_SERVICE_NAME_TO_DBAAS_ENVIRONMENT
+# this array stores the images that will need to be pulled from an external registry (private, dockerhub)
 declare -A IMAGES_PULL
+# this array stores the built images
 declare -A IMAGES_BUILD
+# this array stores the image names that will be pushed (registry/project/environment/service:tag)
+declare -A IMAGES_PUSH
+# this array stores the images from the source environment that will be pulled from
+declare -A IMAGES_PROMOTE
+# this array stores the hashes of the built images
 declare -A IMAGE_HASHES
 
-set +x
 HELM_ARGUMENTS=()
 . /kubectl-build-deploy/scripts/kubectl-get-cluster-capabilities.sh
 for CAPABILITIES in "${CAPABILITIES[@]}"; do
   HELM_ARGUMENTS+=(-a "${CAPABILITIES}")
 done
-set -x
 
-set +x # reduce noise in build logs
 # Allow the servicetype be overridden by the lagoon API
 # This accepts colon separated values like so `SERVICE_NAME:SERVICE_TYPE_OVERRIDE`, and multiple overrides
 # separated by commas
@@ -387,7 +406,6 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
     LAGOON_DBAAS_ENVIRONMENT_TYPES=$TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES
   fi
 fi
-set -x
 
 # loop through created DBAAS templates
 DBAAS=($(build-deploy-tool identify dbaas))
@@ -471,7 +489,7 @@ do
       [[ "$SERVICE_TYPE" != "postgres-dbaas" ]] &&
       [[ "$SERVICE_TYPE" != "mongodb-dbaas" ]] &&
       [[ "$SERVICE_TYPE" != "mongodb-shared" ]]; then
-    # Generate List of Images to build
+    # Generate list of images to build
     IMAGES+=("${IMAGE_NAME}")
   fi
 
@@ -497,12 +515,69 @@ do
 
 done
 
-set +x
+# Get the pre-rollout and post-rollout vars
+if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
+  LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+  LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+fi
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
+  TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+  if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
+    LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
+  fi
+  if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
+    LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
+  fi
+fi
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
+beginBuildStep "Container Regstiry Login" "registryLogin"
+
+# seed all the push images for use later on, push images relate to images that may not be built by this build
+# but are required from somewhere else like a promote environment or from another registry
+ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+
+# log in to the provided registry if details are provided
+if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
+  echo "Logging in to Lagoon main registry"
+  if [ ! -z ${INTERNAL_REGISTRY_USERNAME} ] && [ ! -z ${INTERNAL_REGISTRY_PASSWORD} ] ; then
+    echo "docker login -u '${INTERNAL_REGISTRY_USERNAME}' -p '${INTERNAL_REGISTRY_PASSWORD}' ${INTERNAL_REGISTRY_URL}" | /bin/bash
+    # create lagoon-internal-registry-secret if it does not exist yet 
+    # TODO: remove this, the secret is created by the remote-controller, builds only need to log in to it now
+    # if ! kubectl -n ${NAMESPACE} get secret lagoon-internal-registry-secret &> /dev/null; then
+    #   kubectl create secret docker-registry lagoon-internal-registry-secret --docker-server=${INTERNAL_REGISTRY_URL} --docker-username=${INTERNAL_REGISTRY_USERNAME} --docker-password=${INTERNAL_REGISTRY_PASSWORD} --dry-run -o yaml | kubectl apply -f -
+    # fi
+    echo "Set internal registry secrets for token ${INTERNAL_REGISTRY_USERNAME} in ${REGISTRY}"
+  fi
+fi
+
+# log in to any container registries before building or pulling images
+for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]?')
+do
+  PRIVATE_CONTAINER_REGISTRY_URL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.url // false')
+  PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.username // false')
+  PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.usernameSource // false')
+  PRIVATE_REGISTRY_CREDENTIAL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.password // false')
+  PRIVATE_REGISTRY_CREDENTIAL_SOURCE=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.passwordSource // false')
+  if [ $PRIVATE_CONTAINER_REGISTRY_URL != "false" ]; then
+      echo "Attempting to log in to $PRIVATE_CONTAINER_REGISTRY_URL with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL $PRIVATE_CONTAINER_REGISTRY_URL
+  else
+      echo "Attempting to log in to docker hub with user $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME from $PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE"
+      echo "Using password sourced from $PRIVATE_REGISTRY_CREDENTIAL_SOURCE"
+      docker login --username $PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME --password $PRIVATE_REGISTRY_CREDENTIAL
+  fi
+done
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Regstiry Login" "false"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
-set -x
+
 ##############################################
 ### CACHE IMAGE LIST GENERATION
 ##############################################
@@ -511,200 +586,78 @@ LAGOON_CACHE_BUILD_ARGS=()
 readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o yaml -l 'lagoon.sh/service' | yq e '.items[].spec.template.spec.containers[].image | capture("^(?P<image>.+\/.+\/.+\/(?P<name>.+)\@.*)$") | "LAGOON_CACHE_" + .name + "=" + .image' -)
 
 
-
 ##############################################
 ### BUILD IMAGES
 ##############################################
 
-set +x # reduce noise in build logs
-# Get the pre-rollout and post-rollout vars
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-    LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
+for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
+do
+  SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
+  # add the image name to the array of images to push. this is consumed later in the build process
+  IMAGES_PUSH["${SERVICE_NAME}"]="$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.buildImage')"
+  if [ "$BUILD_TYPE" == "promote" ]; then
+    # add the image name to the array of images to promote from. this is consumed later in the build process
+    IMAGES_PROMOTE["${SERVICE_NAME}"]="$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.promoteImage')"
   fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-    TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-    if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-      LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-    fi
-    if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-      LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-    fi
-  fi
-set -x
+done
 
 # we only need to build images for pullrequests and branches
 if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
-
-  BUILD_ARGS=()
-
-  set +x # reduce noise in build logs
-  # Add environment variables from lagoon API as build args
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    echo "LAGOON_PROJECT_VARIABLES are available from the API"
-    # multiline/spaced variables seem to break when being added from the API.
-    # this changes the way it works to create the variable in a similar way to how they are injected below
-    LAGOON_ENV_VARS=$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | "\(.name)"')
-    for LAGOON_ENV_VAR in $LAGOON_ENV_VARS
-    do
-      BUILD_ARGS+=(--build-arg $(echo $LAGOON_ENV_VAR)="$(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'$LAGOON_ENV_VAR'") | "\(.value)"')")
-    done
-  fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    echo "LAGOON_ENVIRONMENT_VARIABLES are available from the API"
-    # multiline/spaced variables seem to break when being added from the API.
-    # this changes the way it works to create the variable in a similar way to how they are injected below
-    LAGOON_ENV_VARS=$(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | "\(.name)"')
-    for LAGOON_ENV_VAR in $LAGOON_ENV_VARS
-    do
-      BUILD_ARGS+=(--build-arg $(echo $LAGOON_ENV_VAR)="$(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'$LAGOON_ENV_VAR'") | "\(.value)"')")
-    done
-  fi
-  set -x
-
-  BUILD_ARGS+=(--build-arg IMAGE_REPO="${CI_OVERRIDE_IMAGE_REPO}")
-  BUILD_ARGS+=(--build-arg LAGOON_PROJECT="${PROJECT}")
-  BUILD_ARGS+=(--build-arg LAGOON_ENVIRONMENT="${ENVIRONMENT}")
-  BUILD_ARGS+=(--build-arg LAGOON_ENVIRONMENT_TYPE="${ENVIRONMENT_TYPE}")
-  BUILD_ARGS+=(--build-arg LAGOON_BUILD_TYPE="${BUILD_TYPE}")
-  BUILD_ARGS+=(--build-arg LAGOON_GIT_SOURCE_REPOSITORY="${SOURCE_REPOSITORY}")
-  BUILD_ARGS+=(--build-arg LAGOON_KUBERNETES="${KUBERNETES}")
-
-  # Add in the cache args
-  for value in "${LAGOON_CACHE_BUILD_ARGS[@]}"
-  do
-        BUILD_ARGS+=(--build-arg $value)
+  # use the build-deploy-tool to seed the image build information
+  BUILD_ARGS=() # build args are now calculated in the build-deploy tool in the generator step
+  # this loop extracts the build arguments from the response from the build deploy tools previous identify image-builds call
+  for IMAGE_BUILD_ARGUMENTS in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -r '.buildArguments | to_entries[] | @base64'); do
+    BUILD_ARG_NAME=$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .key')
+    BUILD_ARG_VALUE=$(echo "$IMAGE_BUILD_ARGUMENTS" | jq -Rr '@base64d | fromjson | .value')
+    BUILD_ARGS+=(--build-arg ${BUILD_ARG_NAME}="${BUILD_ARG_VALUE}")
   done
 
-  set +x
-  BUILD_ARGS+=(--build-arg LAGOON_SSH_PRIVATE_KEY="${SSH_PRIVATE_KEY}")
-  set -x
-
-  if [ "$BUILD_TYPE" == "branch" ]; then
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_SHA="${LAGOON_GIT_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_BRANCH="${BRANCH}")
-  fi
-
-  if [ "$BUILD_TYPE" == "pullrequest" ]; then
-    BUILD_ARGS+=(--build-arg LAGOON_GIT_SHA="${LAGOON_GIT_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_HEAD_BRANCH="${PR_HEAD_BRANCH}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_HEAD_SHA="${PR_HEAD_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_BASE_BRANCH="${PR_BASE_BRANCH}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_BASE_SHA="${PR_BASE_SHA}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_TITLE="${PR_TITLE}")
-    BUILD_ARGS+=(--build-arg LAGOON_PR_NUMBER="${PR_NUMBER}")
-  fi
-
-  # Add in random data as per https://github.com/uselagoon/lagoon/issues/2246
-  BUILD_ARGS+=(--build-arg LAGOON_BUILD_NAME="${LAGOON_BUILD_NAME}")
-
-  for IMAGE_NAME in "${IMAGES[@]}"
+  # now we loop through the images in the build data and determine if they need to be pulled or build
+  for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
   do
-
-    DOCKERFILE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.dockerfile false)
-
-    # allow to overwrite build dockerfile for this environment and service
-    ENVIRONMENT_DOCKERFILE_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.dockerfile false)
-    if [ ! $ENVIRONMENT_DOCKERFILE_OVERRIDE == "false" ]; then
-      DOCKERFILE=$ENVIRONMENT_DOCKERFILE_OVERRIDE
-    fi
-
+    SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
+    DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile // false')
+    # if there is no dockerfile, then this image needs to be pulled from somewhere else
     if [ $DOCKERFILE == "false" ]; then
-      # No Dockerfile defined, assuming to download the Image directly
-
-      PULL_IMAGE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.image false)
-      if [ $PULL_IMAGE == "false" ]; then
-        echo "No Dockerfile or Image for service ${IMAGE_NAME} defined"; exit 1;
+      PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage // false')
+      if [ "$PULL_IMAGE" != "false" ]; then
+        IMAGES_PULL["${SERVICE_NAME}"]="${PULL_IMAGE}"
       fi
-
-      # allow to overwrite image that we pull
-      OVERRIDE_IMAGE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.labels.lagoon\\.image false)
-
-      # allow to overwrite image that we pull for this environment and service
-      ENVIRONMENT_IMAGE_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.image false)
-      if [ ! $ENVIRONMENT_IMAGE_OVERRIDE == "false" ]; then
-        OVERRIDE_IMAGE=$ENVIRONMENT_IMAGE_OVERRIDE
-      fi
-
-      if [ ! $OVERRIDE_IMAGE == "false" ]; then
-        # expand environment variables from ${OVERRIDE_IMAGE}
-        PULL_IMAGE=$(echo "${OVERRIDE_IMAGE}" | envsubst)
-      fi
-
-      # if the image just is an image name (like "alpine") we prefix it with `libary/` as the imagecache does not understand
-      # the magic `alpine` images
-      if [[ ! "$PULL_IMAGE" =~ "/" ]]; then
-        PULL_IMAGE="library/$PULL_IMAGE"
-      fi
-
-      # Add the images we should pull to the IMAGES_PULL array, they will later be tagged from dockerhub
-      IMAGES_PULL["${IMAGE_NAME}"]="${PULL_IMAGE}"
-
     else
-      # Dockerfile defined, load the context and build it
-
-      # We need the Image Name uppercase sometimes, so we create that here
-      IMAGE_NAME_UPPERCASE=$(echo "$IMAGE_NAME" | tr '[:lower:]' '[:upper:]')
-
-
-      # To prevent clashes of ImageNames during parallel builds, we give all Images a Temporary name
-      TEMPORARY_IMAGE_NAME="${NAMESPACE}-${IMAGE_NAME}"
-
-      BUILD_CONTEXT=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.context .)
-
-      # Check to see if this service uses a build target
-      BUILD_TARGET=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$IMAGE_NAME.build.target false)
-
-      # allow to overwrite build context for this environment and service
-      ENVIRONMENT_BUILD_CONTEXT_OVERRIDE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.overrides.$IMAGE_NAME.build.context false)
-      if [ ! $ENVIRONMENT_BUILD_CONTEXT_OVERRIDE == "false" ]; then
-        BUILD_CONTEXT=$ENVIRONMENT_BUILD_CONTEXT_OVERRIDE
-      fi
-
-      if [ ! -f $BUILD_CONTEXT/$DOCKERFILE ]; then
-        echo "defined Dockerfile $DOCKERFILE for service $IMAGE_NAME not found"; exit 1;
-      fi
-
-      set +x # reduce noise in build logs
-      # Decide whether to use BuildKit for Docker builds - disabled by default.
+      # otherwise extract build information from the image build data payload
+      # this is a temporary image name to use for the build, it is based on the namespace and service, this can probably be deprecated and the images could just be
+      # built with the name they are meant to be. only 1 build can run at a time within a namespace
+      # the temporary name would clash here as well if there were multiple builds (it could use the `imageBuild.buildImage` value)
+      TEMPORARY_IMAGE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.temporaryImage // false')
+      # the context for this image build, the original source for this value is from the `docker-compose file`
+      BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context // ""')
+      # the build target for this image build, the original source for this value is from the `docker-compose file`
+      BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target // false')
+      # determine if buildkit should be used for this build
       DOCKER_BUILDKIT=0
-
-      if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-        DOCKER_BUILDKIT=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
-      fi
-      if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-        TEMP_DOCKER_BUILDKIT=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_BUILDKIT") | "\(.value)"'))
-        if [ ! -z $TEMP_DOCKER_BUILDKIT ]; then
-          DOCKER_BUILDKIT=$TEMP_DOCKER_BUILDKIT
-        fi
-      fi
-
-      case "$DOCKER_BUILDKIT" in
-        1|t|T|true|TRUE|True)
+      if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit // false')" == "true" ]; then
           DOCKER_BUILDKIT=1
           echo "Using BuildKit for $DOCKERFILE";
-        ;;
-        *)
-          DOCKER_BUILDKIT=0
-        ;;
-      esac
-      set -x
+      fi
 
-      . /kubectl-build-deploy/scripts/exec-build.sh
+      # now do the actual image build
+      if [ $BUILD_TARGET == "false" ]; then
+          echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+      else
+          echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
+      fi
 
-      # Keep a list of the images we have built, as we need to push them to the OpenShift Registry later
-      IMAGES_BUILD["${IMAGE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
+      # Keep a list of the images we have built, as we need to push them to the registry later
+      IMAGES_BUILD["${SERVICE_NAME}"]="${TEMPORARY_IMAGE_NAME}"
 
       # adding the build image to the list of arguments passed into the next image builds
-      BUILD_ARGS+=(--build-arg ${IMAGE_NAME_UPPERCASE}_IMAGE=${TEMPORARY_IMAGE_NAME})
+      SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
     fi
-
   done
-
 fi
 
-set +x
 # print information about built image sizes
 function printBytes {
     local -i bytes=$1;
@@ -720,14 +673,11 @@ do
   TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
   echo -e "Image ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
 done
-set -x
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
-set -x
 
 ##############################################
 ### RUN PRE-ROLLOUT tasks defined in .lagoon.yml
@@ -737,18 +687,13 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
     build-deploy-tool tasks pre-rollout
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
-  set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
-  set -x
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
-set -x
-
 
 ##############################################
 ### CONFIGURE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
@@ -775,24 +720,8 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'gitSha' $LAGOON_GIT_SHA
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'buildType' $BUILD_TYPE
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'kubernetes' $KUBERNETES
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'lagoonVersion' $LAGOON_VERSION
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.memory' "$ADMIN_LAGOON_FEATURE_FLAG_CONTAINER_MEMORY_LIMIT"
-fi
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.requests.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_REQUESTS"
-fi
-if [ "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT" ]; then
-  yq3 write -i -- /kubectl-build-deploy/values.yaml 'resources.limits.ephemeral-storage' "$ADMIN_LAGOON_FEATURE_FLAG_EPHEMERAL_STORAGE_LIMIT"
-fi
 # check for ROOTLESS_WORKLOAD feature flag, disabled by default
 
-set +x
-if [ "$(featureFlag ROOTLESS_WORKLOAD)" = enabled ]; then
-	yq3 merge -ix -- /kubectl-build-deploy/values.yaml /kubectl-build-deploy/rootless.values.yaml
-fi
-if [ "$(featureFlag FS_ON_ROOT_MISMATCH)" = enabled ]; then
-	yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroupChangePolicy' "OnRootMismatch"
-fi
 if [ "${SCC_CHECK}" != "false" ]; then
   # openshift permissions are different, this is to set the fsgroup to the supplemental group from the openshift annotations
   # this applies it to all deployments in this environment because we don't isolate by service type its applied to all
@@ -800,19 +729,6 @@ if [ "${SCC_CHECK}" != "false" ]; then
   echo "Setting openshift fsGroup to ${OPENSHIFT_SUPPLEMENTAL_GROUP}"
   yq3 write -i -- /kubectl-build-deploy/values.yaml 'podSecurityContext.fsGroup' $OPENSHIFT_SUPPLEMENTAL_GROUP
 fi
-set -x
-
-
-echo -e "\
-imagePullSecrets:\n\
-" >> /kubectl-build-deploy/values.yaml
-
-for REGISTRY_SECRET in "${REGISTRY_SECRETS[@]}"
-do
-  echo -e "\
-  - name: "${REGISTRY_SECRET}"\n\
-" >> /kubectl-build-deploy/values.yaml
-done
 
 echo -e "\
 LAGOON_PROJECT=${PROJECT}\n\
@@ -851,12 +767,10 @@ LAGOON_PR_NUMBER=${PR_NUMBER}\n\
 " >> /kubectl-build-deploy/values.env
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
-set -x
 
 ##############################################
 ### CUSTOM FASTLY API SECRETS .lagoon.yml
@@ -883,7 +797,6 @@ FASTLY_API_SECRET_PREFIX="fastly-api-"
 
 FASTLY_API_SECRETS_COUNTER=0
 FASTLY_API_SECRETS=()
-set +x # reduce noise in build logs
 if [ -n "$(cat .lagoon.yml | shyaml keys fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER 2> /dev/null)" ]; then
   while [ -n "$(cat .lagoon.yml | shyaml get-value fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER 2> /dev/null)" ]; do
     FASTLY_API_SECRET_NAME=$FASTLY_API_SECRET_PREFIX$(cat .lagoon.yml | shyaml get-value fastly.api-secrets.$FASTLY_API_SECRETS_COUNTER.name 2> /dev/null)
@@ -921,13 +834,12 @@ if [ -n "$(cat .lagoon.yml | shyaml keys fastly.api-secrets.$FASTLY_API_SECRETS_
 
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
+    set +x
 
     let FASTLY_API_SECRETS_COUNTER=FASTLY_API_SECRETS_COUNTER+1
   done
 fi
-set -x
 
-set +x # reduce noise in build logs
 # FASTLY API SECRETS FROM LAGOON API VARIABLE
 # Allow for defining fastly api secrets using lagoon api variables
 # This accepts colon separated values like so `SECRET_NAME:FASTLY_API_TOKEN:FASTLY_PLATFORMTLS_CONFIGURATION_ID`, and multiple overrides
@@ -961,11 +873,10 @@ if [ ! -z "$LAGOON_FASTLY_API_SECRETS" ]; then
     FASTLY_API_PLATFORMTLS_CONFIGURATION=${LAGOON_FASTLY_API_SECRET_SPLIT[2]}
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
+    set +x
   done
 fi
-set -x
 
-set +x # reduce noise in build logs
 # FASTLY SERVICE ID PER INGRESS OVERRIDE FROM LAGOON API VARIABLE
 # Allow the fastly serviceid for specific ingress to be overridden by the lagoon API
 # This accepts colon separated values like so `INGRESS_DOMAIN:FASTLY_SERVICE_ID:WATCH_STATUS:SECRET_NAME(OPTIONAL)`, and multiple overrides
@@ -986,7 +897,6 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
     LAGOON_FASTLY_SERVICE_IDS=$TEMP_LAGOON_FASTLY_SERVICE_IDS
   fi
 fi
-set -x
 
 ##############################################
 ### CREATE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
@@ -1005,7 +915,15 @@ fi
 
 # generate the autogenerated ingress
 if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
-  build-deploy-tool template autogenerated-ingress
+  LAGOON_AUTOGEN_YAML_FOLDER="/kubectl-build-deploy/lagoon/autogen-routes"
+  mkdir -p $LAGOON_AUTOGEN_YAML_FOLDER
+  build-deploy-tool template autogenerated-ingress --saved-templates-path ${LAGOON_AUTOGEN_YAML_FOLDER}
+
+  # apply autogenerated ingress
+  if [ -n "$(ls -A $LAGOON_AUTOGEN_YAML_FOLDER/ 2>/dev/null)" ]; then
+    find $LAGOON_AUTOGEN_YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $LAGOON_AUTOGEN_YAML_FOLDER/
+  fi
 else
   echo ">> Autogenerated ingress templates disabled for this build"
 # end custom route
@@ -1048,27 +966,18 @@ do
 
   touch /kubectl-build-deploy/${SERVICE_NAME}-values.yaml
 
-  HELM_SERVICE_TEMPLATE="templates/service.yaml"
-  if [ -f /kubectl-build-deploy/helmcharts/${SERVICE_TYPE}/$HELM_SERVICE_TEMPLATE ]; then
-    SERVICE_OVERRIDES=()
-    if  [[ "$SERVICE_TYPE" == "basic" ]] ||
-        [[ "$SERVICE_TYPE" == "basic-persistent" ]]; then
-      SERVICE_PORT_NUMBER=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.service\\.port false)
-      if [ ! $SERVICE_PORT_NUMBER == "false" ]; then
-        # check if the port provided is actually a number
-        if ! [[ $SERVICE_PORT_NUMBER =~ ^[0-9]+$ ]] ; then
-          echo "Provided service port is not a number"; exit 1;
-        fi
-        SERVICE_OVERRIDES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
-      fi
-    fi
-    cat /kubectl-build-deploy/values.yaml
-    helm template ${SERVICE_NAME} /kubectl-build-deploy/helmcharts/${SERVICE_TYPE} -s $HELM_SERVICE_TEMPLATE -f /kubectl-build-deploy/values.yaml "${SERVICE_OVERRIDES[@]}" "${HELM_ARGUMENTS[@]}" > $YAML_FOLDER/service-${SERVICE_NAME}.yaml
-  fi
 done
 
 # generate the dbaas templates if any
-build-deploy-tool template dbaas
+LAGOON_DBAAS_YAML_FOLDER="/kubectl-build-deploy/lagoon/dbaas"
+mkdir -p $LAGOON_DBAAS_YAML_FOLDER
+build-deploy-tool template dbaas --saved-templates-path ${LAGOON_DBAAS_YAML_FOLDER}
+
+# apply dbaas
+if [ -n "$(ls -A $LAGOON_DBAAS_YAML_FOLDER/ 2>/dev/null)" ]; then
+  find $LAGOON_DBAAS_YAML_FOLDER -type f -exec cat {} \;
+  kubectl apply -n ${NAMESPACE} -f $LAGOON_DBAAS_YAML_FOLDER/
+fi
 
 set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1097,16 +1006,18 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
 fi
 
 if [ ! "$CUSTOM_ROUTES_DISABLED" == true ]; then
-build-deploy-tool template ingress
+  LAGOON_ROUTES_YAML_FOLDER="/kubectl-build-deploy/lagoon/routes"
+  mkdir -p $LAGOON_ROUTES_YAML_FOLDER
+  build-deploy-tool template ingress --saved-templates-path ${LAGOON_ROUTES_YAML_FOLDER}
+
+  # apply the routes
+  if [ -n "$(ls -A $LAGOON_ROUTES_YAML_FOLDER/ 2>/dev/null)" ]; then
+    find $LAGOON_ROUTES_YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $LAGOON_ROUTES_YAML_FOLDER/
+  fi
 else
   echo ">> Custom ingress templates disabled for this build"
-# end custom route
-fi
-
-# apply the currently templated components out so that the route and lagoon-env configmaps gets what they need
-if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  find $YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+  # end custom route
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1118,7 +1029,6 @@ beginBuildStep "Route/Ingress Cleanup" "cleanupRoutes"
 ### CLEANUP Ingress/routes which have been removed from .lagoon.yml
 ##############################################s
 
-set +x
 # collect the current routes excluding any certmanager requests.
 # its also possible to exclude ingress by adding a label 'route.lagoon.sh/remove=false', this is then used to skip this from the removal checks
 CURRENT_ROUTES=$(kubectl -n ${NAMESPACE} get ingress  -l "lagoon.sh/autogenerated!=true"  --no-headers  2> /dev/null | cut -d " " -f 1 | xargs)
@@ -1310,7 +1220,6 @@ LAGOON_AUTOGENERATED_ROUTES=${AUTOGENERATED_ROUTES}\n\
 # Generate a Config Map with project wide env variables
 kubectl -n ${NAMESPACE} create configmap lagoon-env -o yaml --dry-run=client --from-env-file=/kubectl-build-deploy/values.env | kubectl apply -n ${NAMESPACE} -f -
 
-set +x # reduce noise in build logs
 # Add environment variables from lagoon API
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   HAS_PROJECT_RUNTIME_VARS=$(echo $LAGOON_PROJECT_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") )')
@@ -1359,18 +1268,21 @@ do
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mariadb-dbaas.sh
+        set +x
         ;;
 
     postgres-dbaas)
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-postgres-dbaas.sh
+        set +x
         ;;
 
     mongodb-dbaas)
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mongodb-dbaas.sh
+        set +x
         ;;
 
     *)
@@ -1383,105 +1295,84 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateConfigmapComplete" "Update Configmap" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Push to Registry" "pushingImages"
-set -x
 
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
 ##############################################
 
 CONFIG_MAP_SHA=$(kubectl -n ${NAMESPACE} get configmap lagoon-env -o yaml | shyaml get-value data | sha256sum | awk '{print $1}')
+export CONFIG_MAP_SHA
 # write the configmap to the values file so when we `exec-kubectl-resources-with-images.sh` the deployments will get the value of the config map
 # which will cause a change in the deployment and trigger a rollout if only the configmap has changed
 yq3 write -i -- /kubectl-build-deploy/values.yaml 'configMapSha' $CONFIG_MAP_SHA
 
 ##############################################
-### PUSH IMAGES TO OPENSHIFT REGISTRY
+### PUSH IMAGES TO REGISTRY
 ##############################################
 
+# pullrequest/branch start
 if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
 
   # All images that should be pulled are copied to the harbor registry
   for IMAGE_NAME in "${!IMAGES_PULL[@]}"
   do
-    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}"
+    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
 
     # Try to handle private registries first
-    if [ $PRIVATE_REGISTRY_COUNTER -gt 0 ]; then
-      if [ $PRIVATE_EXTERNAL_REGISTRY ]; then
-        EXTERNAL_REGISTRY=0
-        for EXTERNAL_REGISTRY_URL in "${PRIVATE_REGISTRY_URLS[@]}"
-        do
-          # strip off "http://" or "https://" from registry url if present
-          bare_url="${EXTERNAL_REGISTRY_URL#http://}"
-          bare_url="${EXTERNAL_REGISTRY_URL#https://}"
 
-          # Test registry to see if image is from an external registry or just private docker hub
-          case $bare_url in
-            "$PULL_IMAGE"*)
-              EXTERNAL_REGISTRY=1
-              ;;
-          esac
-        done
+    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
+    # from being a promote image, or an image from an imagecache or from some other registry entirely
+    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
 
-        # If this image is hosted in an external registry, pull it from there
-        if [ $EXTERNAL_REGISTRY -eq 1 ]; then
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        # If this image is not from an external registry, but docker hub creds were supplied, pull it straight from Docker Hub
-        elif [ $PRIVATE_DOCKER_HUB_REGISTRY -eq 1 ]; then
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        # If image not from an external registry and no docker hub creds were supplied, pull image from the imagecache
-        else
-          skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-        fi
-      # If the private registry counter is 1 and no external registry was listed, we know a private docker hub was specified
-      else
-        skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-      fi
-    # If no private registries, use the imagecache
-    else
-      skopeo copy --retry-times 5 --dest-tls-verify=false docker://${IMAGECACHE_REGISTRY}${PULL_IMAGE} docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest}
-    fi
-
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    # store the resulting image hash
+    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
   done
 
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     # Before the push the temporary name is resolved to the future tag with the registry in the image name
     TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
 
     # This will actually not push any images and instead just add them to the file /kubectl-build-deploy/lagoon/push
-    . /kubectl-build-deploy/scripts/exec-push-parallel.sh
+    # this file is used to perform parallel image pushes next
+    docker tag ${TEMPORARY_IMAGE_NAME} ${PUSH_IMAGE}
+    echo "docker push ${PUSH_IMAGE}" >> /kubectl-build-deploy/lagoon/push
   done
 
-  # If we have Images to Push to the OpenRegistry, let's do so
+  # If we have images to push to the registry, let's do so
   if [ -f /kubectl-build-deploy/lagoon/push ]; then
     parallel --retries 4 < /kubectl-build-deploy/lagoon/push
   fi
 
-  # load the image hashes for just pushed Images
+  # load the image hashes for just pushed images
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
-    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
+    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
   done
 
+# pullrequest/branch end
+# promote start
 elif [ "$BUILD_TYPE" == "promote" ]; then
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
-    .  /kubectl-build-deploy/scripts/exec-kubernetes-promote.sh
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG:-latest} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
-  done
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
 
+    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+  done
+# promote end
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
-set -x
 
 # Run the backup generation script
 
@@ -1498,6 +1389,8 @@ fi
 
 if [ ! "$BACKUPS_DISABLED" == true ]; then
   # check if k8up v2 feature flag is enabled
+  LAGOON_BACKUP_YAML_FOLDER="/kubectl-build-deploy/lagoon/backup"
+  mkdir -p $LAGOON_BACKUP_YAML_FOLDER
   if [ "$(featureFlag K8UP_V2)" = enabled ]; then
   # build-tool doesn't do any capability checks yet, so do this for now
     if [[ "${CAPABILITIES[@]}" =~ "k8up.io/v1/Schedule" ]]; then
@@ -1506,7 +1399,7 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
         # Create baas-repo-pw secret based on the project secret
         kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
       fi
-      build-deploy-tool template backup-schedule --version v2
+      build-deploy-tool template backup-schedule --version v2 --saved-templates-path ${LAGOON_BACKUP_YAML_FOLDER}
       # check if the existing schedule exists, and delete it
       if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
         if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get schedules.backup.appuio.ch k8up-lagoon-backup-schedule &> /dev/null; then
@@ -1527,184 +1420,60 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
       # Create baas-repo-pw secret based on the project secret
       kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
     fi
-    build-deploy-tool template backup-schedule --version v1
+    build-deploy-tool template backup-schedule --version v1 --saved-templates-path ${LAGOON_BACKUP_YAML_FOLDER}
+  fi
+  # apply backup templates
+  if [ -n "$(ls -A $LAGOON_BACKUP_YAML_FOLDER/ 2>/dev/null)" ]; then
+    find $LAGOON_BACKUP_YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $LAGOON_BACKUP_YAML_FOLDER/
   fi
 else
   echo ">> Backup configurations disabled for this build"
 fi
 
-# check for ISOLATION_NETWORK_POLICY feature flag, disabled by default
-if [ "$(featureFlag ISOLATION_NETWORK_POLICY)" = enabled ]; then
-	# add namespace isolation network policy to deployment
-	helm template isolation-network-policy /kubectl-build-deploy/helmcharts/isolation-network-policy \
-		-f /kubectl-build-deploy/values.yaml \
-		> $YAML_FOLDER/isolation-network-policy.yaml
-fi
-set -x
-
-if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  find $YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
-fi
-
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
-set -x
 
 ##############################################
 ### CREATE PVC, DEPLOYMENTS AND CRONJOBS
 ##############################################
 
-YAML_FOLDER="/kubectl-build-deploy/lagoon/deploymentconfigs-pvcs-cronjobs-backups"
-mkdir -p $YAML_FOLDER
-
-for SERVICE_TYPES_ENTRY in "${SERVICE_TYPES[@]}"
+# generate a map of servicename>imagename+hash json for the build-deploy-tool to use when templating
+# this reduces the need for the crazy logic with how services are currently mapped together in the case of nginx-php type deploymentss
+touch /kubectl-build-deploy/images.yaml
+for COMPOSE_SERVICE in "${COMPOSE_SERVICES[@]}"
 do
-  IFS=':' read -ra SERVICE_TYPES_ENTRY_SPLIT <<< "$SERVICE_TYPES_ENTRY"
-
-  SERVICE_NAME=${SERVICE_TYPES_ENTRY_SPLIT[0]}
-  SERVICE_TYPE=${SERVICE_TYPES_ENTRY_SPLIT[1]}
-
-  SERVICE_NAME_IMAGE="${MAP_SERVICE_NAME_TO_IMAGENAME[${SERVICE_NAME}]}"
-  SERVICE_NAME_IMAGE_HASH="${IMAGE_HASHES[${SERVICE_NAME_IMAGE}]}"
-
-  SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
-
-  COMPOSE_SERVICE=${MAP_SERVICE_TYPE_TO_COMPOSE_SERVICE["${SERVICE_TYPES_ENTRY}"]}
-
-  # Some Templates need additonal Parameters, like where persistent storage can be found.
-  HELM_SET_VALUES=()
-
-  # PERSISTENT_STORAGE_CLASS=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.class false)
-  # if [ ! $PERSISTENT_STORAGE_CLASS == "false" ]; then
-  #     TEMPLATE_PARAMETERS+=(-p PERSISTENT_STORAGE_CLASS="${PERSISTENT_STORAGE_CLASS}")
-  # fi
-
-  PERSISTENT_STORAGE_SIZE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.size false)
-  if [ ! $PERSISTENT_STORAGE_SIZE == "false" ]; then
-    HELM_SET_VALUES+=(--set "persistentStorage.size=${PERSISTENT_STORAGE_SIZE}")
-  fi
-
-  PERSISTENT_STORAGE_PATH=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent false)
-  if [ ! $PERSISTENT_STORAGE_PATH == "false" ]; then
-    HELM_SET_VALUES+=(--set "persistentStorage.path=${PERSISTENT_STORAGE_PATH}")
-
-    PERSISTENT_STORAGE_NAME=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.persistent\\.name false)
-    if [ ! $PERSISTENT_STORAGE_NAME == "false" ]; then
-      HELM_SET_VALUES+=(--set "persistentStorage.name=${PERSISTENT_STORAGE_NAME}")
-    else
-      HELM_SET_VALUES+=(--set "persistentStorage.name=${SERVICE_NAME}")
-    fi
-  fi
-
-  # all our templates appear to support this if they have a service defined in them, but only `basic` properly supports this
-  # as all services will get re-written in the future into build-deploy-tool, just handle basic only for now and don't
-  # support it in other templates (yet)
-  if  [[ "$SERVICE_TYPE" == "basic" ]] ||
-      [[ "$SERVICE_TYPE" == "basic-persistent" ]]; then
-    SERVICE_PORT_NUMBER=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.service\\.port false)
-    if [ ! $SERVICE_PORT_NUMBER == "false" ]; then
-      # check if the port provided is actually a number
-      if ! [[ $SERVICE_PORT_NUMBER =~ ^[0-9]+$ ]] ; then
-        echo "Provided service port is not a number"; exit 1;
-      fi
-      HELM_SET_VALUES+=(--set "service.port=${SERVICE_PORT_NUMBER}")
-    fi
-  fi
-
-  # handle spot configurations
-  . /kubectl-build-deploy/scripts/exec-spot-generation.sh
-
-  # handle dynamically added secrets
-  . /kubectl-build-deploy/scripts/exec-dynamic-secret-volumes.sh
-
-# TODO: we don't need this anymore
-  # DEPLOYMENT_STRATEGY=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.$COMPOSE_SERVICE.labels.lagoon\\.deployment\\.strategy false)
-  # if [ ! $DEPLOYMENT_STRATEGY == "false" ]; then
-  #   TEMPLATE_PARAMETERS+=(-p DEPLOYMENT_STRATEGY="${DEPLOYMENT_STRATEGY}")
-  # fi
-
-  # start cronjob disabled
-  CRONJOBS_DISABLED=false
-  if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-    CRONJOBS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
-  fi
-  if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-    TEMP_CRONJOBS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CRONJOBS_DISABLED") | "\(.value)"'))
-    if [ ! -z $TEMP_CRONJOBS_DISABLED ]; then
-      CRONJOBS_DISABLED=$TEMP_CRONJOBS_DISABLED
-    fi
-  fi
-
-  if [ ! "$CRONJOBS_DISABLED" == true ]; then
-  CRONJOB_COUNTER=0
-  CRONJOBS_ARRAY_INSIDE_POD=()   #crons run inside an existing pod more frequently than every 15 minutes
-  while [ -n "$(cat .lagoon.yml | shyaml keys environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER 2> /dev/null)" ]
-  do
-
-    CRONJOB_SERVICE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.service)
-
-    # Only implement the cronjob for the services we are currently handling
-    if [ $CRONJOB_SERVICE == $SERVICE_NAME ]; then
-
-      CRONJOB_NAME=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.name | sed "s/[^[:alnum:]-]/-/g" | sed "s/^-//g")
-
-      CRONJOB_SCHEDULE_RAW=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.schedule)
-
-      # Convert the Cronjob Schedule for additional features and better spread
-      CRONJOB_SCHEDULE=$( /kubectl-build-deploy/scripts/convert-crontab.sh "${NAMESPACE}" "$CRONJOB_SCHEDULE_RAW")
-      CRONJOB_COMMAND=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.cronjobs.$CRONJOB_COUNTER.command)
-
-      if cronScheduleMoreOftenThan30Minutes "$CRONJOB_SCHEDULE_RAW" ; then
-        # If this cronjob is more often than 30 minutes, we run the cronjob inside the pod itself
-        CRONJOBS_ARRAY_INSIDE_POD+=("${CRONJOB_SCHEDULE} ${CRONJOB_COMMAND}")
-      else
-        # This cronjob runs less ofen than every 30 minutes, we create a kubernetes native cronjob for it.
-
-        # Add this cronjob to the native cleanup array, this will remove native cronjobs at the end of this script
-        NATIVE_CRONJOB_CLEANUP_ARRAY+=($(echo "cronjob-${SERVICE_NAME}-${CRONJOB_NAME}" | awk '{print tolower($0)}'))
-        # kubectl stores this cronjob name lowercased
-
-        # if [ ! -f $OPENSHIFT_TEMPLATE ]; then
-        #   echo "No cronjob support for service '${SERVICE_NAME}' with type '${SERVICE_TYPE}', please contact the Lagoon maintainers to implement cronjob support"; exit 1;
-        # else
-
-        yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "nativeCronjobs.${CRONJOB_NAME,,}.schedule" "$CRONJOB_SCHEDULE"
-        yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml "nativeCronjobs.${CRONJOB_NAME,,}.command" "$CRONJOB_COMMAND"
-
-        # fi
-      fi
-    fi
-
-    let CRONJOB_COUNTER=CRONJOB_COUNTER+1
-  done
-
-
-  # if there are cronjobs running inside pods, add them to the deploymentconfig.
-  if [[ ${#CRONJOBS_ARRAY_INSIDE_POD[@]} -ge 1 ]]; then
-    yq3 write -i -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' "$(printf '%s\n' "${CRONJOBS_ARRAY_INSIDE_POD[@]}")"
-  else
-    yq3 write -i --tag '!!str' -- /kubectl-build-deploy/${SERVICE_NAME}-values.yaml 'inPodCronjobs' ''
-  fi
-
-  else
-    echo ">> Cronjob configurations disabled for this build"
-  fi
-  # end cronjob disabled
-
-  . /kubectl-build-deploy/scripts/exec-kubectl-resources-with-images.sh
-
+  SERVICE_NAME_IMAGE_HASH="${IMAGE_HASHES[${COMPOSE_SERVICE}]}"
+  yq -i '.images.'$COMPOSE_SERVICE' = "'${SERVICE_NAME_IMAGE_HASH}'"' /kubectl-build-deploy/images.yaml
 done
 
-set +x
+# handle dynamic secret collection here, @TODO this will go into the state collector eventually
+export DYNAMIC_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l lagoon.sh/dynamic-secret -o json | jq -r '[.items[] | .metadata.name] | join(",")')
+
+# label subject to change
+export DYNAMIC_DBAAS_SECRETS=$(kubectl -n ${NAMESPACE} get secrets -l secret.lagoon.sh/dbaas=true -o json | jq -r '[.items[] | .metadata.name] | join(",")')
+
+# delete any custom private registry secrets, they will get re-created by the lagoon-services templates
+EXISTING_REGISTRY_SECRETS=$(kubectl -n ${NAMESPACE} get secrets --no-headers | cut -d " " -f 1 | xargs)
+for EXISTING_REGISTRY_SECRET in ${EXISTING_REGISTRY_SECRETS}; do
+  if [[ "${EXISTING_REGISTRY_SECRET}" =~ "lagoon-private-registry-" ]]; then
+    if kubectl -n ${NAMESPACE} get secret ${EXISTING_REGISTRY_SECRET} &> /dev/null; then
+      kubectl -n ${NAMESPACE} delete secret ${EXISTING_REGISTRY_SECRET}
+    fi
+  fi
+done
+
+echo "=== BEGIN deployment template for services ==="
+LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
+mkdir -p $LAGOON_SERVICES_YAML_FOLDER
+build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images /kubectl-build-deploy/images.yaml
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Applying Deployments" "applyingDeployments"
-set -x
 
 ##############################################
 ### APPLY RESOURCES
@@ -1716,23 +1485,19 @@ for STORAGE_CALCULATOR_POD in $STORAGE_CALCULATOR_PODS; do
   kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD}
 done
 
-set +x
-if [ "$(ls -A $YAML_FOLDER/)" ]; then
-  if [ "$CI" == "true" ]; then
-    # During CI tests of Lagoon itself we only have a single compute node, so we change podAntiAffinity to podAffinity
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/podAntiAffinity/podAffinity/g
-    # During CI tests of Lagoon itself we only have a single compute node, so we change ReadWriteMany to ReadWriteOnce
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
-  fi
-  if [ "$(featureFlag RWX_TO_RWO)" = enabled ]; then
-    # If there is only a single compute node, this can be used to change RWX to RWO
-    find $YAML_FOLDER -type f  -print0 | xargs -0 sed -i s/ReadWriteMany/ReadWriteOnce/g
-  fi
+if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
+  echo "=== deployment templates for services ==="
+  ls -A $LAGOON_SERVICES_YAML_FOLDER
 
-  find $YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $YAML_FOLDER/
+  # cat $LAGOON_SERVICES_YAML_FOLDER/services.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/pvcs.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/deployments.yaml
+  # cat $LAGOON_SERVICES_YAML_FOLDER/cronjobs.yaml
+  if [ -n "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/ 2>/dev/null)" ]; then
+    find $LAGOON_SERVICES_YAML_FOLDER -type f -exec cat {} \;
+    kubectl apply -n ${NAMESPACE} -f $LAGOON_SERVICES_YAML_FOLDER/
+  fi
 fi
-set -x
 
 ##############################################
 ### WAIT FOR POST-ROLLOUT TO BE FINISHED
@@ -1779,15 +1544,14 @@ do
 
   elif [ ! $SERVICE_ROLLOUT_TYPE == "false" ]; then
     . /kubectl-build-deploy/scripts/exec-monitor-deploy.sh
+    set +x
   fi
 done
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
-set -x
 
 ##############################################
 ### CLEANUP NATIVE CRONJOBS which have been removed from .lagoon.yml or modified to run more frequently than every 15 minutes
@@ -1817,12 +1581,10 @@ for DC in ${!DELETE_CRONJOBS[@]}; do
   fi
 done
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
-set -x
 
 ##############################################
 ### RUN POST-ROLLOUT tasks defined in .lagoon.yml
@@ -1833,23 +1595,18 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
   build-deploy-tool tasks post-rollout
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
-  set +x
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
-  set -x
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Build and Deploy" "finalizingBuild"
-set -x
 
 ##############################################
 ### PUSH the latest .lagoon.yml into lagoon-yaml configmap
 ##############################################
 
-set +x
 echo "Updating lagoon-yaml configmap with a post-deploy version of the .lagoon.yml file"
 if kubectl -n ${NAMESPACE} get configmap lagoon-yaml &> /dev/null; then
   # replace it, no need to check if the key is different, as that will happen in the pre-deploy phase
@@ -1882,9 +1639,7 @@ for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
     fi
   done
 done
-set -x
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
 previousStepEnd=${currentStepEnd}
@@ -1935,4 +1690,3 @@ if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
     sleep 5
   fi
 fi
-set -x

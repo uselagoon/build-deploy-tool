@@ -102,7 +102,6 @@ func Test_generateAndMerge(t *testing.T) {
 	type args struct {
 		api         lagoon.RoutesV2
 		envVars     []lagoon.EnvironmentVariable
-		lagoonYAML  lagoon.YAML
 		buildValues BuildValues
 	}
 	tests := []struct {
@@ -116,25 +115,25 @@ func Test_generateAndMerge(t *testing.T) {
 			args: args{
 				buildValues: BuildValues{
 					Branch: "main",
-				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme: helpers.BoolPtr(true),
+													},
 												},
 											},
-										},
-										{
-											Name: "b.example.com",
-										},
-										{
-											Name: "c.example.com",
+											{
+												Name: "b.example.com",
+											},
+											{
+												Name: "c.example.com",
+											},
 										},
 									},
 								},
@@ -212,9 +211,9 @@ func Test_generateAndMerge(t *testing.T) {
 			name: "test2 - don't generate routes from lagoon yaml and only merge ones from api onto them",
 			args: args{
 				buildValues: BuildValues{
-					Branch: "main",
+					Branch:     "main",
+					LagoonYAML: lagoon.YAML{},
 				},
-				lagoonYAML: lagoon.YAML{},
 				api: lagoon.RoutesV2{
 					Routes: []lagoon.RouteV2{
 						{
@@ -265,25 +264,25 @@ func Test_generateAndMerge(t *testing.T) {
 				buildValues: BuildValues{
 					Branch:       "main",
 					IngressClass: "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme: helpers.BoolPtr(true),
+													},
 												},
 											},
-										},
-										{
-											Name: "b.example.com",
-										},
-										{
-											Name: "c.example.com",
+											{
+												Name: "b.example.com",
+											},
+											{
+												Name: "c.example.com",
+											},
 										},
 									},
 								},
@@ -367,17 +366,17 @@ func Test_generateAndMerge(t *testing.T) {
 				buildValues: BuildValues{
 					Branch:       "main",
 					IngressClass: "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -425,18 +424,18 @@ func Test_generateAndMerge(t *testing.T) {
 				buildValues: BuildValues{
 					Branch:       "main",
 					IngressClass: "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme:  helpers.BoolPtr(false),
-													Wildcard: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme:  helpers.BoolPtr(false),
+														Wildcard: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -471,18 +470,18 @@ func Test_generateAndMerge(t *testing.T) {
 				buildValues: BuildValues{
 					Branch:       "main",
 					IngressClass: "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme:  helpers.BoolPtr(true),
-													Wildcard: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme:  helpers.BoolPtr(true),
+														Wildcard: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -501,7 +500,7 @@ func Test_generateAndMerge(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := generateAndMerge(tt.args.api, tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
+			got, err := generateAndMerge(tt.args.api, tt.args.envVars, tt.args.buildValues)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateAndMerge() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -518,7 +517,6 @@ func Test_generateAndMerge(t *testing.T) {
 func Test_generateActiveStandbyRoutes(t *testing.T) {
 	type args struct {
 		envVars     []lagoon.EnvironmentVariable
-		lagoonYAML  lagoon.YAML
 		buildValues BuildValues
 	}
 	tests := []struct {
@@ -532,15 +530,15 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 			args: args{
 				buildValues: BuildValues{
 					IsActiveEnvironment: true,
-				},
-				lagoonYAML: lagoon.YAML{
-					ProductionRoutes: &lagoon.ProductionRoutes{
-						Active: &lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Name: "active.example.com",
+					LagoonYAML: lagoon.YAML{
+						ProductionRoutes: &lagoon.ProductionRoutes{
+							Active: &lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Name: "active.example.com",
+											},
 										},
 									},
 								},
@@ -573,17 +571,17 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 				buildValues: BuildValues{
 					IsActiveEnvironment: true,
 					IngressClass:        "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					ProductionRoutes: &lagoon.ProductionRoutes{
-						Active: &lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"active.example.com": {
-													TLSAcme: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						ProductionRoutes: &lagoon.ProductionRoutes{
+							Active: &lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"active.example.com": {
+														TLSAcme: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -619,18 +617,18 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 				buildValues: BuildValues{
 					IsActiveEnvironment: true,
 					IngressClass:        "nginx",
-				},
-				lagoonYAML: lagoon.YAML{
-					ProductionRoutes: &lagoon.ProductionRoutes{
-						Active: &lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"active.example.com": {
-													TLSAcme:      helpers.BoolPtr(true),
-													IngressClass: "custom-nginx",
+					LagoonYAML: lagoon.YAML{
+						ProductionRoutes: &lagoon.ProductionRoutes{
+							Active: &lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"active.example.com": {
+														TLSAcme:      helpers.BoolPtr(true),
+														IngressClass: "custom-nginx",
+													},
 												},
 											},
 										},
@@ -666,18 +664,18 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 				buildValues: BuildValues{
 					IngressClass:        "nginx",
 					IsActiveEnvironment: true,
-				},
-				lagoonYAML: lagoon.YAML{
-					ProductionRoutes: &lagoon.ProductionRoutes{
-						Active: &lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"active.example.com": {
-													TLSAcme:  helpers.BoolPtr(true),
-													Wildcard: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						ProductionRoutes: &lagoon.ProductionRoutes{
+							Active: &lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"active.example.com": {
+														TLSAcme:  helpers.BoolPtr(true),
+														Wildcard: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -700,18 +698,18 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 				buildValues: BuildValues{
 					IngressClass:        "nginx",
 					IsActiveEnvironment: true,
-				},
-				lagoonYAML: lagoon.YAML{
-					ProductionRoutes: &lagoon.ProductionRoutes{
-						Active: &lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"active.example.com": {
-													TLSAcme:  helpers.BoolPtr(false),
-													Wildcard: helpers.BoolPtr(true),
+					LagoonYAML: lagoon.YAML{
+						ProductionRoutes: &lagoon.ProductionRoutes{
+							Active: &lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"active.example.com": {
+														TLSAcme:  helpers.BoolPtr(false),
+														Wildcard: helpers.BoolPtr(true),
+													},
 												},
 											},
 										},
@@ -745,7 +743,7 @@ func Test_generateActiveStandbyRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := generateActiveStandbyRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues)
+			got, err := generateActiveStandbyRoutes(tt.args.envVars, tt.args.buildValues)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateAndMerge() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -811,7 +809,6 @@ func Test_autogeneratedDomainFromPattern(t *testing.T) {
 func Test_generateAutogenRoutes(t *testing.T) {
 	type args struct {
 		envVars       []lagoon.EnvironmentVariable
-		lagoonYAML    *lagoon.YAML
 		buildValues   *BuildValues
 		autogenRoutes *lagoon.RoutesV2
 	}
@@ -831,7 +828,6 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Scope: "internal_system",
 					},
 				},
-				lagoonYAML: &lagoon.YAML{},
 				buildValues: &BuildValues{
 					Project:         "example-com",
 					BuildType:       "branch",
@@ -846,6 +842,7 @@ func Test_generateAutogenRoutes(t *testing.T) {
 							AutogeneratedRoutesTLSAcme: true,
 						},
 					},
+					LagoonYAML: lagoon.YAML{},
 				},
 				autogenRoutes: &lagoon.RoutesV2{},
 			},
@@ -862,10 +859,10 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Labels: map[string]string{
 							"app.kubernetes.io/instance": "nginx",
 							"app.kubernetes.io/name":     "autogenerated-ingress",
-							"helm.sh/chart":              "autogenerated-ingress-0.1.0",
 							"lagoon.sh/autogenerated":    "true",
 							"lagoon.sh/service":          "nginx",
 							"lagoon.sh/service-type":     "nginx",
+							"lagoon.sh/template":         "autogenerated-ingress-0.1.0",
 						},
 						IngressName:         "nginx",
 						RequestVerification: helpers.BoolPtr(false),
@@ -883,7 +880,6 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Scope: "internal_system",
 					},
 				},
-				lagoonYAML: &lagoon.YAML{},
 				buildValues: &BuildValues{
 					Project:         "example-com",
 					BuildType:       "branch",
@@ -899,6 +895,7 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						},
 					},
 					IngressClass: "nginx",
+					LagoonYAML:   lagoon.YAML{},
 				},
 				autogenRoutes: &lagoon.RoutesV2{},
 			},
@@ -916,10 +913,10 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Labels: map[string]string{
 							"app.kubernetes.io/instance": "nginx",
 							"app.kubernetes.io/name":     "autogenerated-ingress",
-							"helm.sh/chart":              "autogenerated-ingress-0.1.0",
 							"lagoon.sh/autogenerated":    "true",
 							"lagoon.sh/service":          "nginx",
 							"lagoon.sh/service-type":     "nginx",
+							"lagoon.sh/template":         "autogenerated-ingress-0.1.0",
 						},
 						IngressName:         "nginx",
 						RequestVerification: helpers.BoolPtr(false),
@@ -937,13 +934,6 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Scope: "internal_system",
 					},
 				},
-				lagoonYAML: &lagoon.YAML{
-					Routes: lagoon.Routes{
-						Autogenerate: lagoon.Autogenerate{
-							IngressClass: "custom-nginx",
-						},
-					},
-				},
 				buildValues: &BuildValues{
 					Project:         "example-com",
 					BuildType:       "branch",
@@ -959,6 +949,13 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						},
 					},
 					IngressClass: "nginx",
+					LagoonYAML: lagoon.YAML{
+						Routes: lagoon.Routes{
+							Autogenerate: lagoon.Autogenerate{
+								IngressClass: "custom-nginx",
+							},
+						},
+					},
 				},
 				autogenRoutes: &lagoon.RoutesV2{},
 			},
@@ -976,10 +973,10 @@ func Test_generateAutogenRoutes(t *testing.T) {
 						Labels: map[string]string{
 							"app.kubernetes.io/instance": "nginx",
 							"app.kubernetes.io/name":     "autogenerated-ingress",
-							"helm.sh/chart":              "autogenerated-ingress-0.1.0",
 							"lagoon.sh/autogenerated":    "true",
 							"lagoon.sh/service":          "nginx",
 							"lagoon.sh/service-type":     "nginx",
+							"lagoon.sh/template":         "autogenerated-ingress-0.1.0",
 						},
 						IngressName:         "nginx",
 						RequestVerification: helpers.BoolPtr(false),
@@ -990,7 +987,7 @@ func Test_generateAutogenRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := generateAutogenRoutes(tt.args.envVars, tt.args.lagoonYAML, tt.args.buildValues, tt.args.autogenRoutes); (err != nil) != tt.wantErr {
+			if err := generateAutogenRoutes(tt.args.envVars, tt.args.buildValues, tt.args.autogenRoutes); (err != nil) != tt.wantErr {
 				t.Errorf("generateAutogenRoutes() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			lValues, _ := json.Marshal(tt.args.autogenRoutes)
@@ -1006,7 +1003,6 @@ func Test_generateRoutes(t *testing.T) {
 	type args struct {
 		envVars            []lagoon.EnvironmentVariable
 		buildValues        BuildValues
-		lagoonYAML         lagoon.YAML
 		autogenRoutes      *lagoon.RoutesV2
 		mainRoutes         *lagoon.RoutesV2
 		activeStanbyRoutes *lagoon.RoutesV2
@@ -1030,7 +1026,6 @@ func Test_generateRoutes(t *testing.T) {
 						Scope: "internal_system",
 					},
 				},
-				lagoonYAML: lagoon.YAML{},
 				buildValues: BuildValues{
 					Project:         "example-com",
 					BuildType:       "branch",
@@ -1045,6 +1040,7 @@ func Test_generateRoutes(t *testing.T) {
 							AutogeneratedRoutesTLSAcme: true,
 						},
 					},
+					LagoonYAML: lagoon.YAML{},
 				},
 				autogenRoutes:      &lagoon.RoutesV2{},
 				mainRoutes:         &lagoon.RoutesV2{},
@@ -1064,31 +1060,6 @@ func Test_generateRoutes(t *testing.T) {
 						Scope: "internal_system",
 					},
 				},
-				lagoonYAML: lagoon.YAML{
-					Environments: lagoon.Environments{
-						"main": lagoon.Environment{
-							Routes: []map[string][]lagoon.Route{
-								{
-									"nginx": {
-										{
-											Ingresses: map[string]lagoon.Ingress{
-												"a.example.com": {
-													TLSAcme: helpers.BoolPtr(true),
-												},
-											},
-										},
-										{
-											Name: "b.example.com",
-										},
-										{
-											Name: "c.example.com",
-										},
-									},
-								},
-							},
-						},
-					},
-				},
 				buildValues: BuildValues{
 					Project:         "example-com",
 					BuildType:       "branch",
@@ -1104,6 +1075,31 @@ func Test_generateRoutes(t *testing.T) {
 							AutogeneratedRoutesTLSAcme: true,
 						},
 					},
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Routes: []map[string][]lagoon.Route{
+									{
+										"nginx": {
+											{
+												Ingresses: map[string]lagoon.Ingress{
+													"a.example.com": {
+														TLSAcme: helpers.BoolPtr(true),
+													},
+												},
+											},
+											{
+												Name: "b.example.com",
+											},
+											{
+												Name: "c.example.com",
+											},
+										},
+									},
+								},
+							},
+						},
+					},
 				},
 				autogenRoutes:      &lagoon.RoutesV2{},
 				mainRoutes:         &lagoon.RoutesV2{},
@@ -1116,7 +1112,7 @@ func Test_generateRoutes(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, got1, got2, err := generateRoutes(tt.args.envVars, tt.args.buildValues, tt.args.lagoonYAML, tt.args.autogenRoutes, tt.args.mainRoutes, tt.args.activeStanbyRoutes, tt.args.debug)
+			got, got1, got2, err := generateRoutes(tt.args.envVars, tt.args.buildValues, tt.args.autogenRoutes, tt.args.mainRoutes, tt.args.activeStanbyRoutes, tt.args.debug)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("generateRoutes() error = %v, wantErr %v", err, tt.wantErr)
 				return

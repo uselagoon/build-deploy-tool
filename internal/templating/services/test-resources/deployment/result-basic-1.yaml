@@ -1,0 +1,456 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: myservice
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/name: basic
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+          value: |
+            M/5 * * * * drush cron
+            M/15 * * * * other cronjob
+        - name: SERVICE_NAME
+          value: myservice
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-po
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-po
+    lagoon.sh/service-type: basic
+    lagoon.sh/spot: "true"
+    lagoon.sh/template: basic-0.1.0
+  name: myservice-po
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-po
+      app.kubernetes.io/name: basic
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-po
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-po
+        lagoon.sh/service-type: basic
+        lagoon.sh/spot: "true"
+        lagoon.sh/template: basic-0.1.0
+    spec:
+      affinity:
+        nodeAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - preference:
+              matchExpressions:
+              - key: lagoon.sh/spot
+                operator: Exists
+            weight: 1
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-po
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-po@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      tolerations:
+      - effect: NoSchedule
+        key: lagoon.sh/spot
+        operator: Exists
+      - effect: PreferNoSchedule
+        key: lagoon.sh/spot
+        operator: Exists
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-persist
+      app.kubernetes.io/name: basic-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-persist
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-persist
+        lagoon.sh/service-type: basic-persistent
+        lagoon.sh/template: basic-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 3000
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /storage/data
+          name: basic
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: basic
+        persistentVolumeClaim:
+          claimName: basic
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist-po
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist-po
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist-po
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-persist-po
+      app.kubernetes.io/name: basic-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-persist-po
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-persist-po
+        lagoon.sh/service-type: basic-persistent
+        lagoon.sh/template: basic-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist-po
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist-po@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /storage/data
+          name: basic
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: basic
+        persistentVolumeClaim:
+          claimName: basic
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice-persist-posize
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice-persist-posize
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
+  name: myservice-persist-posize
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice-persist-posize
+      app.kubernetes.io/name: basic-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice-persist-posize
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice-persist-posize
+        lagoon.sh/service-type: basic-persistent
+        lagoon.sh/template: basic-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice-persist-posize
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice-persist-posize@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 8080
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /storage/data
+          name: basic
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: basic
+        persistentVolumeClaim:
+          claimName: basic
+status: {}

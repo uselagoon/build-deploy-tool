@@ -5,8 +5,12 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestIdentifyRoute(t *testing.T) {
@@ -26,7 +30,7 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FASTLY_SERVICE_IDS",
@@ -35,7 +39,7 @@ func TestIdentifyRoute(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://node-example-project-main.example.com", "https://example.com"},
 			wantautoGen:  []string{"https://node-example-project-main.example.com"},
@@ -48,7 +52,7 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FASTLY_SERVICE_IDS",
@@ -57,7 +61,7 @@ func TestIdentifyRoute(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://node-example-project-main.example.com", "https://example.com"},
 			wantautoGen:  []string{"https://node-example-project-main.example.com"},
@@ -70,7 +74,7 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FASTLY_SERVICE_ID",
@@ -79,7 +83,7 @@ func TestIdentifyRoute(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://node-example-project-main.example.com", "https://example.com"},
 			wantautoGen:  []string{"https://node-example-project-main.example.com"},
@@ -92,9 +96,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://node-example-project-main.example.com", "https://example.com"},
 			wantautoGen:  []string{"https://node-example-project-main.example.com"},
@@ -107,9 +111,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "multiproject1",
 					EnvironmentName: "multiproject",
 					Branch:          "multiproject",
-					LagoonYAML:      "../internal/testdata/node/lagoon.polysite.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://multiproject1.com",
 			wantRemain:   []string{"https://node-multiproject1-multiproject.example.com", "https://multiproject1.com"},
 			wantautoGen:  []string{"https://node-multiproject1-multiproject.example.com"},
@@ -122,9 +126,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "multiproject2",
 					EnvironmentName: "multiproject",
 					Branch:          "multiproject",
-					LagoonYAML:      "../internal/testdata/node/lagoon.polysite.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://multiproject2.com",
 			wantRemain:   []string{"https://node-multiproject2-multiproject.example.com", "https://multiproject2.com"},
 			wantautoGen:  []string{"https://node-multiproject2-multiproject.example.com"},
@@ -137,9 +141,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "tworoutes",
 					Branch:          "tworoutes",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://node-example-project-tworoutes.example.com", "https://example.com", "https://www.example.com"},
 			wantautoGen:  []string{"https://node-example-project-tworoutes.example.com"},
@@ -152,9 +156,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "branch-routes",
 					Branch:          "branch/routes",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://customdomain-will-be-main-domain.com",
 			wantRemain:   []string{"https://node-example-project-branch-routes.example.com", "https://customdomain-will-be-main-domain.com", "https://customdomain-will-be-not-be-main-domain.com"},
 			wantautoGen:  []string{"https://node-example-project-branch-routes.example.com"},
@@ -169,9 +173,9 @@ func TestIdentifyRoute(t *testing.T) {
 					Branch:             "main",
 					ActiveEnvironment:  "main",
 					StandbyEnvironment: "main-sb",
-					LagoonYAML:         "../internal/testdata/node/lagoon.activestandby.yml",
+					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://active.example.com",
 			wantRemain:   []string{"https://node-example-project-main.example.com", "https://main.example.com", "https://active.example.com"},
 			wantautoGen:  []string{"https://node-example-project-main.example.com"},
@@ -186,9 +190,9 @@ func TestIdentifyRoute(t *testing.T) {
 					Branch:             "main-sb",
 					ActiveEnvironment:  "main",
 					StandbyEnvironment: "main-sb",
-					LagoonYAML:         "../internal/testdata/node/lagoon.activestandby.yml",
+					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://standby.example.com",
 			wantRemain:   []string{"https://node-example-project-main-sb.example.com", "https://main-sb.example.com", "https://standby.example.com"},
 			wantautoGen:  []string{"https://node-example-project-main-sb.example.com"},
@@ -201,9 +205,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "no-ingress",
 					Branch:          "no-ingress",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://node-example-project-no-ingress.example.com",
 			wantRemain:   []string{"https://node-example-project-no-ingress.example.com"},
 			wantautoGen:  []string{"https://node-example-project-no-ingress.example.com"},
@@ -216,9 +220,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "no-ingress",
 					Branch:          "no-ingress",
-					LagoonYAML:      "../internal/testdata/node/lagoon.autogen-prefixes-1.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.autogen-prefixes-1.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://node-example-project-no-ingress.example.com",
 			wantRemain: []string{
 				"https://node-example-project-no-ingress.example.com",
@@ -243,9 +247,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.autogen-1.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.autogen-1.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://example.com",
 			wantRemain:   []string{"https://example.com"},
 			wantautoGen:  []string{},
@@ -258,9 +262,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "notmain",
 					Branch:          "notmain",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://node-example-project-notmain.example.com",
 			wantRemain:   []string{"https://node-example-project-notmain.example.com"},
 			wantautoGen:  []string{"https://node-example-project-notmain.example.com"},
@@ -274,7 +278,7 @@ func TestIdentifyRoute(t *testing.T) {
 					EnvironmentName: "develop",
 					Branch:          "develop",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.small.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.small.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_SYSTEM_ROUTER_PATTERN",
@@ -283,7 +287,7 @@ func TestIdentifyRoute(t *testing.T) {
 						},
 					},
 				}, false),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://nginx-sales-customer-support-develop.ex1.example-web.com",
 			wantRemain:   []string{"https://nginx-sales-customer-support-develop.ex1.example-web.com"},
 			wantautoGen:  []string{"https://nginx-sales-customer-support-develop.ex1.example-web.com"},
@@ -297,7 +301,7 @@ func TestIdentifyRoute(t *testing.T) {
 					EnvironmentName: "feature-migration",
 					Branch:          "feature/migration",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/nginxphp/lagoon.nginx-2.yml",
+					LagoonYAML:      "internal/testdata/nginxphp/lagoon.nginx-2.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_SYSTEM_ROUTER_PATTERN",
@@ -306,7 +310,7 @@ func TestIdentifyRoute(t *testing.T) {
 						},
 					},
 				}, false),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://nginx-php.feature-migration.content-example-com.example.com",
 			wantRemain:   []string{"https://nginx-php.feature-migration.content-example-com.example.com"},
 			wantautoGen:  []string{"https://nginx-php.feature-migration.content-example-com.example.com"},
@@ -319,9 +323,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.small-2.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.small-2.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://nginx-example-project-main.example.com",
 			wantRemain:   []string{"https://nginx-example-project-main.example.com", "https://varnish-example-project-main.example.com"},
 			wantautoGen:  []string{"https://nginx-example-project-main.example.com", "https://varnish-example-project-main.example.com"},
@@ -334,9 +338,9 @@ func TestIdentifyRoute(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.complex-2.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.complex-2.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			want:         "https://wild.example.com",
 			wantRemain:   []string{"https://nginx-example-project-main.example.com", "https://wild.example.com", "https://alt.example.com", "https://www.example.com", "https://en.example.com"},
 			wantautoGen:  []string{"https://nginx-example-project-main.example.com"},
@@ -345,6 +349,7 @@ func TestIdentifyRoute(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
@@ -383,29 +388,6 @@ func TestIdentifyRoute(t *testing.T) {
 }
 
 func TestCreatedIngressIdentification(t *testing.T) {
-	type args struct {
-		alertContact       string
-		statusPageID       string
-		projectName        string
-		environmentName    string
-		branch             string
-		prNumber           string
-		prHeadBranch       string
-		prBaseBranch       string
-		environmentType    string
-		buildType          string
-		activeEnvironment  string
-		standbyEnvironment string
-		cacheNoCache       string
-		serviceID          string
-		secretPrefix       string
-		projectVars        string
-		envVars            string
-		lagoonVersion      string
-		lagoonYAML         string
-		valuesFilePath     string
-		templatePath       string
-	}
 	tests := []struct {
 		name         string
 		args         testdata.TestData
@@ -422,9 +404,9 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.autogen-1.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.autogen-1.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{"example.com"},
 			wantautoGen:  []string{},
 			wantJSON:     `{"primary":"","secondary":["example.com"],"autogenerated":[]}`,
@@ -436,9 +418,9 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "notmain",
 					Branch:          "notmain",
-					LagoonYAML:      "../internal/testdata/node/lagoon.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{},
 			wantautoGen:  []string{"node"},
 			wantJSON:     `{"primary":"","secondary":[],"autogenerated":["node"]}`,
@@ -451,7 +433,7 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					EnvironmentName: "develop",
 					Branch:          "develop",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.small.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.small.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_SYSTEM_ROUTER_PATTERN",
@@ -460,7 +442,7 @@ func TestCreatedIngressIdentification(t *testing.T) {
 						},
 					},
 				}, false),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{},
 			wantautoGen:  []string{"nginx"},
 			wantJSON:     `{"primary":"","secondary":[],"autogenerated":["nginx"]}`,
@@ -473,7 +455,7 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					EnvironmentName: "feature-migration",
 					Branch:          "feature/migration",
 					EnvironmentType: "development",
-					LagoonYAML:      "../internal/testdata/nginxphp/lagoon.nginx-2.yml",
+					LagoonYAML:      "internal/testdata/nginxphp/lagoon.nginx-2.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_SYSTEM_ROUTER_PATTERN",
@@ -482,7 +464,7 @@ func TestCreatedIngressIdentification(t *testing.T) {
 						},
 					},
 				}, false),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{},
 			wantautoGen:  []string{"nginx-php"},
 			wantJSON:     `{"primary":"","secondary":[],"autogenerated":["nginx-php"]}`,
@@ -494,9 +476,9 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.small-2.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.small-2.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{},
 			wantautoGen:  []string{"nginx", "varnish"},
 			wantJSON:     `{"primary":"","secondary":[],"autogenerated":["nginx","varnish"]}`,
@@ -508,9 +490,9 @@ func TestCreatedIngressIdentification(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.complex-2.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.complex-2.yml",
 				}, true),
-			templatePath: "testdata/output",
+			templatePath: "testoutput",
 			wantRemain:   []string{"wildcard-wild.example.com", "alt.example.com"},
 			wantautoGen:  []string{"nginx"},
 			wantJSON:     `{"primary":"","secondary":["wildcard-wild.example.com","alt.example.com"],"autogenerated":["nginx"]}`,

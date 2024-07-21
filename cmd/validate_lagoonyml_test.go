@@ -10,6 +10,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"sigs.k8s.io/yaml"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestValidateLagoonYml(t *testing.T) {
@@ -30,8 +33,8 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 1 - Simple .lagoon.yml - testing equality",
 			args: args{
-				lagoonYml:     "../test-resources/validate-lagoon-yml/test1/lagoon.yml",
-				wantLagoonYml: "../test-resources/validate-lagoon-yml/test1/lagoon.yml",
+				lagoonYml:     "internal/testdata/validate-lagoon-yml/test1/lagoon.yml",
+				wantLagoonYml: "internal/testdata/validate-lagoon-yml/test1/lagoon.yml",
 				lYAML:         &lagoon.YAML{},
 				projectName:   "",
 				debug:         false,
@@ -41,9 +44,9 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 2 - Merging files - no env vars",
 			args: args{
-				lagoonYml:         "../test-resources/validate-lagoon-yml/test2/lagoon.yml",
-				lagoonOverrideYml: "../test-resources/validate-lagoon-yml/test2/lagoon-override.yml",
-				wantLagoonYml:     "../test-resources/validate-lagoon-yml/test2/lagoon-final.yml",
+				lagoonYml:         "internal/testdata/validate-lagoon-yml/test2/lagoon.yml",
+				lagoonOverrideYml: "internal/testdata/validate-lagoon-yml/test2/lagoon-override.yml",
+				wantLagoonYml:     "internal/testdata/validate-lagoon-yml/test2/lagoon-final.yml",
 				lYAML:             &lagoon.YAML{},
 				projectName:       "",
 				debug:             false,
@@ -53,9 +56,9 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 3 - Merging env vars - no override",
 			args: args{
-				lagoonYml:                "../test-resources/validate-lagoon-yml/test3/lagoon.yml",
-				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/test3/lagoon-override.yml",
-				wantLagoonYml:            "../test-resources/validate-lagoon-yml/test3/lagoon-final.yml",
+				lagoonYml:                "internal/testdata/validate-lagoon-yml/test3/lagoon.yml",
+				lagoonOverrideEnvVarFile: "internal/testdata/validate-lagoon-yml/test3/lagoon-override.yml",
+				wantLagoonYml:            "internal/testdata/validate-lagoon-yml/test3/lagoon-final.yml",
 				lYAML:                    &lagoon.YAML{},
 				projectName:              "",
 				debug:                    false,
@@ -65,10 +68,10 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 4 - Merging env vars and override file",
 			args: args{
-				lagoonYml:                "../test-resources/validate-lagoon-yml/test4/lagoon.yml",
-				lagoonOverrideYml:        "../test-resources/validate-lagoon-yml/test4/lagoon-override.yml",
-				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/test4/lagoon-override-env.yml",
-				wantLagoonYml:            "../test-resources/validate-lagoon-yml/test4/lagoon-final.yml",
+				lagoonYml:                "internal/testdata/validate-lagoon-yml/test4/lagoon.yml",
+				lagoonOverrideYml:        "internal/testdata/validate-lagoon-yml/test4/lagoon-override.yml",
+				lagoonOverrideEnvVarFile: "internal/testdata/validate-lagoon-yml/test4/lagoon-override-env.yml",
+				wantLagoonYml:            "internal/testdata/validate-lagoon-yml/test4/lagoon-final.yml",
 				lYAML:                    &lagoon.YAML{},
 				projectName:              "",
 				debug:                    false,
@@ -78,9 +81,9 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 5 - Overriding named task",
 			args: args{
-				lagoonYml:         "../test-resources/validate-lagoon-yml/test5/lagoon.yml",
-				lagoonOverrideYml: "../test-resources/validate-lagoon-yml/test5/lagoon-override.yml",
-				wantLagoonYml:     "../test-resources/validate-lagoon-yml/test5/lagoon-final.yml",
+				lagoonYml:         "internal/testdata/validate-lagoon-yml/test5/lagoon.yml",
+				lagoonOverrideYml: "internal/testdata/validate-lagoon-yml/test5/lagoon-override.yml",
+				wantLagoonYml:     "internal/testdata/validate-lagoon-yml/test5/lagoon-final.yml",
 				lYAML:             &lagoon.YAML{},
 				projectName:       "",
 				debug:             false,
@@ -90,8 +93,8 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 6 - Invalid lagoon override should fail",
 			args: args{
-				lagoonYml:         "../test-resources/validate-lagoon-yml/test6/lagoon.yml",
-				lagoonOverrideYml: "../test-resources/validate-lagoon-yml/test6/lagoon-override.yml",
+				lagoonYml:         "internal/testdata/validate-lagoon-yml/test6/lagoon.yml",
+				lagoonOverrideYml: "internal/testdata/validate-lagoon-yml/test6/lagoon-override.yml",
 				lYAML:             &lagoon.YAML{},
 				projectName:       "",
 				debug:             false,
@@ -101,8 +104,8 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "test 7 - Invalid lagoon override env var should fail",
 			args: args{
-				lagoonYml:                "../test-resources/validate-lagoon-yml/test6/lagoon.yml",
-				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/test6/lagoon-override.yml",
+				lagoonYml:                "internal/testdata/validate-lagoon-yml/test6/lagoon.yml",
+				lagoonOverrideEnvVarFile: "internal/testdata/validate-lagoon-yml/test6/lagoon-override.yml",
 				lYAML:                    &lagoon.YAML{},
 				projectName:              "",
 				debug:                    false,
@@ -112,7 +115,7 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "multiline cronjobs should fail validation",
 			args: args{
-				lagoonYml:   "../test-resources/validate-lagoon-yml/cronjobs/lagoon.yml",
+				lagoonYml:   "internal/testdata/validate-lagoon-yml/cronjobs/lagoon.yml",
 				lYAML:       &lagoon.YAML{},
 				projectName: "",
 				debug:       false,
@@ -122,9 +125,9 @@ func TestValidateLagoonYml(t *testing.T) {
 		{
 			name: "merged multiline cronjobs should fail validation",
 			args: args{
-				lagoonYml:                "../test-resources/validate-lagoon-yml/cronjobs/lagoon.yml",
-				lagoonOverrideYml:        "../test-resources/validate-lagoon-yml/cronjobs/lagoon-override.yml",
-				lagoonOverrideEnvVarFile: "../test-resources/validate-lagoon-yml/cronjobs/lagoon-override-env.yml",
+				lagoonYml:                "internal/testdata/validate-lagoon-yml/cronjobs/lagoon.yml",
+				lagoonOverrideYml:        "internal/testdata/validate-lagoon-yml/cronjobs/lagoon-override.yml",
+				lagoonOverrideEnvVarFile: "internal/testdata/validate-lagoon-yml/cronjobs/lagoon-override-env.yml",
 				lYAML:                    &lagoon.YAML{},
 				projectName:              "",
 				debug:                    false,
@@ -183,7 +186,7 @@ func TestValidateLagoonYml(t *testing.T) {
 
 func TestMultilineCronjobs(t *testing.T) {
 	var l lagoon.YAML
-	if err := generator.LoadAndUnmarshalLagoonYml("../test-resources/validate-lagoon-yml/cronjobs/multiline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
+	if err := generator.LoadAndUnmarshalLagoonYml("internal/testdata/validate-lagoon-yml/cronjobs/multiline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
 		t.Fatalf("couldn't load and unmarshal YAML: %v", err)
 	}
 
@@ -204,7 +207,7 @@ func TestMultilineCronjobs(t *testing.T) {
 
 func TestSinglelineCronjobs(t *testing.T) {
 	var l lagoon.YAML
-	if err := generator.LoadAndUnmarshalLagoonYml("../test-resources/validate-lagoon-yml/cronjobs/singleline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
+	if err := generator.LoadAndUnmarshalLagoonYml("internal/testdata/validate-lagoon-yml/cronjobs/singleline-cronjobs.lagoon.yml", "", "", &l, "", false); err != nil {
 		t.Fatalf("couldn't load and unmarshal YAML: %v", err)
 	}
 

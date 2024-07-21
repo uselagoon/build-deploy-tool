@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/nginxphp/docker-compose.nginx-1.yml
+docker-compose-yaml: internal/testdata/nginxphp/docker-compose.nginx-1.yml
 
 routes:
   autogenerate:
@@ -12,5 +12,5 @@ environment_variables:
 environments:
   main:
     routes:
-      - node:
+      - nginx-php:
           - example.com

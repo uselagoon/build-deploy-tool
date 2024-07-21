@@ -1,0 +1,22 @@
+version: '2'
+services:
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.usecomposeports: true
+    volumes:
+      - .:/app:delegated
+    ports:
+      - '1234'
+      - '8191'
+      - '9001/udp'
+
+networks:
+  amazeeio-network:
+    external: true

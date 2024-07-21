@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/node/docker-compose.mongo.yml
+docker-compose-yaml: internal/testdata/node/docker-compose.mongo.yml
 
 
 environment_variables:

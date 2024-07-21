@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io/fs"
 	"os"
 	"reflect"
 	"testing"
@@ -11,6 +11,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+
+	// changes the testing to source from root so paths to test resources must be defined from repo root
+	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
 
 func TestDBaaSTemplateGeneration(t *testing.T) {
@@ -19,6 +22,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 		args         testdata.TestData
 		templatePath string
 		want         string
+		emptyDir     bool // if no templates are generated, then there will be a .gitkeep file in there
 		wantErr      bool
 	}{
 		{
@@ -28,10 +32,10 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-1",
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-1",
 		},
 		{
 			name: "test2 - mariadb-single to mariadb-dbaas (using mariadb-shared to mariadb-dbaas conversion)",
@@ -40,13 +44,13 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_SERVICE_TYPES", Value: "mariadb:mariadb-shared", Scope: "build"},
 					},
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-2",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-2",
 		},
 		{
 			name: "test3 - multiple mariadb",
@@ -55,10 +59,10 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.multidb.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multidb.yml",
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-3",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-3",
 		},
 		{
 			name: "test4 - mongo",
@@ -67,10 +71,10 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.mongo.yml",
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/dbaas-templates/dbaas-1",
+			want:         "internal/testdata/node/dbaas-templates/dbaas-1",
 		},
 		{
 			name: "test5 - mongo override (the mongo should not generate because it has a mongodb-single override)",
@@ -79,13 +83,13 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/node/lagoon.mongo.yml",
+					LagoonYAML:      "internal/testdata/node/lagoon.mongo.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_SERVICE_TYPES", Value: "mongo:mongodb-single", Scope: "build"},
 					},
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/node/dbaas-templates/dbaas-2",
+			want:         "internal/testdata/node/dbaas-templates/dbaas-2",
 		},
 		{
 			name: "test6 - postgres",
@@ -94,17 +98,31 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "../internal/testdata/complex/lagoon.services.yml",
+					LagoonYAML:      "internal/testdata/complex/lagoon.services.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{Name: "LAGOON_DBAAS_ENVIRONMENT_TYPES", Value: "postgres-15:production-postgres,mongo-4:production-mongo", Scope: "build"},
 					},
 				}, true),
 			templatePath: "testdata/output",
-			want:         "../internal/testdata/complex/dbaas-templates/dbaas-4",
+			want:         "internal/testdata/complex/dbaas-templates/dbaas-4",
+		},
+		{
+			name: "test7 - basic - no dbaas",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+				}, true),
+			templatePath: "testdata/output",
+			emptyDir:     true,
+			want:         "internal/testdata/basic/dbaas-templates/dbaas-1",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
 			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
@@ -128,15 +146,21 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 			if err := DBaaSTemplateGeneration(generator); (err != nil) != tt.wantErr {
 				t.Errorf("DBaaSTemplateGeneration() error = %v, wantErr %v", err, tt.wantErr)
 			}
-			files, err := ioutil.ReadDir(savedTemplates)
+			files, err := os.ReadDir(savedTemplates)
 			if err != nil {
 				t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 			}
-			results, err := ioutil.ReadDir(tt.want)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", tt.want, err)
+			resultSize := 0
+			results := []fs.DirEntry{}
+			if !tt.emptyDir {
+				results, err = os.ReadDir(tt.want)
+				if err != nil {
+					t.Errorf("couldn't read directory %v: %v", tt.want, err)
+				}
+				// .gitkeep file needs to be subtracted to equal 0
+				resultSize = len(results)
 			}
-			if len(files) != len(results) {
+			if len(files) != resultSize {
 				for _, f := range files {
 					f1, err := os.ReadFile(fmt.Sprintf("%s/%s", savedTemplates, f.Name()))
 					if err != nil {
@@ -177,7 +201,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 				t.Errorf("resulting templates do not match")
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars([]helpers.EnvironmentVariable{{Name: "DBAAS_OPERATOR_HTTP"}})
+				helpers.UnsetEnvVars(nil)
 			})
 		})
 	}

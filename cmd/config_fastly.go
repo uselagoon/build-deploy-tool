@@ -9,10 +9,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-var (
-	domainName string
-)
-
 var fastlyConfigGeneration = &cobra.Command{
 	Use:     "fastly",
 	Aliases: []string{"f"},

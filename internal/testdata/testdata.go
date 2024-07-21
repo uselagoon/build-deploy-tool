@@ -3,6 +3,7 @@ package testdata
 import (
 	"encoding/json"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -14,34 +15,47 @@ import (
 
 // basic data structure for test data using the generator
 type TestData struct {
-	AlertContact          string
-	StatusPageID          string
-	ProjectName           string
-	EnvironmentName       string
-	Branch                string
-	PRNumber              string
-	PRHeadBranch          string
-	PRBaseBranch          string
-	EnvironmentType       string
-	BuildType             string
-	ActiveEnvironment     string
-	StandbyEnvironment    string
-	CacheNoCache          string
-	ServiceID             string
-	SecretPrefix          string
-	IngressClass          string
-	ProjectVars           string
-	EnvVars               string
-	ProjectVariables      []lagoon.EnvironmentVariable
-	EnvVariables          []lagoon.EnvironmentVariable
-	LagoonVersion         string
-	LagoonYAML            string
-	ValuesFilePath        string
-	K8UPVersion           string
-	DefaultBackupSchedule string
-	ControllerDevSchedule string
-	ControllerPRSchedule  string
-	Namespace             string
+	AlertContact               string
+	StatusPageID               string
+	BuildName                  string
+	SourceRepository           string
+	Kubernetes                 string
+	ProjectName                string
+	EnvironmentName            string
+	Branch                     string
+	GitSHA                     string
+	PRNumber                   string
+	PRHeadBranch               string
+	PRBaseBranch               string
+	PRHeadSHA                  string
+	PRBaseSHA                  string
+	EnvironmentType            string
+	BuildType                  string
+	ActiveEnvironment          string
+	StandbyEnvironment         string
+	CacheNoCache               string
+	ServiceID                  string
+	SecretPrefix               string
+	IngressClass               string
+	ProjectVars                string
+	EnvVars                    string
+	ProjectVariables           []lagoon.EnvironmentVariable
+	EnvVariables               []lagoon.EnvironmentVariable
+	LagoonVersion              string
+	LagoonYAML                 string
+	ValuesFilePath             string
+	K8UPVersion                string
+	DefaultBackupSchedule      string
+	ControllerDevSchedule      string
+	ControllerPRSchedule       string
+	Namespace                  string
+	ImageReferences            map[string]string
+	ConfigMapSha               string
+	ImageRegistry              string
+	PromotionSourceEnvironment string
+	PrivateRegistryURLS        []string
+	DynamicSecrets             []string
+	DynamicDBaaSSecrets        []string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -128,12 +142,54 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
+	err = os.Setenv("REGISTRY", t.ImageRegistry)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("SOURCE_REPOSITORY", t.SourceRepository)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_BUILD_NAME", t.BuildName)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("KUBERNETES", t.Kubernetes)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PR_HEAD_SHA", t.PRHeadSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PR_BASE_SHA", t.PRBaseSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_GIT_SHA", t.GitSHA)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PROMOTION_SOURCE_ENVIRONMENT", t.PromotionSourceEnvironment)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("DYNAMIC_SECRETS", strings.Join(t.DynamicSecrets, ","))
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("DYNAMIC_DBAAS_SECRETS", strings.Join(t.DynamicDBaaSSecrets, ","))
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
 
 	generator, err := generator.GenerateInput(rootCmd, false)
 	if err != nil {
 		return generator, err
 	}
 	generator.LagoonYAML = t.LagoonYAML
+	generator.ImageReferences = t.ImageReferences
+	generator.ConfigMapSha = t.ConfigMapSha
 	generator.SavedTemplatesPath = templatePath
 	// add dbaasclient overrides for tests
 	generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
@@ -165,7 +221,13 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 				Scope: "internal_system",
 			},
 		},
-		K8UPVersion: "v1",
+		K8UPVersion:      "v1",
+		ConfigMapSha:     "abcdefg1234567890",
+		ImageRegistry:    "harbor.example",
+		BuildName:        "lagoon-build-abcdefg",
+		SourceRepository: "ssh://git@example.com/lagoon-demo.git",
+		Kubernetes:       "remote-cluster1",
+		GitSHA:           "abcdefg123456",
 	}
 	if t.ProjectName != "" {
 		rt.ProjectName = t.ProjectName
@@ -182,6 +244,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	if t.BuildType != "" {
 		rt.BuildType = t.BuildType
 	}
+	if rt.BuildType == "promote" {
+		rt.PromotionSourceEnvironment = "promote-main"
+	}
 	if t.PRNumber != "" {
 		rt.PRNumber = t.PRNumber
 	}
@@ -190,6 +255,12 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.PRBaseBranch != "" {
 		rt.PRBaseBranch = t.PRBaseBranch
+	}
+	if t.PRHeadSHA != "" {
+		rt.PRHeadSHA = t.PRHeadSHA
+	}
+	if t.PRBaseSHA != "" {
+		rt.PRBaseSHA = t.PRBaseSHA
 	}
 	if t.LagoonVersion != "" {
 		rt.LagoonVersion = t.LagoonVersion
@@ -226,12 +297,27 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	if t.ControllerPRSchedule != "" {
 		rt.ControllerPRSchedule = t.ControllerPRSchedule
 	}
+	if t.ImageReferences != nil {
+		rt.ImageReferences = t.ImageReferences
+	}
+	if t.ConfigMapSha != "" {
+		rt.ConfigMapSha = t.ConfigMapSha
+	}
 	// will be deprecated eventually
 	if t.AlertContact != "" {
 		rt.AlertContact = t.AlertContact
 	}
 	if t.StatusPageID != "" {
 		rt.StatusPageID = t.StatusPageID
+	}
+	if t.PrivateRegistryURLS != nil {
+		rt.PrivateRegistryURLS = t.PrivateRegistryURLS
+	}
+	if t.DynamicSecrets != nil {
+		rt.DynamicSecrets = t.DynamicSecrets
+	}
+	if t.DynamicDBaaSSecrets != nil {
+		rt.DynamicDBaaSSecrets = t.DynamicDBaaSSecrets
 	}
 	return rt
 }

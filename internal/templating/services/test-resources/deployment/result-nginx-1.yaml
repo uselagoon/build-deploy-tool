@@ -1,0 +1,279 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: nginx
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: nginx-php
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: nginx
+    lagoon.sh/service-type: nginx-php
+    lagoon.sh/template: nginx-php-0.1.0
+  name: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: nginx
+      app.kubernetes.io/name: nginx-php
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: nginx
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: nginx-php
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: nginx
+        lagoon.sh/service-type: nginx-php
+        lagoon.sh/template: nginx-php-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: NGINX_FASTCGI_PASS
+          value: 127.0.0.1
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: nginx
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/nginx@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /nginx_status
+            port: 50000
+          initialDelaySeconds: 900
+          timeoutSeconds: 3
+        name: nginx
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /nginx_status
+            port: 50000
+          initialDelaySeconds: 1
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+      - env:
+        - name: NGINX_FASTCGI_PASS
+          value: 127.0.0.1
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: SERVICE_NAME
+          value: nginx
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/php@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          tcpSocket:
+            port: 9000
+        name: php
+        ports:
+        - containerPort: 9000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          tcpSocket:
+            port: 9000
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi
+        securityContext: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: nginx-2
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: nginx-php-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: nginx-2
+    lagoon.sh/service-type: nginx-php-persistent
+    lagoon.sh/template: nginx-php-persistent-0.1.0
+  name: nginx-2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: nginx-2
+      app.kubernetes.io/name: nginx-php-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: nginx-2
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: nginx-php-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: nginx-2
+        lagoon.sh/service-type: nginx-php-persistent
+        lagoon.sh/template: nginx-php-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: NGINX_FASTCGI_PASS
+          value: 127.0.0.1
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: nginx-2
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/nginx2@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          failureThreshold: 5
+          httpGet:
+            path: /nginx_status
+            port: 50000
+          initialDelaySeconds: 900
+          timeoutSeconds: 3
+        name: nginx
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /nginx_status
+            port: 50000
+          initialDelaySeconds: 1
+          timeoutSeconds: 3
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /storage/data
+          name: nginx2
+      - env:
+        - name: NGINX_FASTCGI_PASS
+          value: 127.0.0.1
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: SERVICE_NAME
+          value: nginx-2
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/php2@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          tcpSocket:
+            port: 9000
+        name: php
+        ports:
+        - containerPort: 9000
+          name: http
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 2
+          periodSeconds: 10
+          tcpSocket:
+            port: 9000
+        resources:
+          requests:
+            cpu: 10m
+            memory: 100Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /storage/data
+          name: nginx2
+        - mountPath: /storage/data/php
+          name: nginx2-twig
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      initContainers:
+      - command:
+        - sh
+        - -c
+        - "set -e\nSENTINEL=\"/storage/.lagoon-rootless-migration-complete\"\nif !
+          [ -f \"$SENTINEL\" ]; then\n\tfind /storage -exec chown 0:0 {} +\n\tfind
+          /storage -exec chmod a+r,u+w {} +\n\tfind /storage -type d -exec chmod a+x
+          {} +\n\ttouch \"$SENTINEL\"\nfi"
+        image: library/busybox:musl
+        imagePullPolicy: IfNotPresent
+        name: fix-storage-permissions
+        resources: {}
+        securityContext:
+          runAsUser: 0
+        volumeMounts:
+        - mountPath: /storage
+          name: nginx2
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
+      volumes:
+      - name: nginx2
+        persistentVolumeClaim:
+          claimName: nginx2
+      - emptyDir: {}
+        name: nginx2-twig
+status: {}

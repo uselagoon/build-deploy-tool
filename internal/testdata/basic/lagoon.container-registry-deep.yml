@@ -1,0 +1,27 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
+
+container-registries:
+  my-custom-registry:
+    description: "passwords in variable"
+    username: myownregistryuser
+    password: REGISTRY_PASSWORD
+    url: my.own.registry.com
+  my-hardcode-registry:
+    description: "password hardcoded"
+    username: myhardcoderegistryuser
+    password: myhardcoderegistrypassword
+    url: my.hardcode.registry.com
+  my-other-registry:
+    description: "password and username in variable"
+    url: my.other.registry.com
+  dockerhub:
+    description: "password and username in variable, default docker.io url"
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com

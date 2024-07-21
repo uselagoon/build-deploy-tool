@@ -1,4 +1,4 @@
-docker-compose-yaml: ../internal/testdata/node/docker-compose.yml
+docker-compose-yaml: internal/testdata/node/docker-compose.yml
 
 routes:
   autogenerate:
@@ -55,7 +55,7 @@ environments:
 
   pr-4841:
     routes:
-      - nginx:
+      - node:
         - performance.example.com
 
   alternativename:

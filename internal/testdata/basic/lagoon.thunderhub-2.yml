@@ -1,0 +1,1 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.thunderhub-2.yml

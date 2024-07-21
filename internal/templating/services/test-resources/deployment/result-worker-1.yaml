@@ -1,0 +1,176 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: worker
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: worker
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: worker
+    lagoon.sh/service-type: worker
+    lagoon.sh/template: worker-0.1.0
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: worker
+      app.kubernetes.io/name: worker
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: worker
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: worker
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: worker
+        lagoon.sh/service-type: worker
+        lagoon.sh/template: worker-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: worker
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/worker@latest
+        imagePullPolicy: Always
+        name: worker
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: worker-persist
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: worker-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: worker-persist
+    lagoon.sh/service-type: worker-persistent
+    lagoon.sh/template: worker-persistent-0.1.0
+  name: worker-persist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: worker-persist
+      app.kubernetes.io/name: worker-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: worker-persist
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: worker-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: worker-persist
+        lagoon.sh/service-type: worker-persistent
+        lagoon.sh/template: worker-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: worker-persist
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/worker-persist@latest
+        imagePullPolicy: Always
+        name: worker
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}

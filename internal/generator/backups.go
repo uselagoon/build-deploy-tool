@@ -21,7 +21,6 @@ const (
 
 func generateBackupValues(
 	buildValues *BuildValues,
-	lYAML *lagoon.YAML,
 	mergedVariables []lagoon.EnvironmentVariable,
 	debug bool,
 ) error {
@@ -138,20 +137,20 @@ func generateBackupValues(
 	}
 	// :end
 
-	if lYAML.BackupRetention.Production.Hourly != nil && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.PruneRetention.Hourly = *lYAML.BackupRetention.Production.Hourly
+	if buildValues.LagoonYAML.BackupRetention.Production.Hourly != nil && buildValues.EnvironmentType == "production" {
+		buildValues.Backup.PruneRetention.Hourly = *buildValues.LagoonYAML.BackupRetention.Production.Hourly
 	}
-	if lYAML.BackupRetention.Production.Daily != nil && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.PruneRetention.Daily = *lYAML.BackupRetention.Production.Daily
+	if buildValues.LagoonYAML.BackupRetention.Production.Daily != nil && buildValues.EnvironmentType == "production" {
+		buildValues.Backup.PruneRetention.Daily = *buildValues.LagoonYAML.BackupRetention.Production.Daily
 	}
-	if lYAML.BackupRetention.Production.Weekly != nil && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.PruneRetention.Weekly = *lYAML.BackupRetention.Production.Weekly
+	if buildValues.LagoonYAML.BackupRetention.Production.Weekly != nil && buildValues.EnvironmentType == "production" {
+		buildValues.Backup.PruneRetention.Weekly = *buildValues.LagoonYAML.BackupRetention.Production.Weekly
 	}
-	if lYAML.BackupRetention.Production.Monthly != nil && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.PruneRetention.Monthly = *lYAML.BackupRetention.Production.Monthly
+	if buildValues.LagoonYAML.BackupRetention.Production.Monthly != nil && buildValues.EnvironmentType == "production" {
+		buildValues.Backup.PruneRetention.Monthly = *buildValues.LagoonYAML.BackupRetention.Production.Monthly
 	}
-	if lYAML.BackupSchedule.Production != "" && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.BackupSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, lYAML.BackupSchedule.Production)
+	if buildValues.LagoonYAML.BackupSchedule.Production != "" && buildValues.EnvironmentType == "production" {
+		buildValues.Backup.BackupSchedule, err = helpers.ConvertCrontab(buildValues.Namespace, buildValues.LagoonYAML.BackupSchedule.Production)
 		if err != nil {
 			return fmt.Errorf("unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}
