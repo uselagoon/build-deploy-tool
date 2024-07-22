@@ -25,6 +25,7 @@ type TestData struct {
 	Branch                     string
 	GitSHA                     string
 	PRNumber                   string
+	PRTitle                    string
 	PRHeadBranch               string
 	PRBaseBranch               string
 	PRHeadSHA                  string
@@ -81,6 +82,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("PR_NUMBER", t.PRNumber)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("PR_TITLE", t.PRTitle)
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -249,6 +254,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.PRNumber != "" {
 		rt.PRNumber = t.PRNumber
+	}
+	if t.PRTitle != "" {
+		rt.PRTitle = t.PRTitle
 	}
 	if t.PRHeadBranch != "" {
 		rt.PRHeadBranch = t.PRHeadBranch
