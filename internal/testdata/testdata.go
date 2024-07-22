@@ -57,6 +57,7 @@ type TestData struct {
 	PrivateRegistryURLS        []string
 	DynamicSecrets             []string
 	DynamicDBaaSSecrets        []string
+	ImageCacheBuildArgsJSON    string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -184,6 +185,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("DYNAMIC_DBAAS_SECRETS", strings.Join(t.DynamicDBaaSSecrets, ","))
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_CACHE_BUILD_ARGS", t.ImageCacheBuildArgsJSON)
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -326,6 +331,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.DynamicDBaaSSecrets != nil {
 		rt.DynamicDBaaSSecrets = t.DynamicDBaaSSecrets
+	}
+	if t.ImageCacheBuildArgsJSON != "" {
+		rt.ImageCacheBuildArgsJSON = t.ImageCacheBuildArgsJSON
 	}
 	return rt
 }

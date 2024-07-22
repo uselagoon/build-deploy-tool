@@ -64,6 +64,7 @@ type GeneratorInput struct {
 	CI                         bool
 	DynamicSecrets             []string
 	DynamicDBaaSSecrets        []string
+	ImageCacheBuildArgsJSON    string
 }
 
 func NewGenerator(
@@ -108,6 +109,7 @@ func NewGenerator(
 	prBaseSHA := helpers.GetEnv("PR_BASE_SHA", generator.PRBaseSHA, generator.Debug)
 	dynamicSecrets := helpers.GetEnv("DYNAMIC_SECRETS", strings.Join(generator.DynamicSecrets, ","), generator.Debug)
 	dynamicDBaaSSecrets := helpers.GetEnv("DYNAMIC_DBAAS_SECRETS", strings.Join(generator.DynamicDBaaSSecrets, ","), generator.Debug)
+	imageCacheBuildArgsJSON := helpers.GetEnv("LAGOON_CACHE_BUILD_ARGS", generator.ImageCacheBuildArgsJSON, generator.Debug)
 	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
 	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 
@@ -407,6 +409,13 @@ func NewGenerator(
 	err = generateServicesFromDockerCompose(&buildValues, generator.IgnoreNonStringKeyErrors, generator.IgnoreMissingEnvFiles, generator.Debug)
 	if err != nil {
 		return nil, err
+	}
+
+	if imageCacheBuildArgsJSON != "" {
+		err = json.Unmarshal([]byte(imageCacheBuildArgsJSON), &buildValues.ImageCacheBuildArguments)
+		if err != nil {
+			return nil, err
+		}
 	}
 	buildValues.ImageBuildArguments = collectImageBuildArguments(buildValues)
 	/* end compose->service configuration */

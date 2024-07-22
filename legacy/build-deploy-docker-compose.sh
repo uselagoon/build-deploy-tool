@@ -350,6 +350,14 @@ DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.d
 # Load all Services that are defined
 COMPOSE_SERVICES=($(cat $DOCKER_COMPOSE_YAML | shyaml keys services))
 
+##############################################
+### CACHE IMAGE LIST GENERATION
+##############################################
+
+# get a list of the images in the deployments for seeing image cache if required
+export LAGOON_CACHE_BUILD_ARGS=$(kubectl -n ${NAMESPACE} get deployments -o yaml -l 'lagoon.sh/service' \
+  | yq -o json e '.items[].spec.template.spec.containers[].image | capture("^(?P<image>.+\/.+\/.+\/(?P<name>.+)\@.*)$")' \
+  | jq -sMrc)
 
 # Figure out which services should we handle
 SERVICE_TYPES=()
@@ -577,13 +585,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Regstiry Login" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
-
-##############################################
-### CACHE IMAGE LIST GENERATION
-##############################################
-
-LAGOON_CACHE_BUILD_ARGS=()
-readarray LAGOON_CACHE_BUILD_ARGS < <(kubectl -n ${NAMESPACE} get deployments -o yaml -l 'lagoon.sh/service' | yq e '.items[].spec.template.spec.containers[].image | capture("^(?P<image>.+\/.+\/.+\/(?P<name>.+)\@.*)$") | "LAGOON_CACHE_" + .name + "=" + .image' -)
 
 
 ##############################################

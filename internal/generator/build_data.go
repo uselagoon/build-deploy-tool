@@ -81,5 +81,9 @@ func collectImageBuildArguments(buildValues BuildValues) map[string]string {
 			buildArgs[fmt.Sprintf("%s_IMAGE", strings.ToUpper(service.Name))] = service.ImageBuild.TemporaryImage
 		}
 	}
+	// add lagoon image cache build arguments
+	for _, icba := range buildValues.ImageCacheBuildArguments {
+		buildArgs[fmt.Sprintf("LAGOON_CACHE_%s", icba.Name)] = icba.Image
+	}
 	return buildArgs
 }
