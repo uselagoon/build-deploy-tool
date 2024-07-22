@@ -3,7 +3,6 @@ package cmd
 import (
 	"encoding/base64"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"reflect"
 	"strings"
@@ -449,11 +448,11 @@ func TestTemplateRoutes(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				files, err := ioutil.ReadDir(savedTemplates)
+				files, err := os.ReadDir(savedTemplates)
 				if err != nil {
 					t.Errorf("couldn't read directory %v: %v", savedTemplates, err)
 				}
-				results, err := ioutil.ReadDir(tt.want)
+				results, err := os.ReadDir(tt.want)
 				if err != nil {
 					t.Errorf("couldn't read directory %v: %v", tt.want, err)
 				}
