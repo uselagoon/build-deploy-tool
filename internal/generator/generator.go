@@ -87,7 +87,7 @@ func NewGenerator(
 	environmentName := helpers.GetEnv("ENVIRONMENT", generator.EnvironmentName, generator.Debug)
 	branch := helpers.GetEnv("BRANCH", generator.Branch, generator.Debug)
 	prNumber := helpers.GetEnv("PR_NUMBER", generator.PRNumber, generator.Debug)
-	prTitle := helpers.GetEnv("PR_NUMBER", generator.PRTitle, generator.Debug)
+	prTitle := helpers.GetEnv("PR_TITLE", generator.PRTitle, generator.Debug)
 	prHeadBranch := helpers.GetEnv("PR_HEAD_BRANCH", generator.PRHeadBranch, generator.Debug)
 	prBaseBranch := helpers.GetEnv("PR_BASE_BRANCH", generator.PRBaseBranch, generator.Debug)
 	environmentType := helpers.GetEnv("ENVIRONMENT_TYPE", generator.EnvironmentType, generator.Debug)
