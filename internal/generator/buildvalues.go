@@ -77,6 +77,7 @@ type BuildValues struct {
 	RoutesAutogeneratePrefixes    []string                     `json:"routesAutogeneratePrefixes"`
 	BackupsEnabled                bool                         `json:"backupsEnabled"`
 	RouteQuota                    *int                         `json:"routeQuota"`
+	ImageCacheBuildArguments      []ImageCacheBuildArguments   `json:"imageCacheBuildArgs"`
 }
 
 type Resources struct {
@@ -136,6 +137,11 @@ type DynamicSecretVolumes struct {
 type DynamicSecret struct {
 	SecretName string `json:"secretName"`
 	Optional   bool   `json:"optional"`
+}
+
+type ImageCacheBuildArguments struct {
+	Image string `json:"image"`
+	Name  string `json:"name"`
 }
 
 // ServiceValues is the values for a specific service used by a lagoon build

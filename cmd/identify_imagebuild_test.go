@@ -563,6 +563,45 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test9 basic deployment with cache args",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					Namespace:               "example-project-main",
+					ProjectName:             "example-project",
+					EnvironmentName:         "main",
+					Branch:                  "main",
+					LagoonYAML:              "internal/testdata/basic/lagoon.yml",
+					ImageCacheBuildArgsJSON: `[{"image":"harbor.example/example-project/main/node@sha256:e90daba405cbf33bab23fe8a021146811b2c258df5f2afe7dadc92c0778eef45","name":"node"}]`,
+				}, true),
+			want: imageBuild{
+				BuildKit: false,
+				BuildArguments: map[string]string{
+					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":               "example-project",
+					"LAGOON_ENVIRONMENT":           "main",
+					"LAGOON_ENVIRONMENT_TYPE":      "production",
+					"LAGOON_BUILD_TYPE":            "branch",
+					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":            "remote-cluster1",
+					"LAGOON_GIT_SHA":               "abcdefg123456",
+					"LAGOON_GIT_BRANCH":            "main",
+					"NODE_IMAGE":                   "example-project-main-node",
+					"LAGOON_CACHE_node":            "harbor.example/example-project/main/node@sha256:e90daba405cbf33bab23fe8a021146811b2c258df5f2afe7dadc92c0778eef45",
+				},
+				Images: []imageBuilds{
+					{
+						Name: "node",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/node:latest",
+							Context:        "internal/testdata/basic/docker",
+							DockerFile:     "basic.dockerfile",
+							TemporaryImage: "example-project-main-node",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
