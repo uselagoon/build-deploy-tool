@@ -97,6 +97,25 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - 
+        name: Cache
+        uses: actions/cache@v4
+        id: cache
+        with:
+          path: |
+            go-mod
+            go-build
+          key: cache-${{ hashFiles('**/go.mod') }}
+      - 
+        name: inject cache into docker
+        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+        with:
+          cache-map: |
+            {
+              "go-mod": "/go/pkg/mod",
+              "go-build": "/root/.cache/go-build"
+            }
+          skip-extraction: ${{ steps.cache.outputs.cache-hit }}
       -
         name: Build and push
         uses: docker/build-push-action@v5
@@ -107,6 +126,8 @@ jobs:
             "VERSION=${{ env.VERSION }}"
             "BUILD=${{ env.BUILD }}"
             "GO_VER=${{ matrix.goversion }}"
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
