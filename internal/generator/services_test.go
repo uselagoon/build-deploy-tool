@@ -2,13 +2,14 @@ package generator
 
 import (
 	"encoding/json"
+	"reflect"
+	"testing"
+	"time"
+
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"reflect"
-	"testing"
-	"time"
 )
 
 func Test_composeToServiceValues(t *testing.T) {
@@ -755,7 +756,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					},
 				},
 			},
-			want: ServiceValues{
+			want: &ServiceValues{
 				Name:                       "nginx",
 				OverrideName:               "nginx",
 				Type:                       "nginx",
@@ -1231,7 +1232,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					Image: "uselagoon/fake-redis:7",
 				},
 			},
-			want:    ServiceValues{},
+			want:    nil,
 			wantErr: true,
 		},
 	}

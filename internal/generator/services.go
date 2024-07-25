@@ -286,11 +286,11 @@ func composeToServiceValues(
 			}
 		}
 
-		baseimage := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
+		baseimage := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
 		if baseimage != "" {
 			// First, let's ensure that the structure of the base image is valid
 			if !reference.ReferenceRegexp.MatchString(baseimage) {
-				return ServiceValues{}, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", composeService, baseimage)
+				return nil, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", composeService, baseimage)
 			}
 			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseimage)
 		}

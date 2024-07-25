@@ -1,0 +1,51 @@
+version: '2'
+services:
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.volumes.files.path: /app/files/
+      lagoon.volumes.config.path: /config
+      lagoon.volumes.node.path: /data
+    volumes:
+      - node:/data
+      - files:/app/files
+      - config:/config
+
+  mariadb:
+    image: uselagoon/mariadb-10.5-drupal:latest
+    labels:
+      lagoon.type: none
+    volumes:
+      - db:/var/lib/mysql
+
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  node:
+    labels:
+      lagoon.type: persistent
+  config:
+    labels:
+      lagoon.type: persistent
+  files:
+    labels:
+      lagoon.type: persistent
+      lagoon.persistent.size: 10Gi
+  db:
+    labels:
+      # this label is not technically needed, but explicit
+      lagoon.type: none 
+  notused:
+    labels:
+      # will create a pvc, but as there is no `lagoon.volumes.notused.path` defined anywhere, it will not be mounted
+      lagoon.type: persistent
+  logs:
+    {}

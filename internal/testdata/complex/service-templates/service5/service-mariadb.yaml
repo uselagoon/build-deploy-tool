@@ -7,25 +7,25 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: node
+    app.kubernetes.io/instance: mariadb
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/name: mariadb-single
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: node
-    lagoon.sh/service-type: basic-persistent
-    lagoon.sh/template: basic-persistent-0.1.0
-  name: node
+    lagoon.sh/service: mariadb
+    lagoon.sh/service-type: mariadb-single
+    lagoon.sh/template: mariadb-single-0.1.0
+  name: mariadb
 spec:
   ports:
-  - name: http
-    port: 3000
+  - name: 3306-tcp
+    port: 3306
     protocol: TCP
-    targetPort: http
+    targetPort: 3306
   selector:
-    app.kubernetes.io/instance: node
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/instance: mariadb
+    app.kubernetes.io/name: mariadb-single
 status:
   loadBalancer: {}

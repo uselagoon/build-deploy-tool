@@ -7,42 +7,47 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: node
+    app.kubernetes.io/instance: mariadb
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/name: mariadb-single
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: node
-    lagoon.sh/service-type: basic-persistent
-    lagoon.sh/template: basic-persistent-0.1.0
-  name: node
+    lagoon.sh/service: mariadb
+    lagoon.sh/service-type: mariadb-single
+    lagoon.sh/template: mariadb-single-0.1.0
+  name: mariadb
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: node
-      app.kubernetes.io/name: basic-persistent
-  strategy: {}
+      app.kubernetes.io/instance: mariadb
+      app.kubernetes.io/name: mariadb-single
+  strategy:
+    type: Recreate
   template:
     metadata:
       annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c 'mysqldump --max-allowed-packet=1G
+          --events --routines --quick --add-locks --no-autocommit --single-transaction
+          --all-databases'
+        k8up.syn.tools/file-extension: .mariadb.sql
         lagoon.sh/branch: main
         lagoon.sh/configMapSha: abcdefg1234567890
         lagoon.sh/version: v2.7.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: node
+        app.kubernetes.io/instance: mariadb
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: basic-persistent
+        app.kubernetes.io/name: mariadb-single
         lagoon.sh/buildType: branch
         lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: node
-        lagoon.sh/service-type: basic-persistent
-        lagoon.sh/template: basic-persistent-0.1.0
+        lagoon.sh/service: mariadb
+        lagoon.sh/service-type: mariadb-single
+        lagoon.sh/template: mariadb-single-0.1.0
     spec:
       containers:
       - env:
@@ -50,26 +55,26 @@ spec:
           value: abcdefg123456
         - name: CRONJOBS
         - name: SERVICE_NAME
-          value: node
+          value: mariadb
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        image: harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
         livenessProbe:
-          initialDelaySeconds: 60
+          initialDelaySeconds: 120
+          periodSeconds: 5
           tcpSocket:
-            port: 3000
-          timeoutSeconds: 10
-        name: basic
+            port: 3306
+        name: mariadb-single
         ports:
-        - containerPort: 3000
-          name: http
+        - containerPort: 3306
+          name: 3306-tcp
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
           tcpSocket:
-            port: 3000
+            port: 3306
           timeoutSeconds: 1
         resources:
           requests:
@@ -77,24 +82,14 @@ spec:
             memory: 10Mi
         securityContext: {}
         volumeMounts:
-        - mountPath: /config
-          name: custom-config
-        - mountPath: /app/files/
-          name: custom-files
-        - mountPath: /data
-          name: node
-      enableServiceLinks: false
+        - mountPath: /var/lib/mysql
+          name: mariadb
+      enableServiceLinks: true
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       volumes:
-      - name: custom-config
+      - name: mariadb
         persistentVolumeClaim:
-          claimName: custom-config
-      - name: custom-files
-        persistentVolumeClaim:
-          claimName: custom-files
-      - name: node
-        persistentVolumeClaim:
-          claimName: node
+          claimName: mariadb
 status: {}

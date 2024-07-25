@@ -1,0 +1,43 @@
+version: '2'
+services:
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: .
+      dockerfile: node.dockerfile
+    labels:
+      lagoon.type: node
+    volumes:
+      - node:/app
+      - config:/config
+      - files:/files
+    environment:
+      - LAGOON_LOCALDEV_HTTP_PORT=3000
+      - LAGOON_ROUTE=http://node.docker.amazee.io
+
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  node:
+    labels:
+      lagoon.type: persistent
+  config:
+    labels:
+      lagoon.type: persistent
+  files:
+    labels:
+      lagoon.type: persistent
+      lagoon.persistent.size: 10Gi
+  db:
+    labels:
+      # this label is not technically needed, but explicit
+      lagoon.type: none 
+  notused:
+    labels:
+      lagoon.type: persistent
+  logs:
+    {}
