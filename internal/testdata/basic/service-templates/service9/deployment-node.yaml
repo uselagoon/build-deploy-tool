@@ -7,23 +7,23 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: redis
+    app.kubernetes.io/instance: node
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: redis
+    app.kubernetes.io/name: basic
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: redis
-    lagoon.sh/service-type: redis
-    lagoon.sh/template: redis-0.1.0
-  name: redis
+    lagoon.sh/service: node
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: node
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: redis
-      app.kubernetes.io/name: redis
+      app.kubernetes.io/instance: node
+      app.kubernetes.io/name: basic
   strategy: {}
   template:
     metadata:
@@ -33,55 +33,68 @@ spec:
         lagoon.sh/version: v2.7.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: redis
+        app.kubernetes.io/instance: node
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: redis
+        app.kubernetes.io/name: basic
         lagoon.sh/buildType: branch
         lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: redis
-        lagoon.sh/service-type: redis
-        lagoon.sh/template: redis-0.1.0
+        lagoon.sh/service: node
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
     spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
-          value: "0000000000000000000000000000000000000000"
+          value: abcdefg123456
         - name: CRONJOBS
         - name: SERVICE_NAME
-          value: redis
+          value: node
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
         livenessProbe:
-          initialDelaySeconds: 120
+          initialDelaySeconds: 60
           tcpSocket:
-            port: 6379
-          timeoutSeconds: 1
-        name: redis
+            port: 3000
+          timeoutSeconds: 10
+        name: basic
         ports:
-        - containerPort: 6379
-          name: 6379-tcp
+        - containerPort: 3000
+          name: http
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 1
           tcpSocket:
-            port: 6379
+            port: 3000
           timeoutSeconds: 1
         resources:
           requests:
             cpu: 10m
             memory: 10Mi
         securityContext: {}
+        volumeMounts:
+        - mountPath: /data
+          name: custom-node
+        - mountPath: /config
+          name: custom-config
+        - mountPath: /app/files/
+          name: custom-files
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
-      securityContext:
-        fsGroup: 10001
-        runAsGroup: 0
-        runAsUser: 10000
+      volumes:
+      - name: custom-node
+        persistentVolumeClaim:
+          claimName: custom-node
+      - name: custom-config
+        persistentVolumeClaim:
+          claimName: custom-config
+      - name: custom-files
+        persistentVolumeClaim:
+          claimName: custom-files
 status: {}

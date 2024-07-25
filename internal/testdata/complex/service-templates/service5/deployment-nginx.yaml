@@ -19,7 +19,7 @@ metadata:
     lagoon.sh/template: nginx-php-persistent-0.1.0
   name: nginx
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: nginx
@@ -106,7 +106,7 @@ spec:
         name: php
         ports:
         - containerPort: 9000
-          name: http
+          name: php
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 2

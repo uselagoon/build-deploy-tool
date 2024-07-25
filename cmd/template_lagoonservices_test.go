@@ -101,32 +101,6 @@ func TestTemplateLagoonServices(t *testing.T) {
 			want:         "internal/testdata/complex/service-templates/service1",
 		},
 		{
-			name: "test2b nginx-php deployment - rootless",
-			args: testdata.GetSeedData(
-				testdata.TestData{
-					ProjectName:     "example-project",
-					EnvironmentName: "main",
-					Branch:          "main",
-					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
-					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-					},
-					ProjectVariables: []lagoon.EnvironmentVariable{
-						{
-							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
-							Value: "enabled",
-							Scope: "build",
-						},
-					},
-				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service2",
-		},
-		{
 			name: "test2b nginx-php deployment - rootless workloads enabled",
 			args: testdata.GetSeedData(
 				testdata.TestData{
@@ -150,7 +124,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service5",
+			want:         "internal/testdata/complex/service-templates/service2",
 		},
 		{
 			name: "test2c nginx-php deployment - spot workloads enabled",
@@ -364,6 +338,59 @@ func TestTemplateLagoonServices(t *testing.T) {
 				}, true),
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/service8",
+		},
+		{
+			name: "test11 basic-persistent deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service7",
+		},
+		{
+			name: "test12 basic deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-2.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service9",
+		},
+		{
+			name: "test13 complex deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"nginx2":  "harbor.example/example-project/main/nginx2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php2":    "harbor.example/example-project/main/php2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/service5",
 		},
 	}
 	for _, tt := range tests {
