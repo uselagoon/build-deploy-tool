@@ -27,6 +27,7 @@ var postgresSingle = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "postgres-single",
 		Container: corev1.Container{

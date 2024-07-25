@@ -7,7 +7,8 @@ import (
 )
 
 var worker = ServiceType{
-	Name: "worker",
+	Name:                   "worker",
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "worker",
 		Volumes: []corev1.Volume{
@@ -56,7 +57,9 @@ var worker = ServiceType{
 }
 
 var workerPersistent = ServiceType{
-	Name: "worker-persistent",
+	Name:                     "worker-persistent",
+	ConsumesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	PrimaryContainer: ServiceContainer{
 		Name:      worker.PrimaryContainer.Name,
 		Container: worker.PrimaryContainer.Container,

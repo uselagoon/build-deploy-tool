@@ -25,6 +25,7 @@ var basic = ServiceType{
 			},
 		},
 	},
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "basic",
 		Container: corev1.Container{
@@ -73,8 +74,10 @@ var basic = ServiceType{
 
 // contains all the persistent type overrides that the basic service doesn't have
 var basicPersistent = ServiceType{
-	Name:  "basic-persistent",
-	Ports: basic.Ports,
+	Name:                     "basic-persistent",
+	Ports:                    basic.Ports,
+	ProvidesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	PrimaryContainer: ServiceContainer{
 		Name:      basic.PrimaryContainer.Name,
 		Container: basic.PrimaryContainer.Container,

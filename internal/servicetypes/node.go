@@ -23,6 +23,7 @@ var node = ServiceType{
 			},
 		},
 	},
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "node",
 		Container: corev1.Container{
@@ -70,8 +71,10 @@ var node = ServiceType{
 }
 
 var nodePersistent = ServiceType{
-	Name:  "node-persistent",
-	Ports: node.Ports,
+	Name:                     "node-persistent",
+	Ports:                    node.Ports,
+	ProvidesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	PrimaryContainer: ServiceContainer{
 		Name:      node.PrimaryContainer.Name,
 		Container: node.PrimaryContainer.Container,

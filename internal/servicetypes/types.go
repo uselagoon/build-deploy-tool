@@ -6,15 +6,18 @@ import (
 )
 
 type ServiceType struct {
-	Name               string
-	Ports              ServicePorts
-	Volumes            ServiceVolume
-	Strategy           appsv1.DeploymentStrategy
-	PrimaryContainer   ServiceContainer
-	InitContainer      ServiceContainer
-	SecondaryContainer ServiceContainer
-	PodSecurityContext ServicePodSecurityContext
-	EnableServiceLinks bool
+	Name                     string
+	Ports                    ServicePorts
+	Volumes                  ServiceVolume
+	Strategy                 appsv1.DeploymentStrategy
+	PrimaryContainer         ServiceContainer
+	InitContainer            ServiceContainer
+	SecondaryContainer       ServiceContainer
+	PodSecurityContext       ServicePodSecurityContext
+	EnableServiceLinks       bool
+	ProvidesPersistentVolume bool
+	ConsumesPersistentVolume bool
+	AllowAdditionalVolumes   bool
 }
 
 type ServicePodSecurityContext struct {
