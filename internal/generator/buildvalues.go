@@ -65,7 +65,7 @@ type BuildValues struct {
 	CronjobsDisabled              bool                         `json:"cronjobsDisabled" description:"this controls whether cronjobs are enabled for this environment or not"`
 	FeatureFlags                  map[string]bool              `json:"-" description:"these are used by templating systems to turn on or off certain functionality based on if feature flags are defined"`
 	ImageRegistry                 string                       `json:"imageRegistry" description:"the image registry in use for this environment, usually harbor"`
-	DockerBuildKit                bool                         `json:"dockerBuildKit" description:"the flag to determine if docker buildkit is used"`
+	DockerBuildKit                *bool                        `json:"dockerBuildKit" description:"the flag to determine if docker buildkit is used"`
 	ImageBuildArguments           map[string]string            `json:"imageBuildArguments" description:"where the calculated image build arguments are stored"`
 	EnvironmentVariables          []lagoon.EnvironmentVariable `json:"environmentVariables" description:"the merged project and environment variables for this environment"`
 	LagoonYAML                    lagoon.YAML                  `json:"lagoonYAML" description:"the unmarshalled lagoon yaml file"`
