@@ -65,20 +65,22 @@ func GeneratePVCTemplate(
 	}
 	// check for any additional volumes
 	for _, vol := range buildValues.Volumes {
-		exists := false
-		// check if an existing pvc that will be created as a default persistent volume hasn't also been defined as an additional volume
-		// this will prevent creating another volume named the same
-		for _, cpvc := range result {
-			if lagoon.GetLagoonVolumeName(cpvc.Name) == vol.Name {
-				exists = true
+		if vol.Create {
+			exists := false
+			// check if an existing pvc that will be created as a default persistent volume hasn't also been defined as an additional volume
+			// this will prevent creating another volume named the same
+			for _, cpvc := range result {
+				if lagoon.GetLagoonVolumeName(cpvc.Name) == vol.Name {
+					exists = true
+				}
 			}
-		}
-		if !exists {
-			pvc, err := generateAdditionalPVC(buildValues, vol, labels, annotations)
-			if err != nil {
-				return nil, err
+			if !exists {
+				pvc, err := generateAdditionalPVC(buildValues, vol, labels, annotations)
+				if err != nil {
+					return nil, err
+				}
+				result = append(result, *pvc)
 			}
-			result = append(result, *pvc)
 		}
 	}
 	return result, nil

@@ -383,7 +383,7 @@ func composeToServiceValues(
 
 		// calculate if this service needs any additional volumes attached from the calculated build volumes
 		// additional volumes can only be attached to certain
-		serviceVolumes, err := calculateServiceVolumes(buildValues.Volumes, lagoonType, servicePersistentName, composeServiceValues.Labels)
+		serviceVolumes, err := calculateServiceVolumes(buildValues, lagoonType, servicePersistentName, composeServiceValues.Labels)
 		if err != nil {
 			return nil, err
 		}

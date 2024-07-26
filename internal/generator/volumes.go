@@ -88,10 +88,11 @@ func composeToVolumeValues(
 
 // calculateServiceVolumes checks if a service type is allowed to have additional volumes attached, and if any volumes from docker compose
 // are to be attached to this service or not
-func calculateServiceVolumes(buildVolumes []ComposeVolume, lagoonType, servicePersistentName string, serviceLabels composetypes.Labels) ([]ServiceVolume, error) {
+func calculateServiceVolumes(buildValues *BuildValues, lagoonType, servicePersistentName string, serviceLabels composetypes.Labels) ([]ServiceVolume, error) {
 	serviceVolumes := []ServiceVolume{}
 	if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
-		for _, vol := range buildVolumes {
+		for i := 0; i < len(buildValues.Volumes); i++ {
+			vol := &buildValues.Volumes[i]
 			volName := lagoon.GetVolumeNameFromLagoonVolume(vol.Name)
 			// if there is a `lagoon.volumes.<xyx>.path` for a custom volume that matches the default persistent volume
 			// don't add it again as a service volume
@@ -100,9 +101,11 @@ func calculateServiceVolumes(buildVolumes []ComposeVolume, lagoonType, servicePe
 				if volumePath != "" {
 					if val.AllowAdditionalVolumes {
 						sVol := ServiceVolume{
-							ComposeVolume: vol,
+							ComposeVolume: *vol,
 							Path:          volumePath,
 						}
+						// if the volume is attached to a service, then add the flag to create the persistent volume claim
+						vol.Create = true
 						serviceVolumes = append(serviceVolumes, sVol)
 					} else {
 						// if the service type is not allowed additional volumes, return an error

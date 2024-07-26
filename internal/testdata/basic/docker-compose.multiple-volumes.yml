@@ -47,7 +47,7 @@ volumes:
       lagoon.type: none 
   notused:
     labels:
-      # will create a pvc, but as there is no `lagoon.volumes.notused.path` defined anywhere, it will not be mounted
+      # as there is no `lagoon.volumes.notused.path` defined anywhere, it will not be created or mounted
       lagoon.type: persistent
   logs:
     {}
