@@ -46,7 +46,7 @@ func generateImageBuild(buildValues BuildValues, composeServiceValues composetyp
 			// no dockerfile determined, this must be a pull through image
 			if composeServiceValues.Image == "" {
 				return imageBuild, fmt.Errorf(
-					"defined Dockerfile or Image for service %s defined", composeService,
+					"no defined Dockerfile or Image for service %s", composeService,
 				)
 			}
 			// check docker-compose override image
