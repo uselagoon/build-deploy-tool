@@ -1311,6 +1311,12 @@ yq3 write -i -- /kubectl-build-deploy/values.yaml 'configMapSha' $CONFIG_MAP_SHA
 ### PUSH IMAGES TO REGISTRY
 ##############################################
 
+# set up image deprecation warnings
+DEPRECATED_IMAGE_WARNINGS="false"
+declare -A DEPRECATED_IMAGE_NAME
+declare -A DEPRECATED_IMAGE_STATUS
+declare -A DEPRECATED_IMAGE_SUGGESTION
+
 # pullrequest/branch start
 if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
 
@@ -1327,7 +1333,17 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
 
     # store the resulting image hash
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
+    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
+
+    # check if the pull through image is deprecated
+    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$PULL_IMAGE
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" // false')
+    fi
   done
 
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
@@ -1340,6 +1356,16 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     # this file is used to perform parallel image pushes next
     docker tag ${TEMPORARY_IMAGE_NAME} ${PUSH_IMAGE}
     echo "docker push ${PUSH_IMAGE}" >> /kubectl-build-deploy/lagoon/push
+
+    # check if the built image is deprecated
+    DOCKER_IMAGE_OUTPUT=$(docker inspect ${TEMPORARY_IMAGE_NAME})
+    DEPRECATED_STATUS=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$TEMPORARY_IMAGE_NAME
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" // false')
+    fi
   done
 
   # If we have images to push to the registry, let's do so
@@ -1372,6 +1398,36 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
+
+##############################################
+### Check for deprecated images
+##############################################
+
+if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Deprecated Image Warnings" "deprecatedImages"
+  ((++BUILD_WARNING_COUNT))
+  echo ">> Lagoon detected deprecated images during the build"
+  echo "  This indicates that an image you're using in the build has been flagged as deprecated."
+  echo "  You should stop using these images as soon as possible."
+  echo "  If the deprecated image has a suggested replacement, it will be mentioned in the warning."
+  echo ""
+  for IMAGE_NAME in "${!DEPRECATED_IMAGE_NAME[@]}"
+  do
+    echo ">> An image (or the image) used in the build for ${DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]} is deprecated"
+    echo "  The image used has been marked ${DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]}"
+    if [ "${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}" != "false" ]; then
+      echo "  An image replacement that could be used has been suggested as ${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}"
+    else
+      echo "  No replacement image has been suggested"
+    fi
+    echo ""
+  done
+
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
+fi
+
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
 
