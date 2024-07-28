@@ -1,6 +1,5 @@
 #!/bin/bash
 
-set +x
 # get the buildname from the pod, $HOSTNAME contains this in the running pod, so we can use this
 # set it to something usable here
 export LAGOON_BUILD_NAME=$HOSTNAME
@@ -200,7 +199,7 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
   kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy=${DOCKER_COMPOSE_YAML}
 fi
 
-set +ex
+set +e
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
 previousStepEnd=${currentStepEnd}
@@ -307,9 +306,8 @@ https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
 ##############################################"
   exit 1
 fi
-set -ex
+set -e
 
-set +x
 # Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
 # aren't in build-deploy-tool.
 if ! lagoon-linter; then
@@ -344,7 +342,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
-
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
 
 # Load all Services that are defined
@@ -835,7 +832,6 @@ if [ -n "$(cat .lagoon.yml | shyaml keys fastly.api-secrets.$FASTLY_API_SECRETS_
 
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
-    set +x
 
     let FASTLY_API_SECRETS_COUNTER=FASTLY_API_SECRETS_COUNTER+1
   done
@@ -874,7 +870,6 @@ if [ ! -z "$LAGOON_FASTLY_API_SECRETS" ]; then
     FASTLY_API_PLATFORMTLS_CONFIGURATION=${LAGOON_FASTLY_API_SECRET_SPLIT[2]}
     # run the script to create the secrets
     . /kubectl-build-deploy/scripts/exec-fastly-api-secrets.sh
-    set +x
   done
 fi
 
@@ -980,7 +975,6 @@ if [ -n "$(ls -A $LAGOON_DBAAS_YAML_FOLDER/ 2>/dev/null)" ]; then
   kubectl apply -n ${NAMESPACE} -f $LAGOON_DBAAS_YAML_FOLDER/
 fi
 
-set +x
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
 previousStepEnd=${currentStepEnd}
@@ -1269,21 +1263,18 @@ do
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mariadb-dbaas.sh
-        set +x
         ;;
 
     postgres-dbaas)
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-postgres-dbaas.sh
-        set +x
         ;;
 
     mongodb-dbaas)
         # remove the image from images to pull
         unset IMAGES_PULL[$SERVICE_NAME]
         . /kubectl-build-deploy/scripts/exec-kubectl-mongodb-dbaas.sh
-        set +x
         ;;
 
     *)
@@ -1545,7 +1536,6 @@ do
 
   elif [ ! $SERVICE_ROLLOUT_TYPE == "false" ]; then
     . /kubectl-build-deploy/scripts/exec-monitor-deploy.sh
-    set +x
   fi
 done
 

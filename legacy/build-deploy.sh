@@ -1,26 +1,21 @@
 #!/bin/bash
-set -x
 set -eo pipefail
 set -o noglob
 
-set +x # reduce noise in build logs
 # print out the build-deploy-tool version information
 echo "##############################################"
 build-deploy-tool version
 echo "##############################################"
-set -x
 
 REGISTRY=$REGISTRY
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 LAGOON_VERSION=$(cat /lagoon/version)
 
-set +x # reduce noise in build logs
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   INTERNAL_REGISTRY_URL=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_URL") | .value' | sed -e 's#^http://##' | sed -e 's#^https://##')
   INTERNAL_REGISTRY_USERNAME=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_USERNAME") | .value')
   INTERNAL_REGISTRY_PASSWORD=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_PASSWORD") | .value')
 fi
-set -x
 
 echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
@@ -40,7 +35,6 @@ fi
 echo -e "##############################################\nBEGIN Kubernetes Setup\n##############################################"
 sleep 0.5s
 
-set +x # reduce noise in build logs
 if [[ -f "/var/run/secrets/kubernetes.io/serviceaccount/token" ]]; then
   DEPLOYER_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
 else
@@ -72,5 +66,4 @@ if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
 fi
 
 echo -e "\n\n##############################################\nStart Build Process\n##############################################"
-set -x
 .  /kubectl-build-deploy/build-deploy-docker-compose.sh
