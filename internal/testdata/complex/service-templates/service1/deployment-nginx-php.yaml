@@ -19,7 +19,7 @@ metadata:
     lagoon.sh/template: nginx-php-persistent-0.1.0
   name: nginx-php
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: nginx-php
