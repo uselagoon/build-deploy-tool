@@ -82,6 +82,12 @@ type BuildValues struct {
 	ForcePullImages               []string                     `json:"forcePullImages"`
 	Volumes                       []ComposeVolume              `json:"volumes,omitempty" description:"stores any additional persistent volume definitions"`
 	PodAntiAffinity               bool                         `json:"podAntiAffinity"`
+	ConfigAPIHost                 string                       `json:"configAPIHost"`
+	ConfigTokenHost               string                       `json:"configTokenHost"`
+	ConfigTokenPort               string                       `json:"configTokenPort"`
+	ConfigSSHHost                 string                       `json:"configSSHHost"`
+	ConfigSSHPort                 string                       `json:"configSSHPort"`
+	DBaaSVariables                map[string]string            `json:"dbaasVariables" description:"map of variables provided by dbaas consumers"`
 }
 
 type Resources struct {
