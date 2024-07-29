@@ -480,7 +480,13 @@ func GenerateDeploymentTemplate(
 			// consume the lagoon-env configmap here
 			container.Container.EnvFrom = []corev1.EnvFromSource{
 				{
-					ConfigMapRef: &corev1.ConfigMapEnvSource{
+					SecretRef: &corev1.SecretEnvSource{
+						LocalObjectReference: corev1.LocalObjectReference{
+							Name: "lagoon-platform-env",
+						},
+					},
+				}, {
+					SecretRef: &corev1.SecretEnvSource{
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: "lagoon-env",
 						},
@@ -605,7 +611,13 @@ func GenerateDeploymentTemplate(
 				linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvars...)
 				linkedContainer.Container.EnvFrom = []corev1.EnvFromSource{
 					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
+						SecretRef: &corev1.SecretEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "lagoon-platform-env",
+							},
+						},
+					}, {
+						SecretRef: &corev1.SecretEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "lagoon-env",
 							},

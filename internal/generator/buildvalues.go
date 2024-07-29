@@ -82,6 +82,14 @@ type BuildValues struct {
 	ForcePullImages               []string                     `json:"forcePullImages"`
 	Volumes                       []ComposeVolume              `json:"volumes,omitempty" description:"stores any additional persistent volume definitions"`
 	PodSpreadConstraints          bool                         `json:"podSpreadConstraints"`
+	PodAntiAffinity               bool                         `json:"podAntiAffinity"`
+	ConfigAPIHost                 string                       `json:"configAPIHost"`
+	ConfigTokenHost               string                       `json:"configTokenHost"`
+	ConfigTokenPort               string                       `json:"configTokenPort"`
+	ConfigSSHHost                 string                       `json:"configSSHHost"`
+	ConfigSSHPort                 string                       `json:"configSSHPort"`
+	LagoonEnvVariables            map[string]string            `json:"lagoonEnvVariables" description:"map of variables that will be saved into the lagoon-env secret"`
+	LagoonPlatformEnvVariables    map[string]string            `json:"agoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
 }
 
 type Resources struct {
