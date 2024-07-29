@@ -381,7 +381,7 @@ func composeToServiceValues(
 		// check if the this service is production and can support 2 replicas on spot
 		for _, t := range strings.Split(spotReplicaTypes, ",") {
 			if t != "" {
-				if t == lagoonType && buildValues.EnvironmentType == "production" {
+				if t == lagoonType && buildValues.EnvironmentType == "production" && useSpot {
 					spotReplicas = 2
 				}
 			}
