@@ -52,7 +52,9 @@ spec:
         - name: SERVICE_NAME
           value: python
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/python@latest
         imagePullPolicy: Always
@@ -140,7 +142,9 @@ spec:
         - name: SERVICE_NAME
           value: python-persist
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/python-persist@latest
         imagePullPolicy: Always

@@ -52,7 +52,9 @@ spec:
         - name: SERVICE_NAME
           value: worker
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/worker@latest
         imagePullPolicy: Always
@@ -145,7 +147,9 @@ spec:
         - name: SERVICE_NAME
           value: worker-persist
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/worker-persist@latest
         imagePullPolicy: Always
