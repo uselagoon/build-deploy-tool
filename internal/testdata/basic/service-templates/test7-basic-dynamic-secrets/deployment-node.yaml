@@ -52,7 +52,9 @@ spec:
         - name: SERVICE_NAME
           value: node
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         - secretRef:
             name: mariadb-dbaas-a4hs12h3

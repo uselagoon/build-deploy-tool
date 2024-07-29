@@ -1,8 +1,12 @@
 package templating
 
 import (
+	"fmt"
+
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	corev1 "k8s.io/api/core/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // LinkedServiceCalculator checks the provided services to see if there are any linked services
@@ -48,4 +52,14 @@ func LinkedServiceCalculator(services []generator.ServiceValues) []generator.Ser
 		retServices = append(retServices, service)
 	}
 	return retServices
+}
+
+func TemplateSecret(item corev1.Secret) ([]byte, error) {
+	separator := []byte("---\n")
+	iBytes, err := yaml.Marshal(item)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML := append(separator[:], iBytes[:]...)
+	return templateYAML, nil
 }

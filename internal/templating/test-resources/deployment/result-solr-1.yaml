@@ -56,7 +56,9 @@ spec:
         - name: SERVICE_NAME
           value: solr
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/solr@latest
         imagePullPolicy: Always
