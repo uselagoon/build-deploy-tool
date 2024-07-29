@@ -153,6 +153,8 @@ func init() {
 		"Ignore missing env_file files (true by default, subject to change).")
 	rootCmd.PersistentFlags().StringP("images", "", "",
 		"JSON representation of service:image reference")
+	rootCmd.PersistentFlags().StringP("dbaas-creds", "", "",
+		"JSON representation of dbaas credential references")
 }
 
 // initConfig reads in config file and ENV variables if set.
