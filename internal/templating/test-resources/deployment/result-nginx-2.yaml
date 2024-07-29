@@ -54,7 +54,9 @@ spec:
         - name: SERVICE_NAME
           value: nginx
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/nginx@latest
         imagePullPolicy: Always
@@ -89,7 +91,9 @@ spec:
         - name: SERVICE_NAME
           value: nginx
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/php@latest
         imagePullPolicy: Always
@@ -179,7 +183,9 @@ spec:
         - name: SERVICE_NAME
           value: nginx-2
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/nginx2@latest
         imagePullPolicy: Always
@@ -217,7 +223,9 @@ spec:
         - name: SERVICE_NAME
           value: nginx-2
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/php2@latest
         imagePullPolicy: Always
