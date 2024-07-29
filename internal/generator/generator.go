@@ -351,7 +351,10 @@ func NewGenerator(
 	// collect docker buildkit value
 	dockerBuildKit, _ := lagoon.GetLagoonVariable("DOCKER_BUILDKIT", []string{"build"}, buildValues.EnvironmentVariables)
 	if dockerBuildKit != nil {
-		buildValues.DockerBuildKit, _ = strconv.ParseBool(dockerBuildKit.Value)
+		bk, _ := strconv.ParseBool(dockerBuildKit.Value)
+		buildValues.DockerBuildKit = &bk
+	} else {
+		buildValues.DockerBuildKit = helpers.BoolPtr(true)
 	}
 
 	// get any lagoon service type overrides
