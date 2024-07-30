@@ -563,8 +563,9 @@ if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
 fi
 
 # log in to any container registries before building or pulling images
-for PRIVATE_CONTAINER_REGISTRY in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]?')
+for PCR in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]? | @base64')
 do
+  PRIVATE_CONTAINER_REGISTRY=$(echo "${PCR}" | jq -rc '@base64d')
   PRIVATE_CONTAINER_REGISTRY_URL=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.url // false')
   PRIVATE_CONTAINER_REGISTRY_CREDENTIAL_USERNAME=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.username // false')
   PRIVATE_CONTAINER_REGISTRY_USERNAME_SOURCE=$(echo "$PRIVATE_CONTAINER_REGISTRY" | jq -r '.usernameSource // false')
