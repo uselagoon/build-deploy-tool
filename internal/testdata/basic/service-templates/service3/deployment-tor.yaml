@@ -87,6 +87,10 @@ spec:
         runAsGroup: 0
         runAsUser: 10000
       volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
       - name: lnd
         persistentVolumeClaim:
           claimName: lnd

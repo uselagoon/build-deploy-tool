@@ -85,6 +85,11 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
         runAsUser: 10000
+      volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
 status: {}
 ---
 apiVersion: apps/v1
@@ -173,4 +178,9 @@ spec:
         fsGroupChangePolicy: OnRootMismatch
         runAsGroup: 0
         runAsUser: 10000
+      volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
 status: {}
