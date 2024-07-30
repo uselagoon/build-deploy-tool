@@ -58,12 +58,12 @@ func GenerateRegistrySecretTemplate(
 				Name: containerRegistry.SecretName,
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
-			StringData: map[string]string{
-				".dockerconfigjson": base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"%s"}}}`,
+			Data: map[string][]byte{
+				".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"%s"}}}`,
 					containerRegistry.URL,
 					containerRegistry.Username,
 					containerRegistry.Password,
-					base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", containerRegistry.Username, containerRegistry.Password)))))),
+					base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", containerRegistry.Username, containerRegistry.Password))))),
 			},
 		}
 
