@@ -1,6 +1,7 @@
 package servicetypes
 
 import (
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -9,6 +10,17 @@ var worker = ServiceType{
 	Name: "worker",
 	PrimaryContainer: ServiceContainer{
 		Name: "worker",
+		Volumes: []corev1.Volume{
+			{
+				Name: "lagoon-sshkey",
+				VolumeSource: corev1.VolumeSource{
+					Secret: &corev1.SecretVolumeSource{
+						DefaultMode: helpers.Int32Ptr(420),
+						SecretName:  "lagoon-sshkey",
+					},
+				},
+			},
+		},
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
 			SecurityContext: &corev1.SecurityContext{},
@@ -48,5 +60,6 @@ var workerPersistent = ServiceType{
 	PrimaryContainer: ServiceContainer{
 		Name:      worker.PrimaryContainer.Name,
 		Container: worker.PrimaryContainer.Container,
+		Volumes:   worker.PrimaryContainer.Volumes,
 	},
 }
