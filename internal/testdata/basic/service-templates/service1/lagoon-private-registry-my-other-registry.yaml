@@ -1,5 +1,7 @@
 ---
 apiVersion: v1
+data:
+  .dockerconfigjson: eyJhdXRocyI6eyJteS5vdGhlci5yZWdpc3RyeS5jb20iOnsidXNlcm5hbWUiOiJvdGhlcnVzZXJuYW1lIiwicGFzc3dvcmQiOiJvdGhlcnBhc3N3b3JkIiwiYXV0aCI6ImIzUm9aWEoxYzJWeWJtRnRaVHB2ZEdobGNuQmhjM04zYjNKayJ9fX0=
 kind: Secret
 metadata:
   annotations:
@@ -16,6 +18,4 @@ metadata:
     lagoon.sh/project: example-project
     lagoon.sh/template: internal-registry-secret-0.1.0
   name: lagoon-private-registry-my-other-registry
-stringData:
-  .dockerconfigjson: eyJhdXRocyI6eyJteS5vdGhlci5yZWdpc3RyeS5jb20iOnsidXNlcm5hbWUiOiJvdGhlcnVzZXJuYW1lIiwicGFzc3dvcmQiOiJvdGhlcnBhc3N3b3JkIiwiYXV0aCI6ImIzUm9aWEoxYzJWeWJtRnRaVHB2ZEdobGNuQmhjM04zYjNKayJ9fX0=
 type: kubernetes.io/dockerconfigjson
