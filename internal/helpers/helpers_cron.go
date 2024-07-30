@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -180,6 +181,10 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 					months = val
 					continue
 				}
+				if isMonth(val) {
+					months = val
+					continue
+				}
 				// if the value is not valid, return an error with where the issue is
 				if months == "" {
 					return "", fmt.Errorf("cron definition '%s' is invalid, unable to determine months value", cron)
@@ -195,6 +200,10 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 					continue
 				}
 				if val == "*" {
+					dayweek = val
+					continue
+				}
+				if isDayOfWeek(val) {
 					dayweek = val
 					continue
 				}
@@ -266,6 +275,18 @@ func isInCSVRange(s string, min, max int) bool {
 		}
 	}
 	return true
+}
+
+// check if the provided cron day string is a valid
+func isDayOfWeek(s string) bool {
+	days := []string{"SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"}
+	return slices.Contains(days, strings.ToUpper(s))
+}
+
+// check if the provided cron month string is a valid
+func isMonth(s string) bool {
+	days := []string{"JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"}
+	return slices.Contains(days, strings.ToUpper(s))
 }
 
 // check if the provided cron time definition is a valid `1-2` type range
