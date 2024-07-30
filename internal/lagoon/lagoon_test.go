@@ -312,6 +312,12 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 								Service:  "cli",
 								Schedule: "*/15 * * * *",
 							},
+							{
+								Name:     "some other drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/5 * * * *",
+							},
 						},
 					},
 				},
@@ -391,6 +397,44 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 										},
 									},
 								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test-polysite without project environment cronjobs",
+			args: args{
+				file:    "test-resources/lagoon-yaml/test9/lagoon.yml",
+				l:       &YAML{},
+				project: "multiproject1",
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/5 * * * *",
+							},
+							{
+								Name:     "some other drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/5 * * * *",
 							},
 						},
 					},

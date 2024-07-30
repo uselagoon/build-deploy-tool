@@ -1,0 +1,30 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
+example-project:
+  environments:
+    main:
+      cronjobs:
+        - name: drush cron
+          schedule: "*/15 0 * * *"
+          command: 'drush cron'
+          service: node
+      routes:
+      -   nginx:
+          - a.example.com
+
+environments:
+  main:
+    cronjobs:
+      - name: "drush cron" #this cronjob should be ignored as a more specific polysite project cronjob of the same name is defined
+        schedule: "*/5 0 * * *"
+        command: 'drush cron'
+        service: node
+        shell: bash
+      - name: "some other drush cron"
+        schedule: "10 2 * * *"
+        command: 'drush cron'
+        service: node
+        shell: bash

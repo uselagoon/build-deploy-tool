@@ -6,11 +6,6 @@ project: content-example-com
 multiproject1:
   environments:
     main:
-      cronjobs:
-        - name: drush cron
-          schedule: "*/15 * * * *"
-          command: 'drush cron'
-          service: cli
       routes:
       -   nginx:
           - a.example.com
@@ -30,7 +25,7 @@ multiproject2:
 environments:
   main:
     cronjobs:
-      - name: "drush cron" #this cronjob should be ignored as a more specific polysite project cronjob of the same name is defined
+      - name: "drush cron"
         schedule: "*/5 * * * *"
         command: 'drush cron'
         service: cli
