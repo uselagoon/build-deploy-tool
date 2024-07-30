@@ -1,0 +1,77 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/managed-by: build-deploy-tool
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: node
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: cronjob-node-some-other-drush-cron
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          annotations:
+            lagoon.sh/branch: main
+            lagoon.sh/configMapSha: abcdefg1234567890
+            lagoon.sh/version: v2.7.x
+          creationTimestamp: null
+          labels:
+            app.kubernetes.io/managed-by: build-deploy-tool
+            lagoon.sh/buildType: branch
+            lagoon.sh/environment: main
+            lagoon.sh/environmentType: production
+            lagoon.sh/project: example-project
+            lagoon.sh/service: node
+            lagoon.sh/service-type: basic
+            lagoon.sh/template: basic-0.1.0
+        spec:
+          containers:
+          - command:
+            - /lagoon/cronjob.sh
+            - drush cron
+            env:
+            - name: LAGOON_GIT_SHA
+              value: abcdefg123456
+            - name: SERVICE_NAME
+              value: node
+            envFrom:
+            - configMapRef:
+                name: lagoon-env
+            image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+            imagePullPolicy: Always
+            name: cronjob-node-some-other-drush-cron
+            resources:
+              requests:
+                cpu: 10m
+                memory: 10Mi
+            securityContext: {}
+          dnsConfig:
+            options:
+            - name: timeout
+              value: "60"
+            - name: attempts
+              value: "10"
+          enableServiceLinks: false
+          imagePullSecrets:
+          - name: lagoon-internal-registry-secret
+          priorityClassName: lagoon-priority-production
+          restartPolicy: Never
+  schedule: 10 2 * * *
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 0
+status: {}

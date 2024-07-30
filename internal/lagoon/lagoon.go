@@ -198,14 +198,43 @@ func UnmarshalLagoonYAML(file string, l *YAML, project string) error {
 	if err != nil {
 		return err
 	}
+	// get all the cronjobs from the top level environments cronjobs into a new map
+	polycrons := map[string][]Cronjob{}
+	for en, e := range l.Environments {
+		polycrons[en] = e.Cronjobs
+	}
 	if _, ok := p[project]; ok {
 		s, err := yaml.Marshal(p[project])
 		if err != nil {
 			return err
 		}
+		// this step copies the polysite environments block over the yaml effectively wiping it clean of anything else it may have had
 		err = yaml.Unmarshal(s, l)
 		if err != nil {
 			return err
+		}
+	}
+	// iterate over the new environments (from the polysite lagoonyml $project.Environments)
+	for en, e := range l.Environments {
+		// check if polysite crons exist
+		val := polycrons[en]
+		// check if the two aren't already the same, no need to do anything otherwise
+		if !reflect.DeepEqual(e.Cronjobs, val) {
+			if len(e.Cronjobs) == 0 {
+				// if there are no cronjobs from the polysite project, set the cronjobs to be the older top level cronjobs only
+				e.Cronjobs = val
+			} else {
+				for _, c1 := range e.Cronjobs {
+					for _, c2 := range val {
+						// check if the original top level cronjobs exist
+						if c1.Name == c2.Name {
+							continue
+						}
+						e.Cronjobs = append(e.Cronjobs, c2)
+					}
+				}
+			}
+			l.Environments[en] = e
 		}
 	}
 	return nil
