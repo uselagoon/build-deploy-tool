@@ -542,7 +542,7 @@ fi
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
-beginBuildStep "Container Regstiry Login" "registryLogin"
+beginBuildStep "Container Registry Login" "registryLogin"
 
 # seed all the push images for use later on, push images relate to images that may not be built by this build
 # but are required from somewhere else like a promote environment or from another registry
@@ -583,7 +583,7 @@ do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Regstiry Login" "false"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
 
