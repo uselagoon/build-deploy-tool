@@ -79,6 +79,7 @@ type BuildValues struct {
 	RouteQuota                    *int                         `json:"routeQuota"`
 	ImageCacheBuildArguments      []ImageCacheBuildArguments   `json:"imageCacheBuildArgs"`
 	IgnoreImageCache              bool                         `json:"ignoreImageCache"`
+	SSHPrivateKey                 string                       `json:"sshPrivateKey"`
 }
 
 type Resources struct {

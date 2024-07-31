@@ -46,6 +46,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_GIT_SHA":               "abcdefg123456",
 					"LAGOON_GIT_BRANCH":            "main",
 					"NODE_IMAGE":                   "example-project-main-node",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -85,6 +86,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"CLI_IMAGE":                    "example-project-main-cli",
 					"NGINX_IMAGE":                  "example-project-main-nginx",
 					"PHP_IMAGE":                    "example-project-main-php",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -172,6 +174,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"NGINX_IMAGE":                             "example-project-main-nginx",
 					"PHP_IMAGE":                               "example-project-main-php",
 					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+					"LAGOON_SSH_PRIVATE_KEY":                  "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -247,6 +250,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LND_IMAGE":                             "example-project-main-lnd",
 					"THUNDERHUB_IMAGE":                      "example-project-main-thunderhub",
 					"TOR_IMAGE":                             "example-project-main-tor",
+					"LAGOON_SSH_PRIVATE_KEY":                "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -315,6 +319,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_GIT_BRANCH":                     "main",
 					"LND_IMAGE":                             "example-project-main-lnd",
 					"TOR_IMAGE":                             "example-project-main-tor",
+					"LAGOON_SSH_PRIVATE_KEY":                "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -358,6 +363,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":            "promote",
 					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":            "remote-cluster1",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -406,6 +412,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":            "remote-cluster1",
 					"NODE_IMAGE":                   "example-project-pr-123-node",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -441,6 +448,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_BUILD_TYPE":            "promote",
 					"LAGOON_GIT_SOURCE_REPOSITORY": "ssh://git@example.com/lagoon-demo.git",
 					"LAGOON_KUBERNETES":            "remote-cluster1",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -510,6 +518,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"NGINX_IMAGE":                             "example-project-main-nginx",
 					"PHP_IMAGE":                               "example-project-main-php",
 					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+					"LAGOON_SSH_PRIVATE_KEY":                  "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				ContainerRegistries: []generator.ContainerRegistry{
 					{
@@ -588,6 +597,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"LAGOON_GIT_BRANCH":            "main",
 					"NODE_IMAGE":                   "example-project-main-node",
 					"LAGOON_CACHE_node":            "harbor.example/example-project/main/node@sha256:e90daba405cbf33bab23fe8a021146811b2c258df5f2afe7dadc92c0778eef45",
+					"LAGOON_SSH_PRIVATE_KEY":       "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				Images: []imageBuilds{
 					{
@@ -635,6 +645,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					"NGINX_IMAGE":                             "example-project-main-nginx",
 					"PHP_IMAGE":                               "example-project-main-php",
 					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+					"LAGOON_SSH_PRIVATE_KEY":                  "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 				},
 				ContainerRegistries: []generator.ContainerRegistry{
 					{
