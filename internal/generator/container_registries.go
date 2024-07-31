@@ -68,6 +68,7 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 		}
 		if cr.URL == "" {
 			cr.URL = "index.docker.io"
+			buildValues.IgnoreImageCache = true
 		}
 		eru := cr.URL
 		u, _ := url.Parse(eru)

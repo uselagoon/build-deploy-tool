@@ -602,6 +602,101 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test10 nginx-php external pull images from dockerhub",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					Namespace:       "example-project-main",
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish3.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: imageBuild{
+				BuildKit: false,
+				BuildArguments: map[string]string{
+					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":                          "example-project",
+					"LAGOON_ENVIRONMENT":                      "main",
+					"LAGOON_ENVIRONMENT_TYPE":                 "production",
+					"LAGOON_BUILD_TYPE":                       "branch",
+					"LAGOON_GIT_SOURCE_REPOSITORY":            "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":                       "remote-cluster1",
+					"LAGOON_GIT_SHA":                          "0000000000000000000000000000000000000000",
+					"LAGOON_GIT_BRANCH":                       "main",
+					"CLI_IMAGE":                               "example-project-main-cli",
+					"NGINX_IMAGE":                             "example-project-main-nginx",
+					"PHP_IMAGE":                               "example-project-main-php",
+					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+				},
+				ContainerRegistries: []generator.ContainerRegistry{
+					{
+						Name:           "my-custom-registry",
+						Username:       "registry_user",
+						Password:       "REGISTRY_PASSWORD",
+						SecretName:     "lagoon-private-registry-my-custom-registry",
+						URL:            "index.docker.io",
+						UsernameSource: ".lagoon.yml",
+						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+					},
+					{
+						Name:           "my-other-custom-registry",
+						Username:       "registry_user2",
+						Password:       "REGISTRY_PASSWORD2",
+						SecretName:     "lagoon-private-registry-my-other-custom-registry",
+						URL:            "registry1.example.com",
+						UsernameSource: ".lagoon.yml",
+						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+					},
+				},
+				Images: []imageBuilds{
+					{
+						Name: "cli",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/cli:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.cli",
+							TemporaryImage: "example-project-main-cli",
+						},
+					}, {
+						Name: "nginx",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/nginx:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.nginx-drupal",
+							TemporaryImage: "example-project-main-nginx",
+						},
+					}, {
+						Name: "php",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "harbor.example/example-project/main/php:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.php",
+							TemporaryImage: "example-project-main-php",
+						},
+					}, {
+						Name: "redis",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "harbor.example/example-project/main/redis:latest",
+							PullImage:  "registry1.example.com/amazeeio/redis:latest",
+						},
+					}, {
+						Name: "varnish",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "harbor.example/example-project/main/varnish:latest",
+							PullImage:  "uselagoon/varnish-5-drupal:latest",
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

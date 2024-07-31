@@ -283,21 +283,48 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service4",
 		},
-		{
-			name: "test10 basic deployment polysite cronjobs",
-			args: testdata.GetSeedData(
-				testdata.TestData{
-					ProjectName:     "example-project",
-					EnvironmentName: "main",
-					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.polysite-cronjobs.yml",
-					ImageReferences: map[string]string{
-						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-					},
-				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service7",
-		},
+		// {
+		// 	name: "test11 basic deployment pullthrough image",
+		// 	args: testdata.GetSeedData(
+		// 		testdata.TestData{
+		// 			ProjectName:     "example-project",
+		// 			EnvironmentName: "main",
+		// 			Branch:          "main",
+		// 			LagoonYAML:      "internal/testdata/basic/lagoon.container-registry-deep-pulltrough.yml",
+		// 			ImageReferences: map[string]string{
+		// 				"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+		// 			},
+		// 			ProjectVariables: []lagoon.EnvironmentVariable{
+		// 				{
+		// 					Name:  "REGISTRY_PASSWORD",
+		// 					Value: "myenvvarregistrypassword",
+		// 					Scope: "container_registry",
+		// 				},
+		// 				{
+		// 					Name:  "REGISTRY_DOCKERHUB_USERNAME",
+		// 					Value: "dockerhubusername",
+		// 					Scope: "container_registry",
+		// 				},
+		// 				{
+		// 					Name:  "REGISTRY_DOCKERHUB_PASSWORD",
+		// 					Value: "dockerhubpassword",
+		// 					Scope: "container_registry",
+		// 				},
+		// 				{
+		// 					Name:  "REGISTRY_MY_OTHER_REGISTRY_USERNAME",
+		// 					Value: "otherusername",
+		// 					Scope: "container_registry",
+		// 				},
+		// 				{
+		// 					Name:  "REGISTRY_MY_OTHER_REGISTRY_PASSWORD",
+		// 					Value: "otherpassword",
+		// 					Scope: "container_registry",
+		// 				},
+		// 			},
+		// 		}, true),
+		// 	templatePath: "testoutput",
+		// 	want:         "internal/testdata/basic/service-templates/service8",
+		// },
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

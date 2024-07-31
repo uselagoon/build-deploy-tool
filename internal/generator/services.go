@@ -532,7 +532,7 @@ func composeToServiceValues(
 					}
 					if !ContainsRegistry(buildValues.ContainerRegistry, pullImage) {
 						// if the image isn't in dockerhub, then the imagecache can't be used
-						if buildValues.ImageCache != "" && strings.Count(pullImage, "/") == 1 {
+						if buildValues.ImageCache != "" && strings.Count(pullImage, "/") == 1 && !buildValues.IgnoreImageCache {
 							imageBuild.PullImage = fmt.Sprintf("%s%s", buildValues.ImageCache, imageBuild.PullImage)
 						}
 					}
