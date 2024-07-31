@@ -105,6 +105,9 @@ spec:
           privileged: true
           runAsUser: 0
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
       volumes:
       - name: myservice
         persistentVolumeClaim:
@@ -217,6 +220,9 @@ spec:
           privileged: true
           runAsUser: 0
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 0
+        fsGroupChangePolicy: OnRootMismatch
       volumes:
       - name: myservice-size
         persistentVolumeClaim:

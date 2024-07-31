@@ -202,6 +202,12 @@ func GenerateDeploymentTemplate(
 					FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
 				}
 			}
+			// some services have a fsgroup override
+			if serviceTypeValues.PodSecurityContext.HasDefault {
+				deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+					FSGroup: helpers.Int64Ptr(serviceTypeValues.PodSecurityContext.FSGroup),
+				}
+			}
 			if buildValues.PodSecurityContext.OnRootMismatch {
 				fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
 				if deployment.Spec.Template.Spec.SecurityContext != nil {

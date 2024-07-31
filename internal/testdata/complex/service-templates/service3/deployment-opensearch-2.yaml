@@ -105,6 +105,8 @@ spec:
           privileged: true
           runAsUser: 0
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 0
       volumes:
       - name: opensearch-2
         persistentVolumeClaim:

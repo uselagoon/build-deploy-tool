@@ -89,10 +89,8 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       securityContext:
-        fsGroup: 10001
+        fsGroup: 0
         fsGroupChangePolicy: OnRootMismatch
-        runAsGroup: 0
-        runAsUser: 10000
       volumes:
       - name: postgres
         persistentVolumeClaim:
