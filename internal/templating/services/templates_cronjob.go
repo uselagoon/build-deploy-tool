@@ -205,6 +205,16 @@ func GenerateCronjobTemplate(
 						FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
 					}
 				}
+				if buildValues.PodSecurityContext.OnRootMismatch {
+					fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+					if cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext != nil {
+						cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+					} else {
+						cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+							FSGroupChangePolicy: &fsGroupChangePolicy,
+						}
+					}
+				}
 
 				// start set up any volumes this cronjob can use
 				// first handle any dynamic secret volumes that come from kubernetes secrets that are labeled
