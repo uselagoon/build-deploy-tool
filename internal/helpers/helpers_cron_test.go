@@ -159,6 +159,14 @@ func TestConvertCrontab(t *testing.T) {
 			},
 			want: "31 1,7,13,19 * JAN MON",
 		},
+		{
+			name: "test19 - whitespace",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "M * * * * ",
+			},
+			want: "31 * * * *",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
