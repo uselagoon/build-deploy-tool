@@ -215,6 +215,9 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 		}
 		return fmt.Sprintf("%v %v %v %v %v", minutes, hours, days, months, dayweek), nil
 	}
+	if len(splitCron) < 5 && len(splitCron) > 0 || len(splitCron) > 5 {
+		return "", fmt.Errorf("cron definition '%s' is invalid, %d fields provided, required 5", cron, len(splitCron))
+	}
 	return "", fmt.Errorf("cron definition '%s' is invalid", cron)
 }
 

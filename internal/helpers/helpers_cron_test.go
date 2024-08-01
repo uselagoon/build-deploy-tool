@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -10,10 +11,11 @@ func TestConvertCrontab(t *testing.T) {
 		cron      string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name       string
+		args       args
+		want       string
+		wantErrMsg string
+		wantErr    bool
 	}{
 		{
 			name: "test1",
@@ -61,7 +63,8 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/H5 H(22-2) * * *",
 			},
-			wantErr: true,
+			wantErrMsg: "cron definition 'M/H5 H(22-2) * * *' is invalid, unable to determine minutes value",
+			wantErr:    true,
 		},
 		{
 			name: "test7 - invalid hour definiton",
@@ -69,7 +72,8 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/15 H(H2-2) * * *",
 			},
-			wantErr: true,
+			wantErrMsg: "cron definition 'M/15 H(H2-2) * * *' is invalid, unable to determine hours value",
+			wantErr:    true,
 		},
 		{
 			name: "test8",
@@ -93,7 +97,8 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/15 H(22-2) * * 1-8",
 			},
-			wantErr: true,
+			wantErrMsg: "cron definition 'M/15 H(22-2) * * 1-8' is invalid, unable to determine day(week) value",
+			wantErr:    true,
 		},
 		{
 			name: "test11",
@@ -117,7 +122,8 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "15 * 1-32 * *",
 			},
-			wantErr: true,
+			wantErrMsg: "cron definition '15 * 1-32 * *' is invalid, unable to determine days value",
+			wantErr:    true,
 		},
 		{
 			name: "test14 - set hours",
@@ -167,6 +173,24 @@ func TestConvertCrontab(t *testing.T) {
 			},
 			want: "31 * * * *",
 		},
+		{
+			name: "test20 - not enough fields",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "*/1 * * *",
+			},
+			wantErrMsg: "cron definition '*/1 * * *' is invalid, 4 fields provided, required 5",
+			wantErr:    true,
+		},
+		{
+			name: "test21 - too many fields",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "*/1 * * * * 7",
+			},
+			wantErrMsg: "cron definition '*/1 * * * * 7' is invalid, 6 fields provided, required 5",
+			wantErr:    true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -174,6 +198,9 @@ func TestConvertCrontab(t *testing.T) {
 			if err != nil {
 				if !tt.wantErr {
 					t.Errorf("ConvertCrontab() error = %v, wantErr %v", err, tt.wantErr)
+				}
+				if !strings.Contains(err.Error(), tt.wantErrMsg) {
+					t.Errorf("ConvertCrontab() error = %v, wantErr %v", err.Error(), tt.wantErrMsg)
 				}
 			}
 			if got != tt.want {
