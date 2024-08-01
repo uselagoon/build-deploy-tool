@@ -205,6 +205,12 @@ func GenerateCronjobTemplate(
 						FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
 					}
 				}
+				// some services have a fsgroup override
+				if serviceTypeValues.PodSecurityContext.HasDefault {
+					cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+						FSGroup: helpers.Int64Ptr(serviceTypeValues.PodSecurityContext.FSGroup),
+					}
+				}
 				if buildValues.PodSecurityContext.OnRootMismatch {
 					fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
 					if cronjob.Spec.JobTemplate.Spec.Template.Spec.SecurityContext != nil {
