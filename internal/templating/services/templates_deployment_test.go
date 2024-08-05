@@ -730,7 +730,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-redis-1.yaml",
 		},
 		{
-			name: "test17 - mariadb",
+			name: "test17a - mariadb",
 			args: args{
 				buildValues: generator.BuildValues{
 					Project:         "example-project",
@@ -759,6 +759,40 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 				},
 			},
 			want: "test-resources/deployment/result-mariadb-1.yaml",
+		},
+		{
+			name: "test17b - mariadb k8upv2",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					PodSecurityContext: generator.PodSecurityContext{
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"mariadb": "harbor.example.com/example-project/environment-name/mariadb@latest",
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v2",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "mariadb",
+							OverrideName: "mariadb",
+							Type:         "mariadb-single",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-mariadb-2.yaml",
 		},
 		{
 			name: "test18 - mongodb",

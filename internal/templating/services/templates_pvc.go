@@ -77,6 +77,7 @@ func GeneratePVCTemplate(
 				additionalLabels["lagoon.sh/service"] = serviceValues.OverrideName
 				additionalLabels["lagoon.sh/service-type"] = serviceType.Name
 
+				// this does both k8up v1 and v2 support
 				additionalAnnotations["k8up.syn.tools/backup"] = strconv.FormatBool(serviceTypeValues.Volumes.Backup)
 				additionalAnnotations["k8up.io/backup"] = strconv.FormatBool(serviceTypeValues.Volumes.Backup)
 

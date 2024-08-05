@@ -72,12 +72,20 @@ func GenerateCronjobTemplate(
 					serviceValues,
 					serviceTypeValues,
 				}
-				if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
-					bc := servicetypes.BackupConfiguration{}
-					helpers.TemplateThings(tpld, serviceTypeValues.Volumes.BackupConfiguration, &bc)
-					templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
-					templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
-				}
+
+				// cronjobs don't need backups
+				// if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
+				// 	bc := servicetypes.BackupConfiguration{}
+				// 	helpers.TemplateThings(tpld, serviceTypeValues.Volumes.BackupConfiguration, &bc)
+				// 	switch buildValues.Backup.K8upVersion {
+				// 	case "v2":
+				// 		templateAnnotations["k8up.io/backupcommand"] = bc.Command
+				// 		templateAnnotations["k8up.io/file-extension"] = bc.FileExtension
+				// 	default:
+				// 		templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
+				// 		templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
+				// 	}
+				// }
 
 				cronjob := &batchv1.CronJob{
 					TypeMeta: metav1.TypeMeta{
