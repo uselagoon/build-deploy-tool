@@ -58,6 +58,7 @@ type TestData struct {
 	DynamicSecrets             []string
 	DynamicDBaaSSecrets        []string
 	ImageCacheBuildArgsJSON    string
+	SSHPrivateKey              string
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -192,6 +193,10 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
+	err = os.Setenv("SSH_PRIVATE_KEY", t.SSHPrivateKey)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
 
 	generator, err := generator.GenerateInput(rootCmd, false)
 	if err != nil {
@@ -238,6 +243,7 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 		SourceRepository: "ssh://git@example.com/lagoon-demo.git",
 		Kubernetes:       "remote-cluster1",
 		GitSHA:           "abcdefg123456",
+		SSHPrivateKey:    "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
 	}
 	if t.ProjectName != "" {
 		rt.ProjectName = t.ProjectName
@@ -334,6 +340,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.ImageCacheBuildArgsJSON != "" {
 		rt.ImageCacheBuildArgsJSON = t.ImageCacheBuildArgsJSON
+	}
+	if t.SSHPrivateKey != "" {
+		rt.SSHPrivateKey = t.SSHPrivateKey
 	}
 	return rt
 }

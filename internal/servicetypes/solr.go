@@ -71,6 +71,10 @@ var solr = ServiceType{
 			},
 		},
 	},
+	PodSecurityContext: ServicePodSecurityContext{
+		HasDefault: true,
+		FSGroup:    0,
+	},
 	Strategy: appsv1.DeploymentStrategy{
 		Type: appsv1.RecreateDeploymentStrategyType,
 	},

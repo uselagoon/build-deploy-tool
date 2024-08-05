@@ -87,6 +87,8 @@ spec:
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 0
       volumes:
       - name: mongo-4
         persistentVolumeClaim:

@@ -78,6 +78,8 @@ type BuildValues struct {
 	BackupsEnabled                bool                         `json:"backupsEnabled"`
 	RouteQuota                    *int                         `json:"routeQuota"`
 	ImageCacheBuildArguments      []ImageCacheBuildArguments   `json:"imageCacheBuildArgs"`
+	IgnoreImageCache              bool                         `json:"ignoreImageCache"`
+	SSHPrivateKey                 string                       `json:"sshPrivateKey"`
 }
 
 type Resources struct {

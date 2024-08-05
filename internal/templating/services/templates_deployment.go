@@ -75,8 +75,14 @@ func GenerateDeploymentTemplate(
 			if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
 				bc := servicetypes.BackupConfiguration{}
 				helpers.TemplateThings(tpld, serviceTypeValues.Volumes.BackupConfiguration, &bc)
-				templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
-				templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
+				switch buildValues.Backup.K8upVersion {
+				case "v2":
+					templateAnnotations["k8up.io/backupcommand"] = bc.Command
+					templateAnnotations["k8up.io/file-extension"] = bc.FileExtension
+				default:
+					templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
+					templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
+				}
 			}
 
 			// create the initial deployment spec
@@ -200,6 +206,12 @@ func GenerateDeploymentTemplate(
 					RunAsUser:  helpers.Int64Ptr(buildValues.PodSecurityContext.RunAsUser),
 					RunAsGroup: helpers.Int64Ptr(buildValues.PodSecurityContext.RunAsGroup),
 					FSGroup:    helpers.Int64Ptr(buildValues.PodSecurityContext.FsGroup),
+				}
+			}
+			// some services have a fsgroup override
+			if serviceTypeValues.PodSecurityContext.HasDefault {
+				deployment.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+					FSGroup: helpers.Int64Ptr(serviceTypeValues.PodSecurityContext.FSGroup),
 				}
 			}
 			if buildValues.PodSecurityContext.OnRootMismatch {

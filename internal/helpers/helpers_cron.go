@@ -16,7 +16,7 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 	// namespace, so will not change after a deployment for a given namespace.
 	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", namespace)))
 	var minutes, hours, days, months, dayweek string
-	splitCron := strings.Split(cron, " ")
+	splitCron := strings.Split(strings.Trim(cron, " "), " ")
 	// check the provided cron splits into 5
 	if len(splitCron) == 5 {
 		for idx, val := range splitCron {
@@ -214,6 +214,9 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 			}
 		}
 		return fmt.Sprintf("%v %v %v %v %v", minutes, hours, days, months, dayweek), nil
+	}
+	if len(splitCron) < 5 && len(splitCron) > 0 || len(splitCron) > 5 {
+		return "", fmt.Errorf("cron definition '%s' is invalid, %d fields provided, required 5", cron, len(splitCron))
 	}
 	return "", fmt.Errorf("cron definition '%s' is invalid", cron)
 }

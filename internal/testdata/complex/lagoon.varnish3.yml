@@ -1,0 +1,28 @@
+---
+docker-compose-yaml: internal/testdata/complex/docker-compose.varnish3.yml
+
+project: example-com
+
+container-registries:
+  my-custom-registry:
+    username: registry_user
+    password: REGISTRY_PASSWORD
+  my-other-custom-registry:
+    username: registry_user2
+    password: REGISTRY_PASSWORD2
+    url: registry1.example.com
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - example.com
+    cronjobs:
+      - name: drush cron
+        schedule: "*/15 * * * *"
+        command: drush cron
+        service: cli
+      - name: drush cron2
+        schedule: "*/30 * * * *"
+        command: drush cron
+        service: cli

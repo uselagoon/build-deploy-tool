@@ -85,5 +85,6 @@ func collectImageBuildArguments(buildValues BuildValues) map[string]string {
 	for _, icba := range buildValues.ImageCacheBuildArguments {
 		buildArgs[fmt.Sprintf("LAGOON_CACHE_%s", icba.Name)] = icba.Image
 	}
+	buildArgs["LAGOON_SSH_PRIVATE_KEY"] = buildValues.SSHPrivateKey
 	return buildArgs
 }
