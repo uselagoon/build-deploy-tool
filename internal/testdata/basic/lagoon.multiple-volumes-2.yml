@@ -1,0 +1,10 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.multiple-volumes-2.yml
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com

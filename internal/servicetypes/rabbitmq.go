@@ -36,6 +36,7 @@ var rabbitmq = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "rabbitmq",
 		Container: corev1.Container{

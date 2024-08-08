@@ -309,6 +309,74 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service4",
 		},
+		{
+			name: "test10 basic deployment polysite cronjobs",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.polysite-cronjobs.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service7",
+		},
+		{
+			name: "test11 basic-persistent deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service8",
+		},
+		{
+			name: "test12 basic deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-2.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service9",
+		},
+		{
+			name: "test13 complex deployment multiple volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"nginx2":  "harbor.example/example-project/main/nginx2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php2":    "harbor.example/example-project/main/php2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/service6",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

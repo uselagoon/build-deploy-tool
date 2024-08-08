@@ -1,9 +1,9 @@
 package lagoon
 
 import (
-	"errors"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
@@ -18,8 +18,14 @@ type OriginalServiceOrder struct {
 	Index int
 }
 
+var (
+	customVolumePrefix string = "custom-"
+)
+
+type OriginalVolumeOrder OriginalServiceOrder
+
 // UnmarshaDockerComposeYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
-func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles bool, envvars map[string]string) (*composetypes.Project, []OriginalServiceOrder, error) {
+func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles bool, envvars map[string]string) (*composetypes.Project, []OriginalServiceOrder, []OriginalVolumeOrder, error) {
 	options, err := cli.NewProjectOptions([]string{file},
 		cli.WithResolvedPaths(false),
 		cli.WithLoadOptions(
@@ -31,27 +37,31 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 			},
 		),
 	)
+	if err != nil {
+		return nil, nil, nil, err
+	}
 	options.Environment = envvars
 	l, err := cli.ProjectFromOptions(options)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	originalOrder, err := UnmarshalLagoonDockerComposeYAML(file)
+	originalOrder, originalVolume, err := UnmarshalLagoonDockerComposeYAML(file)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
-	return l, originalOrder, nil
+	return l, originalOrder, originalVolume, nil
 }
 
 // UnmarshalLagoonDockerComposeYAML unmarshal the docker-compose.yml file into a YAML and map for consumption.
 // this uses yaml mapslice to preserve the order of the services in the docker-compose file
 // as lagoon relies on this order for building images and determining the order of routes
-func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, error) {
+func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, []OriginalVolumeOrder, error) {
 	rawYAML, err := os.ReadFile(file)
-	l := []OriginalServiceOrder{}
 	if err != nil {
-		return nil, fmt.Errorf("couldn't read %v: %v", file, err)
+		return nil, nil, fmt.Errorf("couldn't read %v: %v", file, err)
 	}
+	ls := []OriginalServiceOrder{}
+	lv := []OriginalVolumeOrder{}
 	// unmarshal docker-compose.yml
 	// use to gopkg yaml v2 for MapSlice
 	m := goyaml.MapSlice{}
@@ -61,13 +71,19 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, erro
 		if item.Key.(string) == "services" {
 			for idx, v := range item.Value.(goyaml.MapSlice) {
 				if err := CheckServiceNameValidity(v); err != nil {
-					return nil, err
+					return nil, nil, err
 				}
-				l = append(l, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
+				ls = append(ls, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
+			}
+		}
+		// extract the volumes only
+		if item.Key.(string) == "volumes" {
+			for idx, v := range item.Value.(goyaml.MapSlice) {
+				lv = append(lv, OriginalVolumeOrder{Index: idx, Name: v.Key.(string)})
 			}
 		}
 	}
-	return l, nil
+	return ls, lv, nil
 }
 
 // use goyamlv3 that newer versions of compose-go uses to validate
@@ -94,7 +110,7 @@ func CheckServiceNameValidity(v goyaml.MapItem) error {
 				// check if the lagoon.type != none
 				if label.Key == "lagoon.type" && label.Value != "none" {
 					if err := utilvalidation.IsDNS1035Label(v.Key.(string)); err != nil {
-						return errors.New("Service name is invalid. Please refer to the documentation regarding service naming requirements")
+						return fmt.Errorf("service name is invalid. Please refer to the documentation regarding service naming requirements")
 					}
 				}
 			}
@@ -103,12 +119,32 @@ func CheckServiceNameValidity(v goyaml.MapItem) error {
 	return nil
 }
 
-// CheckServiceLagoonLabel checks the labels in a compose service to see if the requested label exists, and returns the value if so
-func CheckServiceLagoonLabel(labels map[string]string, label string) string {
+// CheckDockerComposeLagoonLabel checks the labels in a compose service to see if the requested label exists, and returns the value if so
+func CheckDockerComposeLagoonLabel(labels map[string]string, label string) string {
 	for k, v := range labels {
 		if k == label {
 			return v
 		}
 	}
 	return ""
+}
+
+// pad volume names from the docker compose file with the compose stack name
+func GetComposeVolumeName(c, n string) string {
+	return fmt.Sprintf("%s_%s", c, n)
+}
+
+// trim compose stack name from volume name
+func GetVolumeNameFromComposeName(c, n string) string {
+	return strings.Replace(n, fmt.Sprintf("%s_", c), "", 1)
+}
+
+// pad volume names from the docker compose file with the custom volume prefix
+func GetLagoonVolumeName(n string) string {
+	return fmt.Sprintf("%s%s", customVolumePrefix, n)
+}
+
+// trim the custom prefix from lagoon volume names returning them to the name defined in the docker compose file
+func GetVolumeNameFromLagoonVolume(n string) string {
+	return strings.Replace(n, customVolumePrefix, "", 1)
 }

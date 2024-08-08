@@ -60,7 +60,7 @@ var validateDockerComposeWithErrors = &cobra.Command{
 
 // ValidateDockerCompose validate a docker-compose file
 func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) error {
-	_, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
+	_, _, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
 	if err != nil {
 		return err
 	}

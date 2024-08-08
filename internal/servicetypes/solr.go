@@ -26,6 +26,7 @@ var solr = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "solr",
 		Container: corev1.Container{

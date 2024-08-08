@@ -25,6 +25,7 @@ var nginx = ServiceType{
 			},
 		},
 	},
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "nginx",
 		Container: corev1.Container{
@@ -75,8 +76,9 @@ var nginx = ServiceType{
 }
 
 var nginxPHP = ServiceType{
-	Name:  "nginx-php",
-	Ports: nginx.Ports,
+	Name:                   "nginx-php",
+	Ports:                  nginx.Ports,
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "nginx",
 		Container: corev1.Container{
@@ -183,8 +185,10 @@ var nginxPHP = ServiceType{
 }
 
 var nginxPHPPersistent = ServiceType{
-	Name:  "nginx-php-persistent",
-	Ports: nginx.Ports,
+	Name:                     "nginx-php-persistent",
+	Ports:                    nginx.Ports,
+	ProvidesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteMany,

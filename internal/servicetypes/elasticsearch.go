@@ -27,6 +27,7 @@ var elasticsearch = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "elasticsearch",
 		Container: corev1.Container{

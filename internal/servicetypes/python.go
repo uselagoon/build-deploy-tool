@@ -23,6 +23,7 @@ var python = ServiceType{
 			},
 		},
 	},
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "python",
 		Container: corev1.Container{
@@ -70,8 +71,10 @@ var python = ServiceType{
 }
 
 var pythonPersistent = ServiceType{
-	Name:  "python-persistent",
-	Ports: python.Ports,
+	Name:                     "python-persistent",
+	Ports:                    python.Ports,
+	ProvidesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	PrimaryContainer: ServiceContainer{
 		Name:      python.PrimaryContainer.Name,
 		Container: python.PrimaryContainer.Container,

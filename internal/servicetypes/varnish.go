@@ -86,8 +86,9 @@ var varnish = ServiceType{
 }
 
 var varnishPersistent = ServiceType{
-	Name:  "varnish-persistent",
-	Ports: varnish.Ports,
+	Name:                     "varnish-persistent",
+	Ports:                    varnish.Ports,
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name:      varnish.PrimaryContainer.Name,
 		Container: varnish.PrimaryContainer.Container,
