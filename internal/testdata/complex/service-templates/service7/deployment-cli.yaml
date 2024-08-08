@@ -7,23 +7,23 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: node
+    app.kubernetes.io/instance: cli
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/name: cli-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: node
-    lagoon.sh/service-type: basic-persistent
-    lagoon.sh/template: basic-persistent-0.1.0
-  name: node
+    lagoon.sh/service: cli
+    lagoon.sh/service-type: cli-persistent
+    lagoon.sh/template: cli-persistent-0.1.0
+  name: cli
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: node
-      app.kubernetes.io/name: basic-persistent
+      app.kubernetes.io/instance: cli
+      app.kubernetes.io/name: cli-persistent
   strategy: {}
   template:
     metadata:
@@ -33,16 +33,16 @@ spec:
         lagoon.sh/version: v2.7.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: node
+        app.kubernetes.io/instance: cli
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: basic-persistent
+        app.kubernetes.io/name: cli-persistent
         lagoon.sh/buildType: branch
         lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: node
-        lagoon.sh/service-type: basic-persistent
-        lagoon.sh/template: basic-persistent-0.1.0
+        lagoon.sh/service: cli
+        lagoon.sh/service-type: cli-persistent
+        lagoon.sh/template: cli-persistent-0.1.0
     spec:
       containers:
       - env:
@@ -50,51 +50,53 @@ spec:
           value: abcdefg123456
         - name: CRONJOBS
         - name: SERVICE_NAME
-          value: node
+          value: cli
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        image: harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
-        livenessProbe:
-          initialDelaySeconds: 60
-          tcpSocket:
-            port: 3000
-          timeoutSeconds: 10
-        name: basic
-        ports:
-        - containerPort: 3000
-          name: http
-          protocol: TCP
+        name: cli
         readinessProbe:
-          initialDelaySeconds: 1
-          tcpSocket:
-            port: 3000
-          timeoutSeconds: 1
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
         resources:
           requests:
             cpu: 10m
             memory: 10Mi
         securityContext: {}
         volumeMounts:
-        - mountPath: /config
-          name: custom-config
-        - mountPath: /app/files/
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
+        - mountPath: /app/otherfiles/
           name: custom-files
-        - mountPath: /data
-          name: node
+        - mountPath: /app/web/sites/default/files//php
+          name: nginx-twig
+        - mountPath: /app/web/sites/default/files/
+          name: nginx
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       volumes:
-      - name: custom-config
-        persistentVolumeClaim:
-          claimName: custom-config
       - name: custom-files
         persistentVolumeClaim:
           claimName: custom-files
-      - name: node
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
+      - emptyDir: {}
+        name: nginx-twig
+      - name: nginx
         persistentVolumeClaim:
-          claimName: node
+          claimName: nginx
 status: {}

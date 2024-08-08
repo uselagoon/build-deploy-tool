@@ -47,8 +47,10 @@ spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
-          value: abcdefg123456
+          value: "0000000000000000000000000000000000000000"
         - name: CRONJOBS
+          value: |
+            3,18,33,48 * * * * drush cron
         - name: SERVICE_NAME
           value: cli
         envFrom:
@@ -76,27 +78,26 @@ spec:
         - mountPath: /var/run/secrets/lagoon/sshkey/
           name: lagoon-sshkey
           readOnly: true
-        - mountPath: /app/otherfiles/
-          name: custom-files
-        - mountPath: /app/web/sites/default/files//php
-          name: nginx-twig
-        - mountPath: /app/web/sites/default/files/
-          name: nginx
+        - mountPath: /app/docroot/sites/default/files//php
+          name: nginx-php-twig
+        - mountPath: /app/docroot/sites/default/files/
+          name: nginx-php
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
       volumes:
-      - name: custom-files
-        persistentVolumeClaim:
-          claimName: custom-files
       - name: lagoon-sshkey
         secret:
           defaultMode: 420
           secretName: lagoon-sshkey
       - emptyDir: {}
-        name: nginx-twig
-      - name: nginx
+        name: nginx-php-twig
+      - name: nginx-php
         persistentVolumeClaim:
-          claimName: nginx
+          claimName: nginx-php
 status: {}

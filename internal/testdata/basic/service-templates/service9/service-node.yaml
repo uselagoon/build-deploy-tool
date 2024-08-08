@@ -9,14 +9,14 @@ metadata:
   labels:
     app.kubernetes.io/instance: node
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic
+    app.kubernetes.io/name: basic-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: node
-    lagoon.sh/service-type: basic
-    lagoon.sh/template: basic-0.1.0
+    lagoon.sh/service-type: basic-persistent
+    lagoon.sh/template: basic-persistent-0.1.0
   name: node
 spec:
   ports:
@@ -26,6 +26,6 @@ spec:
     targetPort: http
   selector:
     app.kubernetes.io/instance: node
-    app.kubernetes.io/name: basic
+    app.kubernetes.io/name: basic-persistent
 status:
   loadBalancer: {}

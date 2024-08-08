@@ -35,7 +35,7 @@ volumes:
   db:
     labels:
       # this label is not technically needed, but explicit
-      lagoon.type: none 
+      lagoon.type: none
   notused:
     labels:
       lagoon.type: persistent

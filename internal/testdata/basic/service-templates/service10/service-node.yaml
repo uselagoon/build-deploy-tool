@@ -20,18 +20,10 @@ metadata:
   name: node
 spec:
   ports:
-  - name: tcp-1234
-    port: 1234
+  - name: http
+    port: 3000
     protocol: TCP
-    targetPort: tcp-1234
-  - name: tcp-8191
-    port: 8191
-    protocol: TCP
-    targetPort: tcp-8191
-  - name: udp-9001
-    port: 9001
-    protocol: UDP
-    targetPort: udp-9001
+    targetPort: http
   selector:
     app.kubernetes.io/instance: node
     app.kubernetes.io/name: basic

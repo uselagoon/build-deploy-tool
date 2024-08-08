@@ -9,21 +9,21 @@ metadata:
   labels:
     app.kubernetes.io/instance: node
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/name: basic
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: node
-    lagoon.sh/service-type: basic-persistent
-    lagoon.sh/template: basic-persistent-0.1.0
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
   name: node
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: node
-      app.kubernetes.io/name: basic-persistent
+      app.kubernetes.io/name: basic
   strategy: {}
   template:
     metadata:
@@ -35,14 +35,14 @@ spec:
       labels:
         app.kubernetes.io/instance: node
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: basic-persistent
+        app.kubernetes.io/name: basic
         lagoon.sh/buildType: branch
         lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
         lagoon.sh/service: node
-        lagoon.sh/service-type: basic-persistent
-        lagoon.sh/template: basic-persistent-0.1.0
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
     spec:
       containers:
       - env:
@@ -77,24 +77,24 @@ spec:
             memory: 10Mi
         securityContext: {}
         volumeMounts:
+        - mountPath: /data
+          name: custom-node
         - mountPath: /config
           name: custom-config
         - mountPath: /app/files/
           name: custom-files
-        - mountPath: /data
-          name: node
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       volumes:
+      - name: custom-node
+        persistentVolumeClaim:
+          claimName: custom-node
       - name: custom-config
         persistentVolumeClaim:
           claimName: custom-config
       - name: custom-files
         persistentVolumeClaim:
           claimName: custom-files
-      - name: node
-        persistentVolumeClaim:
-          claimName: node
 status: {}

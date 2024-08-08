@@ -9,21 +9,21 @@ metadata:
   labels:
     app.kubernetes.io/instance: node
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: basic-persistent
+    app.kubernetes.io/name: basic
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: node
-    lagoon.sh/service-type: basic-persistent
-    lagoon.sh/template: basic-persistent-0.1.0
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
   name: node
 spec:
   replicas: 1
   selector:
     matchLabels:
       app.kubernetes.io/instance: node
-      app.kubernetes.io/name: basic-persistent
+      app.kubernetes.io/name: basic
   strategy: {}
   template:
     metadata:
@@ -35,20 +35,22 @@ spec:
       labels:
         app.kubernetes.io/instance: node
         app.kubernetes.io/managed-by: build-deploy-tool
-        app.kubernetes.io/name: basic-persistent
+        app.kubernetes.io/name: basic
         lagoon.sh/buildType: branch
         lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
         lagoon.sh/service: node
-        lagoon.sh/service-type: basic-persistent
-        lagoon.sh/template: basic-persistent-0.1.0
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
     spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
           value: abcdefg123456
         - name: CRONJOBS
+          value: |
+            3,18,33,48 0 * * * drush cron
         - name: SERVICE_NAME
           value: node
         envFrom:
@@ -59,42 +61,31 @@ spec:
         livenessProbe:
           initialDelaySeconds: 60
           tcpSocket:
-            port: 3000
+            port: 1234
           timeoutSeconds: 10
         name: basic
         ports:
-        - containerPort: 3000
-          name: http
+        - containerPort: 1234
+          name: tcp-1234
           protocol: TCP
+        - containerPort: 8191
+          name: tcp-8191
+          protocol: TCP
+        - containerPort: 9001
+          name: udp-9001
+          protocol: UDP
         readinessProbe:
           initialDelaySeconds: 1
           tcpSocket:
-            port: 3000
+            port: 1234
           timeoutSeconds: 1
         resources:
           requests:
             cpu: 10m
             memory: 10Mi
         securityContext: {}
-        volumeMounts:
-        - mountPath: /config
-          name: custom-config
-        - mountPath: /app/files/
-          name: custom-files
-        - mountPath: /data
-          name: node
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
-      volumes:
-      - name: custom-config
-        persistentVolumeClaim:
-          claimName: custom-config
-      - name: custom-files
-        persistentVolumeClaim:
-          claimName: custom-files
-      - name: node
-        persistentVolumeClaim:
-          claimName: node
 status: {}
