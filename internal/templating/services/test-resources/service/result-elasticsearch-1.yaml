@@ -9,14 +9,14 @@ metadata:
   labels:
     app.kubernetes.io/instance: myservice
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/name: elasticsearch-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice
-    lagoon.sh/service-type: elasticsearch
-    lagoon.sh/template: elasticsearch-0.1.0
+    lagoon.sh/service-type: elasticsearch-persistent
+    lagoon.sh/template: elasticsearch-persistent-0.1.0
   name: myservice
 spec:
   ports:
@@ -26,7 +26,7 @@ spec:
     targetPort: 9200
   selector:
     app.kubernetes.io/instance: myservice
-    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/name: elasticsearch-persistent
 status:
   loadBalancer: {}
 ---
@@ -40,14 +40,14 @@ metadata:
   labels:
     app.kubernetes.io/instance: myservice-size
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/name: elasticsearch-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
     lagoon.sh/service: myservice-size
-    lagoon.sh/service-type: elasticsearch
-    lagoon.sh/template: elasticsearch-0.1.0
+    lagoon.sh/service-type: elasticsearch-persistent
+    lagoon.sh/template: elasticsearch-persistent-0.1.0
   name: myservice-size
 spec:
   ports:
@@ -57,6 +57,6 @@ spec:
     targetPort: 9200
   selector:
     app.kubernetes.io/instance: myservice-size
-    app.kubernetes.io/name: elasticsearch
+    app.kubernetes.io/name: elasticsearch-persistent
 status:
   loadBalancer: {}

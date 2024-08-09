@@ -13,7 +13,7 @@ import (
 var defaultElasticsearchPort int32 = 9200
 
 var elasticsearch = ServiceType{
-	Name: "elasticsearch",
+	Name: "elasticsearch-persistent",
 	Ports: ServicePorts{
 		Ports: []corev1.ServicePort{
 			{
