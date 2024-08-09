@@ -408,7 +408,8 @@ func composeToServiceValues(
 					if err != nil {
 						return ServiceValues{}, fmt.Errorf("unable to convert crontab for cronjob %s: %v", cronjob.Name, err)
 					}
-					if inpod {
+					// if the cronjob is inpod, or the cronjob has an inpod flag override
+					if inpod || (cronjob.InPod != nil && *cronjob.InPod) {
 						inpodcronjobs = append(inpodcronjobs, cronjob)
 					} else {
 						// make the cronjob name kubernetes compliant

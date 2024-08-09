@@ -1,0 +1,21 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.yml
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com
+    cronjobs:
+      - name: drush cron
+        schedule: "*/15 * * * *"
+        command: drush cron
+        service: node
+        inPod: true # not required as the interval is suited to in pod already
+      - name: drush cron2
+        schedule: "*/30 * * * *"
+        command: drush cron
+        service: node
+        inPod: true

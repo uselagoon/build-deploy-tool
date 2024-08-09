@@ -309,6 +309,21 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/service4",
 		},
+		{
+			name: "test10 basic deployment native cronjobs disabled",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon-cronjob-native-disable.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/service8",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
