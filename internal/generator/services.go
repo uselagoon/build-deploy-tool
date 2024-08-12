@@ -360,7 +360,8 @@ func composeToServiceValues(
 				tt := strings.Split(t, ":")
 				if tt[0] == lagoonType {
 					useSpot = true
-					if tt[1] == "force" {
+					// check if the length of the split is more than one indicating that `force` is provided
+					if len(tt) > 1 && tt[1] == "force" {
 						forceSpot = true
 					}
 				}
@@ -372,7 +373,8 @@ func composeToServiceValues(
 				tt := strings.Split(t, ":")
 				if tt[0] == lagoonType {
 					cronjobUseSpot = true
-					if tt[1] == "force" {
+					// check if the length of the split is more than one indicating that `force` is provided
+					if len(tt) > 1 && tt[1] == "force" {
 						cronjobForceSpot = true
 					}
 				}
