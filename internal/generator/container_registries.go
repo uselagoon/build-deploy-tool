@@ -66,8 +66,10 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 			username = &lagoon.EnvironmentVariable{Value: cr.Username}
 			usernameSource = ".lagoon.yml"
 		}
+		isDockerHub := false
 		if cr.URL == "" {
 			cr.URL = "index.docker.io"
+			isDockerHub = true
 			buildValues.IgnoreImageCache = true
 		}
 		eru := cr.URL
@@ -88,6 +90,7 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 			UsernameSource: usernameSource,
 			PasswordSource: passwordSource,
 			SecretName:     secretName,
+			IsDockerHub:    &isDockerHub,
 		})
 	}
 	return nil

@@ -529,6 +529,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						URL:            "registry1.example.com",
 						UsernameSource: ".lagoon.yml",
 						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+						IsDockerHub:    helpers.BoolPtr(false),
 					},
 				},
 				Images: []imageBuilds{
@@ -656,6 +657,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						URL:            "index.docker.io",
 						UsernameSource: ".lagoon.yml",
 						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+						IsDockerHub:    helpers.BoolPtr(true),
 					},
 					{
 						Name:           "my-other-custom-registry",
@@ -665,6 +667,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						URL:            "registry1.example.com",
 						UsernameSource: ".lagoon.yml",
 						PasswordSource: ".lagoon.yml (we recommend using an environment variable, see the docs on container-registries for more information)",
+						IsDockerHub:    helpers.BoolPtr(false),
 					},
 				},
 				Images: []imageBuilds{
