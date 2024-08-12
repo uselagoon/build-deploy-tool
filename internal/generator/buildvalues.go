@@ -104,6 +104,7 @@ type ContainerRegistry struct {
 	UsernameSource string `json:"usernameSource" description:"information regarding the source of the username"`
 	PasswordSource string `json:"passwordSource" description:"information regarding the source of the password"`
 	SecretName     string `json:"secretName" description:"the name of the secret to be created for this registry"`
+	IsDockerHub    *bool  `json:"isDockerHub" description:"if this registry is dockerhub or not"`
 }
 
 type PodSecurityContext struct {
