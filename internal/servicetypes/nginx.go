@@ -137,7 +137,7 @@ var nginxPHP = ServiceType{
 			SecurityContext: &corev1.SecurityContext{},
 			Ports: []corev1.ContainerPort{
 				{
-					Name:          "http",
+					Name:          "php",
 					ContainerPort: defaultPHPPort,
 					Protocol:      corev1.ProtocolTCP,
 				},
