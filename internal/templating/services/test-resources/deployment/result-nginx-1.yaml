@@ -101,7 +101,7 @@ spec:
         name: php
         ports:
         - containerPort: 9000
-          name: http
+          name: php
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 2
@@ -228,7 +228,7 @@ spec:
         name: php
         ports:
         - containerPort: 9000
-          name: http
+          name: php
           protocol: TCP
         readinessProbe:
           initialDelaySeconds: 2
