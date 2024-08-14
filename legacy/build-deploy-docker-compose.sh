@@ -618,7 +618,7 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
   for FPI in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.forcePullImages[]?')
   do
-    docker pull "$FPI"
+    echo docker pull "$FPI"
   done
 
   # now we loop through the images in the build data and determine if they need to be pulled or build
