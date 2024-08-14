@@ -615,10 +615,12 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg ${BUILD_ARG_NAME}="${BUILD_ARG_VALUE}")
   done
 
-
-  for FPI in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.forcePullImages[]?')
+  # Here we iterate over any lagoon.base.image data that has been passed to us
+  # in order to explicitly
+  for FPI in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -rc '.forcePullImages[]?')
   do
-    docker pull "$FPI"
+    echo "Pulling Image: ${FPI}"
+    docker pull "${FPI}"
   done
 
   # now we loop through the images in the build data and determine if they need to be pulled or build
