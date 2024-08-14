@@ -615,18 +615,11 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg ${BUILD_ARG_NAME}="${BUILD_ARG_VALUE}")
   done
 
-  # Check if REFRESH_BASE_IMAGES is set and not empty
-  if [[ -n "$REFRESH_BASE_IMAGES" ]]; then
-    # Convert the comma-separated list into an array
-    IFS=',' read -r -a images <<< "$REFRESH_BASE_IMAGES"
 
-    # Loop through the array and pull each image
-    for image in "${images[@]}"; do
-      echo "Pulling Docker image: $image"
-      docker pull "$image"
-    done
-  fi
-
+  for FPI in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.forcePullImages[]?')
+  do
+    docker pull "$FPI"
+  done
 
   # now we loop through the images in the build data and determine if they need to be pulled or build
   for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')

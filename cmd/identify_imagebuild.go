@@ -35,6 +35,7 @@ type imageBuild struct {
 	Images              []imageBuilds                 `json:"images"`
 	BuildArguments      map[string]string             `json:"buildArguments"`
 	ContainerRegistries []generator.ContainerRegistry `json:"containerRegistries,omitempty"`
+	ForcePullImages     []string                      `json:"forcePullImages"`
 }
 
 type imageBuilds struct {
@@ -69,6 +70,7 @@ func ImageBuildConfigurationIdentification(g generator.GeneratorInput) (imageBui
 			})
 		}
 	}
+	lServices.ForcePullImages = lagoonBuild.BuildValues.ForcePullImages
 	lServices.ContainerRegistries = lagoonBuild.BuildValues.ContainerRegistry
 	return lServices, nil
 }

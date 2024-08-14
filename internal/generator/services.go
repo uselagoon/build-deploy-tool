@@ -244,6 +244,11 @@ func composeToServiceValues(
 			}
 		}
 
+		baseimage := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
+		if baseimage != "" {
+			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseimage)
+		}
+
 		// if there are overrides defined in the lagoon API `LAGOON_SERVICE_TYPES`
 		// handle those here
 		if buildValues.ServiceTypeOverrides != nil {

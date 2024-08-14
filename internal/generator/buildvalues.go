@@ -80,6 +80,7 @@ type BuildValues struct {
 	ImageCacheBuildArguments      []ImageCacheBuildArguments   `json:"imageCacheBuildArgs"`
 	IgnoreImageCache              bool                         `json:"ignoreImageCache"`
 	SSHPrivateKey                 string                       `json:"sshPrivateKey"`
+	ForcePullImages               []string                     `json:"forcePullImages"`
 }
 
 type Resources struct {
