@@ -615,6 +615,19 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     BUILD_ARGS+=(--build-arg ${BUILD_ARG_NAME}="${BUILD_ARG_VALUE}")
   done
 
+  # Check if REFRESH_BASE_IMAGES is set and not empty
+  if [[ -n "$REFRESH_BASE_IMAGES" ]]; then
+    # Convert the comma-separated list into an array
+    IFS=',' read -r -a images <<< "$REFRESH_BASE_IMAGES"
+
+    # Loop through the array and pull each image
+    for image in "${images[@]}"; do
+      echo "Pulling Docker image: $image"
+      docker pull "$image"
+    done
+  fi
+
+
   # now we loop through the images in the build data and determine if they need to be pulled or build
   for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
   do
@@ -646,10 +659,10 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       # now do the actual image build
       if [ $BUILD_TARGET == "false" ]; then
           echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --pull --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
       else
           echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --pull --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
       fi
 
       # Keep a list of the images we have built, as we need to push them to the registry later
