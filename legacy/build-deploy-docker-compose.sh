@@ -616,7 +616,7 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
   done
 
   # Here we iterate over any lagoon.base.image data that has been passed to us
-  # in order to explicitly
+  # in order to explicitly pull the images to ensure they are current
   for FPI in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -rc '.forcePullImages[]?')
   do
     echo "Pulling Image: ${FPI}"
