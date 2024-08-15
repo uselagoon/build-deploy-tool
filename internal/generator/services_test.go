@@ -2,14 +2,13 @@ package generator
 
 import (
 	"encoding/json"
-	"reflect"
-	"testing"
-	"time"
-
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"reflect"
+	"testing"
+	"time"
 )
 
 func Test_composeToServiceValues(t *testing.T) {
@@ -1162,6 +1161,41 @@ func Test_composeToServiceValues(t *testing.T) {
 					BuildImage: "harbor.example/example-project/main/redis:latest",
 				},
 			},
+		},
+		{
+			name: "test23 - failure on invalid baseimage label reference structure",
+			args: args{
+				buildValues: &BuildValues{
+					Namespace:            "example-project-main",
+					Project:              "example-project",
+					ImageRegistry:        "harbor.example",
+					Environment:          "main",
+					Branch:               "main",
+					BuildType:            "branch",
+					ServiceTypeOverrides: &lagoon.EnvironmentVariable{},
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Overrides: map[string]lagoon.Override{
+									"redis": {
+										Image: "uselagoon/fake-redis:7",
+									},
+								},
+							},
+						},
+					},
+				},
+				composeService: "redis",
+				composeServiceValues: composetypes.ServiceConfig{
+					Labels: composetypes.Labels{
+						"lagoon.type":       "redis",
+						"lagoon.base.image": "this-is-an-invalid-reference!",
+					},
+					Image: "uselagoon/fake-redis:7",
+				},
+			},
+			want:    ServiceValues{},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
