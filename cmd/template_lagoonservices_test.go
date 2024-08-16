@@ -165,7 +165,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service6",
+			want:         "internal/testdata/complex/service-templates/service5",
 		},
 		{
 			name:        "test3 - funky pvcs",
@@ -405,7 +405,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service7",
+			want:         "internal/testdata/complex/service-templates/service6",
 		},
 	}
 	for _, tt := range tests {
