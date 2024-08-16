@@ -222,7 +222,7 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 }
 
 func IsInPodCronjob(cron string) (bool, error) {
-	splitCron := strings.Split(cron, " ")
+	splitCron := strings.Split(strings.Trim(cron, " "), " ")
 	// check the provided cron splits into 5
 	if len(splitCron) == 5 {
 		for idx, val := range splitCron {
