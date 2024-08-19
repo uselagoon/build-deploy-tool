@@ -3,6 +3,7 @@ package generator
 import (
 	"fmt"
 	"net/url"
+	"sort"
 	"strings"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -93,5 +94,9 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 			IsDockerHub:    &isDockerHub,
 		})
 	}
+	// sort the container registries
+	sort.Slice(buildValues.ContainerRegistry, func(i, j int) bool {
+		return buildValues.ContainerRegistry[i].Name < buildValues.ContainerRegistry[j].Name
+	})
 	return nil
 }
