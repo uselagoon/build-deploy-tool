@@ -7,7 +7,9 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: cronjob-myservice
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cronjob-cli
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -31,7 +33,9 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
+            app.kubernetes.io/instance: cronjob-myservice
             app.kubernetes.io/managed-by: build-deploy-tool
+            app.kubernetes.io/name: cronjob-cli
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production
@@ -93,7 +97,9 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: cronjob-myservice
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cronjob-cli
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -117,7 +123,9 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
+            app.kubernetes.io/instance: cronjob-myservice
             app.kubernetes.io/managed-by: build-deploy-tool
+            app.kubernetes.io/name: cronjob-cli
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production
@@ -179,7 +187,9 @@ metadata:
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
   labels:
+    app.kubernetes.io/instance: cronjob-myservice-persist
     app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cronjob-cli-persistent
     lagoon.sh/buildType: branch
     lagoon.sh/environment: environment-name
     lagoon.sh/environmentType: production
@@ -203,7 +213,9 @@ spec:
             lagoon.sh/version: v2.x.x
           creationTimestamp: null
           labels:
+            app.kubernetes.io/instance: cronjob-myservice-persist
             app.kubernetes.io/managed-by: build-deploy-tool
+            app.kubernetes.io/name: cronjob-cli-persistent
             lagoon.sh/buildType: branch
             lagoon.sh/environment: environment-name
             lagoon.sh/environmentType: production

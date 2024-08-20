@@ -34,17 +34,15 @@ func GenerateCronjobTemplate(
 				// add the default labels
 				labels := map[string]string{
 					"app.kubernetes.io/managed-by": "build-deploy-tool",
-					// @TODO: these are removed for now to resolve a deployment label matching issue
-					// that can crop up
-					// "app.kubernetes.io/name":       serviceTypeValues.Name,
-					// "app.kubernetes.io/instance":   serviceValues.OverrideName,
-					"lagoon.sh/project":         buildValues.Project,
-					"lagoon.sh/environment":     buildValues.Environment,
-					"lagoon.sh/environmentType": buildValues.EnvironmentType,
-					"lagoon.sh/buildType":       buildValues.BuildType,
-					"lagoon.sh/template":        fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
-					"lagoon.sh/service":         serviceValues.OverrideName,
-					"lagoon.sh/service-type":    serviceTypeValues.Name,
+					"app.kubernetes.io/name":       fmt.Sprintf("cronjob-%s", serviceTypeValues.Name),
+					"app.kubernetes.io/instance":   fmt.Sprintf("cronjob-%s", serviceValues.OverrideName),
+					"lagoon.sh/project":            buildValues.Project,
+					"lagoon.sh/environment":        buildValues.Environment,
+					"lagoon.sh/environmentType":    buildValues.EnvironmentType,
+					"lagoon.sh/buildType":          buildValues.BuildType,
+					"lagoon.sh/template":           fmt.Sprintf("%s-%s", serviceTypeValues.Name, "0.1.0"),
+					"lagoon.sh/service":            serviceValues.OverrideName,
+					"lagoon.sh/service-type":       serviceTypeValues.Name,
 				}
 
 				// add the default annotations
@@ -72,20 +70,6 @@ func GenerateCronjobTemplate(
 					serviceValues,
 					serviceTypeValues,
 				}
-
-				// cronjobs don't need backups
-				// if serviceTypeValues.Volumes.BackupConfiguration.Command != "" {
-				// 	bc := servicetypes.BackupConfiguration{}
-				// 	helpers.TemplateThings(tpld, serviceTypeValues.Volumes.BackupConfiguration, &bc)
-				// 	switch buildValues.Backup.K8upVersion {
-				// 	case "v2":
-				// 		templateAnnotations["k8up.io/backupcommand"] = bc.Command
-				// 		templateAnnotations["k8up.io/file-extension"] = bc.FileExtension
-				// 	default:
-				// 		templateAnnotations["k8up.syn.tools/backupcommand"] = bc.Command
-				// 		templateAnnotations["k8up.syn.tools/file-extension"] = bc.FileExtension
-				// 	}
-				// }
 
 				cronjob := &batchv1.CronJob{
 					TypeMeta: metav1.TypeMeta{
