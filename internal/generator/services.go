@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/distribution/reference"
 	"os"
 	"reflect"
 	"regexp"
@@ -242,6 +243,15 @@ func composeToServiceValues(
 			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
 				servicePersistentSize = val.Volumes.PersistentVolumeSize
 			}
+		}
+
+		baseimage := lagoon.CheckServiceLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
+		if baseimage != "" {
+			// First, let's ensure that the structure of the base image is valid
+			if !reference.ReferenceRegexp.MatchString(baseimage) {
+				return ServiceValues{}, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", composeService, baseimage)
+			}
+			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseimage)
 		}
 
 		// if there are overrides defined in the lagoon API `LAGOON_SERVICE_TYPES`
