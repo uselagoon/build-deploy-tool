@@ -1,6 +1,6 @@
 VERSION=$(shell echo $(shell git describe --abbrev=0 --tags)+$(shell git rev-parse --short=8 HEAD))
 BUILD=$(shell date +%FT%T%z)
-GO_VER=1.21
+GO_VER=1.22
 GOOS=linux
 GOARCH=amd64
 PKG=github.com/uselagoon/build-deploy-tool
