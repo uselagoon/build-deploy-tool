@@ -34,7 +34,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -72,7 +72,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -158,7 +158,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD":   "enabled",
 					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
@@ -235,7 +235,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD": "enabled",
 					"LAGOON_BUILD_NAME":                     "lagoon-build-abcdefg",
@@ -282,7 +282,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 			},
 		},
 		{
-			name:        "test4 - basic-persistent with worker-persistent with buildkit",
+			name:        "test4 - basic-persistent with worker-persistent with buildkit disabled",
 			description: "create a basic-persistent that gets a pvc and mount that volume on a worker-persistent type",
 			args: testdata.GetSeedData(
 				testdata.TestData{
@@ -298,16 +298,16 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 						},
 						{
 							Name:  "DOCKER_BUILDKIT",
-							Value: "true",
+							Value: "false",
 							Scope: "build",
 						},
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: true,
+				BuildKit: helpers.BoolPtr(false),
 				BuildArguments: map[string]string{
 					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD": "enabled",
-					"DOCKER_BUILDKIT":                       "true",
+					"DOCKER_BUILDKIT":                       "false",
 					"LAGOON_BUILD_NAME":                     "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":                        "example-project",
 					"LAGOON_ENVIRONMENT":                    "main",
@@ -354,7 +354,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -395,7 +395,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -439,7 +439,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -503,7 +503,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":                          "example-project",
@@ -585,7 +585,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					ImageCacheBuildArgsJSON: `[{"image":"harbor.example/example-project/main/node@sha256:e90daba405cbf33bab23fe8a021146811b2c258df5f2afe7dadc92c0778eef45","name":"node"}]`,
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",
@@ -631,7 +631,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					},
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":                          "example-project",
@@ -722,7 +722,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 					LagoonYAML:      "internal/testdata/basic/lagoon.forcebaseimagepull.yml",
 				}, true),
 			want: imageBuild{
-				BuildKit: false,
+				BuildKit: helpers.BoolPtr(true),
 				BuildArguments: map[string]string{
 					"LAGOON_BUILD_NAME":            "lagoon-build-abcdefg",
 					"LAGOON_PROJECT":               "example-project",

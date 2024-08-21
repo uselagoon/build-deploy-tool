@@ -31,7 +31,7 @@ var imageBuildIdentify = &cobra.Command{
 }
 
 type imageBuild struct {
-	BuildKit            bool                          `json:"buildKit"`
+	BuildKit            *bool                         `json:"buildKit"`
 	Images              []imageBuilds                 `json:"images"`
 	BuildArguments      map[string]string             `json:"buildArguments"`
 	ContainerRegistries []generator.ContainerRegistry `json:"containerRegistries,omitempty"`

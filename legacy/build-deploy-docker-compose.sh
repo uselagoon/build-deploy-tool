@@ -644,11 +644,13 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       BUILD_CONTEXT=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.context // ""')
       # the build target for this image build, the original source for this value is from the `docker-compose file`
       BUILD_TARGET=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.target // false')
-      # determine if buildkit should be used for this build
-      DOCKER_BUILDKIT=0
-      if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit // false')" == "true" ]; then
-          DOCKER_BUILDKIT=1
-          echo "Using BuildKit for $DOCKERFILE";
+      # determine if buildkit should be disabled for this build
+      DOCKER_BUILDKIT=1
+      if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit')" == "false" ]; then
+          DOCKER_BUILDKIT=0
+          echo "Not using BuildKit for $DOCKERFILE"
+      else
+          echo "Using BuildKit for $DOCKERFILE"
       fi
 
       # now do the actual image build

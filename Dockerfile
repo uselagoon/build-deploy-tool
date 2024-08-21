@@ -1,8 +1,8 @@
 ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
-FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} as commons
-FROM golang:${GO_VER:-1.21}-alpine3.18 as golang
+FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
+FROM golang:${GO_VER:-1.21}-alpine3.18 AS golang
 
 RUN apk add --no-cache git
 RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
@@ -72,7 +72,7 @@ RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing au
     && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
     && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
-    && pip install shyaml yq
+    && pip install --break-system-packages shyaml yq
 
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -Lo /usr/bin/kubectl https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/${architecture}/kubectl \
