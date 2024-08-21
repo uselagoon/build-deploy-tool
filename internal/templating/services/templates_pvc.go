@@ -133,7 +133,7 @@ func GeneratePVCTemplate(
 					AccessModes: []corev1.PersistentVolumeAccessMode{
 						serviceTypeValues.Volumes.PersistentVolumeType,
 					},
-					Resources: corev1.ResourceRequirements{
+					Resources: corev1.VolumeResourceRequirements{
 						Requests: corev1.ResourceList{
 							"storage": *resource.NewQuantity(volumeSize, resource.BinarySI),
 						},
