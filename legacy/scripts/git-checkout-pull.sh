@@ -1,5 +1,4 @@
 #!/bin/bash
-set -x
 set -eo pipefail
 
 # REF: can be a:

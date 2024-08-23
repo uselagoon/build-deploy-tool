@@ -4,7 +4,6 @@
 # in case this rollout fails, we show the logs of the new containers to the user as they might contain information about why
 # the rollout has failed
 stream_logs_deployment() {
-  set +x
   mkdir -p /tmp/kubectl-build-deploy/logs/container/${SERVICE_NAME}
 
   # this runs in a loop forever (until killed)
@@ -28,7 +27,6 @@ stream_logs_deployment() {
   done
 }
 
-set +x # reduce noise in build logs
 # start background logs streaming
 stream_logs_deployment &
 STREAM_LOGS_PID=$!
@@ -70,4 +68,3 @@ fi
 
 # stop all running stream logs
 pkill -P $STREAM_LOGS_PID || true
-set -x
