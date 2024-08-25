@@ -424,6 +424,23 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/test14-complex-custom-volumes",
 		},
+		{
+			name:        "test15-basic-custom-volume-no-backup",
+			description: "create a basic with custom volumes with one volume flagged to not be backed up",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-3.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test15-basic-custom-volume-no-backup",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

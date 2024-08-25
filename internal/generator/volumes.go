@@ -15,7 +15,7 @@ var (
 )
 
 // convertVolumes handles converting docker compose volumes into lagoon volumes and adds them to build values
-func convertVolumes(buildValues *BuildValues, lCompose *composetypes.Project, lComposeVolumes []lagoon.OriginalVolumeOrder, debug bool) error {
+func convertVolumes(buildValues *BuildValues, lCompose *composetypes.Project, lComposeVolumes []lagoon.OriginalVolumeOrder) error {
 	// convert docker-compose volumes to buildvolumes,
 	// range over the volumes and add them to build values
 	for _, vol := range lComposeVolumes {
@@ -23,7 +23,7 @@ func convertVolumes(buildValues *BuildValues, lCompose *composetypes.Project, lC
 			// check that the volumename from the ordered volumes matches (with the composestack name prefix)
 			if lagoon.GetComposeVolumeName(lCompose.Name, vol.Name) == composeVolumeValues.Name {
 				// if so, check that the volume returns values correctly
-				cVolume, err := composeToVolumeValues(lCompose.Name, composeVolumeValues, debug)
+				cVolume, err := composeToVolumeValues(lCompose.Name, composeVolumeValues)
 				if err != nil {
 					return err
 				}
@@ -45,7 +45,6 @@ func convertVolumes(buildValues *BuildValues, lCompose *composetypes.Project, lC
 func composeToVolumeValues(
 	composeName string,
 	composeVolumeValues composetypes.VolumeConfig,
-	debug bool,
 ) (*ComposeVolume, error) {
 	// if there are no labels, then this is probably not going to end up in Lagoon
 	// the lagoonType check will skip to the end and return an empty service definition
@@ -79,6 +78,13 @@ func composeToVolumeValues(
 				// use the lagoonVolumename which contains the `custom-` prefix
 				Name: lagoonVolumeName,
 				Size: volumeSize,
+				// backup volumes by default
+				Backup: true,
+			}
+			// allow volumes to have the backup flag to disable it from being backed up
+			volumeBackup := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.backup")
+			if volumeBackup == "false" {
+				cVolume.Backup = false
 			}
 			return cVolume, nil
 		}

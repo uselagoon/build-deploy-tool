@@ -152,7 +152,8 @@ type ImageCacheBuildArguments struct {
 type ComposeVolume struct {
 	Name   string `json:"name" description:"name is the name the volume, when creating in kubernetes will have a prefix"`
 	Size   string `json:"size" description:"the size of the volume to request if the system enforces it"`
-	Create bool   `json:"unused" description:"flag to determine if this volume is to be created or not"`
+	Create bool   `json:"create" description:"flag to determine if this volume is to be created or not"`
+	Backup bool   `json:"Backup" description:"flag to determine if this volume has backups enabled or not"`
 }
 
 type ServiceVolume struct {

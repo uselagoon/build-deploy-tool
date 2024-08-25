@@ -108,7 +108,7 @@ func generateServicesFromDockerCompose(
 	}
 
 	// convert docker-compose volumes to buildvolumes,
-	err = convertVolumes(buildValues, lCompose, lComposeVolumes, debug)
+	err = convertVolumes(buildValues, lCompose, lComposeVolumes)
 	if err != nil {
 		return err
 	}

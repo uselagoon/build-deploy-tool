@@ -166,8 +166,9 @@ func generateAdditionalPVC(
 	additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", "additional-volume", "0.1.0")
 	additionalLabels["lagoon.sh/service-type"] = "additional-volume"
 
-	additionalAnnotations["k8up.syn.tools/backup"] = "true"
-	additionalAnnotations["k8up.io/backup"] = "true"
+	// if the volume has backups, set the backup annotations
+	additionalAnnotations["k8up.syn.tools/backup"] = strconv.FormatBool(additionalVolume.Backup)
+	additionalAnnotations["k8up.io/backup"] = strconv.FormatBool(additionalVolume.Backup)
 
 	pvc := &corev1.PersistentVolumeClaim{
 		TypeMeta: metav1.TypeMeta{

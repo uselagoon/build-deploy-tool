@@ -1,0 +1,40 @@
+version: '2'
+services:
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.volumes.scratch.path: /scratch
+      lagoon.volumes.node.path: /data
+    volumes:
+      - node:/data
+      - scratch:/scratch
+
+  mariadb:
+    image: uselagoon/mariadb-10.5-drupal:latest
+    labels:
+      lagoon.type: none
+    volumes:
+      - db:/var/lib/mysql
+
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  node:
+    labels:
+      lagoon.type: persistent
+  scratch:
+    labels:
+      lagoon.type: persistent
+      lagoon.backup: false
+  db:
+    labels:
+      # this label is not technically needed, but explicit
+      lagoon.type: none
