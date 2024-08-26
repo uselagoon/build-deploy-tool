@@ -1,0 +1,16 @@
+---
+docker-compose-yaml: docker-compose.yml
+
+project: content-example-com
+
+environments:
+  main:
+    cronjobs:
+      - name: drush cron
+        schedule: "*/30 * * * *"
+        command: 'drush cron'
+        service: cli
+        inPod: true
+    routes:
+    -   nginx:
+        - a.example.com

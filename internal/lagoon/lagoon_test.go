@@ -441,6 +441,38 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-cronjobs-inpod-only",
+			args: args{
+				file: "test-resources/lagoon-yaml/test10/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/30 * * * *",
+								InPod:    helpers.BoolPtr(true),
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
