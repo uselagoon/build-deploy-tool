@@ -271,24 +271,56 @@ func GenerateIngressTemplate(
 
 	// set up the pathtype prefix for the host rule
 	pt := networkv1.PathTypePrefix
+
+	// set up the default path to point to the first backend service as required
+	paths := []networkv1.HTTPIngressPath{
+		{
+			Path:     "/",
+			PathType: &pt,
+			Backend: networkv1.IngressBackend{
+				Service: &networkv1.IngressServiceBackend{
+					Name: backendService,
+					Port: servicePort,
+				},
+			},
+		},
+	}
+
+	// check for any path based routes defined against this ingress
+	for _, pr := range route.PathRoutes {
+		// default path routes to the http named backend
+		pathPort := networkv1.ServiceBackendPort{
+			Name: "http",
+		}
+		// if a port override service name has been provided because 'lagoon.service.usecomposeports' is defined against a service
+		// look it up the provided service against the computed additional ports
+		// and extract that ports backend name to use
+		for _, service := range lValues.Services {
+			for _, addPort := range service.AdditionalServicePorts {
+				if addPort.ServiceName == pr.ToService {
+					pathPort = services.GenerateServiceBackendPort(addPort)
+				}
+			}
+		}
+		// append the ingress paths with the computed details
+		paths = append(paths, networkv1.HTTPIngressPath{
+			Path:     pr.Path,
+			PathType: &pt,
+			Backend: networkv1.IngressBackend{
+				Service: &networkv1.IngressServiceBackend{
+					Name: pr.ToService,
+					Port: pathPort,
+				},
+			},
+		})
+	}
 	// add the main domain as the first rule in the spec
 	ingress.Spec.Rules = []networkv1.IngressRule{
 		{
 			Host: route.Domain,
 			IngressRuleValue: networkv1.IngressRuleValue{
 				HTTP: &networkv1.HTTPIngressRuleValue{
-					Paths: []networkv1.HTTPIngressPath{
-						{
-							Path:     "/",
-							PathType: &pt,
-							Backend: networkv1.IngressBackend{
-								Service: &networkv1.IngressServiceBackend{
-									Name: backendService,
-									Port: servicePort,
-								},
-							},
-						},
-					},
+					Paths: paths,
 				},
 			},
 		},

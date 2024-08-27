@@ -473,6 +473,60 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test-path-routes",
+			args: args{
+				file: "test-resources/lagoon-yaml/test11/lagoon.yml",
+				l:    &YAML{},
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Routes: Routes{
+					Autogenerate: Autogenerate{
+						PathRoutes: []AutogeneratePathRoute{
+							{
+								FromService: "nginx",
+								PathRoute: PathRoute{
+									ToService: "node",
+									Path:      "/api/v1",
+								},
+							},
+						},
+					},
+				},
+				Environments: Environments{
+					"main": Environment{
+						AutogeneratePathRoutes: []AutogeneratePathRoute{
+							{
+								FromService: "nginx",
+								PathRoute: PathRoute{
+									ToService: "node",
+									Path:      "/api/v1",
+								},
+							},
+						},
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Ingresses: map[string]Ingress{
+											"a.example.com": {
+												PathRoutes: []PathRoute{
+													{
+														ToService: "node",
+														Path:      "/api/v1",
+													},
+												},
+											},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
