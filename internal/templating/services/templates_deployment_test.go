@@ -857,6 +857,37 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			want: "test-resources/deployment/result-postgres-1.yaml",
 		},
 		{
+			name: "test-basic-single",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					GitSHA:          "0",
+					ConfigMapSha:    "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice": "harbor.example.com/example-project/environment-name/myservice@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "basic-single",
+							DBaaSEnvironment: "production",
+							ServicePort:      8080,
+							Replicas:         1,
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-basic-4.yaml",
+		},
+		{
 			name: "test-basic-antiaffinity",
 			args: args{
 				buildValues: generator.BuildValues{
@@ -910,7 +941,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/deployment/result-basic-4.yaml",
+			want: "test-resources/deployment/result-basic-5.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -1092,7 +1123,7 @@ func TestLinkedServiceCalculator(t *testing.T) {
 			lValues, _ := json.Marshal(got)
 			wValues, _ := json.Marshal(tt.want)
 			if !reflect.DeepEqual(string(lValues), string(wValues)) {
-				t.Errorf("LinkedServiceCalculator() = %v, want %v", string(lValues), string(wValues))
+				t.Errorf("LinkedServiceCalculator() = \n%v", diff.LineDiff(string(lValues), string(wValues)))
 			}
 		})
 	}

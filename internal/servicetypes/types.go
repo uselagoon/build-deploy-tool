@@ -61,6 +61,7 @@ type ServicePorts struct {
 var ServiceTypes = map[string]ServiceType{
 	"basic":                basic,
 	"basic-persistent":     basicPersistent,
+	"basic-single":         basicSingle,
 	"cli":                  cli,
 	"cli-persistent":       cliPersistent,
 	"elasticsearch":        elasticsearch,
