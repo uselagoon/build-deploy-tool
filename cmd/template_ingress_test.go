@@ -511,6 +511,7 @@ func TestTemplateRoutes(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
 			})
 		})
 	}

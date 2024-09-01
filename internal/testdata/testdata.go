@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/machinery/utils/namespace"
 )
@@ -59,6 +60,7 @@ type TestData struct {
 	DynamicDBaaSSecrets        []string
 	ImageCacheBuildArgsJSON    string
 	SSHPrivateKey              string
+	BuildPodVariables          []helpers.EnvironmentVariable
 }
 
 // helper function to set up all the environment variables from provided testdata
@@ -196,6 +198,14 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 	err = os.Setenv("SSH_PRIVATE_KEY", t.SSHPrivateKey)
 	if err != nil {
 		return generator.GeneratorInput{}, err
+	}
+	// this can b used to pass OS level variables likw what would be present in a build pod when it
+	// is started by the remote-controller
+	for _, osv := range t.BuildPodVariables {
+		err = os.Setenv(osv.Name, osv.Value)
+		if err != nil {
+			return generator.GeneratorInput{}, err
+		}
 	}
 
 	generator, err := generator.GenerateInput(rootCmd, false)
@@ -343,6 +353,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.SSHPrivateKey != "" {
 		rt.SSHPrivateKey = t.SSHPrivateKey
+	}
+	if t.BuildPodVariables != nil {
+		rt.BuildPodVariables = t.BuildPodVariables
 	}
 	return rt
 }

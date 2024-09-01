@@ -184,6 +184,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
 			})
 		})
 	}

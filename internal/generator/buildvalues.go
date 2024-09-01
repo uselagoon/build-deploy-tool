@@ -82,6 +82,7 @@ type BuildValues struct {
 	SSHPrivateKey                 string                       `json:"sshPrivateKey"`
 	ForcePullImages               []string                     `json:"forcePullImages"`
 	Volumes                       []ComposeVolume              `json:"volumes,omitempty" description:"stores any additional persistent volume definitions"`
+	PodAntiAffinity               bool                         `json:"podAntiAffinity"`
 }
 
 type Resources struct {

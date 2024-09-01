@@ -270,6 +270,12 @@ func NewGenerator(
 		return nil, err
 	}
 
+	// feature to enable pod antiaffinity on deployments
+	podAntiAffinity := CheckFeatureFlag("POD_SPREADCONSTRAINTS", buildValues.EnvironmentVariables, false)
+	if podAntiAffinity == "enabled" {
+		buildValues.PodAntiAffinity = true
+	}
+
 	// check for readwritemany to readwriteonce flag, disabled by default
 	rwx2rwo := CheckFeatureFlag("RWX_TO_RWO", buildValues.EnvironmentVariables, generator.Debug)
 	if rwx2rwo == "enabled" {
