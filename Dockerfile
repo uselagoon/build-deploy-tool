@@ -2,7 +2,8 @@ ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
-FROM golang:${GO_VER:-1.21}-alpine3.18 AS golang
+
+FROM golang:${GO_VER:-1.22}-alpine3.20 AS golang
 
 RUN apk add --no-cache git
 RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
@@ -38,7 +39,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 FROM docker:27.1.1-alpine3.20
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
-LABEL org.opencontainers.image.source="https://github.com/uselagoon/lagoon-images" repository="https://github.com/uselagoon/lagoon-images"
+LABEL org.opencontainers.image.source="https://github.com/uselagoon/build-deploy-tool" repository="https://github.com/uselagoon/build-deploy-tool"
 
 ENV LAGOON=build-deploy-image
 
@@ -65,8 +66,8 @@ ENV TMPDIR=/tmp \
     BASH_ENV=/home/.bashrc
 
 # Defining Versions
-ENV KUBECTL_VERSION=v1.27.6 \
-    HELM_VERSION=v3.13.0
+ENV KUBECTL_VERSION=v1.30.3 \
+    HELM_VERSION=v3.15.3
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
     && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
@@ -108,8 +109,6 @@ RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 |
     && curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_${architecture}.tar.gz \
     | tar -xz -C /usr/local/bin lagoon-linter
 
-# RUN curl -sSL https://github.com/uselagoon/build-deploy-tool/releases/download/v0.11.0/build-deploy-tool_0.11.0_linux_amd64.tar.gz \
-#     | tar -xz -C /usr/local/bin build-deploy-tool
 COPY --from=golang /app/build-deploy-tool /usr/local/bin/build-deploy-tool
 
 # enable running unprivileged
