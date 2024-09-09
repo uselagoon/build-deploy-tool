@@ -145,6 +145,15 @@ func ConvertCrontab(namespace, cron string) (string, error) {
 					hours = val
 					continue
 				}
+				sVal := strings.Split(val, ",")
+				if len(sVal) > 1 {
+					for _, r := range sVal {
+						if isInRange(r, 0, 23) {
+							continue
+						}
+					}
+					hours = val
+				}
 				// if the value is not valid, return an error with where the issue is
 				if hours == "" {
 					return "", fmt.Errorf("cron definition '%s' is invalid, unable to determine hours value", cron)
