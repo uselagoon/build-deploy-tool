@@ -2,6 +2,7 @@ ARG UPSTREAM_REPO
 ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
+
 FROM golang:${GO_VER:-1.22}-alpine3.20 AS golang
 
 RUN apk add --no-cache git
@@ -35,7 +36,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:20.10.24
+FROM docker:27.1.1-alpine3.20
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/build-deploy-tool" repository="https://github.com/uselagoon/build-deploy-tool"
