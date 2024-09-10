@@ -3,7 +3,6 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    fastly.amazee.io/api-secret-name: fastly-api-annotationscom
     fastly.amazee.io/service-id: service-id
     fastly.amazee.io/watch: "true"
     idling.amazee.io/disable-request-verification: "false"

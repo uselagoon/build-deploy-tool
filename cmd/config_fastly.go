@@ -36,10 +36,6 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	if err != nil {
 		return lagoon.Fastly{}, fmt.Errorf("error reading fastly-cache-no-cache-id flag: %v", err)
 	}
-	fastlyAPISecretPrefix, err := rootCmd.PersistentFlags().GetString("fastly-api-secret-prefix")
-	if err != nil {
-		return lagoon.Fastly{}, fmt.Errorf("error reading fastly-api-secret-prefix flag: %v", err)
-	}
 	fastlyServiceID, err := rootCmd.PersistentFlags().GetString("fastly-service-id")
 	if err != nil {
 		return lagoon.Fastly{}, fmt.Errorf("error reading fastly-service-id flag: %v", err)
@@ -55,7 +51,6 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 
 	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
 	fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
-	fastlyAPISecretPrefix = helpers.GetEnv("FASTLY_API_SECRET_PREFIX", fastlyAPISecretPrefix, debug)
 
 	// get the project and environment variables
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
@@ -70,7 +65,7 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 
 	// generate the fastly configuration from the provided flags/variables
 	f := &lagoon.Fastly{}
-	err = lagoon.GenerateFastlyConfiguration(f, fastlyCacheNoCahce, fastlyServiceID, domain, fastlyAPISecretPrefix, lagoonEnvVars)
+	err = lagoon.GenerateFastlyConfiguration(f, fastlyCacheNoCahce, fastlyServiceID, domain, lagoonEnvVars)
 	if err != nil {
 		return lagoon.Fastly{}, err
 	}

@@ -8,13 +8,12 @@ import (
 
 // Fastly represents the fastly configuration for a Lagoon route
 type Fastly struct {
-	ServiceID     string `json:"service-id,omitempty"`
-	APISecretName string `json:"api-secret-name,omitempty"`
-	Watch         bool   `json:"watch,omitempty"`
+	ServiceID string `json:"service-id,omitempty"`
+	Watch     bool   `json:"watch,omitempty"`
 }
 
 // GenerateFastlyConfiguration generates the fastly configuration for a specific route from Lagoon variables.
-func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route, secretPrefix string, variables []EnvironmentVariable) error {
+func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route string, variables []EnvironmentVariable) error {
 	f.ServiceID = serviceID
 	if serviceID == "" {
 		if noCacheServiceID != "" {
@@ -38,10 +37,6 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route, 
 		}
 		f.ServiceID = lfsIDSplit[0]
 		f.Watch = watch
-		if len(lfsIDSplit) == 3 {
-			// the optional secret has been defined
-			f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, lfsIDSplit[2])
-		}
 	}
 	// check the `LAGOON_FASTLY_SERVICE_IDS` to see if we have a domain specific override
 	// this is useful if all domains are using the nocache service, but you have a specific domain that should use a different service
@@ -72,20 +67,7 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route, 
 				}
 				f.ServiceID = lfsIDSplit[1]
 				f.Watch = watch
-				// unset the apisecret name if this point is reached
-				// this is because this particular ingress may not have one defined
-				// it will get checked next
-				f.APISecretName = ""
-				if len(lfsIDSplit) == 4 {
-					// the optional secret has been defined
-					f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, lfsIDSplit[3])
-				}
 			}
-		}
-	}
-	if f.APISecretName != "" {
-		if !strings.HasPrefix(f.APISecretName, secretPrefix) {
-			f.APISecretName = fmt.Sprintf("%s%s", secretPrefix, f.APISecretName)
 		}
 	}
 	return nil

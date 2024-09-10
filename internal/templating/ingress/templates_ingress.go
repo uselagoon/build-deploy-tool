@@ -115,9 +115,6 @@ func GenerateIngressTemplate(
 	if route.Fastly.ServiceID != "" {
 		additionalAnnotations["fastly.amazee.io/service-id"] = route.Fastly.ServiceID
 	}
-	if route.Fastly.APISecretName != "" {
-		additionalAnnotations["fastly.amazee.io/api-secret-name"] = route.Fastly.APISecretName
-	}
 	if lValues.BuildType == "branch" {
 		additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
 	} else if lValues.BuildType == "pullrequest" {

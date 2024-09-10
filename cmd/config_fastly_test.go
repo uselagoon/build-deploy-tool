@@ -16,7 +16,6 @@ func TestGenerateFastlyConfig(t *testing.T) {
 		cacheNoCache string
 		serviceID    string
 		domain       string
-		secretPrefix string
 	}
 	tests := []struct {
 		name string
@@ -31,12 +30,10 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
-				ServiceID:     "service-id",
-				APISecretName: "",
-				Watch:         true,
+				ServiceID: "service-id",
+				Watch:     true,
 			},
 		},
 		{
@@ -47,44 +44,10 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "",
 				domain:       "example.com",
-				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
-				ServiceID:     "service-id",
-				APISecretName: "",
-				Watch:         true,
-			},
-		},
-		{
-			name: "test3 check LAGOON_FASTLY_SERVICE_ID with secret",
-			args: args{
-				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_ID","value":"service-id:true:secret","scope":"global"}]`,
-				envVars:      `[]`,
-				cacheNoCache: "",
-				serviceID:    "",
-				domain:       "example.com",
-				secretPrefix: "fastly-api-",
-			},
-			want: lagoon.Fastly{
-				ServiceID:     "service-id",
-				APISecretName: "fastly-api-secret",
-				Watch:         true,
-			},
-		},
-		{
-			name: "test4 check LAGOON_FASTLY_SERVICE_IDS with secret",
-			args: args{
-				projectVars:  `[{"name":"LAGOON_SYSTEM_ROUTER_PATTERN","value":"${service}-${project}-${environment}.example.com","scope":"internal_system"},{"name":"LAGOON_FASTLY_SERVICE_IDS","value":"example.com:service-id:true:secret","scope":"global"}]`,
-				envVars:      `[]`,
-				cacheNoCache: "",
-				serviceID:    "",
-				domain:       "example.com",
-				secretPrefix: "fastly-api-",
-			},
-			want: lagoon.Fastly{
-				ServiceID:     "service-id",
-				APISecretName: "fastly-api-secret",
-				Watch:         true,
+				ServiceID: "service-id",
+				Watch:     true,
 			},
 		},
 		{
@@ -95,7 +58,6 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
 				domain:       "example.com",
-				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID: "dedicated-service-id",
@@ -110,7 +72,6 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				cacheNoCache: "",
 				serviceID:    "dedicated-service-id",
 				domain:       "example.com",
-				secretPrefix: "fastly-api-",
 			},
 			want: lagoon.Fastly{
 				ServiceID: "service-id",
@@ -127,10 +88,6 @@ func TestGenerateFastlyConfig(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			err = os.Setenv("ROUTE_FASTLY_SERVICE_ID", tt.args.serviceID)
-			if err != nil {
-				t.Errorf("%v", err)
-			}
-			err = os.Setenv("FASTLY_API_SECRET_PREFIX", tt.args.secretPrefix)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
