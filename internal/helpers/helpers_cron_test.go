@@ -191,6 +191,14 @@ func TestConvertCrontab(t *testing.T) {
 			wantErrMsg: "cron definition '*/1 * * * * 7' is invalid, 6 fields provided, required 5",
 			wantErr:    true,
 		},
+		{
+			name: "test22 - split range hours",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "*/30 0-12,22-23 * * *",
+			},
+			want: "1,31 0-12,22-23 * * *",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
