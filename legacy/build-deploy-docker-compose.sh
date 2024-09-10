@@ -1343,9 +1343,9 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
     if [ "${DEPRECATED_STATUS}" != false ]; then
       DEPRECATED_IMAGE_WARNINGS="true"
-      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$PULL_IMAGE
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
       DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" // false')
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
     fi
   done
 
@@ -1367,7 +1367,7 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
       DEPRECATED_IMAGE_WARNINGS="true"
       DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$TEMPORARY_IMAGE_NAME
       DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" // false')
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
     fi
   done
 
@@ -1414,13 +1414,13 @@ if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
   echo "  This indicates that an image you're using in the build has been flagged as deprecated."
   echo "  You should stop using these images as soon as possible."
   echo "  If the deprecated image has a suggested replacement, it will be mentioned in the warning."
+  echo "  Please visit https://docs.lagoon.sh/deprecated-images for more information."
   echo ""
   for IMAGE_NAME in "${!DEPRECATED_IMAGE_NAME[@]}"
   do
-    echo ">> An image (or the image) used in the build for ${DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]} is deprecated"
-    echo "  The image used has been marked ${DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]}"
+    echo ">> The image (or an image used in the build for) ${DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]} has been deprecated, marked ${DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]}"
     if [ "${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}" != "false" ]; then
-      echo "  An image replacement that could be used has been suggested as ${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}"
+      echo "  A suggested replacement image is ${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}"
     else
       echo "  No replacement image has been suggested"
     fi
