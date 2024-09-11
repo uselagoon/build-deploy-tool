@@ -7,17 +7,17 @@ metadata:
     lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: cronjob-cli
+    app.kubernetes.io/instance: cronjob-node
     app.kubernetes.io/managed-by: build-deploy-tool
-    app.kubernetes.io/name: cronjob-cli-persistent
+    app.kubernetes.io/name: cronjob-basic
     lagoon.sh/buildType: branch
     lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: cli
-    lagoon.sh/service-type: cli-persistent
-    lagoon.sh/template: cli-persistent-0.1.0
-  name: cronjob-cli-drush-cron2
+    lagoon.sh/service: node
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: cronjob-node-some-other-drush-cron
 spec:
   concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 1
@@ -33,16 +33,16 @@ spec:
             lagoon.sh/version: v2.7.x
           creationTimestamp: null
           labels:
-            app.kubernetes.io/instance: cronjob-cli
+            app.kubernetes.io/instance: cronjob-node
             app.kubernetes.io/managed-by: build-deploy-tool
-            app.kubernetes.io/name: cronjob-cli-persistent
+            app.kubernetes.io/name: cronjob-basic
             lagoon.sh/buildType: branch
             lagoon.sh/environment: main
             lagoon.sh/environmentType: production
             lagoon.sh/project: example-project
-            lagoon.sh/service: cli
-            lagoon.sh/service-type: cli-persistent
-            lagoon.sh/template: cli-persistent-0.1.0
+            lagoon.sh/service: node
+            lagoon.sh/service-type: basic
+            lagoon.sh/template: basic-0.1.0
         spec:
           containers:
           - command:
@@ -50,28 +50,20 @@ spec:
             - drush cron
             env:
             - name: LAGOON_GIT_SHA
-              value: "0000000000000000000000000000000000000000"
+              value: abcdefg123456
             - name: SERVICE_NAME
-              value: cli
+              value: node
             envFrom:
             - configMapRef:
                 name: lagoon-env
-            image: harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+            image: harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
             imagePullPolicy: Always
-            name: cronjob-cli-drush-cron2
+            name: cronjob-node-some-other-drush-cron
             resources:
               requests:
                 cpu: 10m
                 memory: 10Mi
             securityContext: {}
-            volumeMounts:
-            - mountPath: /var/run/secrets/lagoon/sshkey/
-              name: lagoon-sshkey
-              readOnly: true
-            - mountPath: /app/docroot/sites/default/files//php
-              name: nginx-php-twig
-            - mountPath: /app/docroot/sites/default/files/
-              name: nginx-php
           dnsConfig:
             options:
             - name: timeout
@@ -83,21 +75,7 @@ spec:
           - name: lagoon-internal-registry-secret
           priorityClassName: lagoon-priority-production
           restartPolicy: Never
-          securityContext:
-            fsGroup: 10001
-            runAsGroup: 0
-            runAsUser: 10000
-          volumes:
-          - name: lagoon-sshkey
-            secret:
-              defaultMode: 420
-              secretName: lagoon-sshkey
-          - emptyDir: {}
-            name: nginx-php-twig
-          - name: nginx-php
-            persistentVolumeClaim:
-              claimName: nginx-php
-  schedule: 18,48 * * * *
+  schedule: 10 2 * * *
   startingDeadlineSeconds: 240
   successfulJobsHistoryLimit: 0
 status: {}

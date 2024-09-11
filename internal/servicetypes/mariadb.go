@@ -27,6 +27,7 @@ var mariadbSingle = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "mariadb-single",
 		Container: corev1.Container{

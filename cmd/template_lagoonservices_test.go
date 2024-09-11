@@ -27,7 +27,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 		vars         []helpers.EnvironmentVariable
 	}{
 		{
-			name: "test1 basic deployment",
+			name:        "test1-basic-deployment",
+			description: "tests a basic deployment",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -66,10 +67,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service1",
+			want:         "internal/testdata/basic/service-templates/test1-basic-deployment",
 		},
 		{
-			name: "test2a nginx-php deployment",
+			name:        "test2-nginx-php",
+			description: "tests an nginx-php deployment",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -85,10 +87,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service1",
+			want:         "internal/testdata/complex/service-templates/test2-nginx-php",
 		},
 		{
-			name: "test2a1 nginx-php deployment using images from images.yaml file (same as test2a result)",
+			name:        "test2a-nginx-php",
+			description: "tests an nginx-php deployment using images from images.yaml (same result as test2)",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -98,10 +101,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 				}, true),
 			imageData:    "internal/testdata/complex/images-service1.yaml",
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service1",
+			want:         "internal/testdata/complex/service-templates/test2-nginx-php",
 		},
 		{
-			name: "test2b nginx-php deployment - rootless",
+			name:        "test2b-nginx-php",
+			description: "tests an nginx-php deployment with rootless workloads enabled",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -124,36 +128,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service2",
+			want:         "internal/testdata/complex/service-templates/test2b-nginx-php",
 		},
 		{
-			name: "test2b nginx-php deployment - rootless workloads enabled",
-			args: testdata.GetSeedData(
-				testdata.TestData{
-					ProjectName:     "example-project",
-					EnvironmentName: "main",
-					Branch:          "main",
-					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
-					ImageReferences: map[string]string{
-						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"redis":   "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
-					},
-					ProjectVariables: []lagoon.EnvironmentVariable{
-						{
-							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
-							Value: "enabled",
-							Scope: "build",
-						},
-					},
-				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service5",
-		},
-		{
-			name: "test2c nginx-php deployment - spot workloads enabled",
+			name:        "test2c-nginx-php",
+			description: "tests an nginx-php deployment with spot workloads enabled",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -191,10 +170,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service6",
+			want:         "internal/testdata/complex/service-templates/test2c-nginx-php",
 		},
 		{
-			name:        "test3 - funky pvcs",
+			name:        "test3-funky-pvcs",
 			description: "only create pvcs of the requested persistent-name in the docker-compose file",
 			args: testdata.GetSeedData(
 				testdata.TestData{
@@ -216,10 +195,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service2",
+			want:         "internal/testdata/basic/service-templates/test3-funky-pvcs",
 		},
 		{
-			name:        "test4 - basic-persistent with worker-persistent",
+			name:        "test4-basic-worker",
 			description: "create a basic-persistent that gets a pvc and mount that volume on a worker-persistent type",
 			args: testdata.GetSeedData(
 				testdata.TestData{
@@ -240,10 +219,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service3",
+			want:         "internal/testdata/basic/service-templates/test4-basic-worker",
 		},
 		{
-			name: "test5 basic deployment promote",
+			name:        "test5-basic-promote",
+			description: "create a basic deployment of the promote build type",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -256,10 +236,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service4",
+			want:         "internal/testdata/basic/service-templates/test5-basic-promote",
 		},
 		{
-			name: "test6 basic deployment pr with isolation network policy",
+			name:        "test6-basic-networkpolicy",
+			description: "create basic deployment pullrequest with isolation network policy",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -283,10 +264,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service5",
+			want:         "internal/testdata/basic/service-templates/test6-basic-networkpolicy",
 		},
 		{
-			name: "test7 basic deployment with dynamic secrets",
+			name:        "test7-basic-dynamic-secrets",
+			description: "create a basic deployment with dynamic secrets support",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -300,10 +282,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					DynamicDBaaSSecrets: []string{"mariadb-dbaas-a4hs12h3"},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service6",
+			want:         "internal/testdata/basic/service-templates/test7-basic-dynamic-secrets",
 		},
 		{
-			name: "test8 services deployment",
+			name:        "test8-multiple-services",
+			description: "create a deployment with multiple services of various types",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -321,10 +304,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service3",
+			want:         "internal/testdata/complex/service-templates/test8-multiple-services",
 		},
 		{
-			name: "test9 compact services meta dbaas deployment",
+			name:        "test9-meta-dbaas-types",
+			description: "create a deployment with meta dbaas types",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -339,7 +323,10 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"mongo-4":       "harbor.example/example-project/main/mongo-4@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 					ProjectVariables: []lagoon.EnvironmentVariable{
-						{Name: "LAGOON_DBAAS_ENVIRONMENT_TYPES", Value: "postgres-15:production-postgres,mongo-4:production-mongo,mariadb-10-11:production-mariadb", Scope: "build"},
+						{
+							Name:  "LAGOON_DBAAS_ENVIRONMENT_TYPES",
+							Value: "postgres-15:production-postgres,mongo-4:production-mongo,mariadb-10-11:production-mariadb",
+							Scope: "build"},
 						{
 							Name:  "LAGOON_SYSTEM_CORE_VERSION",
 							Value: "v2.19.0",
@@ -348,10 +335,11 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/service4",
+			want:         "internal/testdata/complex/service-templates/test9-meta-dbaas-types",
 		},
 		{
-			name: "test10 basic deployment native cronjobs disabled",
+			name:        "test10-basic-no-native-cronjobs",
+			description: "create a basic deployment with native cronjobs disabled",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -363,7 +351,95 @@ func TestTemplateLagoonServices(t *testing.T) {
 					},
 				}, true),
 			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/service8",
+			want:         "internal/testdata/basic/service-templates/test10-basic-no-native-cronjobs",
+		},
+		{
+			name:        "test11-basic-polysite-cronjobs",
+			description: "create a basic deployment polysite with cronjobs",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.polysite-cronjobs.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test11-basic-polysite-cronjobs",
+		},
+		{
+			name:        "test12-basic-persistent-custom-volumes",
+			description: "create a basic persistent with the seed volume and other custom volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test12-basic-persistent-custom-volumes",
+		},
+		{
+			name:        "test13-basic-custom-volumes",
+			description: "create a basic with custom volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-2.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test13-basic-custom-volumes",
+		},
+		{
+			name: "test14-complex-custom-volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"nginx2":  "harbor.example/example-project/main/nginx2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php2":    "harbor.example/example-project/main/php2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/test14-complex-custom-volumes",
+		},
+		{
+			name:        "test15-basic-custom-volume-no-backup",
+			description: "create a basic with custom volumes with one volume flagged to not be backed up",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-3.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test15-basic-custom-volume-no-backup",
 		},
 	}
 	for _, tt := range tests {

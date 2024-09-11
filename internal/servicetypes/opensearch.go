@@ -27,6 +27,7 @@ var opensearch = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "opensearch",
 		Container: corev1.Container{

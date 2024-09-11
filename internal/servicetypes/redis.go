@@ -73,8 +73,9 @@ var redis = ServiceType{
 }
 
 var redisPersistent = ServiceType{
-	Name:  "redis-persistent",
-	Ports: redis.Ports,
+	Name:                     "redis-persistent",
+	Ports:                    redis.Ports,
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name:      redis.PrimaryContainer.Name,
 		Container: redis.PrimaryContainer.Container,

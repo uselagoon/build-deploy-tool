@@ -81,6 +81,7 @@ type BuildValues struct {
 	IgnoreImageCache              bool                         `json:"ignoreImageCache"`
 	SSHPrivateKey                 string                       `json:"sshPrivateKey"`
 	ForcePullImages               []string                     `json:"forcePullImages"`
+	Volumes                       []ComposeVolume              `json:"volumes,omitempty" description:"stores any additional persistent volume definitions"`
 }
 
 type Resources struct {
@@ -148,6 +149,18 @@ type ImageCacheBuildArguments struct {
 	Name  string `json:"name"`
 }
 
+type ComposeVolume struct {
+	Name   string `json:"name" description:"name is the name the volume, when creating in kubernetes will have a prefix"`
+	Size   string `json:"size" description:"the size of the volume to request if the system enforces it"`
+	Create bool   `json:"create" description:"flag to determine if this volume is to be created or not"`
+	Backup bool   `json:"Backup" description:"flag to determine if this volume has backups enabled or not"`
+}
+
+type ServiceVolume struct {
+	ComposeVolume
+	Path string `json:"path" description:"path is where the volume will be mounted in a specific service"`
+}
+
 // ServiceValues is the values for a specific service used by a lagoon build
 type ServiceValues struct {
 	Name                                   string                  `json:"name"`         // the actual compose service name
@@ -185,6 +198,7 @@ type ServiceValues struct {
 	BackupsEnabled                         bool                    `json:"backupsEnabled"`
 	IsDBaaS                                bool                    `json:"isDBaaS"`
 	IsSingle                               bool                    `json:"isSingle"`
+	AdditionalVolumes                      []ServiceVolume         `json:"additonalVolumes,omitempty"`
 }
 
 type ImageBuild struct {

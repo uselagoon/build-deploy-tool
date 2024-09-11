@@ -1,0 +1,72 @@
+version: '2'
+services:
+  cli:
+    build:
+      context: internal/testdata/complex/docker
+      dockerfile: builder.dockerfile
+    image: builder
+    labels:
+      lagoon.type: cli-persistent
+      lagoon.persistent: /app/web/sites/default/files/
+      lagoon.persistent.name: nginx
+      lagoon.volumes.files.path: /app/otherfiles/
+    environment:
+      LAGOON_PROJECT: ci-drupal
+      LAGOON_ROUTE: drupal9-mariadb.docker.amazee.io
+    volumes:
+      - ./web:/app/web:delegated
+  nginx:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/complex/docker
+      dockerfile: nginx.dockerfile
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/web/sites/default/files/
+      lagoon.persistent.size: 1Gi
+      lagoon.name: nginx
+      lagoon.deployment.servicetype: nginx
+      lagoon.volumes.files.path: /app/otherfiles/
+    volumes:
+      - ./web:/app/web:delegated
+    depends_on:
+      - cli
+    expose:
+      - "8080"
+    environment:
+      LAGOON_LOCALDEV_URL: drupal9-mariadb.docker.amazee.io
+  php:
+    build:
+      context: internal/testdata/complex/docker
+      dockerfile: php.dockerfile
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/web/sites/default/files/
+      lagoon.name: nginx
+      lagoon.deployment.servicetype: php
+      lagoon.volumes.files.path: /app/otherfiles/
+    volumes:
+      - ./web:/app/web:delegated
+    depends_on:
+      - cli
+  mariadb:
+    build:
+      context: internal/testdata/complex/docker
+      dockerfile: mariadb.dockerfile
+    labels:
+      lagoon.type: mariadb-single
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  nginx:
+    labels:
+      # this is ignored if a default persistent volume has the same name
+      lagoon.type: persistent
+  files:
+    labels:
+      lagoon.type: persistent
+      lagoon.persistent.size: 10Gi

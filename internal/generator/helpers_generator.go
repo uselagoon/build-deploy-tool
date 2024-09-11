@@ -1,9 +1,11 @@
 package generator
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -197,4 +199,80 @@ func ValidateResourceQuantity(s string) (err error) {
 	}()
 	resource.MustParse(s)
 	return nil
+}
+
+func ValidateResourceSize(size string) (int64, error) {
+	volQ, err := resource.ParseQuantity(size)
+	if err != nil {
+		return 0, err
+	}
+	volS, _ := volQ.AsInt64()
+	return volS, nil
+}
+
+// ContainsRegistry checks if a string slice contains a specific string regex match.
+func ContainsRegistry(regex []ContainerRegistry, match string) bool {
+	for _, v := range regex {
+		m, _ := regexp.MatchString(v.URL, match)
+		if m {
+			return true
+		}
+	}
+	return false
+}
+
+func checkDuplicateCronjobs(cronjobs []lagoon.Cronjob) error {
+	var unique []lagoon.Cronjob
+	var duplicates []lagoon.Cronjob
+	for _, v := range cronjobs {
+		skip := false
+		for _, u := range unique {
+			if v.Name == u.Name {
+				skip = true
+				duplicates = append(duplicates, v)
+				break
+			}
+		}
+		if !skip {
+			unique = append(unique, v)
+		}
+	}
+	var uniqueDuplicates []lagoon.Cronjob
+	for _, d := range duplicates {
+		for _, u := range unique {
+			if d.Name == u.Name {
+				uniqueDuplicates = append(uniqueDuplicates, u)
+			}
+		}
+	}
+	// join the two together
+	result := append(duplicates, uniqueDuplicates...)
+	if result != nil {
+		b, _ := json.Marshal(result)
+		return fmt.Errorf("duplicate named cronjobs detected: %v", string(b))
+	}
+	return nil
+}
+
+// getDBaasEnvironment will check the dbaas provider to see if an environment exists or not
+func getDBaasEnvironment(
+	buildValues *BuildValues,
+	dbaasEnvironment *string,
+	lagoonOverrideName,
+	lagoonType string,
+) (bool, error) {
+	if buildValues.DBaaSEnvironmentTypeOverrides != nil {
+		dbaasEnvironmentTypeSplit := strings.Split(buildValues.DBaaSEnvironmentTypeOverrides.Value, ",")
+		for _, sType := range dbaasEnvironmentTypeSplit {
+			sTypeSplit := strings.Split(sType, ":")
+			if sTypeSplit[0] == lagoonOverrideName {
+				*dbaasEnvironment = sTypeSplit[1]
+			}
+		}
+	}
+	exists, err := buildValues.DBaaSClient.CheckProvider(buildValues.DBaaSOperatorEndpoint, lagoonType, *dbaasEnvironment)
+	if err != nil {
+		return exists, fmt.Errorf("there was an error checking DBaaS endpoint %s: %v", buildValues.DBaaSOperatorEndpoint, err)
+	}
+	return exists, nil
 }

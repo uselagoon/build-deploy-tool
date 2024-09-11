@@ -240,7 +240,20 @@ func GenerateDeploymentTemplate(
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
 
-			// if there is a persistent volume attached to this service, handle adding that here
+			// add any additional volumes with volumes
+			for _, av := range serviceValues.AdditionalVolumes {
+				volume := corev1.Volume{
+					Name: av.Name,
+					VolumeSource: corev1.VolumeSource{
+						PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+							ClaimName: av.Name,
+						},
+					},
+				}
+				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
+			}
+
+			// if there is a persistent volume attached to this service, and no additional volumes, handle adding that here
 			if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
 				volume := corev1.Volume{
 					Name: serviceValues.PersistentVolumeName,
@@ -450,6 +463,15 @@ func GenerateDeploymentTemplate(
 				}
 				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
 			}
+
+			// add any additional volumes with volumemounts
+			for _, avm := range serviceValues.AdditionalVolumes {
+				volumeMount := corev1.VolumeMount{
+					Name:      avm.Name,
+					MountPath: avm.Path,
+				}
+				container.Container.VolumeMounts = append(container.Container.VolumeMounts, volumeMount)
+			}
 			// handle the default storage volumemount
 			if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
 				volumeMount := corev1.VolumeMount{
@@ -560,6 +582,15 @@ func GenerateDeploymentTemplate(
 						Name:      dsm.Name,
 						MountPath: dsm.MountPath,
 						ReadOnly:  dsm.ReadOnly,
+					}
+					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+				}
+
+				// add any additional volumes with volumemounts
+				for _, avm := range serviceValues.AdditionalVolumes {
+					volumeMount := corev1.VolumeMount{
+						Name:      avm.Name,
+						MountPath: avm.Path,
 					}
 					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
 				}

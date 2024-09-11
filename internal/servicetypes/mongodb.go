@@ -27,6 +27,7 @@ var mongodbSingle = ServiceType{
 			},
 		},
 	},
+	ProvidesPersistentVolume: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "mongodb-single",
 		Container: corev1.Container{

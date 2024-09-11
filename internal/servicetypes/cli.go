@@ -8,7 +8,8 @@ import (
 
 // defines all the cli service type defaults
 var cli = ServiceType{
-	Name: "cli",
+	Name:                   "cli",
+	AllowAdditionalVolumes: true,
 	PrimaryContainer: ServiceContainer{
 		Name: "cli",
 		Volumes: []corev1.Volume{
@@ -58,7 +59,9 @@ var cli = ServiceType{
 
 // contains all the persistent type overrides that the cli service doesn't have
 var cliPersistent = ServiceType{
-	Name: "cli-persistent",
+	Name:                     "cli-persistent",
+	ConsumesPersistentVolume: true,
+	AllowAdditionalVolumes:   true,
 	PrimaryContainer: ServiceContainer{
 		Name:      cli.PrimaryContainer.Name,
 		Container: cli.PrimaryContainer.Container,
