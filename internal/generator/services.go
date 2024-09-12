@@ -550,8 +550,9 @@ func composeToServiceValues(
 		if useComposeServices == "true" {
 			for _, compPort := range composeServiceValues.Ports {
 				newService := AdditionalServicePort{
-					ServicePort: compPort,
-					ServiceName: fmt.Sprintf("%s-%d", composeService, compPort.Target),
+					ServicePort:         compPort,
+					ServiceName:         fmt.Sprintf("%s-%d", composeService, compPort.Target),
+					ServiceOverrideName: composeService,
 				}
 				cService.AdditionalServicePorts = append(cService.AdditionalServicePorts, newService)
 			}

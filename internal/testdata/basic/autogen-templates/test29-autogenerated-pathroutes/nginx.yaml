@@ -43,12 +43,12 @@ spec:
           service:
             name: node
             port:
-              name: http
+              name: tcp-1234
         path: /api/v1
         pathType: Prefix
       - backend:
           service:
-            name: node-4321
+            name: node
             port:
               name: tcp-4321
         path: /api/v2

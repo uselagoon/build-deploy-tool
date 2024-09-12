@@ -212,9 +212,10 @@ type ImageBuild struct {
 }
 
 type AdditionalServicePort struct {
-	ServicePort composetypes.ServicePortConfig `json:"servicePort,omitempty"`
-	ServiceName string                         `json:"serviceName,omitempty"`
-	Index       int                            `json:"-"`
+	ServicePort         composetypes.ServicePortConfig `json:"servicePort,omitempty"`
+	ServiceName         string                         `json:"serviceName,omitempty"`
+	ServiceOverrideName string                         `json:"serviceOverrideName,omitempty"`
+	Index               int                            `json:"-"`
 }
 
 // CronjobValues is the values for cronjobs

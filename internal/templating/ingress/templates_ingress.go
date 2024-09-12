@@ -292,13 +292,24 @@ func GenerateIngressTemplate(
 		pathPort := networkv1.ServiceBackendPort{
 			Name: "http",
 		}
+		backendServiceName := pr.ToService
 		// if a port override service name has been provided because 'lagoon.service.usecomposeports' is defined against a service
 		// look it up the provided service against the computed additional ports
 		// and extract that ports backend name to use
 		for _, service := range lValues.Services {
+			// if the toService is the default service name, not a port specific override but additionalserviceports is more than 0
+			// then this is the "default" service that is being references
+			if pr.ToService == service.OverrideName && len(service.AdditionalServicePorts) > 0 {
+				// extract the first port from the additional ports to use as the path port
+				// as the first port in the list is the "default" port
+				pathPort = services.GenerateServiceBackendPort(service.AdditionalServicePorts[0])
+			}
+			// otherwise if the user has specified a specific 'servicename-port' in their toService
+			// look that up instead and serve the backend as requested
 			for _, addPort := range service.AdditionalServicePorts {
 				if addPort.ServiceName == pr.ToService {
 					pathPort = services.GenerateServiceBackendPort(addPort)
+					backendServiceName = addPort.ServiceOverrideName
 				}
 			}
 		}
@@ -308,7 +319,7 @@ func GenerateIngressTemplate(
 			PathType: &pt,
 			Backend: networkv1.IngressBackend{
 				Service: &networkv1.IngressServiceBackend{
-					Name: pr.ToService,
+					Name: backendServiceName,
 					Port: pathPort,
 				},
 			},
