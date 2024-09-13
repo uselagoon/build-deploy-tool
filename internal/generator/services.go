@@ -399,8 +399,14 @@ func composeToServiceValues(
 
 		// these services can support multiple replicas in production
 		// @TODO this should probably be an admin only feature flag though
-		spotReplicaTypes := "nginx,nginx-persistent,nginx-php,nginx-php-persistent"
-		// spotReplicaTypes := CheckAdminFeatureFlag("SPOT_REPLICAS_PRODUCTION", buildValues.EnvironmentVariables, debug) // doesn't exist yet
+		prodSpotReplicaTypes := CheckAdminFeatureFlag("SPOT_TYPE_REPLICAS_PRODUCTION", debug)
+		if prodSpotReplicaTypes == "" {
+			prodSpotReplicaTypes = "nginx,nginx-persistent,nginx-php,nginx-php-persistent"
+		}
+		devSpotReplicaTypes := CheckAdminFeatureFlag("SPOT_TYPE_REPLICAS_DEVELOPMENT", debug)
+		if devSpotReplicaTypes == "" {
+			devSpotReplicaTypes = ""
+		}
 
 		productionSpot := CheckFeatureFlag("SPOT_INSTANCE_PRODUCTION", buildValues.EnvironmentVariables, debug)
 		developmentSpot := CheckFeatureFlag("SPOT_INSTANCE_DEVELOPMENT", buildValues.EnvironmentVariables, debug)
@@ -439,9 +445,16 @@ func composeToServiceValues(
 			}
 		}
 		// check if the this service is production and can support 2 replicas on spot
-		for _, t := range strings.Split(spotReplicaTypes, ",") {
+		for _, t := range strings.Split(prodSpotReplicaTypes, ",") {
 			if t != "" {
 				if t == lagoonType && buildValues.EnvironmentType == "production" && useSpot {
+					spotReplicas = 2
+				}
+			}
+		}
+		for _, t := range strings.Split(devSpotReplicaTypes, ",") {
+			if t != "" {
+				if t == lagoonType && buildValues.EnvironmentType == "development" && useSpot {
 					spotReplicas = 2
 				}
 			}

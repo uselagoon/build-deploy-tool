@@ -1,0 +1,112 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: myservice
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/name: basic
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: basic
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: myservice
+        lagoon.sh/service-type: basic
+        lagoon.sh/template: basic-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: myservice
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/myservice@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 60
+          tcpSocket:
+            port: 8191
+          timeoutSeconds: 10
+        name: basic
+        ports:
+        - containerPort: 8191
+          name: tcp-8191
+          protocol: TCP
+        - containerPort: 8211
+          name: tcp-8211
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 8191
+          timeoutSeconds: 1
+        resources:
+          limits:
+            ephemeral-storage: 160Gi
+            memory: 16Gi
+          requests:
+            cpu: 10m
+            ephemeral-storage: 1Gi
+            memory: 10Mi
+        securityContext: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      topologySpreadConstraints:
+      - labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - basic
+          - key: app.kubernetes.io/instance
+            operator: In
+            values:
+            - myservice
+          - key: lagoon.sh/project
+            operator: In
+            values:
+            - example-project
+          - key: lagoon.sh/environment
+            operator: In
+            values:
+            - environment-name
+        maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: ScheduleAnyway
+status: {}

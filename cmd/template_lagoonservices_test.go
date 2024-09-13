@@ -441,6 +441,45 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test15-basic-custom-volume-no-backup",
 		},
+		{
+			name: "test-basic-spot-affinity",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "development",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_POD_SPREADCONSTRAINTS",
+							Value: "enabled",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_SPOT_INSTANCE_DEVELOPMENT",
+							Value: "enabled",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_SPOT_INSTANCE_DEVELOPMENT_TYPES",
+							Value: "basic,basic-persistent",
+						},
+						{
+							// `ADMIN_` are only configurable by the remote-controller
+							Name:  "ADMIN_LAGOON_FEATURE_FLAG_SPOT_TYPE_REPLICAS_DEVELOPMENT",
+							Value: "basic,basic-persistent",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test-basic-spot-affinity",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -533,6 +572,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
 			})
 		})
 	}

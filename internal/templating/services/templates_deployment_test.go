@@ -856,6 +856,62 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			},
 			want: "test-resources/deployment/result-postgres-1.yaml",
 		},
+		{
+			name: "test-basic-antiaffinity",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					Resources: generator.Resources{
+						Limits: generator.ResourceLimits{
+							Memory:           "16Gi",
+							EphemeralStorage: "160Gi",
+						},
+						Requests: generator.ResourceRequests{
+							EphemeralStorage: "1Gi",
+						},
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"myservice": "harbor.example.com/example-project/environment-name/myservice@latest",
+					},
+					PodAntiAffinity: true,
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "basic",
+							DBaaSEnvironment: "production",
+							AdditionalServicePorts: []generator.AdditionalServicePort{
+								{
+									ServiceName: "myservice-8191",
+									ServicePort: types.ServicePortConfig{
+										Target:   8191,
+										Protocol: "tcp",
+									},
+								},
+								{
+									ServiceName: "myservice-8211",
+									ServicePort: types.ServicePortConfig{
+										Target:   8211,
+										Protocol: "tcp",
+									},
+								},
+							},
+							Replicas: 2,
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-basic-4.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

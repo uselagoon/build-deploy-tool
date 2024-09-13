@@ -795,6 +795,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
 			})
 		})
 	}
