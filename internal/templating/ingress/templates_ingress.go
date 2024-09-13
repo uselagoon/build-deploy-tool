@@ -271,24 +271,67 @@ func GenerateIngressTemplate(
 
 	// set up the pathtype prefix for the host rule
 	pt := networkv1.PathTypePrefix
+
+	// set up the default path to point to the first backend service as required
+	paths := []networkv1.HTTPIngressPath{
+		{
+			Path:     "/",
+			PathType: &pt,
+			Backend: networkv1.IngressBackend{
+				Service: &networkv1.IngressServiceBackend{
+					Name: backendService,
+					Port: servicePort,
+				},
+			},
+		},
+	}
+
+	// check for any path based routes defined against this ingress
+	for _, pr := range route.PathRoutes {
+		// default path routes to the http named backend
+		pathPort := networkv1.ServiceBackendPort{
+			Name: "http",
+		}
+		backendServiceName := pr.ToService
+		// if a port override service name has been provided because 'lagoon.service.usecomposeports' is defined against a service
+		// look it up the provided service against the computed additional ports
+		// and extract that ports backend name to use
+		for _, service := range lValues.Services {
+			// if the toService is the default service name, not a port specific override but additionalserviceports is more than 0
+			// then this is the "default" service that is being references
+			if pr.ToService == service.OverrideName && len(service.AdditionalServicePorts) > 0 {
+				// extract the first port from the additional ports to use as the path port
+				// as the first port in the list is the "default" port
+				pathPort = services.GenerateServiceBackendPort(service.AdditionalServicePorts[0])
+			}
+			// otherwise if the user has specified a specific 'servicename-port' in their toService
+			// look that up instead and serve the backend as requested
+			for _, addPort := range service.AdditionalServicePorts {
+				if addPort.ServiceName == pr.ToService {
+					pathPort = services.GenerateServiceBackendPort(addPort)
+					backendServiceName = addPort.ServiceOverrideName
+				}
+			}
+		}
+		// append the ingress paths with the computed details
+		paths = append(paths, networkv1.HTTPIngressPath{
+			Path:     pr.Path,
+			PathType: &pt,
+			Backend: networkv1.IngressBackend{
+				Service: &networkv1.IngressServiceBackend{
+					Name: backendServiceName,
+					Port: pathPort,
+				},
+			},
+		})
+	}
 	// add the main domain as the first rule in the spec
 	ingress.Spec.Rules = []networkv1.IngressRule{
 		{
 			Host: route.Domain,
 			IngressRuleValue: networkv1.IngressRuleValue{
 				HTTP: &networkv1.HTTPIngressRuleValue{
-					Paths: []networkv1.HTTPIngressPath{
-						{
-							Path:     "/",
-							PathType: &pt,
-							Backend: networkv1.IngressBackend{
-								Service: &networkv1.IngressServiceBackend{
-									Name: backendService,
-									Port: servicePort,
-								},
-							},
-						},
-					},
+					Paths: paths,
 				},
 			},
 		},

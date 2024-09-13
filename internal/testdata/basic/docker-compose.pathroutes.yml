@@ -1,0 +1,25 @@
+version: '2'
+services:
+  nginx:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.port: 8080
+    volumes:
+      - ./app:/app:delegated
+    ports:
+      - '8080'
+  node:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.usecomposeports: true
+    volumes:
+      - ./api:/api:delegated
+    ports:
+      - '1234'
+      - '4321'

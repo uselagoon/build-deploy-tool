@@ -1,0 +1,29 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.pathroutes.yml
+
+# this will apply to ALL environments, if an environment does not have a matching to or from service
+# it will fail to validate the lagoon.yml and return an error
+routes:
+  autogenerate:
+    pathRoutes:
+      # route to a specific default port on a service
+      - fromService: nginx
+        toService: node
+        path: /api/v1
+      # path route for a port when 'lagoon.service.usecomposeports' is enabled
+      - fromService: nginx
+        toService: node-4321
+        path: /api/v2
+
+environments:
+  main:
+    routes:
+      - nginx:
+        - a.example.com:
+            # if the environment does not have a matching to service it will fail to validate the lagoon.yml and return an error
+            pathRoutes:
+              # route to a specific default port on a service
+              - toService: node
+                path: /api/v1
+                # path route for a port when 'lagoon.service.usecomposeports' is enabled
+              - toService: node-4321
+                path: /api/v2

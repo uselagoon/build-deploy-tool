@@ -829,7 +829,8 @@ func Test_composeToServiceValues(t *testing.T) {
 							Target:   8181,
 							Protocol: "tcp",
 						},
-						ServiceName: "service-a-8181",
+						ServiceName:         "service-a-8181",
+						ServiceOverrideName: "service-a",
 					},
 				},
 				ImageBuild: &ImageBuild{

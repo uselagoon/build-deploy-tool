@@ -20,11 +20,12 @@ type ProductionRoutes struct {
 
 // Environment represents a Lagoon environment.
 type Environment struct {
-	AutogenerateRoutes *bool                `json:"autogenerateRoutes"`
-	Types              map[string]string    `json:"types"`
-	Routes             []map[string][]Route `json:"routes"`
-	Cronjobs           []Cronjob            `json:"cronjobs"`
-	Overrides          map[string]Override  `json:"overrides,omitempty"`
+	AutogenerateRoutes     *bool                   `json:"autogenerateRoutes"`
+	Types                  map[string]string       `json:"types"`
+	Routes                 []map[string][]Route    `json:"routes"`
+	Cronjobs               []Cronjob               `json:"cronjobs"`
+	Overrides              map[string]Override     `json:"overrides,omitempty"`
+	AutogeneratePathRoutes []AutogeneratePathRoute `json:"autogeneratePathRoutes,omitempty"`
 }
 
 // Cronjob represents a Lagoon cronjob.
@@ -105,13 +106,19 @@ type Routes struct {
 
 // Autogenerate .
 type Autogenerate struct {
-	Enabled             *bool    `json:"enabled"`
-	AllowPullRequests   *bool    `json:"allowPullRequests"`
-	Insecure            string   `json:"insecure"`
-	Prefixes            []string `json:"prefixes"`
-	TLSAcme             *bool    `json:"tls-acme,omitempty"`
-	IngressClass        string   `json:"ingressClass"`
-	RequestVerification *bool    `json:"disableRequestVerification,omitempty"`
+	Enabled             *bool                   `json:"enabled"`
+	AllowPullRequests   *bool                   `json:"allowPullRequests"`
+	Insecure            string                  `json:"insecure"`
+	Prefixes            []string                `json:"prefixes"`
+	TLSAcme             *bool                   `json:"tls-acme,omitempty"`
+	IngressClass        string                  `json:"ingressClass"`
+	RequestVerification *bool                   `json:"disableRequestVerification,omitempty"`
+	PathRoutes          []AutogeneratePathRoute `json:"pathRoutes,omitempty"`
+}
+
+type AutogeneratePathRoute struct {
+	PathRoute
+	FromService string `json:"fromService"`
 }
 
 func (a *Routes) UnmarshalJSON(data []byte) error {

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -419,6 +420,18 @@ func TestTemplateRoutes(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "internal/testdata/node/ingress-templates/ingress-23",
 		},
+		{
+			name: "test25-pathroutes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.pathroutes.yml",
+				}, true),
+			templatePath: "testdata/output",
+			want:         "internal/testdata/basic/ingress-templates/test25-pathroutes",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -480,8 +493,7 @@ func TestTemplateRoutes(t *testing.T) {
 								t.Errorf("couldn't read file %v: %v", tt.want, err)
 							}
 							if !reflect.DeepEqual(f1, r1) {
-								fmt.Println(string(f1))
-								t.Errorf("resulting templates do not match")
+								t.Errorf("IngressTemplateGeneration() = \n%v", diff.LineDiff(string(r1), string(f1)))
 							}
 						}
 					}
