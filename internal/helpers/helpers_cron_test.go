@@ -63,7 +63,7 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/H5 H(22-2) * * *",
 			},
-			wantErrMsg: "cron definition 'M/H5 H(22-2) * * *' is invalid, unable to determine minutes value",
+			wantErrMsg: "cron definition 'M/H5 H(22-2) * * *' is invalid",
 			wantErr:    true,
 		},
 		{
@@ -72,7 +72,7 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/15 H(H2-2) * * *",
 			},
-			wantErrMsg: "cron definition 'M/15 H(H2-2) * * *' is invalid, unable to determine hours value",
+			wantErrMsg: "cron definition 'M/15 H(H2-2) * * *' is invalid",
 			wantErr:    true,
 		},
 		{
@@ -97,7 +97,7 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "M/15 H(22-2) * * 1-8",
 			},
-			wantErrMsg: "cron definition 'M/15 H(22-2) * * 1-8' is invalid, unable to determine day(week) value",
+			wantErrMsg: "cron definition 'M/15 H(22-2) * * 1-8' is invalid",
 			wantErr:    true,
 		},
 		{
@@ -122,7 +122,7 @@ func TestConvertCrontab(t *testing.T) {
 				namespace: "example-com-main",
 				cron:      "15 * 1-32 * *",
 			},
-			wantErrMsg: "cron definition '15 * 1-32 * *' is invalid, unable to determine days value",
+			wantErrMsg: "cron definition '15 * 1-32 * *' is invalid",
 			wantErr:    true,
 		},
 		{
@@ -198,6 +198,30 @@ func TestConvertCrontab(t *testing.T) {
 				cron:      "*/30 0-12,22-23 * * *",
 			},
 			want: "1,31 0-12,22-23 * * *",
+		},
+		{
+			name: "test23 - step hours",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "0 17/12 * * *",
+			},
+			want: "0 17/12 * * *",
+		},
+		{
+			name: "test24 - step and range hours",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "0 17/12,0-23 * * *",
+			},
+			want: "0 17/12,0-23 * * *",
+		},
+		{
+			name: "test25 - random minute with step and range hours",
+			args: args{
+				namespace: "example-com-main",
+				cron:      "M/30 17/12,0-23 * * *",
+			},
+			want: "1,31 17/12,0-23 * * *",
 		},
 	}
 	for _, tt := range tests {
