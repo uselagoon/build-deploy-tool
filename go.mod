@@ -16,6 +16,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
 	github.com/k8up-io/k8up/v2 v2.11.1
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.8.1
 	github.com/uselagoon/machinery v0.0.29
 	github.com/vshn/k8up v1.99.99
