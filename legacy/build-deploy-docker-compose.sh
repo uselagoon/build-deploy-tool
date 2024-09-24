@@ -269,7 +269,7 @@ You can run docker compose config locally to check that your docker-compose file
 fi
 
 if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
-  echo "Read the docs for more on errors displayed here https://docs.lagoon.sh/lagoon-build-errors
+  echo "Read the docs for more on errors displayed here ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/lagoon-build-errors
 "
   echo "##############################################"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -298,7 +298,7 @@ if [ "${lyvExit}" != "0" ]; then
 Warning!
 There are issues with your .lagoon.yml file that must be fixed.
 Refer to the .lagoon.yml docs for the correct syntax
-https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
+${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/using-lagoon-the-basics/lagoon-yml/
 ##############################################
 "
   echo "${lyvOutput}"
@@ -311,7 +311,7 @@ set -e
 # Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
 # aren't in build-deploy-tool.
 if ! lagoon-linter; then
-	echo "https://docs.lagoon.sh/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
+	echo "${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
 	echo "If you require assistance to fix this error, please contact support."
 	exit 1
 else
@@ -1119,7 +1119,7 @@ if [ "${CURRENT_CHALLENGE_ROUTES[@]}" != "" ]; then
   echo ">> Lagoon detected routes that have stale acme certificate challenges."
   echo "  This indicates that the routes have not generated the certificate for some reason."
   echo "  You may need to verify that the DNS or configuration is correct for the hosting provider."
-  echo "  https://docs.lagoon.sh/using-lagoon-the-basics/going-live/#routes-ssl"
+  echo "  ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/using-lagoon-the-basics/going-live/#routes-ssl"
   echo "  Depending on your going live instructions from your hosting provider, you may need to make adjustments to your .lagoon.yml file"
   echo "  Otherwise, If you no longer need these routes, you should remove them from your .lagoon.yml file."
   echo ""
@@ -1414,7 +1414,7 @@ if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
   echo "  This indicates that an image you're using in the build has been flagged as deprecated."
   echo "  You should stop using these images as soon as possible."
   echo "  If the deprecated image has a suggested replacement, it will be mentioned in the warning."
-  echo "  Please visit https://docs.lagoon.sh/deprecated-images for more information."
+  echo "  Please visit ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/deprecated-images for more information."
   echo ""
   for IMAGE_NAME in "${!DEPRECATED_IMAGE_NAME[@]}"
   do
