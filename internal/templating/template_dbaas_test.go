@@ -161,6 +161,7 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 				t.Errorf("GenerateDBaaSTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			r1, err := os.ReadFile(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
@@ -169,8 +170,12 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't generate template: %v", err)
 			}
-			if !reflect.DeepEqual(string(templateYAML), string(r1)) {
-				t.Errorf("GenerateDBaaSTemplate() = \n%v", diff.LineDiff(string(r1), string(templateYAML)))
+			var tplYAML []byte
+			for _, tpl := range templateYAML {
+				tplYAML = append(tplYAML, tpl...)
+			}
+			if !reflect.DeepEqual(string(tplYAML), string(r1)) {
+				t.Errorf("GenerateDBaaSTemplate() = \n%v", diff.LineDiff(string(r1), string(tplYAML)))
 			}
 		})
 	}
