@@ -23,9 +23,8 @@ var dbaasTypes = []string{
 // GenerateDBaaSTemplate generates the lagoon template to apply.
 func GenerateDBaaSTemplate(
 	lValues generator.BuildValues,
-) ([]byte, error) {
-	separator := []byte("---\n")
-	var result []byte
+) (map[string][]byte, error) {
+	result := make(map[string][]byte)
 
 	// add the default labels
 	labels := map[string]string{
@@ -202,11 +201,8 @@ func GenerateDBaaSTemplate(
 
 			}
 			// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-			// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-			// of the current build process
-			// join all dbaas-consumer templates together
-			restoreResult := append(separator[:], consumerBytes[:]...)
-			result = append(result, restoreResult[:]...)
+			// add to the map so that it can be templated out and `kubectl apply` as part of the current build process
+			result[serviceValues.Name] = consumerBytes
 		}
 	}
 	return result, nil
