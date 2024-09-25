@@ -4,7 +4,9 @@ import (
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 )
 
 const (
@@ -83,6 +85,8 @@ type BuildValues struct {
 	ForcePullImages               []string                     `json:"forcePullImages"`
 	Volumes                       []ComposeVolume              `json:"volumes,omitempty" description:"stores any additional persistent volume definitions"`
 	PodAntiAffinity               bool                         `json:"podAntiAffinity"`
+	ResourceWorkloads             map[string]ResourceWorkloads `json:"resourceWorkloads"`
+	ResourceWorkloadOverrides     string                       `json:"resourceWorkloadOverrides"`
 }
 
 type Resources struct {
@@ -116,6 +120,28 @@ type PodSecurityContext struct {
 	RunAsUser      int64 `json:"runAsUser"`
 	OnRootMismatch bool  `json:"onRootMismatch"`
 }
+
+type ResourceWorkloads struct {
+	ServiceType string     `json:"serviceType"`
+	HPA         *HPASpec   `json:"hpa,omitempty"`
+	PDB         *PDBSpec   `json:"pdb,omitempty"`
+	Resources   []Resource `json:"resources"`
+}
+
+type Resource struct {
+	Name      string                      `json:"name"`
+	Resources corev1.ResourceRequirements `json:"resources"`
+}
+
+type HPASpec struct {
+	Spec autoscalingv2.HorizontalPodAutoscalerSpec `json:"spec"`
+}
+
+type PDBSpec struct {
+	Spec policyv1.PodDisruptionBudgetSpec `json:"spec"`
+}
+
+// type Resources map[string]corev1.ResourceRequirements
 
 type Fastly struct {
 	ServiceID     string `json:"serviceId"`
@@ -200,6 +226,7 @@ type ServiceValues struct {
 	IsDBaaS                                bool                    `json:"isDBaaS"`
 	IsSingle                               bool                    `json:"isSingle"`
 	AdditionalVolumes                      []ServiceVolume         `json:"additonalVolumes,omitempty"`
+	ResourceWorkload                       string                  `json:"resourceWorkload,omitempty"`
 }
 
 type ImageBuild struct {
