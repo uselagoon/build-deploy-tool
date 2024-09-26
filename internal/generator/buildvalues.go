@@ -91,11 +91,14 @@ type Resources struct {
 }
 
 type ResourceLimits struct {
+	Cpu              string `json:"cpu"`
 	Memory           string `json:"memory"`
 	EphemeralStorage string `json:"ephemeral-storage"`
 }
 
 type ResourceRequests struct {
+	Cpu              string `json:"cpu"`
+	Memory           string `json:"memory"`
 	EphemeralStorage string `json:"ephemeral-storage"`
 }
 
@@ -200,6 +203,7 @@ type ServiceValues struct {
 	IsDBaaS                                bool                    `json:"isDBaaS"`
 	IsSingle                               bool                    `json:"isSingle"`
 	AdditionalVolumes                      []ServiceVolume         `json:"additonalVolumes,omitempty"`
+	Resources                              Resources               `json:"resources,omitempty"`
 }
 
 type ImageBuild struct {

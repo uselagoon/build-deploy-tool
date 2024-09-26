@@ -511,6 +511,34 @@ func composeToServiceValues(
 
 		}
 
+		// Helper lambda to look for resource requirement label, validate it, and update value
+		updateResourceRequirement := func(dest *string, label string, serviceLabels composetypes.Labels) (err error) {
+			resourceValue := lagoon.CheckDockerComposeLagoonLabel(serviceLabels, label)
+			if resourceValue != "" {
+				err := ValidateResourceQuantity(resourceValue)
+				if err != nil {
+					return fmt.Errorf("Value of sesource requirement label %s for %s is not valid resource quantity: %v", label, servicePersistentName, err)
+				}
+				*dest = resourceValue
+			}
+			return nil
+		}
+
+		// Build container resource requirements from service labels
+		resources := Resources{}
+		if err := updateResourceRequirement(&resources.Requests.Cpu, "lagoon.resources.requests.cpu", composeServiceValues.Labels); err != nil {
+			return nil, err
+		}
+		if err := updateResourceRequirement(&resources.Requests.Memory, "lagoon.resources.requests.memory", composeServiceValues.Labels); err != nil {
+			return nil, err
+		}
+		if err := updateResourceRequirement(&resources.Limits.Cpu, "lagoon.resources.limits.cpu", composeServiceValues.Labels); err != nil {
+			return nil, err
+		}
+		if err := updateResourceRequirement(&resources.Limits.Memory, "lagoon.resources.limits.memory", composeServiceValues.Labels); err != nil {
+			return nil, err
+		}
+
 		// create the service values
 		cService := &ServiceValues{
 			Name:                                   composeService,
@@ -535,6 +563,7 @@ func composeToServiceValues(
 			IsSingle:                               svcIsSingle,
 			BackupsEnabled:                         backupsEnabled,
 			AdditionalVolumes:                      serviceVolumes,
+			Resources:                              resources,
 		}
 
 		// work out the images here and the associated dockerfile and contexts

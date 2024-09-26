@@ -10,6 +10,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -595,6 +596,8 @@ func GenerateDeploymentTemplate(
 			}
 
 			// set the resource limit overrides if htey are provided
+			//
+			// TODO: cpu limit, and cpu/mem requests have been added, should consider wiring up BuildValues resource override
 			if buildValues.Resources.Limits.Memory != "" {
 				if container.Container.Resources.Limits == nil {
 					container.Container.Resources.Limits = corev1.ResourceList{}
@@ -612,6 +615,35 @@ func GenerateDeploymentTemplate(
 					container.Container.Resources.Requests = corev1.ResourceList{}
 				}
 				container.Container.Resources.Requests[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Requests.EphemeralStorage)
+			}
+
+			// If service resource overrides are present, use those
+			if serviceValues.Resources.Requests.Cpu != "" {
+				if container.Container.Resources.Requests == nil {
+					container.Container.Resources.Requests = corev1.ResourceList{}
+				}
+				container.Container.Resources.Requests[v1.ResourceCPU] = resource.MustParse(serviceValues.Resources.Requests.Cpu)
+			}
+
+			if serviceValues.Resources.Requests.Memory != "" {
+				if container.Container.Resources.Requests == nil {
+					container.Container.Resources.Requests = corev1.ResourceList{}
+				}
+				container.Container.Resources.Requests[v1.ResourceMemory] = resource.MustParse(serviceValues.Resources.Requests.Memory)
+			}
+
+			if serviceValues.Resources.Limits.Cpu != "" {
+				if container.Container.Resources.Limits == nil {
+					container.Container.Resources.Limits = corev1.ResourceList{}
+				}
+				container.Container.Resources.Limits[v1.ResourceCPU] = resource.MustParse(serviceValues.Resources.Limits.Cpu)
+			}
+
+			if serviceValues.Resources.Limits.Memory != "" {
+				if container.Container.Resources.Limits == nil {
+					container.Container.Resources.Limits = corev1.ResourceList{}
+				}
+				container.Container.Resources.Limits[v1.ResourceMemory] = resource.MustParse(serviceValues.Resources.Limits.Memory)
 			}
 
 			// append the final defined container to the spec
@@ -693,6 +725,36 @@ func GenerateDeploymentTemplate(
 					helpers.TemplateThings(tpld, svm, &volumeMount)
 					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
 				}
+
+				// If service resource overrides are present, use those
+				if serviceValues.LinkedService.Resources.Requests.Cpu != "" {
+					if linkedContainer.Container.Resources.Requests == nil {
+						linkedContainer.Container.Resources.Requests = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Requests[v1.ResourceCPU] = resource.MustParse(serviceValues.LinkedService.Resources.Requests.Cpu)
+				}
+
+				if serviceValues.LinkedService.Resources.Requests.Memory != "" {
+					if linkedContainer.Container.Resources.Requests == nil {
+						linkedContainer.Container.Resources.Requests = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Requests[v1.ResourceMemory] = resource.MustParse(serviceValues.LinkedService.Resources.Requests.Memory)
+				}
+
+				if serviceValues.LinkedService.Resources.Limits.Cpu != "" {
+					if linkedContainer.Container.Resources.Limits == nil {
+						linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Limits[v1.ResourceCPU] = resource.MustParse(serviceValues.LinkedService.Resources.Limits.Cpu)
+				}
+
+				if serviceValues.LinkedService.Resources.Limits.Memory != "" {
+					if linkedContainer.Container.Resources.Limits == nil {
+						linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Limits[v1.ResourceMemory] = resource.MustParse(serviceValues.LinkedService.Resources.Limits.Memory)
+				}
+
 				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, linkedContainer.Container)
 			}
 
