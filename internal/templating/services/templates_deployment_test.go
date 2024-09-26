@@ -912,6 +912,71 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			},
 			want: "test-resources/deployment/result-basic-4.yaml",
 		},
+		{
+			name: "test20 - nginx-php ServiceValues Resource Override",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					FeatureFlags: map[string]bool{
+						"rootlessworkloads": true,
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup: 0,
+						RunAsUser:  10000,
+						FsGroup:    10001,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"nginx": "harbor.example.com/example-project/environment-name/nginx@latest",
+						"php":   "harbor.example.com/example-project/environment-name/php@latest",
+					},
+					// BuildValues.Resouces not expected to be used as is overriden by ServiceValues resource
+					// (Included to verify ServiceValues is final word)
+					Resources: generator.Resources{Limits: generator.ResourceLimits{Memory: "2Gi"}},
+					Services: []generator.ServiceValues{
+						{
+							Name:             "nginx",
+							OverrideName:     "nginx",
+							Type:             "nginx-php",
+							DBaaSEnvironment: "production",
+							// Leave primary mem request as default, ensure that default from ServiceType is still templated
+							Resources: generator.Resources{
+								Requests: generator.ResourceRequests{Cpu: "500m"},
+								Limits: generator.ResourceLimits{
+									Cpu:    "2",
+									Memory: "1Gi",
+								},
+							},
+						},
+						{
+							Name:             "php",
+							OverrideName:     "nginx",
+							Type:             "nginx-php",
+							DBaaSEnvironment: "production",
+							Resources: generator.Resources{
+								Requests: generator.ResourceRequests{
+									Cpu:    "500m",
+									Memory: "200Mi",
+								},
+								Limits: generator.ResourceLimits{
+									Cpu:    "500m",
+									Memory: "1Gi",
+								},
+							},
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-nginx-php-resources-1.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
