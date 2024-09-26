@@ -1,0 +1,10 @@
+---
+docker-compose-yaml: internal/testdata/complex/docker-compose.resources.yml
+
+project: example-com
+
+environments:
+  main:
+    routes:
+      - nginx:
+          - example.com

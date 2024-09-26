@@ -480,6 +480,31 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test-basic-spot-affinity",
 		},
+		{
+			name:        "test16-nginx-php-resource-requests-from-env",
+			description: "tests an nginx-php deployment with service label resource requests set from env var",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.resources.yml",
+					EnvVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "NGINX_CPU_REQUEST",
+							Value: "50m",
+							Scope: "global",
+						},
+					},
+					ImageReferences: map[string]string{
+						"nginx": "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":   "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":   "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/test16-nginx-php-resources",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
