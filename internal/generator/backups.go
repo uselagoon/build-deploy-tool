@@ -13,7 +13,7 @@ const (
 	hourlyDefaultBackupRetention  = 0
 	dailyDefaultBackupRetention   = 7
 	weeklyDefaultBackupRetention  = 6
-	monthlyDefaultBackupRetention = 1
+	monthlyDefaultBackupRetention = 0
 
 	// TODO: make this configurable
 	baasBucketPrefix = "baas"
