@@ -43,7 +43,6 @@ spec:
     resources: {}
     retention:
       keepDaily: 7
-      keepMonthly: 1
       keepWeekly: 6
     schedule: 17 4 * * 0
   resourceRequirementsTemplate: {}
