@@ -806,7 +806,7 @@ func Test_generateBackupValues(t *testing.T) {
 						Hourly:  0,
 						Daily:   7,
 						Weekly:  6,
-						Monthly: 1,
+						Monthly: 0,
 					},
 				},
 			},
