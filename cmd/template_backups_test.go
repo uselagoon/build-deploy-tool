@@ -240,6 +240,27 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "internal/testdata/node/backup-templates/backup-8",
 		},
+		{
+			name: "test11 - custom prod schedule",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "production",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG",
+							Value: "enabled",
+							Scope: "global",
+						},
+						{Name: "LAGOON_BACKUP_PROD_SCHEDULE", Value: "2,21 22 * * *", Scope: "build"},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/backup-templates/backup-9",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

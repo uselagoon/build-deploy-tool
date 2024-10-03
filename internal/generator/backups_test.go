@@ -775,6 +775,42 @@ func Test_generateBackupValues(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test20- prod schedule from lagoon api variable",
+			args: args{
+				buildValues: &BuildValues{
+					BuildType:             "branch",
+					EnvironmentType:       "production",
+					Project:               "example-project",
+					Namespace:             "example-com-main",
+					DefaultBackupSchedule: "M H(22-2) * * *",
+					LagoonYAML:            lagoon.YAML{},
+				},
+				mergedVariables: []lagoon.EnvironmentVariable{
+					{Name: "LAGOON_FEATURE_FLAG_CUSTOM_BACKUP_CONFIG", Value: "enabled", Scope: "global"},
+					{Name: "LAGOON_BACKUP_PROD_SCHEDULE", Value: "M/15 23 * * 0-5", Scope: "build"},
+				},
+			},
+			want: &BuildValues{
+				BuildType:             "branch",
+				EnvironmentType:       "production",
+				Project:               "example-project",
+				Namespace:             "example-com-main",
+				DefaultBackupSchedule: "M H(22-2) * * *",
+				Backup: BackupConfiguration{
+					BackupSchedule: "1,16,31,46 23 * * 0-5",
+					CheckSchedule:  "31 6 * * 1",
+					PruneSchedule:  "31 4 * * 0",
+					S3BucketName:   "baas-example-project",
+					PruneRetention: PruneRetention{
+						Hourly:  0,
+						Daily:   7,
+						Weekly:  6,
+						Monthly: 0,
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
