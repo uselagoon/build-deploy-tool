@@ -27,25 +27,6 @@ func TestTemplateRoutes(t *testing.T) {
 		wantErrMsg   string
 	}{
 		{
-			name: "test1 check LAGOON_FASTLY_SERVICE_IDS with secret no values",
-			args: testdata.GetSeedData(
-				testdata.TestData{
-					ProjectName:     "example-project",
-					EnvironmentName: "main",
-					Branch:          "main",
-					LagoonYAML:      "internal/testdata/node/lagoon.yml",
-					ProjectVariables: []lagoon.EnvironmentVariable{
-						{
-							Name:  "LAGOON_FASTLY_SERVICE_IDS",
-							Value: "example.com:service-id:true:annotationscom",
-							Scope: "build",
-						},
-					},
-				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-1",
-		},
-		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
 			args: testdata.GetSeedData(
 				testdata.TestData{
@@ -289,7 +270,7 @@ func TestTemplateRoutes(t *testing.T) {
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FASTLY_SERVICE_IDS",
-							Value: "example.com:service-id:true:annotationscom",
+							Value: "example.com:service-id:true",
 							Scope: "build",
 						},
 					},
@@ -308,7 +289,7 @@ func TestTemplateRoutes(t *testing.T) {
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FASTLY_SERVICE_IDS",
-							Value: "example.com:service-id:true:annotationscom",
+							Value: "example.com:service-id:true",
 							Scope: "build",
 						},
 					},

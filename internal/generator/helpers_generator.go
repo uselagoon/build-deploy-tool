@@ -93,10 +93,6 @@ func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 	if err != nil {
 		return GeneratorInput{}, fmt.Errorf("error reading fastly-cache-no-cache-id flag: %v", err)
 	}
-	fastlyAPISecretPrefix, err := rootCmd.PersistentFlags().GetString("fastly-api-secret-prefix")
-	if err != nil {
-		return GeneratorInput{}, fmt.Errorf("error reading fastly-api-secret-prefix flag: %v", err)
-	}
 	ignoreMissingEnvFiles, err := rootCmd.PersistentFlags().GetBool("ignore-missing-env-files")
 	if err != nil {
 		return GeneratorInput{}, fmt.Errorf("error reading ignore-missing-env-files flag: %v", err)
@@ -136,7 +132,6 @@ func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 		MonitoringContact:        monitoringContact,
 		MonitoringStatusPageID:   monitoringStatusPageID,
 		FastlyCacheNoCahce:       fastlyCacheNoCahce,
-		FastlyAPISecretPrefix:    fastlyAPISecretPrefix,
 		SavedTemplatesPath:       savedTemplates,
 		IgnoreMissingEnvFiles:    ignoreMissingEnvFiles,
 		IgnoreNonStringKeyErrors: ignoreNonStringKeyErrors,

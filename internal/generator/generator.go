@@ -48,7 +48,6 @@ type GeneratorInput struct {
 	MonitoringContact          string
 	MonitoringStatusPageID     string
 	FastlyCacheNoCahce         string
-	FastlyAPISecretPrefix      string
 	SavedTemplatesPath         string
 	ConfigMapSha               string
 	BackupConfiguration        BackupConfiguration
@@ -97,7 +96,6 @@ func NewGenerator(
 	activeEnvironment := helpers.GetEnv("ACTIVE_ENVIRONMENT", generator.ActiveEnvironment, generator.Debug)
 	standbyEnvironment := helpers.GetEnv("STANDBY_ENVIRONMENT", generator.StandbyEnvironment, generator.Debug)
 	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
-	fastlyAPISecretPrefix := helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", generator.FastlyAPISecretPrefix, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 	configMapSha := helpers.GetEnv("CONFIG_MAP_SHA", generator.ConfigMapSha, generator.Debug)
 	imageRegistry := helpers.GetEnv("REGISTRY", generator.ImageRegistry, generator.Debug)
@@ -174,7 +172,6 @@ func NewGenerator(
 	buildValues.ActiveEnvironment = activeEnvironment
 	buildValues.StandbyEnvironment = standbyEnvironment
 	buildValues.FastlyCacheNoCache = fastlyCacheNoCahce
-	buildValues.FastlyAPISecretPrefix = fastlyAPISecretPrefix
 	switch buildType {
 	case "branch", "promote":
 		buildValues.Branch = branch

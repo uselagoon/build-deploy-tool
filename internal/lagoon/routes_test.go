@@ -15,7 +15,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 		yamlRouteMap        map[string][]Route
 		variables           []EnvironmentVariable
 		defaultIngressClass string
-		secretPrefix        string
 		activeStandby       bool
 	}
 	tests := []struct {
@@ -38,7 +37,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:  "",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -87,16 +85,14 @@ func TestGenerateRouteStructure(t *testing.T) {
 							Ingresses: map[string]Ingress{
 								"www.example.com": {
 									Fastly: Fastly{
-										APISecretName: "annotationscom",
-										Watch:         true,
-										ServiceID:     "12345",
+										Watch:     true,
+										ServiceID: "12345",
 									},
 								},
 							},
 						},
 					},
 				},
-				secretPrefix:  "fastly-api-",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -123,9 +119,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							APISecretName: "fastly-api-annotationscom",
-							Watch:         true,
-							ServiceID:     "12345",
+							Watch:     true,
+							ServiceID: "12345",
 						},
 						AlternativeNames:    []string{},
 						IngressName:         "www.example.com",
@@ -144,9 +139,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 							Ingresses: map[string]Ingress{
 								"example.com": {
 									Fastly: Fastly{
-										APISecretName: "annotationscom",
-										Watch:         true,
-										ServiceID:     "12345",
+										Watch:     true,
+										ServiceID: "12345",
 									},
 									AlternativeNames: []string{
 										"www.example.com",
@@ -157,7 +151,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:  "fastly-api-",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -170,9 +163,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							APISecretName: "fastly-api-annotationscom",
-							Watch:         true,
-							ServiceID:     "12345",
+							Watch:     true,
+							ServiceID: "12345",
 						},
 						AlternativeNames: []string{
 							"www.example.com",
@@ -198,7 +190,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:        "",
 				defaultIngressClass: "nginx",
 				activeStandby:       false,
 			},
@@ -250,9 +241,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 							Ingresses: map[string]Ingress{
 								"www.example.com": {
 									Fastly: Fastly{
-										APISecretName: "annotationscom",
-										Watch:         true,
-										ServiceID:     "12345",
+										Watch:     true,
+										ServiceID: "12345",
 									},
 									IngressClass: "custom-ingress",
 								},
@@ -260,7 +250,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:        "fastly-api-",
 				defaultIngressClass: "nginx",
 				activeStandby:       false,
 			},
@@ -290,9 +279,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							APISecretName: "fastly-api-annotationscom",
-							Watch:         true,
-							ServiceID:     "12345",
+							Watch:     true,
+							ServiceID: "12345",
 						},
 						AlternativeNames:    []string{},
 						IngressName:         "www.example.com",
@@ -314,9 +302,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 							Ingresses: map[string]Ingress{
 								"www.example.com": {
 									Fastly: Fastly{
-										APISecretName: "annotationscom",
-										Watch:         true,
-										ServiceID:     "12345",
+										Watch:     true,
+										ServiceID: "12345",
 									},
 									HSTSEnabled: helpers.BoolPtr(true),
 									HSTSMaxAge:  10000,
@@ -325,7 +312,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:  "fastly-api-",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -352,9 +338,8 @@ func TestGenerateRouteStructure(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							APISecretName: "fastly-api-annotationscom",
-							Watch:         true,
-							ServiceID:     "12345",
+							Watch:     true,
+							ServiceID: "12345",
 						},
 						HSTSEnabled:         helpers.BoolPtr(true),
 						HSTSMaxAge:          10000,
@@ -381,7 +366,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:  "fastly-api-",
 				activeStandby: false,
 			},
 			wantErr: true,
@@ -405,7 +389,6 @@ func TestGenerateRouteStructure(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix:  "fastly-api-",
 				activeStandby: false,
 			},
 			want: &RoutesV2{
@@ -428,7 +411,7 @@ func TestGenerateRouteStructure(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := GenerateRoutesV2(tt.args.yamlRoutes, tt.args.yamlRouteMap, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix, tt.args.activeStandby)
+			err := GenerateRoutesV2(tt.args.yamlRoutes, tt.args.yamlRouteMap, tt.args.variables, tt.args.defaultIngressClass, tt.args.activeStandby)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GenerateRouteStructure() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -448,7 +431,6 @@ func TestMergeRouteStructures(t *testing.T) {
 		apiRoutes           RoutesV2
 		variables           []EnvironmentVariable
 		defaultIngressClass string
-		secretPrefix        string
 	}
 	tests := []struct {
 		name    string
@@ -469,9 +451,8 @@ func TestMergeRouteStructures(t *testing.T) {
 							TLSAcme:        helpers.BoolPtr(true),
 							Annotations:    map[string]string{},
 							Fastly: Fastly{
-								Watch:         true,
-								ServiceID:     "12345",
-								APISecretName: "annotationscom",
+								Watch:     true,
+								ServiceID: "12345",
 							},
 							IngressName:         "example.com",
 							RequestVerification: helpers.BoolPtr(false),
@@ -535,7 +516,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix: "fastly-api-",
 			},
 			want: RoutesV2{
 				Routes: []RouteV2{
@@ -547,9 +527,8 @@ func TestMergeRouteStructures(t *testing.T) {
 						TLSAcme:        helpers.BoolPtr(true),
 						Annotations:    map[string]string{},
 						Fastly: Fastly{
-							Watch:         true,
-							ServiceID:     "12345",
-							APISecretName: "fastly-api-annotationscom",
+							Watch:     true,
+							ServiceID: "12345",
 						},
 						AlternativeNames:    []string{},
 						IngressName:         "example.com",
@@ -642,7 +621,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix: "fastly-api-",
 			},
 			want: RoutesV2{
 				Routes: []RouteV2{
@@ -702,7 +680,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix: "fastly-api-",
 			},
 			wantErr: true,
 			want: RoutesV2{
@@ -738,7 +715,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix: "fastly-api-",
 			},
 			wantErr: true,
 			want: RoutesV2{
@@ -774,7 +750,6 @@ func TestMergeRouteStructures(t *testing.T) {
 						},
 					},
 				},
-				secretPrefix: "fastly-api-",
 			},
 			wantErr: true,
 			want: RoutesV2{
@@ -784,7 +759,7 @@ func TestMergeRouteStructures(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := MergeRoutesV2(tt.args.yamlRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.defaultIngressClass, tt.args.secretPrefix)
+			got, err := MergeRoutesV2(tt.args.yamlRoutes, tt.args.apiRoutes, tt.args.variables, tt.args.defaultIngressClass)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("MergeRouteStructures() error = %v, wantErr %v", err, tt.wantErr)
 				return

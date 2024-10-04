@@ -105,8 +105,6 @@ COPY legacy/build-deploy-docker-compose.sh /kubectl-build-deploy/build-deploy-do
 
 COPY legacy/scripts /kubectl-build-deploy/scripts
 
-COPY legacy/helmcharts  /kubectl-build-deploy/helmcharts
-
 ENV DBAAS_OPERATOR_HTTP=dbaas.lagoon.svc:5000
 ENV DOCKER_HOST=docker-host.lagoon.svc
 ENV LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL=https://docs.lagoon.sh
