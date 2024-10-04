@@ -10,7 +10,12 @@ RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
 
 WORKDIR /app
 
-COPY . ./
+COPY go.mod go.mod
+COPY go.sum go.sum
+
+COPY main.go main.go
+COPY cmd/ cmd/
+COPY internal/ internal/
 
 ARG BUILD
 ARG GO_VER
