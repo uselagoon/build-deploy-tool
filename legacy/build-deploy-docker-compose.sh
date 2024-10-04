@@ -377,11 +377,8 @@ declare -A IMAGES_PROMOTE
 # this array stores the hashes of the built images
 declare -A IMAGE_HASHES
 
-HELM_ARGUMENTS=()
+# this sets CAPABILITIES which is used by some processes in this build 
 . /kubectl-build-deploy/scripts/kubectl-get-cluster-capabilities.sh
-for CAPABILITIES in "${CAPABILITIES[@]}"; do
-  HELM_ARGUMENTS+=(-a "${CAPABILITIES}")
-done
 
 # Allow the servicetype be overridden by the lagoon API
 # This accepts colon separated values like so `SERVICE_NAME:SERVICE_TYPE_OVERRIDE`, and multiple overrides
@@ -686,22 +683,6 @@ done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
-
-##############################################
-### RUN PRE-ROLLOUT tasks defined in .lagoon.yml
-##############################################
-
-if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
-    build-deploy-tool tasks pre-rollout
-else
-  echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
-fi
-
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 
@@ -1390,6 +1371,22 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
+previousStepEnd=${currentStepEnd}
+beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
+
+##############################################
+### RUN PRE-ROLLOUT tasks defined in .lagoon.yml
+##############################################
+
+if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
+    build-deploy-tool tasks pre-rollout
+else
+  echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
+fi
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
 
