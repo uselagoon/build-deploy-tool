@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/distribution/reference"
+
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -270,4 +272,42 @@ func getDBaasEnvironment(
 		return exists, fmt.Errorf("there was an error checking DBaaS endpoint %s: %v", buildValues.DBaaSOperatorEndpoint, err)
 	}
 	return exists, nil
+}
+
+func determineRefreshImage(serviceName, imageName string, labels map[string]string, envVars []lagoon.EnvironmentVariable) (string, error) {
+	tagvalue := lagoon.CheckDockerComposeLagoonLabel(labels, "lagoon.base.image.tag")
+	if tagvalue != "" {
+
+		// Regular expression to match VAR and defaulttag
+		re := regexp.MustCompile(`\$(\w+)(?::-(\w+))?`)
+		matches := re.FindStringSubmatch(tagvalue)
+
+		if len(matches) > 0 { // we have an env var, and optionally a default
+			tv := ""
+			envVarKey := matches[1]
+			defaultVal := matches[2] //This could be empty
+			for _, v := range envVars {
+				if v.Name == envVarKey {
+					// we've found a matching env var - that becomes the tag
+					tv = v.Value
+				}
+			}
+			if tv == "" {
+				if defaultVal != "" {
+					tagvalue = defaultVal
+				}
+			} else {
+				tagvalue = tv
+			}
+		}
+
+		println(matches)
+
+		imageName = fmt.Sprintf("%v:%v", imageName, tagvalue)
+	}
+
+	if !reference.ReferenceRegexp.MatchString(imageName) {
+		return "", fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", serviceName, imageName)
+	}
+	return imageName, nil
 }
