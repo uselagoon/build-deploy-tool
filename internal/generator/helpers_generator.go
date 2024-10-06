@@ -301,8 +301,6 @@ func determineRefreshImage(serviceName, imageName string, labels map[string]stri
 			}
 		}
 
-		println(matches)
-
 		imageName = fmt.Sprintf("%v:%v", imageName, tagvalue)
 	}
 
