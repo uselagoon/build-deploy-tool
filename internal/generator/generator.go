@@ -362,7 +362,12 @@ func NewGenerator(
 		bk, _ := strconv.ParseBool(dockerBuildKit.Value)
 		buildValues.DockerBuildKit = &bk
 	} else {
-		buildValues.DockerBuildKit = helpers.BoolPtr(true)
+		lffDockerbuildkit := CheckFeatureFlag("DOCKER_BUILDKIT", buildValues.EnvironmentVariables, false)
+		if lffDockerbuildkit == "disabled" {
+			buildValues.DockerBuildKit = helpers.BoolPtr(false)
+		} else {
+			buildValues.DockerBuildKit = helpers.BoolPtr(true)
+		}
 	}
 
 	// get any lagoon service type overrides
