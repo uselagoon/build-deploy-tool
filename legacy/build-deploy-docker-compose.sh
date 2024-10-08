@@ -652,29 +652,10 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
       # Decide whether to use a dedicated project builder for Docker builds - disabled by default.
       DOCKER_PROJECT_BUILDER=default
-
-      if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-        DOCKER_PROJECT_BUILDER=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_PROJECT_BUILDER") | "\(.value)"'))
-      fi
-      if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-        TEMP_DOCKER_PROJECT_BUILDER=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "DOCKER_PROJECT_BUILDER") | "\(.value)"'))
-        if [ ! -z $TEMP_DOCKER_PROJECT_BUILDER ]; then
-          DOCKER_PROJECT_BUILDER=$TEMP_DOCKER_PROJECT_BUILDER
-        fi
-      fi
-
-      case "$DOCKER_PROJECT_BUILDER" in
-        default|Default|False|false|0)
-          DOCKER_PROJECT_BUILDER=default
-          echo "Using default builder for $DOCKERFILE";
-        ;;
-        *)
-          echo "Using dedicated builder $PROJECT for $DOCKERFILE";
+      if [ "$(featureFlag DOCKER_PROJECT_BUILDER)" = enabled ]; then
           DOCKER_PROJECT_BUILDER=${PROJECT}
           docker builder create --name $DOCKER_PROJECT_BUILDER --driver docker-container || true
-        ;;
-      esac
-      set -x
+      fi
 
       # now do the actual image build
       if [ $BUILD_TARGET == "false" ]; then
@@ -697,6 +678,11 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     fi
   done
 fi
+
+if [ "$(featureFlag DOCKER_PROJECT_BUILDER)" = enabled ]; then  
+  echo "stopping builder $DOCKER_PROJECT_BUILDER"
+  docker builder stop --builder $DOCKER_PROJECT_BUILDER 
+fi  
 
 # print information about built image sizes
 function printBytes {
