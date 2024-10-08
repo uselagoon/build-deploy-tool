@@ -289,10 +289,15 @@ func composeToServiceValues(
 		// may have an update without a change in tag (i.e. "latest" tagged images)
 		baseimage := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
 		if baseimage != "" {
-
-			baseImageWithTag, err := determineRefreshImage(composeService, baseimage, composeServiceValues.Labels, buildValues.EnvironmentVariables)
-			if err != nil {
-				return nil, err
+			baseImageWithTag, errs := determineRefreshImage(composeService, baseimage, buildValues.EnvironmentVariables)
+			if len(errs) > 0 {
+				for idx, err := range errs {
+					if idx+1 == len(errs) {
+						return nil, err
+					} else {
+						fmt.Println(err)
+					}
+				}
 			}
 			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseImageWithTag)
 		}
