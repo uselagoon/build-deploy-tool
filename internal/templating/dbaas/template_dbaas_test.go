@@ -131,12 +131,19 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 				t.Errorf("GenerateDBaaSTemplate() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
+
 			r1, err := os.ReadFile(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateDBaaSTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
+			separator := []byte("---\n")
+			var result []byte
+			for _, d := range got {
+				restoreResult := append(separator[:], d[:]...)
+				result = append(result, restoreResult[:]...)
+			}
+			if !reflect.DeepEqual(string(result), string(r1)) {
+				t.Errorf("GenerateServiceTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
 			}
 		})
 	}
