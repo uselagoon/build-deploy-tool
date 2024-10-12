@@ -249,43 +249,6 @@ func composeToServiceValues(
 			lagoonOverrideName = composeService
 		}
 
-		// check if the service has any persistent labels, this is the path that the volume will be mounted to
-		servicePersistentPath := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent")
-		if servicePersistentPath == "" {
-			// if there is no persistent path, check if the service type has a default path
-			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
-				servicePersistentPath = val.Volumes.PersistentVolumePath
-				// check if the service type provides or consumes a default persistent volume
-				if (val.ProvidesPersistentVolume || val.ConsumesPersistentVolume) && servicePersistentPath == "" {
-					return nil, fmt.Errorf("label lagoon.persistent not defined for service %s, no valid mount path was found", composeService)
-				}
-			}
-		}
-		servicePersistentName := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent.name")
-		if servicePersistentName == "" && servicePersistentPath != "" {
-			// if there is a persistent path defined, then set the persistent name to be the compose service if no persistent name is provided
-			// persistent name is used by joined services like nginx/php or cli or worker pods to mount another service volume
-			servicePersistentName = lagoonOverrideName
-		}
-		servicePersistentSize := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent.size")
-		if servicePersistentSize == "" {
-			// if there is no persistent size, check if the service type has a default size allocated
-			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
-				servicePersistentSize = val.Volumes.PersistentVolumeSize
-				// check if the service type provides persistent volume, and that a size was detected
-				if val.ProvidesPersistentVolume && servicePersistentSize == "" {
-					return nil, fmt.Errorf("label lagoon.persistent.size not defined for service %s, no valid size was found", composeService)
-				}
-			}
-		}
-		if servicePersistentSize != "" {
-			// check the provided size is a valid resource size for kubernetes
-			_, err := ValidateResourceSize(servicePersistentSize)
-			if err != nil {
-				return nil, fmt.Errorf("provided persistent volume size for %s is not valid: %v", servicePersistentName, err)
-			}
-		}
-
 		baseimage := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
 		if baseimage != "" {
 			// First, let's ensure that the structure of the base image is valid
@@ -378,6 +341,43 @@ func composeToServiceValues(
 					lagoonType = fmt.Sprintf("%s-single", lagoonType)
 					svcIsSingle = true
 				}
+			}
+		}
+
+		// check if the service has any persistent labels, this is the path that the volume will be mounted to
+		servicePersistentPath := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent")
+		if servicePersistentPath == "" {
+			// if there is no persistent path, check if the service type has a default path
+			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
+				servicePersistentPath = val.Volumes.PersistentVolumePath
+				// check if the service type provides or consumes a default persistent volume
+				if (val.ProvidesPersistentVolume || val.ConsumesPersistentVolume) && servicePersistentPath == "" {
+					return nil, fmt.Errorf("label lagoon.persistent not defined for service %s, no valid mount path was found", composeService)
+				}
+			}
+		}
+		servicePersistentName := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent.name")
+		if servicePersistentName == "" && servicePersistentPath != "" {
+			// if there is a persistent path defined, then set the persistent name to be the compose service if no persistent name is provided
+			// persistent name is used by joined services like nginx/php or cli or worker pods to mount another service volume
+			servicePersistentName = lagoonOverrideName
+		}
+		servicePersistentSize := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.persistent.size")
+		if servicePersistentSize == "" {
+			// if there is no persistent size, check if the service type has a default size allocated
+			if val, ok := servicetypes.ServiceTypes[lagoonType]; ok {
+				servicePersistentSize = val.Volumes.PersistentVolumeSize
+				// check if the service type provides persistent volume, and that a size was detected
+				if val.ProvidesPersistentVolume && servicePersistentSize == "" {
+					return nil, fmt.Errorf("label lagoon.persistent.size not defined for service %s, no valid size was found", composeService)
+				}
+			}
+		}
+		if servicePersistentSize != "" {
+			// check the provided size is a valid resource size for kubernetes
+			_, err := ValidateResourceSize(servicePersistentSize)
+			if err != nil {
+				return nil, fmt.Errorf("provided persistent volume size for %s is not valid: %v", servicePersistentName, err)
 			}
 		}
 

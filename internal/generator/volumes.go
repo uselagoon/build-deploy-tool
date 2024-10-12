@@ -124,3 +124,25 @@ func calculateServiceVolumes(buildValues *BuildValues, lagoonType, servicePersis
 
 	return serviceVolumes, nil
 }
+
+// flagDefaultVolumeCreation checks services for duplicate default volumes and flags only the ones that need to be created
+// this will ensure that a service type that provides a volume will create that volume
+// even if the `lagoon.persistent.name` is different to the default name being the service name
+// due to the way labels in docker-compose can be added to services for lagoon, this allows multiple types to mount one shared volume by name
+// from one main service, across multiple services by using the `lagoon.persistent.name` value
+func flagDefaultVolumeCreation(
+	buildValues *BuildValues,
+) error {
+	vols := make(map[string]bool)
+	for idx, service := range buildValues.Services {
+		if sType, ok := servicetypes.ServiceTypes[service.Type]; ok && service.PersistentVolumeName != "" {
+			if _, ok := vols[service.PersistentVolumeName]; !ok && sType.ProvidesPersistentVolume {
+				// this volume is the one to be created by the first service that provides a persistent volume
+				service.CreateDefaultVolume = true
+				vols[service.PersistentVolumeName] = true
+				buildValues.Services[idx] = service
+			}
+		}
+	}
+	return nil
+}
