@@ -424,6 +424,12 @@ func NewGenerator(
 		return nil, err
 	}
 
+	// strip out duplicate default volumes
+	err = flagDefaultVolumeCreation(&buildValues)
+	if err != nil {
+		return nil, err
+	}
+
 	if imageCacheBuildArgsJSON != "" {
 		err = json.Unmarshal([]byte(imageCacheBuildArgsJSON), &buildValues.ImageCacheBuildArguments)
 		if err != nil {

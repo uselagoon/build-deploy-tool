@@ -199,6 +199,7 @@ type ServiceValues struct {
 	IsDBaaS                                bool                    `json:"isDBaaS"`
 	IsSingle                               bool                    `json:"isSingle"`
 	AdditionalVolumes                      []ServiceVolume         `json:"additonalVolumes,omitempty"`
+	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
 }
 
 type ImageBuild struct {
