@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: opensearch
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: opensearch-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: opensearch
+    lagoon.sh/service-type: opensearch-persistent
+    lagoon.sh/template: opensearch-persistent-0.1.0
+  name: opensearch
+spec:
+  ports:
+  - name: 9200-tcp
+    port: 9200
+    protocol: TCP
+    targetPort: 9200
+  selector:
+    app.kubernetes.io/instance: opensearch
+    app.kubernetes.io/name: opensearch-persistent
+status:
+  loadBalancer: {}

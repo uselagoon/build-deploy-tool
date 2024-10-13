@@ -1,0 +1,7 @@
+docker-compose-yaml: internal/testdata/complex/docker-compose.persistent-name.yml
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com
