@@ -119,7 +119,7 @@ func generateDefaultPVC(buildValues generator.BuildValues,
 			APIVersion: corev1.SchemeGroupVersion.Version,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceValues.OverrideName,
+			Name: serviceValues.PersistentVolumeName,
 		},
 	}
 

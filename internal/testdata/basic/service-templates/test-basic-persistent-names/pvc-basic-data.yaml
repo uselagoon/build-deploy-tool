@@ -19,7 +19,7 @@ metadata:
     lagoon.sh/service: basic
     lagoon.sh/service-type: basic-persistent
     lagoon.sh/template: basic-persistent-0.1.0
-  name: basic
+  name: basic-data
 spec:
   accessModes:
   - ReadWriteMany
