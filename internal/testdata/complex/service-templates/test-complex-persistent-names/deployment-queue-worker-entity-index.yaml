@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: queue-worker-entity-index
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: worker-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: queue-worker-entity-index
+    lagoon.sh/service-type: worker-persistent
+    lagoon.sh/template: worker-persistent-0.1.0
+  name: queue-worker-entity-index
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: queue-worker-entity-index
+      app.kubernetes.io/name: worker-persistent
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.7.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: queue-worker-entity-index
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: worker-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: main
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: queue-worker-entity-index
+        lagoon.sh/service-type: worker-persistent
+        lagoon.sh/template: worker-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0000000000000000000000000000000000000000"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: queue-worker-entity-index
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example/example-project/main/queue-worker-entity-index@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+        imagePullPolicy: Always
+        name: worker
+        readinessProbe:
+          exec:
+            command:
+            - /bin/sh
+            - -c
+            - if [ -x /bin/entrypoint-readiness ]; then /bin/entrypoint-readiness;
+              fi
+          failureThreshold: 3
+          initialDelaySeconds: 5
+          periodSeconds: 2
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /var/run/secrets/lagoon/sshkey/
+          name: lagoon-sshkey
+          readOnly: true
+        - mountPath: /app/files
+          name: nginx
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      volumes:
+      - name: lagoon-sshkey
+        secret:
+          defaultMode: 420
+          secretName: lagoon-sshkey
+      - name: nginx
+        persistentVolumeClaim:
+          claimName: nginx
+status: {}

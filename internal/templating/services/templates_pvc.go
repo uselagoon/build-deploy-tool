@@ -51,7 +51,7 @@ func GeneratePVCTemplate(
 	// iterate over them and generate any kubernetes services
 	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
-			if val.Volumes.PersistentVolumeSize != "" {
+			if serviceValues.CreateDefaultVolume {
 				pvc, err := generateDefaultPVC(buildValues, serviceValues, val, labels, annotations)
 				if err != nil {
 					return nil, err
@@ -92,14 +92,6 @@ func generateDefaultPVC(buildValues generator.BuildValues,
 	val servicetypes.ServiceType,
 	labels, annotations map[string]string,
 ) (*corev1.PersistentVolumeClaim, error) {
-	if serviceValues.PersistentVolumeName != "" {
-		if serviceValues.PersistentVolumeName != serviceValues.OverrideName {
-			// this service base volume is not needed because it is created by a different service
-			// lagoon legacy templates allowed due to a funny templating issue, for multiple "basic" types to mount one volume
-			// from one main service, across multiple services of the same type
-			return nil, nil
-		}
-	}
 	serviceTypeValues := &servicetypes.ServiceType{}
 	helpers.DeepCopy(val, serviceTypeValues)
 	persistentVolumeSize := serviceTypeValues.Volumes.PersistentVolumeSize
@@ -127,7 +119,7 @@ func generateDefaultPVC(buildValues generator.BuildValues,
 			APIVersion: corev1.SchemeGroupVersion.Version,
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name: serviceValues.OverrideName,
+			Name: serviceValues.PersistentVolumeName,
 		},
 	}
 
