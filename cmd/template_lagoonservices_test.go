@@ -513,6 +513,35 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test-basic-persistent-names",
 		},
+		{
+			name:        "test-complex-persistent-names",
+			description: "tests a complex deployment with two services with persistent name",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.persistent-name.yml",
+					ImageReferences: map[string]string{
+						"cli":                           "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"gotenberg":                     "harbor.example/example-project/main/gotenberg@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"nginx":                         "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"opensearch":                    "harbor.example/example-project/main/opensearch@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":                           "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"rabbitmq":                      "harbor.example/example-project/main/rabbitmq@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":                         "harbor.example/example-project/main/redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis-persist":                 "harbor.example/example-project/main/redis-persist@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis-session":                 "harbor.example/example-project/main/redis-session@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"queue-worker-entity-index":     "harbor.example/example-project/main/queue-worker-entity-index@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"queue-worker-priority-high":    "harbor.example/example-project/main/queue-worker-priority-high@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"queue-worker-priority-instant": "harbor.example/example-project/main/queue-worker-priority-instant@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"queue-worker-priority-low":     "harbor.example/example-project/main/queue-worker-priority-low@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"queue-worker-priority-medium":  "harbor.example/example-project/main/queue-worker-priority-medium@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/complex/service-templates/test-complex-persistent-names",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

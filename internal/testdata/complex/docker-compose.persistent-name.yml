@@ -1,0 +1,265 @@
+x-lagoon-project:
+  # Lagoon project name (leave `&lagoon-project` when you edit this)
+  &lagoon-project default
+
+x-volumes:
+  &default-volumes
+    # Define all volumes you would like to have real-time mounted into the docker containers
+    volumes:
+      - .:/app:delegated
+
+x-environment:
+  &default-environment
+    LAGOON_PROJECT: *lagoon-project
+    # Route that should be used locally
+    # Uncomment if you like to have the system behave like in production
+    #LAGOON_ENVIRONMENT_TYPE: production
+    REDIS_PERSIST_URL: 'redis://redis-persist:6379'
+    REDIS_SESSION_URL: 'redis://redis-session:6379'
+    REDIS_URL: 'redis://redis:6379'
+    RABBITMQ_DEFAULT_USER: "default"
+    RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:-default}"
+    MESSENGER_TRANSPORT_DSN: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq:5672/"
+    # Uncomment to enable xdebug and then restart via `docker-compose up -d`
+    # XDEBUG_ENABLE: "true"
+
+services:
+
+  cli: # cli container, will be used for executing composer and any local commands (drush, drupal, etc.)
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/cli.dockerfile
+      args:
+        - "COMPOSER_AUTH=${COMPOSER_AUTH}"
+    image: *lagoon-project # this image will be reused as `CLI_IMAGE` in subsequent Docker builds
+    labels:
+      # Lagoon Labels
+      lagoon.type: cli-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    << : *default-volumes # loads the defined volumes from the top
+    volumes_from: # mount the ssh-agent from the pygmy or cachalot ssh-agent
+      - container:amazeeio-ssh-agent
+    depends_on:
+      - redis-persist
+      - mariadb
+    environment:
+      << : *default-environment # loads the defined environment variables from the top
+
+  nginx:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/nginx.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project # Inject the name of the cli image
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: /app/files # define where the persistent storage should be mounted too
+    << : *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      << : *default-environment # loads the defined environment variables from the top
+    networks:
+      - amazeeio-network
+      - default
+
+  php:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/php.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.name: nginx # we want this service be part of the nginx pod in Lagoon
+      lagoon.persistent: /app/files # define where the persistent storage should be mounted too
+    << : *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      << : *default-environment # loads the defined environment variables from the to
+
+  queue-worker-entity-index:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: worker-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    <<: *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - rabbitmq # We kind of do need rabbitmq to run before we start listening
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      <<: *default-environment # loads the defined environment variables from the top
+
+  queue-worker-priority-instant:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: worker-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    <<: *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - rabbitmq # We kind of do need rabbitmq to run before we start listening
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      <<: *default-environment # loads the defined environment variables from the top
+
+  queue-worker-priority-high:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: worker-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    <<: *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - rabbitmq # We kind of do need rabbitmq to run before we start listening
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      <<: *default-environment # loads the defined environment variables from the top
+
+  queue-worker-priority-medium:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: worker-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    <<: *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - rabbitmq # We kind of do need rabbitmq to run before we start listening
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      <<: *default-environment # loads the defined environment variables from the top
+
+  queue-worker-priority-low:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: worker-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: /app/files # location where the persistent storage should be mounted
+    <<: *default-volumes # loads the defined volumes from the top
+    depends_on:
+      - rabbitmq # We kind of do need rabbitmq to run before we start listening
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      <<: *default-environment # loads the defined environment variables from the top
+
+  mariadb:
+    image: uselagoon/mariadb-10.5
+    labels:
+      lagoon.type: mariadb
+    ports:
+      - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
+    environment:
+      << : *default-environment
+
+  redis:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+    labels:
+      lagoon.type: redis
+    environment:
+      <<: *default-environment
+
+  redis-persist:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+    labels:
+      lagoon.type: redis-persistent
+      # Should be at least 3x the size of allocated RAM
+      # See https://docs.redis.com/latest/rs/installing-upgrading/install/plan-deployment/hardware-requirements/
+      lagoon.persistent.size: 15Gi
+    environment:
+      <<: *default-environment
+
+  redis-product-info:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+    labels:
+      lagoon.name: redis-product-info
+      # This service type is set to redis-persistent for master and production in .lagoon.yml
+      lagoon.type: none
+      # Should be at least 3x the size of allocated RAM
+      # See https://docs.redis.com/latest/rs/installing-upgrading/install/plan-deployment/hardware-requirements/
+      lagoon.persistent.size: 4Gi
+    environment:
+      <<: *default-environment
+
+  redis-session:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+    labels:
+      lagoon.name: redis-session
+      lagoon.type: redis-persistent
+      # Should be at least 3x the size of allocated RAM
+      # See https://docs.redis.com/latest/rs/installing-upgrading/install/plan-deployment/hardware-requirements/
+      lagoon.persistent.size: 4Gi
+    environment:
+      <<: *default-environment
+
+  rabbitmq:
+    image: uselagoon/rabbitmq
+    labels:
+      lagoon.service.port: 5672
+      lagoon.service.usecomposeports: true
+      lagoon.autogeneratedroute: false
+      lagoon.type: basic-persistent
+      lagoon.persistent: /var/lib/rabbitmq
+      lagoon.persistent.name: rabbitmq-data
+      # Note: 5Gi is the default size for persistent storage
+      lagoon.persistent.size: 1Gi
+    environment:
+      <<: *default-environment
+    ports:
+      - '5672'
+      - '15672:15672'
+
+  gotenberg:
+    build:
+      context: .
+      dockerfile: internal/testdata/complex/docker/generic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.autogeneratedroute: false
+    ports:
+      - '3000'
+    environment:
+      <<: *default-environment
+
+  opensearch:
+    image: uselagoon/opensearch-2
+    labels:
+      lagoon.type: opensearch
+      # Note: 5Gi is the default size for persistent storage
+      lagoon.persistent.size: 4Gi
+    environment:
+      <<: *default-environment
+
+networks:
+  amazeeio-network:
+    external: true
