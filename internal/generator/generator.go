@@ -65,6 +65,12 @@ type GeneratorInput struct {
 	DynamicDBaaSSecrets        []string
 	ImageCacheBuildArgsJSON    string
 	SSHPrivateKey              string
+	ConfigAPIHost              string
+	ConfigTokenHost            string
+	ConfigTokenPort            string
+	ConfigSSHHost              string
+	ConfigSSHPort              string
+	DBaaSVariables             map[string]string
 }
 
 func NewGenerator(
@@ -113,6 +119,16 @@ func NewGenerator(
 	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
 	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 
+	// add dbaas credentials to build values for injection into configmap
+	buildValues.DBaaSVariables = generator.DBaaSVariables
+
+	// set the lagoon config variables
+	buildValues.ConfigAPIHost = helpers.GetEnv("LAGOON_CONFIG_API_HOST", generator.ConfigAPIHost, generator.Debug)
+	buildValues.ConfigTokenHost = helpers.GetEnv("LAGOON_CONFIG_TOKEN_HOST", generator.ConfigTokenHost, generator.Debug)
+	buildValues.ConfigTokenPort = helpers.GetEnv("LAGOON_CONFIG_TOKEN_PORT", generator.ConfigTokenPort, generator.Debug)
+	buildValues.ConfigSSHHost = helpers.GetEnv("LAGOON_CONFIG_SSH_HOST", generator.ConfigSSHHost, generator.Debug)
+	buildValues.ConfigSSHPort = helpers.GetEnv("LAGOON_CONFIG_SSH_PORT", generator.ConfigSSHPort, generator.Debug)
+
 	buildValues.ConfigMapSha = configMapSha
 	buildValues.BuildName = buildName
 	buildValues.Kubernetes = kubernetes
@@ -120,6 +136,7 @@ func NewGenerator(
 	buildValues.ImageRegistry = imageRegistry
 	buildValues.SourceRepository = sourceRepository
 	buildValues.PromotionSourceEnvironment = promotionSourceEnvironment
+
 	// get the image references values from the build images output
 	buildValues.ImageReferences = generator.ImageReferences
 	defaultBackupSchedule := helpers.GetEnv("DEFAULT_BACKUP_SCHEDULE", generator.DefaultBackupSchedule, generator.Debug)
@@ -249,12 +266,9 @@ func NewGenerator(
 	envVars := []lagoon.EnvironmentVariable{}
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
-	mergedVariables := lagoon.MergeVariables(projectVars, envVars)
-	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
-	configVars := collectBuildVariables(buildValues)
-	// add the calculated build runtime variables into the existing variable slice
-	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
-	buildValues.EnvironmentVariables = lagoon.MergeVariables(mergedVariables, configVars)
+
+	// set the environment variables to all the known merged variables so far
+	buildValues.EnvironmentVariables = lagoon.MergeVariables(projectVars, envVars)
 
 	// if the core version is provided from the API, set the buildvalues LagoonVersion to this instead
 	lagoonCoreVersion, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_CORE_VERSION", []string{"internal_system"}, buildValues.EnvironmentVariables)
@@ -454,6 +468,13 @@ func NewGenerator(
 		}
 	}
 	/* end route generation configuration */
+
+	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
+	configVars := collectLagoonEnvConfigmapVariables(buildValues)
+
+	// add the calculated build runtime variables into the existing variable slice
+	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
+	buildValues.EnvironmentVariables = lagoon.MergeVariables(buildValues.EnvironmentVariables, configVars)
 
 	// finally return the generator values, this should be a mostly complete version of the resulting data needed for a build
 	// another step will collect the current or known state of a build.
