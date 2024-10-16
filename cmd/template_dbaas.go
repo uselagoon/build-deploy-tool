@@ -33,15 +33,17 @@ func DBaaSTemplateGeneration(g generator.GeneratorInput,
 	}
 	savedTemplates := g.SavedTemplatesPath
 
-	templateYAML, err := dbaasTemplater.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
+	dbaas, err := dbaasTemplater.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
-	if len(templateYAML) > 0 {
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas"), templateYAML)
+	for dn, d := range dbaas {
+		separator := []byte("---\n")
+		restoreResult := append(separator[:], d[:]...)
 		if g.Debug {
-			fmt.Printf("Templating dbaas consumers to %s\n", fmt.Sprintf("%s/%s.yaml", savedTemplates, "dbaas"))
+			fmt.Printf("Templating deployment manifests %s\n", fmt.Sprintf("%s/%s.yaml", savedTemplates, dn))
 		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, dn), restoreResult)
 	}
 	return nil
 }
