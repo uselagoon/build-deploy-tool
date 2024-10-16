@@ -1,0 +1,31 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic-single
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: myservice
+    lagoon.sh/service-type: basic-single
+    lagoon.sh/template: basic-single-0.1.0
+  name: myservice
+spec:
+  ports:
+  - name: http
+    port: 3000
+    protocol: TCP
+    targetPort: http
+  selector:
+    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/name: basic-single
+status:
+  loadBalancer: {}
