@@ -1,0 +1,189 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: valkey
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: valkey
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: valkey
+    lagoon.sh/service-type: valkey
+    lagoon.sh/template: valkey-0.1.0
+  name: valkey
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: valkey
+      app.kubernetes.io/name: valkey
+  strategy: {}
+  template:
+    metadata:
+      annotations:
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: valkey
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: valkey
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: valkey
+        lagoon.sh/service-type: valkey
+        lagoon.sh/template: valkey-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: valkey
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/valkey@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 1
+        name: valkey
+        ports:
+        - containerPort: 6379
+          name: 6379-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: valkey-persist
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: valkey-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: valkey-persist
+    lagoon.sh/service-type: valkey-persistent
+    lagoon.sh/template: valkey-persistent-0.1.0
+  name: valkey-persist
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/instance: valkey-persist
+      app.kubernetes.io/name: valkey-persistent
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        k8up.syn.tools/backupcommand: /bin/sh -c "timeout 5400 tar -cf - -C /data
+          ."
+        k8up.syn.tools/file-extension: .valkey-persist.tar
+        lagoon.sh/branch: environment-name
+        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
+        lagoon.sh/version: v2.x.x
+      creationTimestamp: null
+      labels:
+        app.kubernetes.io/instance: valkey-persist
+        app.kubernetes.io/managed-by: build-deploy-tool
+        app.kubernetes.io/name: valkey-persistent
+        lagoon.sh/buildType: branch
+        lagoon.sh/environment: environment-name
+        lagoon.sh/environmentType: production
+        lagoon.sh/project: example-project
+        lagoon.sh/service: valkey-persist
+        lagoon.sh/service-type: valkey-persistent
+        lagoon.sh/template: valkey-persistent-0.1.0
+    spec:
+      containers:
+      - env:
+        - name: VALKEY_FLAVOR
+          value: persistent
+        - name: LAGOON_GIT_SHA
+          value: "0"
+        - name: CRONJOBS
+        - name: SERVICE_NAME
+          value: valkey-persist
+        envFrom:
+        - configMapRef:
+            name: lagoon-env
+        image: harbor.example.com/example-project/environment-name/valkey-persist@latest
+        imagePullPolicy: Always
+        livenessProbe:
+          initialDelaySeconds: 120
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 1
+        name: valkey
+        ports:
+        - containerPort: 6379
+          name: 6379-tcp
+          protocol: TCP
+        readinessProbe:
+          initialDelaySeconds: 1
+          tcpSocket:
+            port: 6379
+          timeoutSeconds: 1
+        resources:
+          requests:
+            cpu: 10m
+            memory: 10Mi
+        securityContext: {}
+        volumeMounts:
+        - mountPath: /data
+          name: valkey-persist
+      enableServiceLinks: false
+      imagePullSecrets:
+      - name: lagoon-internal-registry-secret
+      priorityClassName: lagoon-priority-production
+      securityContext:
+        fsGroup: 10001
+        fsGroupChangePolicy: OnRootMismatch
+        runAsGroup: 0
+        runAsUser: 10000
+      volumes:
+      - name: valkey-persist
+        persistentVolumeClaim:
+          claimName: valkey-persist
+status: {}
