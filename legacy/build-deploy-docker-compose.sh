@@ -1587,8 +1587,10 @@ for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
   for TLS_SECRET in $TLS_SECRETS; do
     echo ">> Cleaning up certificate for ${TLS_SECRET} as tls-acme is set to false"
     # check if it is a lets encrypt certificate
-    if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET}-tls -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
-      kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET}-tls
+    if kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} &> /dev/null; then
+      if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
+        kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET}
+      fi
     fi
     if kubectl -n ${NAMESPACE} get certificates.cert-manager.io ${TLS_SECRET} &> /dev/null; then
       kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET}
