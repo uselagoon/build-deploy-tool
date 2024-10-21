@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/distribution/reference"
+
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -270,4 +272,45 @@ func getDBaasEnvironment(
 		return exists, fmt.Errorf("there was an error checking DBaaS endpoint %s: %v", buildValues.DBaaSOperatorEndpoint, err)
 	}
 	return exists, nil
+}
+
+var exp = regexp.MustCompile(`(\\*)\$\{(.+?)(?:(\:\-)(.*?))?\}`)
+
+func determineRefreshImage(serviceName, imageName string, envVars []lagoon.EnvironmentVariable) (string, []error) {
+	errs := []error{}
+	parsed := exp.ReplaceAllStringFunc(string(imageName), func(match string) string {
+		tagvalue := ""
+		re := regexp.MustCompile(`\${?(\w+)?(?::-(\w+))?}?`)
+		matches := re.FindStringSubmatch(match)
+		if len(matches) > 0 {
+			tv := ""
+			envVarKey := matches[1]
+			defaultVal := matches[2] //This could be empty
+			for _, v := range envVars {
+				if v.Name == envVarKey {
+					tv = v.Value
+				}
+			}
+			if tv == "" {
+				if defaultVal != "" {
+					tagvalue = defaultVal
+				} else {
+					errs = append(errs, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - no matching variable or fallback found to replace requested variable %s", serviceName, imageName, envVarKey))
+				}
+			} else {
+				tagvalue = tv
+			}
+		}
+		return tagvalue
+	})
+	if parsed == imageName {
+		if !reference.ReferenceRegexp.MatchString(parsed) {
+			if strings.Contains(parsed, "$") {
+				errs = append(errs, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - variables are defined incorrectly, must contain curly brackets (example: '${VARIABLE}')", serviceName, imageName))
+			} else {
+				errs = append(errs, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", serviceName, imageName))
+			}
+		}
+	}
+	return parsed, errs
 }

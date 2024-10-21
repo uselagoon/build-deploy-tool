@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/distribution/reference"
-
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -286,13 +284,22 @@ func composeToServiceValues(
 			}
 		}
 
+		// if any `lagoon.base.image` labels are set, we note them for docker pulling
+		// this allows us to refresh the docker-host's cache in cases where an image
+		// may have an update without a change in tag (i.e. "latest" tagged images)
 		baseimage := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.base.image")
 		if baseimage != "" {
-			// First, let's ensure that the structure of the base image is valid
-			if !reference.ReferenceRegexp.MatchString(baseimage) {
-				return nil, fmt.Errorf("the 'lagoon.base.image' label defined on service %s in the docker-compose file is invalid ('%s') - please ensure it conforms to the structure `[REGISTRY_HOST[:REGISTRY_PORT]/]REPOSITORY[:TAG|@DIGEST]`", composeService, baseimage)
+			baseImageWithTag, errs := determineRefreshImage(composeService, baseimage, buildValues.EnvironmentVariables)
+			if len(errs) > 0 {
+				for idx, err := range errs {
+					if idx+1 == len(errs) {
+						return nil, err
+					} else {
+						fmt.Println(err)
+					}
+				}
 			}
-			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseimage)
+			buildValues.ForcePullImages = append(buildValues.ForcePullImages, baseImageWithTag)
 		}
 
 		// if there are overrides defined in the lagoon API `LAGOON_SERVICE_TYPES`
