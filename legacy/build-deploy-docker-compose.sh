@@ -261,6 +261,7 @@ if [ "${dccExit2}" != "0" ]; then
     # is configured, and that the environment type matches.
     # eventually this logic will be changed entirely from warnings to errors
     DOCKER_COMPOSE_VALIDATION_ERROR=false
+    DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE=LAGOON_FEATURE_FLAG_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION
     # this logic will make development environments return an error by default
     # adding LAGOON_FEATURE_FLAG_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled can be used to disable the error and revert to a warning per project or environment
     # or add LAGOON_FEATURE_FLAG_DEFAULT_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled to the remote-controller as a default to disable for a cluster
@@ -273,6 +274,7 @@ if [ "${dccExit2}" != "0" ]; then
     # or add LAGOON_FEATURE_FLAG_DEFAULT_PRODUCTION_DOCKER_COMPOSE_VALIDATION=enabled to the remote-controller as a default to disable for a cluster
     if [[ "$(featureFlag PRODUCTION_DOCKER_COMPOSE_VALIDATION)" = enabled ]] && [[ "$ENVIRONMENT_TYPE" == "production" ]]; then
       DOCKER_COMPOSE_VALIDATION_ERROR=true
+    DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE=LAGOON_FEATURE_FLAG_PRODUCTION_DOCKER_COMPOSE_VALIDATION
     fi
 
     ((++BUILD_WARNING_COUNT))
@@ -309,6 +311,10 @@ fi
 
 if [[ "$DOCKER_COMPOSE_VALIDATION_ERROR" == "true" ]]; then
   # drop the exit here if this should be an error
+  echo "> You can instruct Lagoon to change this to a warning by setting the following variable"
+  echo "> '${DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE}=disabled' as a GLOBAL scoped variable to this environment or project."
+  echo "> A future release of Lagoon will not be able to change this error."
+  echo "> You should correct the issue as soon as possible to prevent future build failures."
   exit 1
 fi
 
