@@ -323,6 +323,7 @@ func GenerateCronjobTemplate(
 				for _, cronjob := range serviceValues.InPodCronjobs {
 					cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
 				}
+				container.Container.Env = append(container.Container.Env, container.EnvVars...)
 				envvars := []corev1.EnvVar{
 					{
 						Name:  "LAGOON_GIT_SHA",
