@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"encoding/json"
 	"os"
 	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -19,7 +21,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 		name        string
 		description string
 		args        testdata.TestData
-		want        []identifyServices
+		want        *identifyServices
 	}{
 		{
 			name: "test1 basic deployment",
@@ -33,20 +35,12 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: []identifyServices{
-				{
-					Name: "node",
-					Type: "basic",
-					Containers: []containers{
-						{
-							Name: "basic",
-							Ports: []ports{
-								{Port: 1234},
-								{Port: 8191},
-								{Port: 9001},
-							},
-						},
-					},
+			want: &identifyServices{
+				Deployments: []string{
+					"node",
+				},
+				Services: []string{
+					"node",
 				},
 			},
 		},
@@ -66,59 +60,20 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: []identifyServices{
-				{
-					Name: "cli",
-					Type: "cli-persistent",
-					Containers: []containers{
-						{
-							Name:  "cli",
-							Ports: []ports{},
-						},
-					},
+			want: &identifyServices{
+				Deployments: []string{
+					"cli",
+					"redis",
+					"varnish",
+					"nginx-php",
 				},
-				{
-					Name: "redis",
-					Type: "redis",
-					Containers: []containers{
-						{
-							Name: "redis",
-							Ports: []ports{
-								{Port: 6379},
-							},
-						},
-					},
+				Volumes: []string{
+					"nginx-php",
 				},
-				{
-					Name: "varnish",
-					Type: "varnish",
-					Containers: []containers{
-						{
-							Name: "varnish",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 6082},
-							},
-						},
-					},
-				},
-				{
-					Name: "nginx-php",
-					Type: "nginx-php-persistent",
-					Containers: []containers{
-						{
-							Name: "nginx",
-							Ports: []ports{
-								{Port: 8080},
-							},
-						},
-						{
-							Name: "php",
-							Ports: []ports{
-								{Port: 9000},
-							},
-						},
-					},
+				Services: []string{
+					"redis",
+					"varnish",
+					"nginx-php",
 				},
 			},
 		},
@@ -145,59 +100,20 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
-				{
-					Name: "cli",
-					Type: "cli-persistent",
-					Containers: []containers{
-						{
-							Name:  "cli",
-							Ports: []ports{},
-						},
-					},
+			want: &identifyServices{
+				Deployments: []string{
+					"cli",
+					"redis",
+					"varnish",
+					"nginx-php",
 				},
-				{
-					Name: "redis",
-					Type: "redis",
-					Containers: []containers{
-						{
-							Name: "redis",
-							Ports: []ports{
-								{Port: 6379},
-							},
-						},
-					},
+				Volumes: []string{
+					"nginx-php",
 				},
-				{
-					Name: "varnish",
-					Type: "varnish",
-					Containers: []containers{
-						{
-							Name: "varnish",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 6082},
-							},
-						},
-					},
-				},
-				{
-					Name: "nginx-php",
-					Type: "nginx-php-persistent",
-					Containers: []containers{
-						{
-							Name: "nginx",
-							Ports: []ports{
-								{Port: 8080},
-							},
-						},
-						{
-							Name: "php",
-							Ports: []ports{
-								{Port: 9000},
-							},
-						},
-					},
+				Services: []string{
+					"redis",
+					"varnish",
+					"nginx-php",
 				},
 			},
 		},
@@ -223,44 +139,19 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
-				{
-					Name: "lnd",
-					Type: "basic-persistent",
-					Containers: []containers{
-						{
-							Name: "basic",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 10009},
-							},
-						},
-					},
+			want: &identifyServices{
+				Deployments: []string{
+					"lnd",
+					"thunderhub",
+					"tor",
 				},
-				{
-					Name: "thunderhub",
-					Type: "basic-persistent",
-					Containers: []containers{
-						{
-							Name: "basic",
-							Ports: []ports{
-								{Port: 3000},
-							},
-						},
-					},
+				Volumes: []string{
+					"lnd",
 				},
-				{
-					Name: "tor",
-					Type: "basic",
-					Containers: []containers{
-						{
-							Name: "basic",
-							Ports: []ports{
-								{Port: 9050},
-								{Port: 9051},
-							},
-						},
-					},
+				Services: []string{
+					"lnd",
+					"thunderhub",
+					"tor",
 				},
 			},
 		},
@@ -285,25 +176,52 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
-				{
-					Name: "lnd",
-					Type: "basic-persistent",
-					Containers: []containers{
-						{Name: "basic",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 10009},
-							}},
-					},
+			want: &identifyServices{
+				Deployments: []string{
+					"lnd",
+					"tor",
 				},
-				{
-					Name: "tor",
-					Type: "worker-persistent",
-					Containers: []containers{
-						{Name: "worker",
-							Ports: []ports{}},
+				Volumes: []string{
+					"lnd",
+				},
+				Services: []string{
+					"lnd",
+				},
+			},
+		},
+
+		{
+			name: "test5-complex-custom-volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/complex/lagoon.multiple-volumes.yml",
+					ImageReferences: map[string]string{
+						"nginx":   "harbor.example/example-project/main/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "harbor.example/example-project/main/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"nginx2":  "harbor.example/example-project/main/nginx2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php2":    "harbor.example/example-project/main/php2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
+				}, true),
+			want: &identifyServices{
+				Deployments: []string{
+					"cli",
+					"mariadb",
+					"nginx",
+				},
+				Volumes: []string{
+					"mariadb",
+					"nginx",
+					"custom-files",
+				},
+				Services: []string{
+					"mariadb",
+					"nginx",
 				},
 			},
 		},
@@ -337,7 +255,9 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 			if !reflect.DeepEqual(out, tt.want) {
-				t.Errorf("returned output %v doesn't match want %v", out, tt.want)
+				r1, _ := json.MarshalIndent(out, "", " ")
+				s1, _ := json.MarshalIndent(tt.want, "", " ")
+				t.Errorf("LagoonServiceTemplateIdentification() = \n%v", diff.LineDiff(string(r1), string(s1)))
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(nil)
