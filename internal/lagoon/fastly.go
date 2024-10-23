@@ -28,12 +28,14 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route s
 	lfsID, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_ID", []string{"build", "global"}, variables)
 	if err == nil {
 		lfsIDSplit := strings.Split(lfsID.Value, ":")
-		if len(lfsIDSplit) == 1 {
-			return fmt.Errorf("no watch status was provided, only the service id")
-		}
-		watch, err := strconv.ParseBool(lfsIDSplit[1])
-		if err != nil {
-			return fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[1])
+		// default watch status to true
+		watch := true
+		if len(lfsIDSplit) > 1 {
+			// if the variable contains the watch status
+			watch, err = strconv.ParseBool(lfsIDSplit[1])
+			if err != nil {
+				return fmt.Errorf("variable LAGOON_FASTLY_SERVICE_ID provided watch value %s is not a valid boolean", lfsIDSplit[1])
+			}
 		}
 		f.ServiceID = lfsIDSplit[0]
 		f.Watch = watch
@@ -58,12 +60,14 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route s
 		for _, lfs := range lfsIDsSplit {
 			lfsIDSplit := strings.Split(lfs, ":")
 			if lfsIDSplit[0] == route {
-				if len(lfsIDSplit) == 2 {
-					return fmt.Errorf("no watch status was provided, only the route and service id")
-				}
-				watch, err := strconv.ParseBool(lfsIDSplit[2])
-				if err != nil {
-					return fmt.Errorf("the provided value %s is not a valid boolean", lfsIDSplit[2])
+				// default watch status to true
+				watch := true
+				if len(lfsIDSplit) > 2 {
+					// if the variable contains the watch status
+					watch, err = strconv.ParseBool(lfsIDSplit[2])
+					if err != nil {
+						return fmt.Errorf("variable LAGOON_FASTLY_SERVICE_IDS provided watch value %s is not a valid boolean", lfsIDSplit[2])
+					}
 				}
 				f.ServiceID = lfsIDSplit[1]
 				f.Watch = watch
