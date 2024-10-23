@@ -189,10 +189,10 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 					// handle wildcards
 					if ingress.Wildcard != nil {
 						newRoute.Wildcard = ingress.Wildcard
-						if *newRoute.TLSAcme == true && *newRoute.Wildcard == true {
+						if *newRoute.TLSAcme && *newRoute.Wildcard {
 							return fmt.Errorf("Route %s has wildcard: true and tls-acme: true, this is not supported", newRoute.Domain)
 						}
-						if ingress.AlternativeNames != nil && *newRoute.Wildcard == true {
+						if ingress.AlternativeNames != nil && *newRoute.Wildcard {
 							return fmt.Errorf("Route %s has wildcard: true and alternativenames defined, this is not supported", newRoute.Domain)
 						}
 						newRoute.IngressName = fmt.Sprintf("wildcard-%s", newRoute.Domain)
@@ -221,7 +221,7 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 			// generate the fastly configuration for this route
 			err := GenerateFastlyConfiguration(&newRoute.Fastly, "", newRoute.Fastly.ServiceID, newRoute.Domain, variables)
 			if err != nil {
-				//@TODO: error handling
+				return err
 			}
 
 			// validate the domain earlier and fail if it is invalid
@@ -364,10 +364,10 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 	// handle wildcards
 	if apiRoute.Wildcard != nil {
 		routeAdd.Wildcard = apiRoute.Wildcard
-		if *routeAdd.TLSAcme == true && *routeAdd.Wildcard == true {
+		if *routeAdd.TLSAcme && *routeAdd.Wildcard {
 			return routeAdd, fmt.Errorf("Route %s has wildcard=true and tls-acme=true, this is not supported", routeAdd.Domain)
 		}
-		if apiRoute.AlternativeNames != nil && *routeAdd.Wildcard == true {
+		if apiRoute.AlternativeNames != nil && *routeAdd.Wildcard {
 			return routeAdd, fmt.Errorf("Route %s has wildcard=true and alternativenames defined, this is not supported", routeAdd.Domain)
 		}
 		apiRoute.IngressName = fmt.Sprintf("wildcard-%s", apiRoute.Domain)
