@@ -268,9 +268,9 @@ func NewGenerator(
 	}
 
 	// feature to enable pod antiaffinity on deployments
-	podAntiAffinity := CheckFeatureFlag("POD_SPREADCONSTRAINTS", buildValues.EnvironmentVariables, false)
-	if podAntiAffinity == "enabled" {
-		buildValues.PodAntiAffinity = true
+	podSpreadConstraints := CheckFeatureFlag("POD_SPREADCONSTRAINTS", buildValues.EnvironmentVariables, false)
+	if podSpreadConstraints == "enabled" {
+		buildValues.PodSpreadConstraints = true
 	}
 
 	// check for readwritemany to readwriteonce flag, disabled by default

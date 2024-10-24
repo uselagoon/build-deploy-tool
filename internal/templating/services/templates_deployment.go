@@ -138,10 +138,7 @@ func GenerateDeploymentTemplate(
 					}
 				}
 			}
-			if buildValues.PodAntiAffinity {
-				// if deployment.Spec.Template.Spec.Affinity == nil {
-				// 	deployment.Spec.Template.Spec.Affinity = &corev1.Affinity{}
-				// }
+			if buildValues.PodSpreadConstraints {
 				deployment.Spec.Template.Spec.TopologySpreadConstraints = []corev1.TopologySpreadConstraint{
 					{
 						MaxSkew:           1,
@@ -181,48 +178,6 @@ func GenerateDeploymentTemplate(
 						},
 					},
 				}
-				// deployment.Spec.Template.Spec.Affinity.PodAntiAffinity = &corev1.PodAntiAffinity{
-				// 	PreferredDuringSchedulingIgnoredDuringExecution: []corev1.WeightedPodAffinityTerm{
-				// 		{
-				// 			Weight: 100,
-				// 			PodAffinityTerm: corev1.PodAffinityTerm{
-				// 				TopologyKey: "kubernetes.io/hostname",
-				// 				LabelSelector: &metav1.LabelSelector{
-				// 					MatchExpressions: []metav1.LabelSelectorRequirement{
-				// 						{
-				// 							Key:      "app.kubernetes.io/name",
-				// 							Operator: metav1.LabelSelectorOpIn,
-				// 							Values: []string{
-				// 								serviceTypeValues.Name,
-				// 							},
-				// 						},
-				// 						{
-				// 							Key:      "app.kubernetes.io/instance",
-				// 							Operator: metav1.LabelSelectorOpIn,
-				// 							Values: []string{
-				// 								serviceValues.OverrideName,
-				// 							},
-				// 						},
-				// 						{
-				// 							Key:      "lagoon.sh/project",
-				// 							Operator: metav1.LabelSelectorOpIn,
-				// 							Values: []string{
-				// 								buildValues.Project,
-				// 							},
-				// 						},
-				// 						{
-				// 							Key:      "lagoon.sh/environment",
-				// 							Operator: metav1.LabelSelectorOpIn,
-				// 							Values: []string{
-				// 								buildValues.Environment,
-				// 							},
-				// 						},
-				// 					},
-				// 				},
-				// 			},
-				// 		},
-				// 	},
-				// }
 			}
 
 			for key, value := range additionalLabels {
