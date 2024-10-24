@@ -882,7 +882,7 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 					ImageReferences: map[string]string{
 						"myservice": "harbor.example.com/example-project/environment-name/myservice@latest",
 					},
-					PodAntiAffinity: true,
+					PodSpreadConstraints: true,
 					Services: []generator.ServiceValues{
 						{
 							Name:             "myservice",
