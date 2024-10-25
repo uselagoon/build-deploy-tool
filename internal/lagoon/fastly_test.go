@@ -83,6 +83,48 @@ func TestGenerateFastlyConfiguration(t *testing.T) {
 				ServiceID: "abcdefg",
 			},
 		},
+		{
+			name: "test4",
+			args: args{
+				noCacheServiceID: "",
+				serviceID:        "",
+				route:            "",
+				secretPrefix:     "",
+				variables: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_FASTLY_SERVICE_ID",
+						Value: "1234567",
+						Scope: "global",
+					},
+				},
+			},
+			provide: &Fastly{},
+			want: Fastly{
+				Watch:     true,
+				ServiceID: "1234567",
+			},
+		},
+		{
+			name: "test5",
+			args: args{
+				noCacheServiceID: "",
+				serviceID:        "",
+				route:            "",
+				secretPrefix:     "",
+				variables: []EnvironmentVariable{
+					{
+						Name:  "LAGOON_FASTLY_SERVICE_ID",
+						Value: "1234567:notabool",
+						Scope: "global",
+					},
+				},
+			},
+			provide: &Fastly{},
+			wantErr: true,
+			want: Fastly{
+				Watch: false,
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
