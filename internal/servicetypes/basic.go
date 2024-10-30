@@ -1,6 +1,7 @@
 package servicetypes
 
 import (
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/util/intstr"
@@ -85,6 +86,27 @@ var basicPersistent = ServiceType{
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteMany,
+		Backup:               true,
+	},
+}
+
+// contains all the single type overrides that the basic service doesn't have
+// basicSingle is like basic persistent except that the volume is not bulk, and the pod can only ever have 1 replica because of this
+var basicSingle = ServiceType{
+	Name:                     "basic-single",
+	Ports:                    basic.Ports,
+	ProvidesPersistentVolume: true,
+	AllowAdditionalVolumes:   false,
+	PrimaryContainer: ServiceContainer{
+		Name:      basic.PrimaryContainer.Name,
+		Container: basic.PrimaryContainer.Container,
+	},
+	Strategy: appsv1.DeploymentStrategy{
+		Type: appsv1.RecreateDeploymentStrategyType,
+	},
+	Volumes: ServiceVolume{
+		PersistentVolumeSize: "5Gi",
+		PersistentVolumeType: corev1.ReadWriteOnce,
 		Backup:               true,
 	},
 }
