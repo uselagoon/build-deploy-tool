@@ -943,6 +943,46 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 			},
 			want: "test-resources/deployment/result-basic-5.yaml",
 		},
+		{
+			name: "test-valkey",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "example-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+					GitSHA:       "0",
+					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
+					ImageReferences: map[string]string{
+						"valkey":         "harbor.example.com/example-project/environment-name/valkey@latest",
+						"valkey-persist": "harbor.example.com/example-project/environment-name/valkey-persist@latest",
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "valkey",
+							OverrideName: "valkey",
+							Type:         "valkey",
+						},
+						{
+							Name:         "valkey-persist",
+							OverrideName: "valkey-persist",
+							Type:         "valkey-persistent",
+						},
+					},
+				},
+			},
+			want: "test-resources/deployment/result-valkey-1.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
