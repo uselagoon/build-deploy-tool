@@ -676,8 +676,6 @@ done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds" "buildingImages"
 
 
 ##############################################
@@ -713,19 +711,23 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     echo "Pulling Image: ${FPI}"
     docker pull "${FPI}"
   done
-
+  HAS_PULLED_IMAGES=false
   # now we loop through the images in the build data and determine if they need to be pulled or build
   for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
   do
     SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
+    SERVICE_NAME_TITLE=$(echo "$SERVICE_NAME" | tr '[:upper:]' '[:lower:]' | tr -d '-')
     DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile // false')
     # if there is no dockerfile, then this image needs to be pulled from somewhere else
     if [ $DOCKERFILE == "false" ]; then
       PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage // false')
       if [ "$PULL_IMAGE" != "false" ]; then
         IMAGES_PULL["${SERVICE_NAME}"]="${PULL_IMAGE}"
+        HAS_PULLED_IMAGES=true
       fi
     else
+      previousStepEnd=${currentStepEnd}
+      beginBuildStep "Building Image ${SERVICE_NAME}" "buildingImage${SERVICE_NAME_TITLE}"
       # otherwise extract build information from the image build data payload
       # this is a temporary image name to use for the build, it is based on the namespace and service, this can probably be deprecated and the images could just be
       # built with the name they are meant to be. only 1 build can run at a time within a namespace
@@ -791,28 +793,50 @@ Retrying build for ${BUILD_CONTEXT}/${DOCKERFILE} without cache
 
       # adding the build image to the list of arguments passed into the next image builds
       SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
+      currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+      patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuild${SERVICE_NAME_TITLE}Complete" "Building Image ${SERVICE_NAME}" "false"
     fi
   done
+
+  if [ $HAS_PULLED_IMAGES == "true" ]; then
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pulled Images" "pulledImageInfo"
+    echo "The following images will be pulled and then pushed directly with no building required"
+    for IMAGE_NAME in "${!IMAGES_PULL[@]}"
+    do
+      PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+      echo "- ${IMAGE_NAME}: ${PULL_IMAGE}"
+    done
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pulledImageInfoComplete" "Pulled Images" "false"
+  fi
+
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Image Build Stats" "imageBuildStats"
+
+  # print information about built image sizes
+  function printBytes {
+      local -i bytes=$1;
+      echo "$(( (bytes + 1000000)/1000000 ))MB"
+  }
+  if [[ "${IMAGES_BUILD[@]}" ]]; then
+    echo "##############################################"
+    echo "Built image sizes:"
+    echo "##############################################"
+  fi
+  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
+  do
+    TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
+    echo -e "- image: ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
+  done
+
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildStatsComplete" "Image Build Stats" "false"
+fi
+if [[ "$BUILD_TYPE" == "promote" ]]; then
+    echo "No images built for promote environments"
 fi
 
-# print information about built image sizes
-function printBytes {
-    local -i bytes=$1;
-    echo "$(( (bytes + 1000000)/1000000 ))MB"
-}
-if [[ "${IMAGES_BUILD[@]}" ]]; then
-  echo "##############################################"
-  echo "Built image sizes:"
-  echo "##############################################"
-fi
-for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
-do
-  TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
-  echo -e "Image ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
-done
-
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase" "serviceConfigurationPhase"
 
@@ -1303,8 +1327,6 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateEnvSecretsComplete" "Update Environment Secrets" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry" "pushingImages"
 
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
@@ -1329,33 +1351,7 @@ declare -A DEPRECATED_IMAGE_SUGGESTION
 
 # pullrequest/branch start
 if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
-
-  # All images that should be pulled are copied to the harbor registry
-  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
-  do
-    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-
-    # Try to handle private registries first
-
-    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
-    # from being a promote image, or an image from an imagecache or from some other registry entirely
-    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
-
-    # store the resulting image hash
-    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
-    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
-
-    # check if the pull through image is deprecated
-    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
-    if [ "${DEPRECATED_STATUS}" != false ]; then
-      DEPRECATED_IMAGE_WARNINGS="true"
-      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
-      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
-    fi
-  done
-
+  # calculate the images required to be pushed to the registry
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
     PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
@@ -1378,6 +1374,8 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     fi
   done
 
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Pushing Images" "pushingImages"
   # If we have images to push to the registry, let's do so
   if [ -f /kubectl-build-deploy/lagoon/push ]; then
     parallel --retries 4 < /kubectl-build-deploy/lagoon/push
@@ -1390,6 +1388,37 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
     IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
   done
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImagesComplete" "Pushing Images" "false"
+
+  # All images that should be pulled are copied to the harbor registry
+  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
+  do
+    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+
+    # Try to handle private registries first
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
+    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
+    # from being a promote image, or an image from an imagecache or from some other registry entirely
+    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
+
+    # store the resulting image hash
+    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
+    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
+
+    # check if the pull through image is deprecated
+    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
+    fi
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Image ${IMAGE_NAME}" "false"
+  done
 
 # pullrequest/branch end
 # promote start
@@ -1397,17 +1426,18 @@ elif [ "$BUILD_TYPE" == "promote" ]; then
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Promote Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
     PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
 
     IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Promote Image ${IMAGE_NAME}" "false"
   done
 # promote end
 fi
-
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 
 ##############################################
 ### Check for deprecated images
