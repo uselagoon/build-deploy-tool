@@ -1,0 +1,50 @@
+site_name: 'Lagoon Build Deploy Tool'
+site_url: https://uselagoon.github.io/build-deploy-tool/
+repo_url: https://github.com/uselagoon/build-deploy-tool/
+repo_name: uselagoon/build-deploy-tool
+edit_uri: edit/main/docs
+site_author: The Lagoon Authors
+
+theme:
+  name: 'material'
+  palette:
+    # Palette toggle for light mode
+    - primary: 'blue'
+      accent: 'light blue'
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - scheme: slate
+      primary: 'blue'
+      toggle:
+        icon: material/brightness-7
+        name: Switch to light mode
+  # favicon: lagoon-build-icon.png
+  icon:
+    logo: fontawesome/solid/terminal
+    repo: fontawesome/brands/github  
+    
+extra:
+  analytics:
+    provider: google
+    property: G-W1SJFEVFDB
+
+markdown_extensions:
+  - toc:
+      permalink: "#"
+      baselevel: 2
+  - admonition
+  - attr_list
+  - tables
+  - pymdownx.highlight
+  - pymdownx.superfences
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Build Stages: buildstages.md
+  - Build Requirements: buildrequirements.md
+  - Commands: commands/lagoon-build.md

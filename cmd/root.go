@@ -21,15 +21,29 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/cobra/doc"
 )
+
+var docsFlag bool
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "lagoon-build",
-	Short: "A tool to help with generating Lagoon resources for Lagoon builds",
+	Use:               "lagoon-build",
+	DisableAutoGenTag: true,
+	Short:             "A tool to help with generating Lagoon resources for Lagoon builds",
 	Long: `A tool to help with generating Lagoon resources for Lagoon builds
 This tool will read a .lagoon.yml file and also all the required environment variables from
 within a Lagoon build to help with generating the resources`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if docsFlag {
+			err := doc.GenMarkdownTree(cmd, "docs/commands")
+			if err != nil {
+				return err
+			}
+			fmt.Println("Documentation updated")
+		}
+		return nil
+	},
 }
 
 var templateCmd = &cobra.Command{
@@ -99,6 +113,9 @@ func init() {
 	rootCmd.AddCommand(taskCmd)
 	rootCmd.AddCommand(identifyCmd)
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.Flags().BoolVarP(&docsFlag, "docs", "", false, "Generate docs")
+
+	rootCmd.Flags().MarkHidden("docs")
 
 	rootCmd.PersistentFlags().StringP("lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
