@@ -3,7 +3,6 @@ package servicetypes
 import (
 	"fmt"
 
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
@@ -69,28 +68,6 @@ var opensearch = ServiceType{
 					corev1.ResourceCPU:    resource.MustParse("10m"),
 					corev1.ResourceMemory: resource.MustParse("10Mi"),
 				},
-			},
-		},
-	},
-	InitContainer: ServiceContainer{
-		Name: "set-max-map-count",
-		Command: []string{
-			"sh",
-			"-c",
-			`set -xe
-DESIRED="262144"
-CURRENT=$(sysctl -n vm.max_map_count)
-if [ "$DESIRED" -gt "$CURRENT" ]; then
-  sysctl -w vm.max_map_count=$DESIRED
-fi`,
-		},
-		Container: corev1.Container{
-			Name:            "set-max-map-count",
-			Image:           "library/busybox:latest",
-			ImagePullPolicy: corev1.PullIfNotPresent,
-			SecurityContext: &corev1.SecurityContext{
-				Privileged: helpers.BoolPtr(true),
-				RunAsUser:  helpers.Int64Ptr(0),
 			},
 		},
 	},
