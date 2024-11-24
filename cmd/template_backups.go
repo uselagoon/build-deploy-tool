@@ -77,6 +77,15 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "k8up-lagoon-backup-schedule"), templateYAML)
 	}
 
+	// generate the backup schedule templates
+	templateYAML, err = backuptemplate.GenerateBackupPodConfig(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	if len(templateYAML) > 0 {
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "k8up-rootless-workload-podconfig"), templateYAML)
+	}
+
 	// generate any prebackuppod templates
 	templateYAML, err = backuptemplate.GeneratePreBackupPod(*lagoonBuild.BuildValues)
 	if err != nil {
