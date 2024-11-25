@@ -414,9 +414,6 @@ declare -A IMAGES_PROMOTE
 # this array stores the hashes of the built images
 declare -A IMAGE_HASHES
 
-# this sets CAPABILITIES which is used by some processes in this build 
-. /kubectl-build-deploy/scripts/kubectl-get-cluster-capabilities.sh
-
 # Allow the servicetype be overridden by the lagoon API
 # This accepts colon separated values like so `SERVICE_NAME:SERVICE_TYPE_OVERRIDE`, and multiple overrides
 # separated by commas
@@ -481,11 +478,9 @@ do
     SERVICE_TYPE="python"
   fi
 
-  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/PreBackupPod" ]]; then
-    if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
-      if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod" &> /dev/null; then
-        kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod"
-      fi
+  if [[ "$SERVICE_TYPE" == "opensearch" ]] || [[ "$SERVICE_TYPE" == "elasticsearch" ]]; then
+    if kubectl -n ${NAMESPACE} get prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod" &> /dev/null; then
+      kubectl -n ${NAMESPACE} delete prebackuppods.backup.appuio.ch "${SERVICE_NAME}-prebackuppod"
     fi
   fi
 
@@ -1368,7 +1363,7 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
   mkdir -p $LAGOON_BACKUP_YAML_FOLDER
   if [ "$(featureFlag K8UP_V2)" = enabled ]; then
   # build-tool doesn't do any capability checks yet, so do this for now
-    if [[ "${CAPABILITIES[@]}" =~ "k8up.io/v1/Schedule" ]]; then
+    if kubectl -n ${NAMESPACE} get schedule.k8up.io &> /dev/null; then
     echo "Backups: generating k8up.io/v1 resources"
       if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
         # Create baas-repo-pw secret based on the project secret
@@ -1376,7 +1371,7 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
       fi
       build-deploy-tool template backup-schedule --version v2 --saved-templates-path ${LAGOON_BACKUP_YAML_FOLDER}
       # check if the existing schedule exists, and delete it
-      if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]]; then
+      if kubectl -n ${NAMESPACE} get schedule.backup.appuio.ch &> /dev/null; then
         if kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get schedules.backup.appuio.ch k8up-lagoon-backup-schedule &> /dev/null; then
           echo "Backups: removing old backup.appuio.ch/v1alpha1 schedule"
           kubectl --insecure-skip-tls-verify -n ${NAMESPACE} delete schedules.backup.appuio.ch k8up-lagoon-backup-schedule
@@ -1389,13 +1384,15 @@ if [ ! "$BACKUPS_DISABLED" == true ]; then
       K8UP_VERSION="v2"
     fi
   fi
-  if [[ "${CAPABILITIES[@]}" =~ "backup.appuio.ch/v1alpha1/Schedule" ]] && [[ "$K8UP_VERSION" != "v2" ]]; then
-    echo "Backups: generating backup.appuio.ch/v1alpha1 resources"
-    if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
-      # Create baas-repo-pw secret based on the project secret
-      kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+  if [[ "$K8UP_VERSION" != "v2" ]]; then
+    if kubectl -n ${NAMESPACE} get schedule.backup.appuio.ch &> /dev/null; then
+      echo "Backups: generating backup.appuio.ch/v1alpha1 resources"
+      if ! kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret baas-repo-pw &> /dev/null; then
+        # Create baas-repo-pw secret based on the project secret
+        kubectl --insecure-skip-tls-verify -n ${NAMESPACE} create secret generic baas-repo-pw --from-literal=repo-pw=$(echo -n "${PROJECT_SECRET}-BAAS-REPO-PW" | sha256sum | cut -d " " -f 1)
+      fi
+      build-deploy-tool template backup-schedule --version v1 --saved-templates-path ${LAGOON_BACKUP_YAML_FOLDER}
     fi
-    build-deploy-tool template backup-schedule --version v1 --saved-templates-path ${LAGOON_BACKUP_YAML_FOLDER}
   fi
   # apply backup templates
   if [ -n "$(ls -A $LAGOON_BACKUP_YAML_FOLDER/ 2>/dev/null)" ]; then
