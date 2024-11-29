@@ -110,6 +110,7 @@ func NewGenerator(
 	dynamicDBaaSSecrets := helpers.GetEnv("DYNAMIC_DBAAS_SECRETS", strings.Join(generator.DynamicDBaaSSecrets, ","), generator.Debug)
 	imageCacheBuildArgsJSON := helpers.GetEnv("LAGOON_CACHE_BUILD_ARGS", generator.ImageCacheBuildArgsJSON, generator.Debug)
 	buildValues.SSHPrivateKey = helpers.GetEnv("SSH_PRIVATE_KEY", generator.SSHPrivateKey, generator.Debug)
+	buildValues.UnauthenticatedImageRegistry = helpers.GetEnvBool("UNAUTHENTICATED_REGISTRY", generator.CI, generator.Debug)
 	// this is used by CI systems to influence builds, it is rarely used and should probably be abandoned
 	buildValues.IsCI = helpers.GetEnvBool("CI", generator.CI, generator.Debug)
 

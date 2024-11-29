@@ -219,6 +219,104 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 			},
 		},
 		{
+			name: "test2c nginx-php deployment - rootless - unauthenticated",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
+					ImageReferences: map[string]string{
+						"nginx":   "unauthenticated.registry/example-project/main-nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":     "unauthenticated.registry/example-project/main-php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"cli":     "unauthenticated.registry/example-project/main-cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"redis":   "unauthenticated.registry/example-project/main-redis@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"varnish": "unauthenticated.registry/example-project/main-varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "UNAUTHENTICATED_REGISTRY",
+							Value: "true",
+						},
+						{
+							Name:  "REGISTRY",
+							Value: "unauthenticated.registry",
+						},
+					},
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: imageBuild{
+				BuildKit: helpers.BoolPtr(true),
+				BuildArguments: map[string]string{
+					"LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD":   "enabled",
+					"LAGOON_BUILD_NAME":                       "lagoon-build-abcdefg",
+					"LAGOON_PROJECT":                          "example-project",
+					"LAGOON_ENVIRONMENT":                      "main",
+					"LAGOON_ENVIRONMENT_TYPE":                 "production",
+					"LAGOON_BUILD_TYPE":                       "branch",
+					"LAGOON_GIT_SOURCE_REPOSITORY":            "ssh://git@example.com/lagoon-demo.git",
+					"LAGOON_KUBERNETES":                       "remote-cluster1",
+					"LAGOON_GIT_SHA":                          "0000000000000000000000000000000000000000",
+					"LAGOON_GIT_BRANCH":                       "main",
+					"CLI_IMAGE":                               "example-project-main-cli",
+					"NGINX_IMAGE":                             "example-project-main-nginx",
+					"PHP_IMAGE":                               "example-project-main-php",
+					"LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY": "imagecache.example.com",
+					"LAGOON_SSH_PRIVATE_KEY":                  "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
+				},
+				Images: []imageBuilds{
+					{
+						Name: "cli",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "unauthenticated.registry/example-project/main-cli:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.cli",
+							TemporaryImage: "example-project-main-cli",
+						},
+					}, {
+						Name: "nginx",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "unauthenticated.registry/example-project/main-nginx:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.nginx-drupal",
+							TemporaryImage: "example-project-main-nginx",
+						},
+					}, {
+						Name: "php",
+						ImageBuild: generator.ImageBuild{
+							BuildImage:     "unauthenticated.registry/example-project/main-php:latest",
+							Context:        "internal/testdata/complex/docker",
+							DockerFile:     ".docker/Dockerfile.php",
+							TemporaryImage: "example-project-main-php",
+						},
+					}, {
+						Name: "redis",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "unauthenticated.registry/example-project/main-redis:latest",
+							PullImage:  "quay.io/notlagoon/redis",
+						},
+					}, {
+						Name: "varnish",
+						ImageBuild: generator.ImageBuild{
+							BuildImage: "unauthenticated.registry/example-project/main-varnish:latest",
+							PullImage:  "imagecache.example.com/uselagoon/varnish-5-drupal:latest",
+						},
+					},
+				},
+			},
+		},
+		{
 			name:        "test3 - funky pvcs",
 			description: "only create pvcs of the requested persistent-name in the docker-compose file",
 			args: testdata.GetSeedData(

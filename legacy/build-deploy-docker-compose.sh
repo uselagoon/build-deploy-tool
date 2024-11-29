@@ -591,6 +591,8 @@ if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
     # fi
     echo "Set internal registry secrets for token ${INTERNAL_REGISTRY_USERNAME} in ${REGISTRY}"
   fi
+else
+  export UNAUTHENTICATED_REGISTRY=true
 fi
 
 # log in to any container registries before building or pulling images
