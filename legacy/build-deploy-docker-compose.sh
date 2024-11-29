@@ -593,6 +593,7 @@ if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
   fi
 else
   export UNAUTHENTICATED_REGISTRY=true
+  echo "Unauthenticated registry in use: ${UNAUTHENTICATED_REGISTRY}"
 fi
 
 # log in to any container registries before building or pulling images
