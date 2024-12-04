@@ -52,7 +52,9 @@ spec:
         - name: SERVICE_NAME
           value: redis
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/redis@latest
         imagePullPolicy: Always
@@ -144,7 +146,9 @@ spec:
         - name: SERVICE_NAME
           value: redis-persist
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/redis-persist@latest
         imagePullPolicy: Always
