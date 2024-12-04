@@ -77,8 +77,12 @@ spec:
           initialDelaySeconds: 1
           timeoutSeconds: 3
         resources:
+          limits:
+            ephemeral-storage: 160Gi
+            memory: 16Gi
           requests:
             cpu: 10m
+            ephemeral-storage: 1Gi
             memory: 10Mi
         securityContext: {}
       - env:
@@ -109,8 +113,12 @@ spec:
           tcpSocket:
             port: 9000
         resources:
+          limits:
+            ephemeral-storage: 160Gi
+            memory: 16Gi
           requests:
             cpu: 10m
+            ephemeral-storage: 1Gi
             memory: 100Mi
         securityContext: {}
       enableServiceLinks: false
@@ -201,8 +209,12 @@ spec:
           initialDelaySeconds: 1
           timeoutSeconds: 3
         resources:
+          limits:
+            ephemeral-storage: 160Gi
+            memory: 16Gi
           requests:
             cpu: 10m
+            ephemeral-storage: 1Gi
             memory: 10Mi
         securityContext: {}
         volumeMounts:
@@ -236,8 +248,12 @@ spec:
           tcpSocket:
             port: 9000
         resources:
+          limits:
+            ephemeral-storage: 160Gi
+            memory: 16Gi
           requests:
             cpu: 10m
+            ephemeral-storage: 1Gi
             memory: 100Mi
         securityContext: {}
         volumeMounts:

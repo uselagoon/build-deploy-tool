@@ -134,6 +134,15 @@ func TestGenerateDeploymentTemplate(t *testing.T) {
 						RunAsUser:  10000,
 						FsGroup:    10001,
 					},
+					Resources: generator.Resources{
+						Limits: generator.ResourceLimits{
+							Memory:           "16Gi",
+							EphemeralStorage: "160Gi",
+						},
+						Requests: generator.ResourceRequests{
+							EphemeralStorage: "1Gi",
+						},
+					},
 					GitSHA:       "0",
 					ConfigMapSha: "32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273",
 					ImageReferences: map[string]string{
