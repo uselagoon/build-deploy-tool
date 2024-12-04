@@ -594,7 +594,7 @@ func GenerateDeploymentTemplate(
 				deployment.Spec.Template.Spec.Volumes = append(deployment.Spec.Template.Spec.Volumes, volume)
 			}
 
-			// set the resource limit overrides if htey are provided
+			// set the resource limit overrides if they are provided
 			if buildValues.Resources.Limits.Memory != "" {
 				if container.Container.Resources.Limits == nil {
 					container.Container.Resources.Limits = corev1.ResourceList{}
@@ -693,6 +693,27 @@ func GenerateDeploymentTemplate(
 					helpers.TemplateThings(tpld, svm, &volumeMount)
 					linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
 				}
+
+				// set the resource limit overrides if they are provided
+				if buildValues.Resources.Limits.Memory != "" {
+					if linkedContainer.Container.Resources.Limits == nil {
+						linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Limits[corev1.ResourceMemory] = resource.MustParse(buildValues.Resources.Limits.Memory)
+				}
+				if buildValues.Resources.Limits.EphemeralStorage != "" {
+					if linkedContainer.Container.Resources.Limits == nil {
+						linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Limits[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Limits.EphemeralStorage)
+				}
+				if buildValues.Resources.Requests.EphemeralStorage != "" {
+					if linkedContainer.Container.Resources.Requests == nil {
+						linkedContainer.Container.Resources.Requests = corev1.ResourceList{}
+					}
+					linkedContainer.Container.Resources.Requests[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Requests.EphemeralStorage)
+				}
+
 				deployment.Spec.Template.Spec.Containers = append(deployment.Spec.Template.Spec.Containers, linkedContainer.Container)
 			}
 
