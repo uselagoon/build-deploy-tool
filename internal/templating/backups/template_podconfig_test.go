@@ -50,7 +50,37 @@ func TestGenerateBackupPodConfig(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-podconfig1.yaml",
+			want: "test-resources/test-k8up-v1-rootless.yaml",
+		},
+		{
+			name:        "test-k8up-v1-rootless-onrootmismatch",
+			description: "this will generate a podconfig if the environment is configured for rootless workloads",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment",
+					BackupsEnabled:  true,
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v2",
+					},
+					FeatureFlags: map[string]bool{
+						"rootlessworkloads": true,
+					},
+					PodSecurityContext: generator.PodSecurityContext{
+						RunAsGroup:     0,
+						RunAsUser:      10000,
+						FsGroup:        10001,
+						OnRootMismatch: true,
+					},
+				},
+			},
+			want: "test-resources/test-k8up-v1-rootless-onrootmismatch.yaml",
 		},
 		{
 			name:        "test-k8up-v1-root",
