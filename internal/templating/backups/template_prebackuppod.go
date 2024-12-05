@@ -149,7 +149,7 @@ func GeneratePreBackupPod(
 					return nil, err
 				}
 
-				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
+				pbpBytes, _ := CleanupPreBackupPodYAML(prebackuppodBytes)
 				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
 				// of the current build process
 				restoreResult := append(separator[:], pbpBytes[:]...)
@@ -238,7 +238,7 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
-				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
+				pbpBytes, _ := CleanupPreBackupPodYAML(prebackuppodBytes)
 				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
 				// of the current build process
 				restoreResult := append(separator[:], pbpBytes[:]...)
@@ -249,16 +249,14 @@ func GeneratePreBackupPod(
 	return result, nil
 }
 
-// helper function to remove the creationtimestamp from the prebackuppod pod spec so that kubectl will apply without validation errors
-func RemoveYAML(a []byte) ([]byte, error) {
+// helper function to remove data from the yaml spec so that kubectl will apply without validation errors
+// this is only needed because we use kubectl in builds for now
+func CleanupPreBackupPodYAML(a []byte) ([]byte, error) {
 	tmpMap := map[string]interface{}{}
 	yaml.Unmarshal(a, &tmpMap)
-	if _, ok := tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{})["creationTimestamp"]; ok {
-		delete(tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{}), "creationTimestamp")
-		b, _ := yaml.Marshal(tmpMap)
-		return b, nil
-	}
-	return a, nil
+	delete(tmpMap["spec"].(map[string]interface{})["pod"].(map[string]interface{})["metadata"].(map[string]interface{}), "creationTimestamp")
+	b, _ := yaml.Marshal(tmpMap)
+	return b, nil
 }
 
 var funcMap = template.FuncMap{
@@ -267,7 +265,7 @@ var funcMap = template.FuncMap{
 
 // varfix just uppercases and replaces - with _ for variable names
 func varFix(s string) string {
-	return fmt.Sprintf("%s", strings.ToUpper(strings.Replace(s, "-", "_", -1)))
+	return strings.ToUpper(strings.Replace(s, "-", "_", -1))
 }
 
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated

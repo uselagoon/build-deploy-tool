@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -240,6 +241,27 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "internal/testdata/node/backup-templates/backup-8",
 		},
+		{
+			name: "test-generic-backup-rootless-workloads",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "production",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					K8UPVersion:     "v2",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -307,8 +329,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 							t.Errorf("couldn't read file %v: %v", tt.want, err)
 						}
 						if !reflect.DeepEqual(f1, r1) {
-							fmt.Println(string(f1))
-							t.Errorf("resulting templates do not match")
+							t.Errorf("TemplateLagoonServices() = \n%v", diff.LineDiff(string(r1), string(f1)))
 						}
 					}
 				}

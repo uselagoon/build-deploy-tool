@@ -221,6 +221,11 @@ func GenerateBackupSchedule(
 					},
 				},
 			}
+			if lValues.PodSecurityContext.RunAsUser != 0 {
+				schedule.Spec.Backup.PodConfigRef = &corev1.LocalObjectReference{
+					Name: "k8up-rootless-workload-podconfig",
+				}
+			}
 			// add the default labels
 			schedule.ObjectMeta.Labels = map[string]string{
 				"app.kubernetes.io/name":       "k8up-schedule",
