@@ -48,6 +48,16 @@ func GenerateBackupPodConfig(
 						},
 					},
 				}
+				if lValues.PodSecurityContext.OnRootMismatch {
+					fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+					if podConfig.Spec.Template.Spec.SecurityContext != nil {
+						podConfig.Spec.Template.Spec.SecurityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+					} else {
+						podConfig.Spec.Template.Spec.SecurityContext = &corev1.PodSecurityContext{
+							FSGroupChangePolicy: &fsGroupChangePolicy,
+						}
+					}
+				}
 				// add the default labels
 				podConfig.ObjectMeta.Labels = map[string]string{
 					"app.kubernetes.io/name":       "k8up-podconfig",
