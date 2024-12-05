@@ -1,0 +1,28 @@
+---
+apiVersion: k8up.io/v1
+kind: PodConfig
+metadata:
+  annotations:
+    lagoon.sh/branch: environment
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: k8up-rootless-workload-podconfig
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: k8up-podconfig
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: k8up-rootless-workload-podconfig
+    lagoon.sh/service-type: k8up-podconfig
+    lagoon.sh/template: k8up-podconfig-0.1.0
+  name: k8up-rootless-workload-podconfig
+spec:
+  template:
+    spec:
+      securityContext:
+        fsGroup: 10001
+        runAsGroup: 0
+        runAsUser: 10000
+status: {}
