@@ -1,4 +1,4 @@
-package services
+package templating
 
 import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"

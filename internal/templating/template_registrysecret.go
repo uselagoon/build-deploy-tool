@@ -1,4 +1,4 @@
-package services
+package templating
 
 import (
 	"encoding/base64"
