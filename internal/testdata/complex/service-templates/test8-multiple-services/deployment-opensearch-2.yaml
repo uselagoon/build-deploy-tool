@@ -86,24 +86,6 @@ spec:
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
-      initContainers:
-      - command:
-        - sh
-        - -c
-        - |-
-          set -xe
-          DESIRED="262144"
-          CURRENT=$(sysctl -n vm.max_map_count)
-          if [ "$DESIRED" -gt "$CURRENT" ]; then
-            sysctl -w vm.max_map_count=$DESIRED
-          fi
-        image: library/busybox:latest
-        imagePullPolicy: IfNotPresent
-        name: set-max-map-count
-        resources: {}
-        securityContext:
-          privileged: true
-          runAsUser: 0
       priorityClassName: lagoon-priority-production
       securityContext:
         fsGroup: 0
