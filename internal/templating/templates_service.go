@@ -12,6 +12,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 )
 
 // GenerateServiceTemplate generates the lagoon template to apply.
@@ -180,4 +181,14 @@ func GenerateServiceBackendPort(addPort generator.AdditionalServicePort) network
 			Name: fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
 		}
 	}
+}
+
+func TemplateService(item corev1.Service) ([]byte, error) {
+	separator := []byte("---\n")
+	iBytes, err := yaml.Marshal(item)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML := append(separator[:], iBytes[:]...)
+	return templateYAML, nil
 }

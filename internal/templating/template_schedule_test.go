@@ -1,4 +1,4 @@
-package backups
+package services
 
 import (
 	"os"
@@ -51,7 +51,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule1.yaml",
+			want: "test-resources/backups/result-schedule1.yaml",
 		},
 		{
 			name: "test2 - k8up/v1alpha1",
@@ -81,7 +81,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule2.yaml",
+			want: "test-resources/backups/result-schedule2.yaml",
 		},
 		{
 			name: "test3 - k8up/v1alpha1",
@@ -117,7 +117,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule3.yaml",
+			want: "test-resources/backups/result-schedule3.yaml",
 		},
 		{
 			name: "test4 - k8up/v1alpha1",
@@ -153,7 +153,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule4.yaml",
+			want: "test-resources/backups/result-schedule4.yaml",
 		},
 		{
 			name: "test5 - k8up/v1alpha1",
@@ -191,7 +191,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule5.yaml",
+			want: "test-resources/backups/result-schedule5.yaml",
 		},
 		{
 			name: "test6 - k8up/v1",
@@ -223,7 +223,7 @@ func TestGenerateBackupSchedule(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/result-schedule6.yaml",
+			want: "test-resources/backups/result-schedule6.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -242,8 +242,12 @@ func TestGenerateBackupSchedule(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateBackupSchedule() = \n%v", diff.LineDiff(string(r1), string(got)))
+			templateYAML, err := TemplateSchedules(got)
+			if err != nil {
+				t.Errorf("couldn't generate template: %v", err)
+			}
+			if !reflect.DeepEqual(string(templateYAML), string(r1)) {
+				t.Errorf("GenerateBackupSchedule() = \n%v", diff.LineDiff(string(r1), string(templateYAML)))
 			}
 		})
 	}

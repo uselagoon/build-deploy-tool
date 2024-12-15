@@ -15,6 +15,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"k8s.io/apimachinery/pkg/util/intstr"
+	"sigs.k8s.io/yaml"
 )
 
 // GenerateDeploymentTemplate generates the lagoon template to apply.
@@ -680,4 +681,14 @@ func GenerateDeploymentTemplate(
 		}
 	}
 	return deployments, nil
+}
+
+func TemplateDeployment(item appsv1.Deployment) ([]byte, error) {
+	separator := []byte("---\n")
+	iBytes, err := yaml.Marshal(item)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML := append(separator[:], iBytes[:]...)
+	return templateYAML, nil
 }

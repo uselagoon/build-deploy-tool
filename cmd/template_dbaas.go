@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	dbaasTemplater "github.com/uselagoon/build-deploy-tool/internal/templating/dbaas"
+	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
 )
 
 var dbaasGeneration = &cobra.Command{
@@ -33,7 +33,11 @@ func DBaaSTemplateGeneration(g generator.GeneratorInput,
 	}
 	savedTemplates := g.SavedTemplatesPath
 
-	templateYAML, err := dbaasTemplater.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
+	dbaas, err := servicestemplates.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML, err := servicestemplates.TemplateConsumers(dbaas)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}

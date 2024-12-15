@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
@@ -184,8 +185,7 @@ func TestDBaaSTemplateGeneration(t *testing.T) {
 							t.Errorf("couldn't read file %v: %v", tt.want, err)
 						}
 						if !reflect.DeepEqual(f1, r1) {
-							fmt.Println(string(f1))
-							t.Errorf("resulting templates do not match")
+							t.Errorf("DBaaSTemplateGeneration() = \n%v", diff.LineDiff(string(r1), string(f1)))
 						}
 					}
 				}

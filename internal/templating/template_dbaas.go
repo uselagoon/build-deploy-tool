@@ -1,4 +1,4 @@
-package dbaas
+package services
 
 import (
 	"fmt"
@@ -8,10 +8,11 @@ import (
 	postgresv1 "github.com/amazeeio/dbaas-operator/apis/postgres/v1"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"sigs.k8s.io/yaml"
+
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-	"sigs.k8s.io/yaml"
 )
 
 var dbaasTypes = []string{
@@ -20,12 +21,19 @@ var dbaasTypes = []string{
 	"postgres-dbaas",
 }
 
+type DBaaSTemplates struct {
+	MariaDB    []mariadbv1.MariaDBConsumer
+	MongoDB    []mongodbv1.MongoDBConsumer
+	PostgreSQL []postgresv1.PostgreSQLConsumer
+}
+
 // GenerateDBaaSTemplate generates the lagoon template to apply.
 func GenerateDBaaSTemplate(
 	lValues generator.BuildValues,
-) ([]byte, error) {
-	separator := []byte("---\n")
-	var result []byte
+) (*DBaaSTemplates, error) {
+	// separator := []byte("---\n")
+	// var result []byte
+	var dbaasTemplates DBaaSTemplates
 
 	// add the default labels
 	labels := map[string]string{
@@ -55,7 +63,6 @@ func GenerateDBaaSTemplate(
 
 	for _, serviceValues := range lValues.Services {
 		if helpers.Contains(dbaasTypes, serviceValues.Type) {
-			var consumerBytes []byte
 			additionalLabels["app.kubernetes.io/name"] = serviceValues.Type
 			additionalLabels["app.kubernetes.io/instance"] = serviceValues.Name
 			additionalLabels["lagoon.sh/template"] = fmt.Sprintf("%s-%s", serviceValues.Type, "0.1.0")
@@ -64,7 +71,7 @@ func GenerateDBaaSTemplate(
 			switch serviceValues.Type {
 			case "mariadb-dbaas":
 				{
-					mariaDBConsumer := &mariadbv1.MariaDBConsumer{
+					mariaDBConsumer := mariadbv1.MariaDBConsumer{
 						TypeMeta: metav1.TypeMeta{
 							Kind:       "MariaDBConsumer",
 							APIVersion: mariadbv1.GroupVersion.String(),
@@ -76,12 +83,17 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					mariaDBConsumer.ObjectMeta.Labels = labels
-					mariaDBConsumer.ObjectMeta.Annotations = annotations
+					mariaDBConsumer.ObjectMeta.Labels = map[string]string{}
+					mariaDBConsumer.ObjectMeta.Annotations = map[string]string{}
+					for key, value := range labels {
+						mariaDBConsumer.ObjectMeta.Labels[key] = value
+					}
+					for key, value := range annotations {
+						mariaDBConsumer.ObjectMeta.Annotations[key] = value
+					}
 					for key, value := range additionalLabels {
 						mariaDBConsumer.ObjectMeta.Labels[key] = value
 					}
-					// add any additional annotations
 					for key, value := range additionalAnnotations {
 						mariaDBConsumer.ObjectMeta.Annotations[key] = value
 					}
@@ -103,10 +115,7 @@ func GenerateDBaaSTemplate(
 					if err != nil {
 						return nil, err
 					}
-					consumerBytes, err = yaml.Marshal(mariaDBConsumer)
-					if err != nil {
-						return nil, err
-					}
+					dbaasTemplates.MariaDB = append(dbaasTemplates.MariaDB, mariaDBConsumer)
 				}
 			case "mongodb-dbaas":
 				{
@@ -122,12 +131,17 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					mongodbConsumer.ObjectMeta.Labels = labels
-					mongodbConsumer.ObjectMeta.Annotations = annotations
+					mongodbConsumer.ObjectMeta.Labels = map[string]string{}
+					mongodbConsumer.ObjectMeta.Annotations = map[string]string{}
+					for key, value := range labels {
+						mongodbConsumer.ObjectMeta.Labels[key] = value
+					}
+					for key, value := range annotations {
+						mongodbConsumer.ObjectMeta.Annotations[key] = value
+					}
 					for key, value := range additionalLabels {
 						mongodbConsumer.ObjectMeta.Labels[key] = value
 					}
-					// add any additional annotations
 					for key, value := range additionalAnnotations {
 						mongodbConsumer.ObjectMeta.Annotations[key] = value
 					}
@@ -148,10 +162,7 @@ func GenerateDBaaSTemplate(
 					if err != nil {
 						return nil, err
 					}
-					consumerBytes, err = yaml.Marshal(mongodbConsumer)
-					if err != nil {
-						return nil, err
-					}
+					dbaasTemplates.MongoDB = append(dbaasTemplates.MongoDB, *mongodbConsumer)
 				}
 			case "postgres-dbaas":
 				{
@@ -167,12 +178,17 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					postgresqlConsumer.ObjectMeta.Labels = labels
-					postgresqlConsumer.ObjectMeta.Annotations = annotations
+					postgresqlConsumer.ObjectMeta.Labels = map[string]string{}
+					postgresqlConsumer.ObjectMeta.Annotations = map[string]string{}
+					for key, value := range labels {
+						postgresqlConsumer.ObjectMeta.Labels[key] = value
+					}
+					for key, value := range annotations {
+						postgresqlConsumer.ObjectMeta.Annotations[key] = value
+					}
 					for key, value := range additionalLabels {
 						postgresqlConsumer.ObjectMeta.Labels[key] = value
 					}
-					// add any additional annotations
 					for key, value := range additionalAnnotations {
 						postgresqlConsumer.ObjectMeta.Annotations[key] = value
 					}
@@ -194,20 +210,40 @@ func GenerateDBaaSTemplate(
 					if err != nil {
 						return nil, err
 					}
-					consumerBytes, err = yaml.Marshal(postgresqlConsumer)
-					if err != nil {
-						return nil, err
-					}
+					dbaasTemplates.PostgreSQL = append(dbaasTemplates.PostgreSQL, *postgresqlConsumer)
 				}
-
 			}
-			// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-			// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-			// of the current build process
-			// join all dbaas-consumer templates together
-			restoreResult := append(separator[:], consumerBytes[:]...)
-			result = append(result, restoreResult[:]...)
 		}
 	}
-	return result, nil
+	return &dbaasTemplates, nil
+}
+
+func TemplateConsumers(dbaas *DBaaSTemplates) ([]byte, error) {
+	separator := []byte("---\n")
+	var templateYAML []byte
+	for _, db := range dbaas.MariaDB {
+		dbBytes, err := yaml.Marshal(db)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], dbBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	for _, db := range dbaas.MongoDB {
+		dbBytes, err := yaml.Marshal(db)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], dbBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	for _, db := range dbaas.PostgreSQL {
+		dbBytes, err := yaml.Marshal(db)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], dbBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	return templateYAML, nil
 }

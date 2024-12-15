@@ -1,4 +1,4 @@
-package backups
+package services
 
 import (
 	"bytes"
@@ -24,13 +24,17 @@ type PreBackupPodTmpl struct {
 	Namespace string
 }
 
+type PreBackupPod struct {
+	K8upV1       []k8upv1.PreBackupPod
+	K8upV1alpha1 []k8upv1alpha1.PreBackupPod
+}
+
 func GeneratePreBackupPod(
 	lValues generator.BuildValues,
-) ([]byte, error) {
+) (*PreBackupPod, error) {
 	// generate the template spec
 
-	var result []byte
-	separator := []byte("---\n")
+	var result PreBackupPod
 
 	// add the default labels
 	labels := map[string]string{
@@ -75,9 +79,20 @@ func GeneratePreBackupPod(
 					},
 					Spec: k8upv1alpha1.PreBackupPodSpec{},
 				}
-
-				prebackuppod.ObjectMeta.Labels = labels
-				prebackuppod.ObjectMeta.Annotations = annotations
+				prebackuppod.ObjectMeta.Labels = map[string]string{}
+				prebackuppod.ObjectMeta.Annotations = map[string]string{}
+				for key, value := range labels {
+					prebackuppod.ObjectMeta.Labels[key] = value
+				}
+				for key, value := range annotations {
+					prebackuppod.ObjectMeta.Annotations[key] = value
+				}
+				for key, value := range additionalLabels {
+					prebackuppod.ObjectMeta.Labels[key] = value
+				}
+				for key, value := range additionalAnnotations {
+					prebackuppod.ObjectMeta.Annotations[key] = value
+				}
 				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
@@ -142,18 +157,7 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
-				// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-				// marshal the resulting ingress
-				prebackuppodBytes, err := yaml.Marshal(prebackuppod)
-				if err != nil {
-					return nil, err
-				}
-
-				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
-				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-				// of the current build process
-				restoreResult := append(separator[:], pbpBytes[:]...)
-				result = append(result, restoreResult[:]...)
+				result.K8upV1alpha1 = append(result.K8upV1alpha1, *prebackuppod)
 			case "v2":
 				prebackuppod := &k8upv1.PreBackupPod{
 					TypeMeta: metav1.TypeMeta{
@@ -165,9 +169,20 @@ func GeneratePreBackupPod(
 					},
 					Spec: k8upv1.PreBackupPodSpec{},
 				}
-
-				prebackuppod.ObjectMeta.Labels = labels
-				prebackuppod.ObjectMeta.Annotations = annotations
+				prebackuppod.ObjectMeta.Labels = map[string]string{}
+				prebackuppod.ObjectMeta.Annotations = map[string]string{}
+				for key, value := range labels {
+					prebackuppod.ObjectMeta.Labels[key] = value
+				}
+				for key, value := range annotations {
+					prebackuppod.ObjectMeta.Annotations[key] = value
+				}
+				for key, value := range additionalLabels {
+					prebackuppod.ObjectMeta.Labels[key] = value
+				}
+				for key, value := range additionalAnnotations {
+					prebackuppod.ObjectMeta.Annotations[key] = value
+				}
 				prebackuppod.ObjectMeta.Labels["prebackuppod"] = serviceValues.Name
 
 				var pbp bytes.Buffer
@@ -232,21 +247,35 @@ func GeneratePreBackupPod(
 				if err != nil {
 					return nil, err
 				}
-				// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-				// marshal the resulting ingress
-				prebackuppodBytes, err := yaml.Marshal(prebackuppod)
-				if err != nil {
-					return nil, err
-				}
-				pbpBytes, _ := RemoveYAML(prebackuppodBytes)
-				// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-				// of the current build process
-				restoreResult := append(separator[:], pbpBytes[:]...)
-				result = append(result, restoreResult[:]...)
+				result.K8upV1 = append(result.K8upV1, *prebackuppod)
 			}
 		}
 	}
-	return result, nil
+	return &result, nil
+}
+
+func TemplatePreBackupPods(pbps *PreBackupPod) ([]byte, error) {
+	separator := []byte("---\n")
+	var templateYAML []byte
+	for _, pbp := range pbps.K8upV1 {
+		pbpBytes, err := yaml.Marshal(pbp)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		pbpBytes, _ = RemoveYAML(pbpBytes)
+		restoreResult := append(separator[:], pbpBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	for _, pbp := range pbps.K8upV1alpha1 {
+		pbpBytes, err := yaml.Marshal(pbp)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		pbpBytes, _ = RemoveYAML(pbpBytes)
+		restoreResult := append(separator[:], pbpBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	return templateYAML, nil
 }
 
 // helper function to remove the creationtimestamp from the prebackuppod pod spec so that kubectl will apply without validation errors
@@ -267,7 +296,7 @@ var funcMap = template.FuncMap{
 
 // varfix just uppercases and replaces - with _ for variable names
 func varFix(s string) string {
-	return fmt.Sprintf("%s", strings.ToUpper(strings.Replace(s, "-", "_", -1)))
+	return strings.ToUpper(strings.Replace(s, "-", "_", -1))
 }
 
 // this is just the first run at doing this, once the service template generator is introduced, this will need to be re-evaluated

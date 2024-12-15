@@ -1,4 +1,4 @@
-package routes
+package services
 
 import (
 	"fmt"
@@ -9,13 +9,11 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"github.com/uselagoon/build-deploy-tool/internal/templating/services"
 	networkv1 "k8s.io/api/networking/v1"
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
-
 	"sigs.k8s.io/yaml"
 )
 
@@ -23,7 +21,7 @@ import (
 func GenerateIngressTemplate(
 	route lagoon.RouteV2,
 	lValues generator.BuildValues,
-) ([]byte, error) {
+) (*networkv1.Ingress, error) {
 
 	// truncate the route for use in labels and secretname
 	truncatedRouteDomain := route.Domain
@@ -255,13 +253,13 @@ func GenerateIngressTemplate(
 	for _, service := range lValues.Services {
 		for idx, addPort := range service.AdditionalServicePorts {
 			if addPort.ServiceName == route.LagoonService {
-				servicePort = services.GenerateServiceBackendPort(addPort)
+				servicePort = GenerateServiceBackendPort(addPort)
 				backendService = service.OverrideName
 			}
 			// if this service is for the default named lagoonservice
 			if service.OverrideName == route.LagoonService && idx == 0 {
 				// and set the portname to the name of the first service in the list
-				servicePort = services.GenerateServiceBackendPort(addPort)
+				servicePort = GenerateServiceBackendPort(addPort)
 			}
 		}
 	}
@@ -299,13 +297,13 @@ func GenerateIngressTemplate(
 			if pr.ToService == service.OverrideName && len(service.AdditionalServicePorts) > 0 {
 				// extract the first port from the additional ports to use as the path port
 				// as the first port in the list is the "default" port
-				pathPort = services.GenerateServiceBackendPort(service.AdditionalServicePorts[0])
+				pathPort = GenerateServiceBackendPort(service.AdditionalServicePorts[0])
 			}
 			// otherwise if the user has specified a specific 'servicename-port' in their toService
 			// look that up instead and serve the backend as requested
 			for _, addPort := range service.AdditionalServicePorts {
 				if addPort.ServiceName == pr.ToService {
-					pathPort = services.GenerateServiceBackendPort(addPort)
+					pathPort = GenerateServiceBackendPort(addPort)
 					backendServiceName = addPort.ServiceOverrideName
 				}
 			}
@@ -357,16 +355,17 @@ func GenerateIngressTemplate(
 		}
 		ingress.Spec.Rules = append(ingress.Spec.Rules, altName)
 	}
+	return ingress, nil
+}
 
-	// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-	// marshal the resulting ingress
-	ingressBytes, err := yaml.Marshal(ingress)
-	if err != nil {
-		return nil, err
-	}
-	// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-	// of the current build process
+func TemplateIngress(ingress *networkv1.Ingress) ([]byte, error) {
 	separator := []byte("---\n")
-	result := append(separator[:], ingressBytes[:]...)
-	return result, nil
+	var templateYAML []byte
+	iBytes, err := yaml.Marshal(ingress)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	restoreResult := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, restoreResult[:]...)
+	return templateYAML, nil
 }

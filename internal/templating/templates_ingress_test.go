@@ -1,4 +1,4 @@
-package routes
+package services
 
 import (
 	"os"
@@ -14,7 +14,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-func TestGenerateKubeTemplate(t *testing.T) {
+func TestGenerateIngressTemplate(t *testing.T) {
 	type args struct {
 		route         lagoon.RouteV2
 		values        generator.BuildValues
@@ -69,7 +69,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: true,
 			},
-			want: "test-resources/result-active-standby1.yaml",
+			want: "test-resources/ingress/result-active-standby1.yaml",
 		},
 		{
 			name: "custom-ingress1",
@@ -114,7 +114,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress1.yaml",
+			want: "test-resources/ingress/result-custom-ingress1.yaml",
 		},
 		{
 			name: "custom-ingress2",
@@ -159,7 +159,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress2.yaml",
+			want: "test-resources/ingress/result-custom-ingress2.yaml",
 		},
 		{
 			name: "test3 - custom ingress with ingress class",
@@ -205,7 +205,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress3.yaml",
+			want: "test-resources/ingress/result-custom-ingress3.yaml",
 		},
 		{
 			name: "test4 - custom ingress with ingress class and hsts",
@@ -253,7 +253,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress4.yaml",
+			want: "test-resources/ingress/result-custom-ingress4.yaml",
 		},
 		{
 			name: "test5 - custom ingress with ingress class and hsts and existing config snippet",
@@ -304,7 +304,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress5.yaml",
+			want: "test-resources/ingress/result-custom-ingress5.yaml",
 		},
 		{
 			name: "test6 - invalid annotation",
@@ -436,7 +436,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress6.yaml",
+			want: "test-resources/ingress/result-custom-ingress6.yaml",
 		},
 		{
 			name: "test9 - wildcard ingress",
@@ -482,7 +482,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-wildcard-ingress1.yaml",
+			want: "test-resources/ingress/result-wildcard-ingress1.yaml",
 		},
 		{
 			name: "test10 - wildcard ingress",
@@ -528,7 +528,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-wildcard-ingress2.yaml",
+			want: "test-resources/ingress/result-wildcard-ingress2.yaml",
 		},
 		{
 			name: "custom-ingress1 with specific port service",
@@ -590,7 +590,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress7.yaml",
+			want: "test-resources/ingress/result-custom-ingress7.yaml",
 		},
 		{
 			name: "custom-ingress1 with specific port service 2",
@@ -652,7 +652,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress8.yaml",
+			want: "test-resources/ingress/result-custom-ingress8.yaml",
 		},
 		{
 			name: "custom-ingress9",
@@ -698,7 +698,7 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				},
 				activeStandby: false,
 			},
-			want: "test-resources/result-custom-ingress9.yaml",
+			want: "test-resources/ingress/result-custom-ingress9.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -723,8 +723,12 @@ func TestGenerateKubeTemplate(t *testing.T) {
 				if err != nil {
 					t.Errorf("couldn't read file %v: %v", tt.want, err)
 				}
-				if !reflect.DeepEqual(string(got), string(r1)) {
-					t.Errorf("GenerateIngressTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
+				gotR, err := TemplateIngress(got)
+				if err != nil {
+					t.Errorf("couldn't generate template  %v", err)
+				}
+				if !reflect.DeepEqual(string(gotR), string(r1)) {
+					t.Errorf("GenerateIngressTemplate() = \n%v", diff.LineDiff(string(r1), string(gotR)))
 				}
 			}
 		})
