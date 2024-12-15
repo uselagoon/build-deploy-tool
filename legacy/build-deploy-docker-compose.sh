@@ -144,6 +144,53 @@ function patchBuildStep() {
 ##############################################
 
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
+beginBuildStep "Initial Environment Collection" "collectEnvironment"
+
+##############################################
+### COLLECT INFORMATION
+##############################################
+
+# run the collector
+ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
+# get the images currently used
+DEPLOYMENTS=$(echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.spec.template.spec.containers[].image')
+touch /kubectl-build-deploy/current-images.yaml
+for DEP_IMAGE in ${DEPLOYMENT_IMAGES}
+do
+  # generate the images file used for templating here
+  if [[ "$DEP_IMAGE" =~ (.*\/)(.*)(@sha256:.*) ]]
+  then
+      COMPOSE_SERVICE=${BASH_REMATCH[2]}
+  fi
+  yq -i '.images.'$COMPOSE_SERVICE' = "'$DEP_IMAGE'"' /kubectl-build-deploy/current-images.yaml
+done
+cat /kubectl-build-deploy/current-images.yaml
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress'
+# echo "$ENVIRONMENT_DATA" | jq -r '.services'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets'
+# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers'
+# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers'
+
+# eventually there would be be a different way to do this, rather than an environment variable, this flag is for proof of concept
+# better would be actual support for this in the API that sets an `internal_system` scoped variable so the user doesn't have to think about it
+if [ "$(featureFlag VARIABLES_ONLY)" = enabled ]
+then
+  # update lagoon-env
+  # then patch any deployments with the new lagoon-env sha and force the pods to rollout
+  # this would make this easier https://github.com/uselagoon/build-deploy-tool/pull/397
+  echo "envvars only"
+fi
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "collectEnvironment" "Initial Environment Collection" "false"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
 
