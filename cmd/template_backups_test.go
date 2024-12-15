@@ -19,6 +19,7 @@ import (
 func TestBackupTemplateGeneration(t *testing.T) {
 	tests := []struct {
 		name         string
+		description  string
 		args         testdata.TestData
 		templatePath string
 		want         string
@@ -261,6 +262,55 @@ func TestBackupTemplateGeneration(t *testing.T) {
 				}, true),
 			templatePath: "testoutput",
 			want:         "internal/testdata/node/backup-templates/backup-9",
+		},
+		{
+			name:        "test-generic-backup-rootless-workloads",
+			description: "this will generate a podsecuritycontext if the environment is configured for rootless workloads against k8up/v1 crs",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "production",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					K8UPVersion:     "v2",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "global",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads",
+		},
+		{
+			name:        "test-generic-backup-rootless-workloads-onrootmismatch",
+			description: "this will generate a podsecuritycontext if the environment is configured for rootless workloads k8up/v1 crs",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					EnvironmentType: "production",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					K8UPVersion:     "v2",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "global",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_FS_ON_ROOT_MISMATCH",
+							Value: "enabled",
+							Scope: "global",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads-onrootmismatch",
 		},
 	}
 	for _, tt := range tests {
