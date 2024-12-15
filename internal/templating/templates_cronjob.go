@@ -12,6 +12,7 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
+	"sigs.k8s.io/yaml"
 )
 
 // GenerateCronjobTemplate generates the lagoon template to apply.
@@ -431,4 +432,14 @@ func GenerateCronjobTemplate(
 		}
 	}
 	return result, nil
+}
+
+func TemplateCronjobs(item batchv1.CronJob) ([]byte, error) {
+	separator := []byte("---\n")
+	iBytes, err := yaml.Marshal(item)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML := append(separator[:], iBytes[:]...)
+	return templateYAML, nil
 }

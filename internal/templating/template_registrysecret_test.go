@@ -1,4 +1,4 @@
-package registrysecret
+package services
 
 import (
 	"os"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
-	"sigs.k8s.io/yaml"
 )
 
 func TestGenerateRegistrySecretTemplate(t *testing.T) {
@@ -58,7 +57,7 @@ func TestGenerateRegistrySecretTemplate(t *testing.T) {
 					},
 				},
 			},
-			want: "test-resources/registry-secret1.yaml",
+			want: "test-resources/regsecret/registry-secret1.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -72,15 +71,13 @@ func TestGenerateRegistrySecretTemplate(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			separator := []byte("---\n")
 			var result []byte
 			for _, d := range got {
-				secretBytes, err := yaml.Marshal(d)
+				templateBytes, err := TemplateSecret(d)
 				if err != nil {
 					t.Errorf("couldn't generate template  %v", err)
 				}
-				restoreResult := append(separator[:], secretBytes[:]...)
-				result = append(result, restoreResult[:]...)
+				result = append(result, templateBytes[:]...)
 			}
 			if !reflect.DeepEqual(string(result), string(r1)) {
 				t.Errorf("GenerateRegistrySecretTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))

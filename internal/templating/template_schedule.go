@@ -1,10 +1,11 @@
-package backups
+package services
 
 import (
 	"fmt"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"sigs.k8s.io/yaml"
 
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
@@ -12,17 +13,20 @@ import (
 	apivalidation "k8s.io/apimachinery/pkg/api/validation"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
-
-	"sigs.k8s.io/yaml"
 )
+
+type BackupSchedule struct {
+	K8upV1       []k8upv1.Schedule
+	K8upV1alpha1 []k8upv1alpha1.Schedule
+	Secrets      []corev1.Secret
+}
 
 func GenerateBackupSchedule(
 	lValues generator.BuildValues,
-) ([]byte, error) {
+) (*BackupSchedule, error) {
 	// generate the template spec
 
-	var result []byte
-	separator := []byte("---\n")
+	var result BackupSchedule
 
 	// create the schedule
 	if lValues.BackupsEnabled {
@@ -147,15 +151,7 @@ func GenerateBackupSchedule(
 			if err != nil {
 				return nil, err
 			}
-			// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
-			// marshal the resulting ingress
-			scheduleBytes, err := yaml.Marshal(schedule)
-			if err != nil {
-				return nil, err
-			}
-			// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-			// of the current build process
-			result = append(separator[:], scheduleBytes[:]...)
+			result.K8upV1alpha1 = append(result.K8upV1alpha1, *schedule)
 		case "v2":
 			s3Spec := &k8upv1.S3Spec{}
 			if lValues.Backup.S3Endpoint != "" {
@@ -278,13 +274,7 @@ func GenerateBackupSchedule(
 			}
 			// @TODO: we should review this in the future when we stop doing `kubectl apply` in the builds :)
 			// marshal the resulting ingress
-			scheduleBytes, err := yaml.Marshal(schedule)
-			if err != nil {
-				return nil, err
-			}
-			// add the seperator to the template so that it can be `kubectl apply` in bulk as part
-			// of the current build process
-			result = append(separator[:], scheduleBytes[:]...)
+			result.K8upV1 = append(result.K8upV1, *schedule)
 		}
 		if lValues.Backup.CustomLocation.BackupLocationAccessKey != "" && lValues.Backup.CustomLocation.BackupLocationSecretKey != "" {
 			backupSecret := &corev1.Secret{
@@ -300,12 +290,7 @@ func GenerateBackupSchedule(
 					"secret-key": lValues.Backup.CustomLocation.BackupLocationSecretKey,
 				},
 			}
-			backupSecretBytes, err := yaml.Marshal(backupSecret)
-			if err != nil {
-				return nil, err
-			}
-			backupResult := append(separator[:], backupSecretBytes[:]...)
-			result = append(result, backupResult[:]...)
+			result.Secrets = append(result.Secrets, *backupSecret)
 		}
 		if lValues.Backup.CustomLocation.RestoreLocationAccessKey != "" && lValues.Backup.CustomLocation.RestoreLocationSecretKey != "" {
 			restoreSecret := &corev1.Secret{
@@ -321,13 +306,38 @@ func GenerateBackupSchedule(
 					"secret-key": lValues.Backup.CustomLocation.RestoreLocationSecretKey,
 				},
 			}
-			restoreSecretBytes, err := yaml.Marshal(restoreSecret)
-			if err != nil {
-				return nil, err
-			}
-			restoreResult := append(separator[:], restoreSecretBytes[:]...)
-			result = append(result, restoreResult[:]...)
+			result.Secrets = append(result.Secrets, *restoreSecret)
 		}
 	}
-	return result, nil
+	return &result, nil
+}
+
+func TemplateSchedules(schedules *BackupSchedule) ([]byte, error) {
+	separator := []byte("---\n")
+	var templateYAML []byte
+	for _, schedule := range schedules.K8upV1 {
+		sBytes, err := yaml.Marshal(schedule)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], sBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	for _, schedule := range schedules.K8upV1alpha1 {
+		sBytes, err := yaml.Marshal(schedule)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], sBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	for _, secret := range schedules.Secrets {
+		sBytes, err := yaml.Marshal(secret)
+		if err != nil {
+			return nil, fmt.Errorf("couldn't generate template: %v", err)
+		}
+		restoreResult := append(separator[:], sBytes[:]...)
+		templateYAML = append(templateYAML, restoreResult[:]...)
+	}
+	return templateYAML, nil
 }

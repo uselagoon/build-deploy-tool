@@ -7,9 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	"github.com/uselagoon/build-deploy-tool/internal/templating/networkpolicy"
-	"github.com/uselagoon/build-deploy-tool/internal/templating/registrysecret"
-	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating/services"
+	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
 	"sigs.k8s.io/yaml"
 )
 
@@ -62,102 +60,90 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 	savedTemplates := g.SavedTemplatesPath
 
 	// generate the templates
-	secrets, err := registrysecret.GenerateRegistrySecretTemplate(*lagoonBuild.BuildValues)
+	secrets, err := servicestemplates.GenerateRegistrySecretTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, secret := range secrets {
-		serviceBytes, err := yaml.Marshal(secret)
+		templateBytes, err := servicestemplates.TemplateSecret(secret)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], serviceBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating registry secret manifests %s\n", fmt.Sprintf("%s/%s.yaml", savedTemplates, secret.Name))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, secret.Name), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, secret.Name), templateBytes)
 	}
 	services, err := servicestemplates.GenerateServiceTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, d := range services {
-		serviceBytes, err := yaml.Marshal(d)
+		templateBytes, err := servicestemplates.TemplateService(d)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], serviceBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating service manifests %s\n", fmt.Sprintf("%s/service-%s.yaml", savedTemplates, d.Name))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/service-%s.yaml", savedTemplates, d.Name), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/service-%s.yaml", savedTemplates, d.Name), templateBytes)
 	}
 	pvcs, err := servicestemplates.GeneratePVCTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, d := range pvcs {
-		serviceBytes, err := yaml.Marshal(d)
+		templateBytes, err := servicestemplates.TemplatePVC(d)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], serviceBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating pvc manifests %s\n", fmt.Sprintf("%s/pvc-%s.yaml", savedTemplates, d.Name))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/pvc-%s.yaml", savedTemplates, d.Name), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/pvc-%s.yaml", savedTemplates, d.Name), templateBytes)
 	}
 	deployments, err := servicestemplates.GenerateDeploymentTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, d := range deployments {
-		deploymentBytes, err := yaml.Marshal(d)
+		templateBytes, err := servicestemplates.TemplateDeployment(d)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], deploymentBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating deployment manifests %s\n", fmt.Sprintf("%s/deployment-%s.yaml", savedTemplates, d.Name))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/deployment-%s.yaml", savedTemplates, d.Name), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/deployment-%s.yaml", savedTemplates, d.Name), templateBytes)
 	}
 	cronjobs, err := servicestemplates.GenerateCronjobTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, d := range cronjobs {
-		deploymentBytes, err := yaml.Marshal(d)
+		templateBytes, err := servicestemplates.TemplateCronjobs(d)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], deploymentBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating cronjob manifests %s\n", fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/cronjob-%s.yaml", savedTemplates, d.Name), templateBytes)
 	}
 	if lagoonBuild.BuildValues.IsolationNetworkPolicy {
 		// if isolation network policies are enabled, template that here
-		np, err := networkpolicy.GenerateNetworkPolicy(*lagoonBuild.BuildValues)
+		np, err := servicestemplates.GenerateNetworkPolicy(*lagoonBuild.BuildValues)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		npBytes, err := yaml.Marshal(np)
+		templateBytes, err := servicestemplates.TemplateNetworkPolicy(np)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
-		separator := []byte("---\n")
-		restoreResult := append(separator[:], npBytes[:]...)
 		if g.Debug {
 			fmt.Printf("Templating networkpolicy manifest %s\n", fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates))
 		}
-		helpers.WriteTemplateFile(fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates), restoreResult)
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates), templateBytes)
 	}
 	return nil
 }

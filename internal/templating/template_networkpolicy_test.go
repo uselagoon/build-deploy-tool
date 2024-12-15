@@ -1,4 +1,4 @@
-package networkpolicy
+package services
 
 import (
 	"os"
@@ -8,7 +8,6 @@ import (
 	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-	"sigs.k8s.io/yaml"
 )
 
 func TestGenerateNetworkPolicy(t *testing.T) {
@@ -109,7 +108,7 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 				},
 			},
 		},
-		want: "test-resources/result-np-1.yaml",
+		want: "test-resources/netpol/result-np-1.yaml",
 	},
 	}
 	for _, tt := range tests {
@@ -123,14 +122,10 @@ func TestGenerateNetworkPolicy(t *testing.T) {
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			separator := []byte("---\n")
-			var result []byte
-			deploymentBytes, err := yaml.Marshal(got)
+			result, err := TemplateNetworkPolicy(got)
 			if err != nil {
 				t.Errorf("couldn't generate template  %v", err)
 			}
-			restoreResult := append(separator[:], deploymentBytes[:]...)
-			result = append(result, restoreResult[:]...)
 			if !reflect.DeepEqual(string(result), string(r1)) {
 				t.Errorf("GenerateDeploymentTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
 			}

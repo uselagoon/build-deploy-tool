@@ -1,15 +1,18 @@
-package networkpolicy
+package services
 
 import (
+	"fmt"
+
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	networkv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"sigs.k8s.io/yaml"
 )
 
 // GenerateNetworkPolicy generates the lagoon template to apply.
 func GenerateNetworkPolicy(
 	buildValues generator.BuildValues,
-) (networkv1.NetworkPolicy, error) {
+) (*networkv1.NetworkPolicy, error) {
 	// add the default labels
 	labels := map[string]string{
 		"app.kubernetes.io/managed-by": "build-deploy-tool",
@@ -70,5 +73,17 @@ func GenerateNetworkPolicy(
 			},
 		},
 	}
-	return np, nil
+	return &np, nil
+}
+
+func TemplateNetworkPolicy(ingress *networkv1.NetworkPolicy) ([]byte, error) {
+	separator := []byte("---\n")
+	var templateYAML []byte
+	iBytes, err := yaml.Marshal(ingress)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	restoreResult := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, restoreResult[:]...)
+	return templateYAML, nil
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
-	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating/services"
+	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
 )
 
 type identifyServices struct {

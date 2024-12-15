@@ -1,4 +1,4 @@
-package dbaas
+package services
 
 import (
 	"os"
@@ -11,7 +11,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
-func TestGenerateDBaaSTemplate(t *testing.T) {
+func TestGeneratePreBackupPod(t *testing.T) {
 	type args struct {
 		lValues generator.BuildValues
 	}
@@ -22,7 +22,7 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "test1 - mariadb",
+			name: "test1 - k8up/v1alpha1",
 			args: args{
 				lValues: generator.BuildValues{
 					Project:         "example-project",
@@ -34,88 +34,139 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 					Kubernetes:      "generator.local",
 					Branch:          "environment-with-really-really-reall-3fdb",
 					Services: []generator.ServiceValues{
+						{
+							Name:             "mariadb-database",
+							OverrideName:     "mariadb-database",
+							Type:             "mariadb-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v1",
+					},
+				},
+			},
+			want: "test-resources/backups/result-prebackuppod1.yaml",
+		},
+		{
+			name: "test2 - k8up/v1alpha1",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "postgres-database",
+							OverrideName:     "postgres-database",
+							Type:             "postgres-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v1",
+					},
+				},
+			},
+			want: "test-resources/backups/result-prebackuppod2.yaml",
+		},
+		{
+			name: "test3 - k8up/v1alpha1",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "mongodb-database",
+							OverrideName:     "mongodb-database",
+							Type:             "mongodb-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v1",
+					},
+				},
+			},
+			want: "test-resources/backups/result-prebackuppod3.yaml",
+		},
+		{
+			name: "test4 - k8up/v1",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "mariadb-database",
+							OverrideName:     "mariadb-database",
+							Type:             "mariadb-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v2",
+					},
+				},
+			},
+			want: "test-resources/backups/result-prebackuppod4.yaml",
+		},
+		{
+			name: "test5 - multiple k8up/v1",
+			args: args{
+				lValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "mariadb-database",
+							OverrideName:     "mariadb-database",
+							Type:             "mariadb-dbaas",
+							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
+						},
 						{
 							Name:             "mariadb",
 							OverrideName:     "mariadb",
 							Type:             "mariadb-dbaas",
 							DBaaSEnvironment: "development",
+							DBaasReadReplica: true,
 						},
+					},
+					Backup: generator.BackupConfiguration{
+						K8upVersion: "v2",
 					},
 				},
 			},
-			want: "test-resources/result-mariadb-1.yaml",
-		},
-		{
-			name: "test2 - mongodb",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:             "mongodb",
-							OverrideName:     "mongodb",
-							Type:             "mongodb-dbaas",
-							DBaaSEnvironment: "development",
-						},
-					},
-				},
-			},
-			want: "test-resources/result-mongodb-1.yaml",
-		},
-		{
-			name: "test3 - postgres",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:             "postgres",
-							OverrideName:     "postgres",
-							Type:             "postgres-dbaas",
-							DBaaSEnvironment: "development",
-						},
-					},
-				},
-			},
-			want: "test-resources/result-postgres-1.yaml",
-		},
-		{
-			name: "test4 - mongo",
-			args: args{
-				lValues: generator.BuildValues{
-					Project:         "example-project",
-					Environment:     "environment-with-really-really-reall-3fdb",
-					EnvironmentType: "production",
-					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
-					BuildType:       "branch",
-					LagoonVersion:   "v2.x.x",
-					Kubernetes:      "generator.local",
-					Branch:          "environment-with-really-really-reall-3fdb",
-					Services: []generator.ServiceValues{
-						{
-							Name:             "mongo",
-							OverrideName:     "mongo",
-							Type:             "mongodb-dbaas",
-							DBaaSEnvironment: "development",
-						},
-					},
-				},
-			},
-			want: "test-resources/result-mongodb-2.yaml",
+			want: "test-resources/backups/result-prebackuppod5.yaml",
 		},
 	}
 	for _, tt := range tests {
@@ -126,17 +177,20 @@ func TestGenerateDBaaSTemplate(t *testing.T) {
 				RetryWaitMin: time.Duration(10) * time.Millisecond,
 				RetryWaitMax: time.Duration(50) * time.Millisecond,
 			})
-			got, err := GenerateDBaaSTemplate(tt.args.lValues)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GenerateDBaaSTemplate() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			got, err := GeneratePreBackupPod(tt.args.lValues)
+			if err != nil {
+				t.Errorf("couldn't generate template %v: %v", tt.want, err)
 			}
 			r1, err := os.ReadFile(tt.want)
 			if err != nil {
 				t.Errorf("couldn't read file %v: %v", tt.want, err)
 			}
-			if !reflect.DeepEqual(string(got), string(r1)) {
-				t.Errorf("GenerateDBaaSTemplate() = \n%v", diff.LineDiff(string(r1), string(got)))
+			templateYAML, err := TemplatePreBackupPods(got)
+			if err != nil {
+				t.Errorf("couldn't generate template: %v", err)
+			}
+			if !reflect.DeepEqual(string(templateYAML), string(r1)) {
+				t.Errorf("GeneratePreBackupPod() = \n%v", diff.LineDiff(string(r1), string(templateYAML)))
 			}
 		})
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
-	backuptemplate "github.com/uselagoon/build-deploy-tool/internal/templating/backups"
+	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
 	"sigs.k8s.io/yaml"
 )
 
@@ -69,16 +69,23 @@ func BackupTemplateGeneration(g generator.GeneratorInput,
 	lagoonBuild.BuildValues.Services = repServices
 
 	// generate the backup schedule templates
-	templateYAML, err := backuptemplate.GenerateBackupSchedule(*lagoonBuild.BuildValues)
+	schedules, err := servicestemplates.GenerateBackupSchedule(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML, err := servicestemplates.TemplateSchedules(schedules)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
 	if len(templateYAML) > 0 {
 		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "k8up-lagoon-backup-schedule"), templateYAML)
 	}
-
 	// generate any prebackuppod templates
-	templateYAML, err = backuptemplate.GeneratePreBackupPod(*lagoonBuild.BuildValues)
+	pbps, err := servicestemplates.GeneratePreBackupPod(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	templateYAML, err = servicestemplates.TemplatePreBackupPods(pbps)
 	if err != nil {
 		return fmt.Errorf("couldn't generate template: %v", err)
 	}
