@@ -1,0 +1,725 @@
+{
+  "deployments": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "Deployment",
+        "apiVersion": "apps/v1",
+        "metadata": {
+          "name": "node",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "node",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "basic",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "node",
+            "lagoon.sh/service-type": "basic",
+            "lagoon.sh/template": "basic-0.1.0"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "replicas": 1,
+          "selector": {
+            "matchLabels": {
+              "app.kubernetes.io/instance": "node",
+              "app.kubernetes.io/name": "basic"
+            }
+          },
+          "template": {
+            "metadata": {
+              "creationTimestamp": null,
+              "labels": {
+                "app.kubernetes.io/instance": "node",
+                "app.kubernetes.io/managed-by": "build-deploy-tool",
+                "app.kubernetes.io/name": "basic",
+                "lagoon.sh/buildType": "branch",
+                "lagoon.sh/environment": "main",
+                "lagoon.sh/environmentType": "production",
+                "lagoon.sh/project": "example-project",
+                "lagoon.sh/service": "node",
+                "lagoon.sh/service-type": "basic",
+                "lagoon.sh/template": "basic-0.1.0"
+              },
+              "annotations": {
+                "lagoon.sh/branch": "main",
+                "lagoon.sh/configMapSha": "abcdefg1234567890",
+                "lagoon.sh/version": "v2.7.x"
+              }
+            },
+            "spec": {
+              "containers": [
+                {
+                  "name": "basic",
+                  "image": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+                  "ports": [
+                    {
+                      "name": "tcp-1234",
+                      "containerPort": 1234,
+                      "protocol": "TCP"
+                    },
+                    {
+                      "name": "tcp-8191",
+                      "containerPort": 8191,
+                      "protocol": "TCP"
+                    },
+                    {
+                      "name": "udp-9001",
+                      "containerPort": 9001,
+                      "protocol": "UDP"
+                    }
+                  ],
+                  "envFrom": [
+                    {
+                      "configMapRef": {
+                        "name": "lagoon-env"
+                      }
+                    }
+                  ],
+                  "env": [
+                    {
+                      "name": "LAGOON_GIT_SHA",
+                      "value": "abcdefg123456"
+                    },
+                    {
+                      "name": "CRONJOBS"
+                    },
+                    {
+                      "name": "SERVICE_NAME",
+                      "value": "node"
+                    }
+                  ],
+                  "resources": {
+                    "requests": {
+                      "cpu": "10m",
+                      "memory": "10Mi"
+                    }
+                  },
+                  "livenessProbe": {
+                    "tcpSocket": {
+                      "port": 1234
+                    },
+                    "initialDelaySeconds": 60,
+                    "timeoutSeconds": 10
+                  },
+                  "readinessProbe": {
+                    "tcpSocket": {
+                      "port": 1234
+                    },
+                    "initialDelaySeconds": 1,
+                    "timeoutSeconds": 1
+                  },
+                  "imagePullPolicy": "Always",
+                  "securityContext": {}
+                }
+              ],
+              "imagePullSecrets": [
+                {
+                  "name": "lagoon-internal-registry-secret"
+                },
+                {
+                  "name": "lagoon-private-registry-dockerhub"
+                },
+                {
+                  "name": "lagoon-private-registry-my-custom-registry"
+                },
+                {
+                  "name": "lagoon-private-registry-my-hardcode-registry"
+                },
+                {
+                  "name": "lagoon-private-registry-my-other-registry"
+                }
+              ],
+              "priorityClassName": "lagoon-priority-production",
+              "enableServiceLinks": false
+            }
+          },
+          "strategy": {}
+        },
+        "status": {}
+      }
+    ]
+  },
+  "cronjobs": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "CronJob",
+        "apiVersion": "batch/v1",
+        "metadata": {
+          "name": "cronjob-node-env",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "cronjob-node",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "cronjob-basic",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "node",
+            "lagoon.sh/service-type": "basic",
+            "lagoon.sh/template": "basic-0.1.0"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "schedule": "18,48 * * * *",
+          "startingDeadlineSeconds": 240,
+          "concurrencyPolicy": "Forbid",
+          "jobTemplate": {
+            "metadata": {
+              "creationTimestamp": null
+            },
+            "spec": {
+              "template": {
+                "metadata": {
+                  "creationTimestamp": null,
+                  "labels": {
+                    "app.kubernetes.io/instance": "cronjob-node",
+                    "app.kubernetes.io/managed-by": "build-deploy-tool",
+                    "app.kubernetes.io/name": "cronjob-basic",
+                    "lagoon.sh/buildType": "branch",
+                    "lagoon.sh/environment": "main",
+                    "lagoon.sh/environmentType": "production",
+                    "lagoon.sh/project": "example-project",
+                    "lagoon.sh/service": "node",
+                    "lagoon.sh/service-type": "basic",
+                    "lagoon.sh/template": "basic-0.1.0"
+                  },
+                  "annotations": {
+                    "lagoon.sh/branch": "main",
+                    "lagoon.sh/configMapSha": "abcdefg1234567890",
+                    "lagoon.sh/version": "v2.7.x"
+                  }
+                },
+                "spec": {
+                  "volumes": [
+                    {
+                      "name": "lagoon-sshkey",
+                      "secret": {
+                        "secretName": "lagoon-sshkey",
+                        "defaultMode": 420
+                      }
+                    }
+                  ],
+                  "containers": [
+                    {
+                      "name": "cronjob-node-env",
+                      "image": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+                      "command": [
+                        "/lagoon/cronjob.sh",
+                        "env"
+                      ],
+                      "envFrom": [
+                        {
+                          "configMapRef": {
+                            "name": "lagoon-env"
+                          }
+                        }
+                      ],
+                      "env": [
+                        {
+                          "name": "LAGOON_GIT_SHA",
+                          "value": "0000000000000000000000000000000000000000"
+                        },
+                        {
+                          "name": "SERVICE_NAME",
+                          "value": "node"
+                        }
+                      ],
+                      "resources": {
+                        "requests": {
+                          "cpu": "10m",
+                          "memory": "10Mi"
+                        }
+                      },
+                      "volumeMounts": [
+                        {
+                          "name": "lagoon-sshkey",
+                          "readOnly": true,
+                          "mountPath": "/var/run/secrets/lagoon/sshkey/"
+                        }
+                      ],
+                      "imagePullPolicy": "Always",
+                      "securityContext": {}
+                    }
+                  ],
+                  "restartPolicy": "Never",
+                  "imagePullSecrets": [
+                    {
+                      "name": "lagoon-internal-registry-secret"
+                    }
+                  ],
+                  "priorityClassName": "lagoon-priority-production",
+                  "dnsConfig": {
+                    "options": [
+                      {
+                        "name": "timeout",
+                        "value": "60"
+                      },
+                      {
+                        "name": "attempts",
+                        "value": "10"
+                      }
+                    ]
+                  },
+                  "enableServiceLinks": false
+                }
+              }
+            }
+          },
+          "successfulJobsHistoryLimit": 0,
+          "failedJobsHistoryLimit": 1
+        },
+        "status": {}
+      }
+    ]
+  },
+  "ingress": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "Ingress",
+        "apiVersion": "networking.k8s.io/v1",
+        "metadata": {
+          "name": "example.com",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "activestandby.lagoon.sh/migrate": "false",
+            "app.kubernetes.io/instance": "example.com",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "custom-ingress",
+            "lagoon.sh/autogenerated": "false",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/primaryIngress": "true",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "example.com",
+            "lagoon.sh/service-type": "custom-ingress",
+            "lagoon.sh/template": "custom-ingress-0.1.0"
+          },
+          "annotations": {
+            "fastly.amazee.io/service-id": "service-id",
+            "fastly.amazee.io/watch": "true",
+            "idling.amazee.io/disable-request-verification": "false",
+            "ingress.kubernetes.io/ssl-redirect": "true",
+            "kubernetes.io/tls-acme": "true",
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x",
+            "monitor.stakater.com/enabled": "true",
+            "monitor.stakater.com/overridePath": "/",
+            "nginx.ingress.kubernetes.io/ssl-redirect": "true",
+            "uptimerobot.monitor.stakater.com/alert-contacts": "alertcontact",
+            "uptimerobot.monitor.stakater.com/interval": "60",
+            "uptimerobot.monitor.stakater.com/status-pages": "statuspageid"
+          }
+        },
+        "spec": {
+          "tls": [
+            {
+              "hosts": [
+                "example.com"
+              ],
+              "secretName": "example.com-tls"
+            }
+          ],
+          "rules": [
+            {
+              "host": "example.com",
+              "http": {
+                "paths": [
+                  {
+                    "path": "/",
+                    "pathType": "Prefix",
+                    "backend": {
+                      "service": {
+                        "name": "node",
+                        "port": {
+                          "name": "http"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "status": {
+          "loadBalancer": {}
+        }
+      },
+      {
+        "kind": "Ingress",
+        "apiVersion": "networking.k8s.io/v1",
+        "metadata": {
+          "name": "node",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "node",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "autogenerated-ingress",
+            "lagoon.sh/autogenerated": "true",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "node",
+            "lagoon.sh/service-type": "node",
+            "lagoon.sh/template": "autogenerated-ingress-0.1.0"
+          },
+          "annotations": {
+            "fastly.amazee.io/watch": "false",
+            "idling.amazee.io/disable-request-verification": "false",
+            "ingress.kubernetes.io/ssl-redirect": "true",
+            "kubernetes.io/tls-acme": "true",
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x",
+            "monitor.stakater.com/enabled": "false",
+            "nginx.ingress.kubernetes.io/server-snippet": "add_header X-Robots-Tag \"noindex, nofollow\";\n",
+            "nginx.ingress.kubernetes.io/ssl-redirect": "true"
+          }
+        },
+        "spec": {
+          "tls": [
+            {
+              "hosts": [
+                "node-example-project-main.example.com"
+              ],
+              "secretName": "node-tls"
+            }
+          ],
+          "rules": [
+            {
+              "host": "node-example-project-main.example.com",
+              "http": {
+                "paths": [
+                  {
+                    "path": "/",
+                    "pathType": "Prefix",
+                    "backend": {
+                      "service": {
+                        "name": "node",
+                        "port": {
+                          "name": "http"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "status": {
+          "loadBalancer": {}
+        }
+      }
+    ]
+  },
+  "services": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "Service",
+        "apiVersion": "v1",
+        "metadata": {
+          "name": "node",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "node",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "basic",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "node",
+            "lagoon.sh/service-type": "basic",
+            "lagoon.sh/template": "basic-0.1.0"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "ports": [
+            {
+              "name": "tcp-1234",
+              "protocol": "TCP",
+              "port": 1234,
+              "targetPort": "tcp-1234"
+            },
+            {
+              "name": "tcp-8191",
+              "protocol": "TCP",
+              "port": 8191,
+              "targetPort": "tcp-8191"
+            },
+            {
+              "name": "udp-9001",
+              "protocol": "UDP",
+              "port": 9001,
+              "targetPort": "udp-9001"
+            }
+          ],
+          "selector": {
+            "app.kubernetes.io/instance": "node",
+            "app.kubernetes.io/name": "basic"
+          }
+        },
+        "status": {
+          "loadBalancer": {}
+        }
+      }
+    ]
+  },
+  "secrets": {
+    "metadata": {},
+    "items": []
+  },
+  "pvcs": {
+    "metadata": {},
+    "items": []
+  },
+  "schedulesv1": {
+    "metadata": {},
+    "items": []
+  },
+  "schedulesv1alpha1": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "Schedule",
+        "apiVersion": "backup.appuio.ch/v1alpha1",
+        "metadata": {
+          "name": "k8up-lagoon-backup-schedule",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "k8up-lagoon-backup-schedule",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "k8up-schedule",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "k8up-lagoon-backup-schedule",
+            "lagoon.sh/service-type": "k8up-schedule",
+            "lagoon.sh/template": "k8up-schedule-0.1.0"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "backup": {
+            "resources": {},
+            "schedule": "48 22 * * *"
+          },
+          "check": {
+            "resources": {},
+            "schedule": "48 5 * * 1"
+          },
+          "prune": {
+            "resources": {},
+            "retention": {
+              "keepDaily": 7,
+              "keepWeekly": 6
+            },
+            "schedule": "48 3 * * 0"
+          },
+          "backend": {
+            "repoPasswordSecretRef": {
+              "name": "baas-repo-pw",
+              "key": "repo-pw"
+            },
+            "s3": {
+              "bucket": "baas-example-project"
+            }
+          },
+          "resourceRequirementsTemplate": {}
+        },
+        "status": {}
+      }
+    ]
+  },
+  "prebackuppodsv1": {
+    "metadata": {},
+    "items": []
+  },
+  "prebackuppodsv1alpha1": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "PreBackupPod",
+        "apiVersion": "backup.appuio.ch/v1alpha1",
+        "metadata": {
+          "name": "mariadb-prebackuppod",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "mariadb",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "mariadb-dbaas",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "example-project",
+            "lagoon.sh/service": "mariadb",
+            "lagoon.sh/service-type": "mariadb-dbaas",
+            "prebackuppod": "mariadb"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "backupCommand": "/bin/sh -c \"if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); fi \u0026\u0026 dump=$(mktemp) \u0026\u0026 mysqldump --max-allowed-packet=1G --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --no-data --no-tablespaces -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE \u003e $dump \u0026\u0026 mysqldump --max-allowed-packet=1G --events --routines --quick --add-locks --no-autocommit --single-transaction --no-create-db --ignore-table=$BACKUP_DB_DATABASE.watchdog --no-create-info --no-tablespaces --skip-triggers -h $BACKUP_DB_HOST -u $BACKUP_DB_USERNAME -p$BACKUP_DB_PASSWORD $BACKUP_DB_DATABASE \u003e\u003e $dump \u0026\u0026 cat $dump \u0026\u0026 rm $dump\"\n",
+          "fileExtension": ".mariadb.sql",
+          "pod": {
+            "metadata": {
+              "creationTimestamp": null
+            },
+            "spec": {
+              "containers": [
+                {
+                  "name": "mariadb-prebackuppod",
+                  "image": "imagecache.example.com/uselagoon/database-tools:latest",
+                  "args": [
+                    "sleep",
+                    "infinity"
+                  ],
+                  "env": [
+                    {
+                      "name": "BACKUP_DB_HOST",
+                      "valueFrom": {
+                        "configMapKeyRef": {
+                          "name": "lagoon-env",
+                          "key": "MARIADB_HOST"
+                        }
+                      }
+                    },
+                    {
+                      "name": "BACKUP_DB_USERNAME",
+                      "valueFrom": {
+                        "configMapKeyRef": {
+                          "name": "lagoon-env",
+                          "key": "MARIADB_USERNAME"
+                        }
+                      }
+                    },
+                    {
+                      "name": "BACKUP_DB_PASSWORD",
+                      "valueFrom": {
+                        "configMapKeyRef": {
+                          "name": "lagoon-env",
+                          "key": "MARIADB_PASSWORD"
+                        }
+                      }
+                    },
+                    {
+                      "name": "BACKUP_DB_DATABASE",
+                      "valueFrom": {
+                        "configMapKeyRef": {
+                          "name": "lagoon-env",
+                          "key": "MARIADB_DATABASE"
+                        }
+                      }
+                    }
+                  ],
+                  "resources": {},
+                  "imagePullPolicy": "Always"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ]
+  },
+  "mariadbconsumers": {
+    "metadata": {},
+    "items": [
+      {
+        "kind": "MariaDBConsumer",
+        "apiVersion": "mariadb.amazee.io/v1",
+        "metadata": {
+          "name": "mariadb",
+          "namespace": "example-project-main",
+          "resourceVersion": "1",
+          "creationTimestamp": null,
+          "labels": {
+            "app.kubernetes.io/instance": "mariadb",
+            "app.kubernetes.io/managed-by": "build-deploy-tool",
+            "app.kubernetes.io/name": "mariadb-dbaas",
+            "lagoon.sh/buildType": "branch",
+            "lagoon.sh/environment": "main",
+            "lagoon.sh/environmentType": "production",
+            "lagoon.sh/project": "lagoon-demo",
+            "lagoon.sh/service": "mariadb",
+            "lagoon.sh/service-type": "mariadb-dbaas",
+            "lagoon.sh/template": "mariadb-dbaas-0.1.0"
+          },
+          "annotations": {
+            "lagoon.sh/branch": "main",
+            "lagoon.sh/version": "v2.7.x"
+          }
+        },
+        "spec": {
+          "environment": "production",
+          "provider": {
+            "name": "lagoon-remote-dbaas-operator-production",
+            "namespace": "lagoon",
+            "hostname": "mariadb.mariadb.svc.cluster.local",
+            "port": "3306"
+          },
+          "consumer": {
+            "database": "lagoon-demo-mainabc",
+            "password": "abcdefghijklmnop",
+            "username": "lagoon-qrs",
+            "services": {
+              "primary": "mariadb-6e7da79a-5609-4b57-9c4f-3d6fd4bd0dda"
+            }
+          }
+        },
+        "status": {}
+      }
+    ]
+  },
+  "mongodbconsumers": {
+    "metadata": {},
+    "items": []
+  },
+  "postgresqlconsumers": {
+    "metadata": {},
+    "items": []
+  }
+}

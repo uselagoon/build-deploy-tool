@@ -99,6 +99,26 @@ function apiEnvVarCheck() {
   echo "$2"
 }
 
+# Checks for a build scoped env var from Lagoon API. All env vars
+# are consolidated into the environment, project env-vars are only checked for
+# backwards compatibility.
+function buildEnvVarCheck() {
+  # check for argument
+  [ "$1" ] || return
+
+  local flagVar
+
+  flagVar="$1"
+  # check Lagoon environment variables
+  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon project variables
+  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+
+  echo "$2"
+}
+
 # Checks for a internal_container_registry scoped env var. These are set in
 # lagoon-remote.
 function internalContainerRegistryCheck() {
@@ -167,6 +187,31 @@ function patchBuildStep() {
 ##############################################
 
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
+beginBuildStep "Initial Environment Collection" "collectEnvironment"
+
+##############################################
+### COLLECT INFORMATION
+##############################################
+
+# run the collector
+ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
+# echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.name'
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "collectEnvironment" "Initial Environment Collection" "false"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
 
