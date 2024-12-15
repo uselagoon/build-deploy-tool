@@ -217,6 +217,23 @@ func GenerateBackupSchedule(
 					},
 				},
 			}
+			if lValues.PodSecurityContext.RunAsUser != 0 {
+				schedule.Spec.PodSecurityContext = &corev1.PodSecurityContext{
+					RunAsUser:  helpers.Int64Ptr(lValues.PodSecurityContext.RunAsUser),
+					RunAsGroup: helpers.Int64Ptr(lValues.PodSecurityContext.RunAsGroup),
+					FSGroup:    helpers.Int64Ptr(lValues.PodSecurityContext.FsGroup),
+				}
+				if lValues.PodSecurityContext.OnRootMismatch {
+					fsGroupChangePolicy := corev1.FSGroupChangeOnRootMismatch
+					if schedule.Spec.PodSecurityContext != nil {
+						schedule.Spec.PodSecurityContext.FSGroupChangePolicy = &fsGroupChangePolicy
+					} else {
+						schedule.Spec.PodSecurityContext = &corev1.PodSecurityContext{
+							FSGroupChangePolicy: &fsGroupChangePolicy,
+						}
+					}
+				}
+			}
 			// add the default labels
 			schedule.ObjectMeta.Labels = map[string]string{
 				"app.kubernetes.io/name":       "k8up-schedule",
