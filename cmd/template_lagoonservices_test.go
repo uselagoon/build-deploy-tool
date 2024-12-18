@@ -583,6 +583,24 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/test-complex-persistent-names",
 		},
+		{
+			name:        "nginx-php-container-cronjobs",
+			description: "tests cronjobs on an nginx-php service type with the php container",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "develop",
+					Branch:          "develop",
+					EnvironmentType: "development",
+					LagoonYAML:      "internal/testdata/nginxphp/lagoon.yml",
+					ImageReferences: map[string]string{
+						"nginx": "harbor.example/example-project/develop/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"php":   "harbor.example/example-project/develop/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/nginxphp/service-templates/nginx-php-container-cronjobs",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

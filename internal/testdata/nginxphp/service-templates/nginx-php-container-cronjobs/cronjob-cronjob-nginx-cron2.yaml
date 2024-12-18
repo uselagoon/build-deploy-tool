@@ -1,0 +1,115 @@
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  annotations:
+    lagoon.sh/branch: develop
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: cronjob-nginx
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: cronjob-nginx-php-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: develop
+    lagoon.sh/environmentType: development
+    lagoon.sh/project: example-project
+    lagoon.sh/service: nginx
+    lagoon.sh/service-type: nginx-php-persistent
+    lagoon.sh/template: nginx-php-persistent-0.1.0
+  name: cronjob-nginx-cron2
+spec:
+  concurrencyPolicy: Forbid
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+    spec:
+      template:
+        metadata:
+          annotations:
+            lagoon.sh/branch: develop
+            lagoon.sh/configMapSha: abcdefg1234567890
+            lagoon.sh/version: v2.7.x
+          creationTimestamp: null
+          labels:
+            app.kubernetes.io/instance: cronjob-nginx
+            app.kubernetes.io/managed-by: build-deploy-tool
+            app.kubernetes.io/name: cronjob-nginx-php-persistent
+            lagoon.sh/buildType: branch
+            lagoon.sh/environment: develop
+            lagoon.sh/environmentType: development
+            lagoon.sh/project: example-project
+            lagoon.sh/service: nginx
+            lagoon.sh/service-type: nginx-php-persistent
+            lagoon.sh/template: nginx-php-persistent-0.1.0
+        spec:
+          containers:
+          - env:
+            - name: NGINX_FASTCGI_PASS
+              value: 127.0.0.1
+            - name: LAGOON_GIT_SHA
+              value: abcdefg123456
+            - name: SERVICE_NAME
+              value: nginx
+            envFrom:
+            - configMapRef:
+                name: lagoon-env
+            image: harbor.example/example-project/develop/nginx@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+            imagePullPolicy: Always
+            name: cronjob-nginx-cron2
+            resources:
+              requests:
+                cpu: 10m
+                memory: 10Mi
+            securityContext: {}
+            volumeMounts:
+            - mountPath: /app/web/sites/default/files/
+              name: nginx
+          - command:
+            - /lagoon/cronjob.sh
+            - echo "test"
+            env:
+            - name: NGINX_FASTCGI_PASS
+              value: 127.0.0.1
+            - name: LAGOON_GIT_SHA
+              value: abcdefg123456
+            - name: SERVICE_NAME
+              value: nginx
+            envFrom:
+            - configMapRef:
+                name: lagoon-env
+            image: harbor.example/example-project/develop/php@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
+            imagePullPolicy: Always
+            name: php
+            resources:
+              requests:
+                cpu: 10m
+                memory: 100Mi
+            securityContext: {}
+            volumeMounts:
+            - mountPath: /app/web/sites/default/files/
+              name: nginx
+            - mountPath: /app/web/sites/default/files//php
+              name: nginx-twig
+          dnsConfig:
+            options:
+            - name: timeout
+              value: "60"
+            - name: attempts
+              value: "10"
+          enableServiceLinks: false
+          imagePullSecrets:
+          - name: lagoon-internal-registry-secret
+          priorityClassName: lagoon-priority-development
+          restartPolicy: Never
+          volumes:
+          - name: nginx
+            persistentVolumeClaim:
+              claimName: nginx
+          - emptyDir: {}
+            name: nginx-twig
+  schedule: 30 1 * * *
+  startingDeadlineSeconds: 240
+  successfulJobsHistoryLimit: 0
+status: {}

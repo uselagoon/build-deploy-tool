@@ -30,11 +30,12 @@ type Environment struct {
 
 // Cronjob represents a Lagoon cronjob.
 type Cronjob struct {
-	Name     string `json:"name"`
-	Service  string `json:"service"`
-	Schedule string `json:"schedule"`
-	Command  string `json:"command"`
-	InPod    *bool  `json:"inPod"`
+	Name      string `json:"name"`
+	Service   string `json:"service"`
+	Container string `json:"container"`
+	Schedule  string `json:"schedule"`
+	Command   string `json:"command"`
+	InPod     *bool  `json:"inPod"`
 }
 
 type Override struct {

@@ -13,3 +13,16 @@ environments:
     routes:
       - nginx:
           - example.com
+
+  develop:
+    cronjobs:
+      - name: cron
+        schedule: "*/15 * * * *"
+        command: echo "test"
+        service: nginx
+        container: php
+      - name: cron2
+        schedule: "30 1 * * *"
+        command: echo "test"
+        service: nginx
+        container: php

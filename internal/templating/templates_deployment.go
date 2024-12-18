@@ -458,7 +458,9 @@ func GenerateDeploymentTemplate(
 			// set up cronjobs if required
 			cronjobs := ""
 			for _, cronjob := range serviceValues.InPodCronjobs {
-				cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
+				if cronjob.Container == "" || cronjob.Container == serviceValues.Name {
+					cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
+				}
 			}
 			// add any variables from the servicetype container overrides here
 			container.Container.Env = append(container.Container.Env, container.EnvVars...)
@@ -593,6 +595,8 @@ func GenerateDeploymentTemplate(
 				}
 
 				linkedContainer.Container.Env = append(linkedContainer.Container.Env, linkedContainer.EnvVars...)
+
+				// set up cronjobs if required
 				envvars := []corev1.EnvVar{
 					{
 						Name:  "LAGOON_GIT_SHA",
@@ -602,6 +606,18 @@ func GenerateDeploymentTemplate(
 						Name:  "SERVICE_NAME",
 						Value: serviceValues.OverrideName,
 					},
+				}
+				cronjobs := ""
+				for _, cronjob := range serviceValues.InPodCronjobs {
+					if cronjob.Container == "" || cronjob.Container == serviceValues.LinkedService.Name {
+						cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
+					}
+				}
+				if cronjobs != "" {
+					envvars = append(envvars, corev1.EnvVar{
+						Name:  "CRONJOBS",
+						Value: cronjobs,
+					})
 				}
 				linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvars...)
 				linkedContainer.Container.EnvFrom = []corev1.EnvFromSource{

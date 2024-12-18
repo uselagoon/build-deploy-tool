@@ -319,11 +319,6 @@ func GenerateCronjobTemplate(
 					return nil, fmt.Errorf("no image reference was found for primary container of service %s", serviceValues.Name)
 				}
 
-				// set up cronjobs if required
-				cronjobs := ""
-				for _, cronjob := range serviceValues.InPodCronjobs {
-					cronjobs = fmt.Sprintf("%s%s %s\n", cronjobs, cronjob.Schedule, cronjob.Command)
-				}
 				container.Container.Env = append(container.Container.Env, container.EnvVars...)
 				envvars := []corev1.EnvVar{
 					{
@@ -420,12 +415,122 @@ func GenerateCronjobTemplate(
 				container.Container.Ports = nil
 				container.Container.ReadinessProbe = nil
 				container.Container.LivenessProbe = nil
-
-				container.Container.Command = []string{"/lagoon/cronjob.sh", nCronjob.Command}
+				if nCronjob.Container == "" || nCronjob.Container == serviceValues.Name {
+					container.Container.Command = []string{"/lagoon/cronjob.sh", nCronjob.Command}
+				}
 
 				// append the final defined container to the spec
 				cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers = append(cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers, container.Container)
 
+				// if this service has a secondary container provided (mainly will be `nginx-php`, but could be others in the future)
+				if serviceValues.LinkedService == nil && serviceTypeValues.SecondaryContainer.Name != "" {
+					// if no linked service is found from the docker-compose services, drop an error
+					return nil, fmt.Errorf("service type %s has a secondary container defined, but no linked service was found", serviceValues.Type)
+				}
+				// if a linked service is provided, and the servicetype supports it, handle that here
+				if serviceValues.LinkedService != nil && serviceTypeValues.SecondaryContainer.Name != "" {
+					linkedContainer := serviceTypeValues.SecondaryContainer
+
+					// handle setting the rest of the containers specs with values from the service or build values
+					linkedContainer.Container.Name = linkedContainer.Name
+					if val, ok := buildValues.ImageReferences[serviceValues.LinkedService.Name]; ok {
+						linkedContainer.Container.Image = val
+					} else {
+						return nil, fmt.Errorf("no image reference was found for secondary container %s of service %s", serviceValues.LinkedService.Name, serviceValues.Name)
+					}
+
+					linkedContainer.Container.Env = append(linkedContainer.Container.Env, linkedContainer.EnvVars...)
+
+					// set up cronjobs if required
+					envvars := []corev1.EnvVar{
+						{
+							Name:  "LAGOON_GIT_SHA",
+							Value: buildValues.GitSHA,
+						},
+						{
+							Name:  "SERVICE_NAME",
+							Value: serviceValues.OverrideName,
+						},
+					}
+					linkedContainer.Container.Env = append(linkedContainer.Container.Env, envvars...)
+					linkedContainer.Container.EnvFrom = []corev1.EnvFromSource{
+						{
+							ConfigMapRef: &corev1.ConfigMapEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: "lagoon-env",
+								},
+							},
+						},
+					}
+					for _, dds := range buildValues.DynamicDBaaSSecrets {
+						linkedContainer.Container.EnvFrom = append(linkedContainer.Container.EnvFrom, corev1.EnvFromSource{
+							SecretRef: &corev1.SecretEnvSource{
+								LocalObjectReference: corev1.LocalObjectReference{
+									Name: dds,
+								},
+							},
+						})
+					}
+					for _, dsm := range buildValues.DynamicSecretMounts {
+						volumeMount := corev1.VolumeMount{
+							Name:      dsm.Name,
+							MountPath: dsm.MountPath,
+							ReadOnly:  dsm.ReadOnly,
+						}
+						linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+					}
+
+					// add any additional volumes with volumemounts
+					for _, avm := range serviceValues.AdditionalVolumes {
+						volumeMount := corev1.VolumeMount{
+							Name:      avm.Name,
+							MountPath: avm.Path,
+						}
+						linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+					}
+					if serviceTypeValues.Volumes.PersistentVolumeSize != "" {
+						volumeMount := corev1.VolumeMount{
+							Name:      serviceValues.PersistentVolumeName,
+							MountPath: serviceValues.PersistentVolumePath,
+						}
+						linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+					}
+
+					for _, svm := range serviceTypeValues.SecondaryContainer.VolumeMounts {
+						volumeMount := corev1.VolumeMount{}
+						helpers.TemplateThings(tpld, svm, &volumeMount)
+						linkedContainer.Container.VolumeMounts = append(linkedContainer.Container.VolumeMounts, volumeMount)
+					}
+
+					// set the resource limit overrides if they are provided
+					if buildValues.Resources.Limits.Memory != "" {
+						if linkedContainer.Container.Resources.Limits == nil {
+							linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+						}
+						linkedContainer.Container.Resources.Limits[corev1.ResourceMemory] = resource.MustParse(buildValues.Resources.Limits.Memory)
+					}
+					if buildValues.Resources.Limits.EphemeralStorage != "" {
+						if linkedContainer.Container.Resources.Limits == nil {
+							linkedContainer.Container.Resources.Limits = corev1.ResourceList{}
+						}
+						linkedContainer.Container.Resources.Limits[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Limits.EphemeralStorage)
+					}
+					if buildValues.Resources.Requests.EphemeralStorage != "" {
+						if linkedContainer.Container.Resources.Requests == nil {
+							linkedContainer.Container.Resources.Requests = corev1.ResourceList{}
+						}
+						linkedContainer.Container.Resources.Requests[corev1.ResourceEphemeralStorage] = resource.MustParse(buildValues.Resources.Requests.EphemeralStorage)
+					}
+
+					// strip ports from the cronjobs
+					linkedContainer.Container.Ports = nil
+					linkedContainer.Container.ReadinessProbe = nil
+					linkedContainer.Container.LivenessProbe = nil
+					if nCronjob.Container == "" || nCronjob.Container == serviceValues.LinkedService.Name {
+						linkedContainer.Container.Command = []string{"/lagoon/cronjob.sh", nCronjob.Command}
+					}
+					cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers = append(cronjob.Spec.JobTemplate.Spec.Template.Spec.Containers, linkedContainer.Container)
+				}
 				// end cronjob template
 				result = append(result, *cronjob)
 			}
