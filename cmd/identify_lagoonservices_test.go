@@ -1,14 +1,16 @@
 package cmd
 
 import (
+	"encoding/json"
 	"os"
-	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+	"github.com/uselagoon/machinery/api/schema"
 
 	// changes the testing to source from root so paths to test resources must be defined from repo root
 	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
@@ -19,7 +21,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 		name        string
 		description string
 		args        testdata.TestData
-		want        []identifyServices
+		want        []schema.EnvironmentService
 	}{
 		{
 			name: "test1 basic deployment",
@@ -33,17 +35,17 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: []identifyServices{
+			want: []schema.EnvironmentService{
 				{
 					Name: "node",
 					Type: "basic",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "basic",
-							Ports: []ports{
-								{Port: 1234},
-								{Port: 8191},
-								{Port: 9001},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 1234, Protocol: "TCP"},
+								{Port: 8191, Protocol: "TCP"},
+								{Port: 9001, Protocol: "UDP"},
 							},
 						},
 					},
@@ -66,25 +68,30 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: []identifyServices{
+			want: []schema.EnvironmentService{
 				{
 					Name: "cli",
 					Type: "cli-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
-							Name:  "cli",
-							Ports: []ports{},
+							Name: "cli",
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
+							},
 						},
 					},
 				},
 				{
 					Name: "redis",
 					Type: "redis",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "redis",
-							Ports: []ports{
-								{Port: 6379},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 6379, Protocol: "TCP"},
 							},
 						},
 					},
@@ -92,12 +99,12 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "varnish",
 					Type: "varnish",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "varnish",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 6082},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+								{Port: 6082, Protocol: "TCP"},
 							},
 						},
 					},
@@ -105,20 +112,36 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "nginx-php",
 					Type: "nginx-php-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "nginx",
-							Ports: []ports{
-								{Port: 8080},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
 							},
 						},
 						{
 							Name: "php",
-							Ports: []ports{
-								{Port: 9000},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 9000, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
 							},
 						},
 					},
+				},
+				{
+					Name: "mariadb",
+					Type: "mariadb-dbaas",
 				},
 			},
 		},
@@ -145,25 +168,30 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
+			want: []schema.EnvironmentService{
 				{
 					Name: "cli",
 					Type: "cli-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
-							Name:  "cli",
-							Ports: []ports{},
+							Name: "cli",
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
+							},
 						},
 					},
 				},
 				{
 					Name: "redis",
 					Type: "redis",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "redis",
-							Ports: []ports{
-								{Port: 6379},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 6379, Protocol: "TCP"},
 							},
 						},
 					},
@@ -171,12 +199,12 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "varnish",
 					Type: "varnish",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "varnish",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 6082},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+								{Port: 6082, Protocol: "TCP"},
 							},
 						},
 					},
@@ -184,20 +212,36 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "nginx-php",
 					Type: "nginx-php-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "nginx",
-							Ports: []ports{
-								{Port: 8080},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
 							},
 						},
 						{
 							Name: "php",
-							Ports: []ports{
-								{Port: 9000},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 9000, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "nginx-php",
+									Path: "/app/docroot/sites/default/files/",
+								},
 							},
 						},
 					},
+				},
+				{
+					Name: "mariadb",
+					Type: "mariadb-dbaas",
 				},
 			},
 		},
@@ -223,16 +267,22 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
+			want: []schema.EnvironmentService{
 				{
 					Name: "lnd",
 					Type: "basic-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "basic",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 10009},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+								{Port: 10009, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "lnd",
+									Path: "/app/storage",
+								},
 							},
 						},
 					},
@@ -240,11 +290,17 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "thunderhub",
 					Type: "basic-persistent",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "basic",
-							Ports: []ports{
-								{Port: 3000},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 3000, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "lnd",
+									Path: "/data",
+								},
 							},
 						},
 					},
@@ -252,12 +308,12 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				{
 					Name: "tor",
 					Type: "basic",
-					Containers: []containers{
+					Containers: []schema.ServiceContainer{
 						{
 							Name: "basic",
-							Ports: []ports{
-								{Port: 9050},
-								{Port: 9051},
+							Ports: []schema.ServiceContainerPort{
+								{Port: 9050, Protocol: "TCP"},
+								{Port: 9051, Protocol: "TCP"},
 							},
 						},
 					},
@@ -285,24 +341,81 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: []identifyServices{
+			want: []schema.EnvironmentService{
 				{
 					Name: "lnd",
 					Type: "basic-persistent",
-					Containers: []containers{
-						{Name: "basic",
-							Ports: []ports{
-								{Port: 8080},
-								{Port: 10009},
-							}},
+					Containers: []schema.ServiceContainer{
+						{
+							Name: "basic",
+							Ports: []schema.ServiceContainerPort{
+								{Port: 8080, Protocol: "TCP"},
+								{Port: 10009, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "lnd",
+									Path: "/app/storage",
+								},
+							},
+						},
 					},
 				},
 				{
 					Name: "tor",
 					Type: "worker-persistent",
-					Containers: []containers{
-						{Name: "worker",
-							Ports: []ports{}},
+					Containers: []schema.ServiceContainer{
+						{
+							Name: "worker",
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "lnd",
+									Path: "/data",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name:        "basic-custom-volumes",
+			description: "create a basic with custom volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-2.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			want: []schema.EnvironmentService{
+				{
+					Name: "node",
+					Type: "basic",
+					Containers: []schema.ServiceContainer{
+						{Name: "basic",
+							Ports: []schema.ServiceContainerPort{
+								{Port: 3000, Protocol: "TCP"},
+							},
+							Volumes: []schema.ServiceContainerVolume{
+								{
+									Name: "custom-node",
+									Path: "/data",
+								},
+								{
+									Name: "custom-config",
+									Path: "/config",
+								},
+								{
+									Name: "custom-files",
+									Path: "/app/files/",
+								},
+							},
+						},
 					},
 				},
 			},
@@ -336,8 +449,10 @@ func TestIdentifyLagoonServices(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			if !reflect.DeepEqual(out, tt.want) {
-				t.Errorf("returned output %v doesn't match want %v", out, tt.want)
+			oJ, _ := json.MarshalIndent(out, "", "  ")
+			wJ, _ := json.MarshalIndent(tt.want, "", "  ")
+			if string(oJ) != string(wJ) {
+				t.Errorf("LagoonServiceTemplateIdentification() = \n%v", diff.LineDiff(string(oJ), string(wJ)))
 			}
 			t.Cleanup(func() {
 				helpers.UnsetEnvVars(nil)
