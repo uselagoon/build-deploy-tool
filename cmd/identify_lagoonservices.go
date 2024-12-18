@@ -10,19 +10,27 @@ import (
 	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
 )
 
-type identifyServices struct {
-	Name       string       `json:"name"`
-	Type       string       `json:"type"`
-	Containers []containers `json:"containers,omitempty"`
+// EnvironmentService this should use `schema.EnvironmentService` and machinery gets extended to support ports and volumes
+type EnvironmentService struct {
+	Name       string             `json:"name,omitempty"`
+	Type       string             `json:"type,omitempty"`
+	Containers []ServiceContainer `json:"containers,omitempty"`
 }
 
-type containers struct {
-	Name  string  `json:"name"`
-	Ports []ports `json:"ports,omitempty"`
+type ServiceContainer struct {
+	Name    string                   `json:"name,omitempty"`
+	Ports   []ServiceContainerPort   `json:"ports,omitempty"`
+	Volumes []ServiceContainerVolume `json:"volumes,omitempty"`
 }
 
-type ports struct {
-	Port int32 `json:"port"`
+type ServiceContainerVolume struct {
+	Name string `json:"name,omitempty"`
+	Path string `json:"path,omitempty"`
+}
+
+type ServiceContainerPort struct {
+	Port     int32  `json:"port,omitempty"`
+	Protocol string `json:"protocol,omitempty"`
 }
 
 var lagoonServiceIdentify = &cobra.Command{
@@ -62,14 +70,18 @@ var lagoonServiceIdentify = &cobra.Command{
 // about the services that lagoon will be deploying (this will be kubernetes `kind: deployment`, but lagoon calls them services ¯\_(ツ)_/¯)
 // this command can be used to identify services that are deployed by the build, so that services that may remain in the environment can be identified
 // and eventually removed
-func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identifyServices, error) {
+func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]EnvironmentService, error) {
 
-	lServices := []identifyServices{}
+	lServices := []EnvironmentService{}
 	lagoonBuild, err := generator.NewGenerator(
 		g,
 	)
 	if err != nil {
 		return nil, err
+	}
+	pvcs, err := servicestemplates.GeneratePVCTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
 
 	deployments, err := servicestemplates.GenerateDeploymentTemplate(*lagoonBuild.BuildValues)
@@ -77,23 +89,63 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) ([]identify
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
 	for _, d := range deployments {
-		dcs := []containers{}
+		dcs := []ServiceContainer{}
 		for _, dc := range d.Spec.Template.Spec.Containers {
-			dcp := []ports{}
-			for _, p := range dc.Ports {
-				dcp = append(dcp, ports{Port: p.ContainerPort})
+			dcv := []ServiceContainerVolume{}
+			for _, v := range dc.VolumeMounts {
+				// only add volumes that have been defined by the user to the service output
+				for _, pvc := range pvcs {
+					if pvc.Name == v.Name {
+						dcv = append(dcv, ServiceContainerVolume{
+							Name: v.Name,
+							Path: v.MountPath,
+						})
+					}
+				}
 			}
-			dcs = append(dcs, containers{
-				Name:  dc.Name,
-				Ports: dcp,
+
+			dcp := []ServiceContainerPort{}
+			for _, p := range dc.Ports {
+				dcp = append(dcp, ServiceContainerPort{
+					Port:     p.ContainerPort,
+					Protocol: string(p.Protocol),
+				})
+			}
+			dcs = append(dcs, ServiceContainer{
+				Name:    dc.Name,
+				Ports:   dcp,
+				Volumes: dcv,
 			})
 		}
-		lServices = append(lServices, identifyServices{
+		lServices = append(lServices, EnvironmentService{
 			Name:       d.Name,
 			Type:       d.ObjectMeta.Labels["lagoon.sh/service-type"],
 			Containers: dcs,
 		})
 	}
+	dbaas, err := servicestemplates.GenerateDBaaSTemplate(*lagoonBuild.BuildValues)
+	if err != nil {
+		return nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	for _, db := range dbaas.MariaDB {
+		lServices = append(lServices, EnvironmentService{
+			Name: db.Name,
+			Type: db.ObjectMeta.Labels["lagoon.sh/service-type"],
+		})
+	}
+	for _, db := range dbaas.MongoDB {
+		lServices = append(lServices, EnvironmentService{
+			Name: db.Name,
+			Type: db.ObjectMeta.Labels["lagoon.sh/service-type"],
+		})
+	}
+	for _, db := range dbaas.PostgreSQL {
+		lServices = append(lServices, EnvironmentService{
+			Name: db.Name,
+			Type: db.ObjectMeta.Labels["lagoon.sh/service-type"],
+		})
+	}
+
 	return lServices, nil
 }
 
