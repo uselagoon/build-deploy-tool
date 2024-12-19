@@ -35,6 +35,7 @@ type Cronjob struct {
 	Schedule string `json:"schedule"`
 	Command  string `json:"command"`
 	InPod    *bool  `json:"inPod"`
+	Timeout  string `json:"timeout"`
 }
 
 type Override struct {

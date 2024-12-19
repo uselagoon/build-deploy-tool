@@ -2,6 +2,8 @@ package templating
 
 import (
 	"fmt"
+	"math"
+	"time"
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -103,6 +105,12 @@ func GenerateCronjobTemplate(
 				cronjob.Spec.FailedJobsHistoryLimit = helpers.Int32Ptr(1)
 				cronjob.Spec.StartingDeadlineSeconds = helpers.Int64Ptr(240)
 				cronjob.Spec.JobTemplate.Spec.Template.Spec.RestartPolicy = corev1.RestartPolicyNever
+
+				// time has already been parsed in generator/services to check for errors
+				// and the default timeout is added in generator/services
+				cronjobTimeout, _ := time.ParseDuration(nCronjob.Timeout)
+				cSec := int64(math.Round(cronjobTimeout.Seconds()))
+				cronjob.Spec.JobTemplate.Spec.ActiveDeadlineSeconds = &cSec
 
 				if serviceValues.CronjobUseSpotInstances {
 					// handle spot instance label and affinity/tolerations/selectors
