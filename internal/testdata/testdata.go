@@ -41,6 +41,7 @@ type TestData struct {
 	IngressClass               string
 	ProjectVars                string
 	EnvVars                    string
+	OrganizationVariables      []lagoon.EnvironmentVariable
 	ProjectVariables           []lagoon.EnvironmentVariable
 	EnvVariables               []lagoon.EnvironmentVariable
 	LagoonVersion              string
@@ -118,6 +119,11 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", t.CacheNoCache)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	ov, _ := json.Marshal(t.OrganizationVariables)
+	err = os.Setenv("LAGOON_ORGANIZATION_VARIABLES", string(ov))
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -296,6 +302,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	}
 	if t.LagoonYAML != "" {
 		rt.LagoonYAML = t.LagoonYAML
+	}
+	if t.OrganizationVariables != nil {
+		rt.OrganizationVariables = append(rt.OrganizationVariables, t.OrganizationVariables...)
 	}
 	if t.ProjectVariables != nil && defaultProjectVariables {
 		rt.ProjectVariables = append(rt.ProjectVariables, t.ProjectVariables...)

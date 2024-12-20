@@ -47,7 +47,11 @@ function contains() {
 #    Lagoon project global scoped env-vars. This allows policy control at the
 #    project level.
 #
-# 4. The cluster-default feature flag, prefixed with
+# 4. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the Lagoon
+#    organization global scoped env-vars. This allows policy control at the
+#    organization level.
+#
+# 5. The cluster-default feature flag, prefixed with
 #    LAGOON_FEATURE_FLAG_DEFAULT_, as a build pod environment variable. This is
 #    set via a flag on the build-deploy controller. This allows default policy
 #    to be set at the cluster level, but maintains the ability to selectively
@@ -72,27 +76,34 @@ function featureFlag() {
 	# check Lagoon project variables
 	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
 	[ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon organization variables
+	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_ORGANIZATION_VARIABLES")
+	[ "$flagValue" ] && echo "$flagValue" && return
 
 	# fall back to the default, if set.
 	defaultFlagVar="LAGOON_FEATURE_FLAG_DEFAULT_$1"
 	echo "${!defaultFlagVar}"
 }
 
-function projectEnvironmentVariableCheck() {
-	# check for argument
-	[ "$1" ] || return
+# Checks for an environment variable from Lagoon API
+function apiEnvironmentVariableCheck() {
+  # check for argument
+  [ "$1" ] || return
 
-	local flagVar
+  local flagVar
 
-	flagVar="$1"
-	# check Lagoon environment variables
-	flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_ENVIRONMENT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
-	# check Lagoon project variables
-	flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
+  flagVar="$1"
+  # check Lagoon environment variables
+  flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_ENVIRONMENT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon project variables
+  flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon organization variables
+  flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_ORGANIZATION_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
 
-	echo "$2"
+  echo "$2"
 }
 
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
@@ -422,28 +433,9 @@ declare -A IMAGE_HASHES
 # separated by commas
 # Example 1: mariadb:mariadb-dbaas < tells any docker-compose services named mariadb to use the mariadb-dbaas service type
 # Example 2: mariadb:mariadb-dbaas,nginx:nginx-persistent
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_SERVICE_TYPES=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_SERVICE_TYPES") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_SERVICE_TYPES=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_SERVICE_TYPES") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_SERVICE_TYPES ]; then
-    LAGOON_SERVICE_TYPES=$TEMP_LAGOON_SERVICE_TYPES
-  fi
-fi
-# Allow the dbaas environment type to be overridden by the lagoon API
-# This accepts colon separated values like so `SERVICE_NAME:DBAAS_ENVIRONMENT_TYPE`, and multiple overrides
-# separated by commas
-# Example 1: mariadb:production < tells any docker-compose services named mariadb to use the production dbaas environment type
-# Example 2: mariadb:production,mariadb-test:development
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_DBAAS_ENVIRONMENT_TYPES=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_DBAAS_ENVIRONMENT_TYPES") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_DBAAS_ENVIRONMENT_TYPES") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES ]; then
-    LAGOON_DBAAS_ENVIRONMENT_TYPES=$TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES
-  fi
+TEMP_LAGOON_SERVICE_TYPES=$(apiEnvironmentVariableCheck LAGOON_SERVICE_TYPES)
+if [ ! -z "$TEMP_LAGOON_SERVICE_TYPES" ]; then
+  LAGOON_SERVICE_TYPES=$TEMP_LAGOON_SERVICE_TYPES
 fi
 
 # loop through created DBAAS templates
@@ -555,20 +547,8 @@ do
 done
 
 # Get the pre-rollout and post-rollout vars
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-  LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-  TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-    LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-  fi
-  if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-    LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-  fi
-fi
+LAGOON_PREROLLOUT_DISABLED=$(apiEnvironmentVariableCheck LAGOON_PREROLLOUT_DISABLED "false")
+LAGOON_POSTROLLOUT_DISABLED=$(apiEnvironmentVariableCheck LAGOON_POSTROLLOUT_DISABLED "false")
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
@@ -800,43 +780,12 @@ patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${N
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 
-# FASTLY SERVICE ID PER INGRESS OVERRIDE FROM LAGOON API VARIABLE
-# Allow the fastly serviceid for specific ingress to be overridden by the lagoon API
-# This accepts colon separated values like so `INGRESS_DOMAIN:FASTLY_SERVICE_ID:WATCH_STATUS:SECRET_NAME(OPTIONAL)`, and multiple overrides
-# separated by commas
-# Example 1: www.example.com:x1s8asfafasf7ssf:true
-# ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
-# Example 2: www.example.com:x1s8asfafasf7ssf:true,www.not-example.com:fa23rsdgsdgas:false
-# ^^^ same as above, but also tells the ingress creation to use the service id fa23rsdgsdgas for ingress www.not-example.com, with the watch status of false
-# Example 3: www.example.com:x1s8asfafasf7ssf:true:examplecom
-# ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
-# but it will also be annotated to be told to use the secret named `examplecom` that could be defined elsewhere
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_FASTLY_SERVICE_IDS=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_FASTLY_SERVICE_IDS") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_FASTLY_SERVICE_IDS=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_FASTLY_SERVICE_IDS") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_FASTLY_SERVICE_IDS ]; then
-    LAGOON_FASTLY_SERVICE_IDS=$TEMP_LAGOON_FASTLY_SERVICE_IDS
-  fi
-fi
-
 ##############################################
 ### CREATE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
 ##############################################
-# start custom routes disabled
-AUTOGEN_ROUTES_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_AUTOGEN_ROUTES_DISABLED ]; then
-    AUTOGEN_ROUTES_DISABLED=$TEMP_AUTOGEN_ROUTES_DISABLED
-  fi
-fi
 
 # generate the autogenerated ingress
+AUTOGEN_ROUTES_DISABLED=$(apiEnvironmentVariableCheck LAGOON_AUTOGEN_ROUTES_DISABLED false)
 if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
   LAGOON_AUTOGEN_YAML_FOLDER="/kubectl-build-deploy/lagoon/autogen-routes"
   mkdir -p $LAGOON_AUTOGEN_YAML_FOLDER
@@ -913,20 +862,7 @@ TEMPLATE_PARAMETERS=()
 ### CUSTOM ROUTES
 ##############################################
 
-# Run the route generation process
-
-# start custom routes disabled
-CUSTOM_ROUTES_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_CUSTOM_ROUTES_DISABLED ]; then
-    CUSTOM_ROUTES_DISABLED=$TEMP_CUSTOM_ROUTES_DISABLED
-  fi
-fi
-
+CUSTOM_ROUTES_DISABLED=$(apiEnvironmentVariableCheck LAGOON_CUSTOM_ROUTES_DISABLED false)
 if [ ! "$CUSTOM_ROUTES_DISABLED" == true ]; then
   LAGOON_ROUTES_YAML_FOLDER="/kubectl-build-deploy/lagoon/routes"
   mkdir -p $LAGOON_ROUTES_YAML_FOLDER
@@ -1143,6 +1079,16 @@ LAGOON_AUTOGENERATED_ROUTES=${AUTOGENERATED_ROUTES}\n\
 kubectl -n ${NAMESPACE} create configmap lagoon-env -o yaml --dry-run=client --from-env-file=/kubectl-build-deploy/values.env | kubectl apply -n ${NAMESPACE} -f -
 
 # Add environment variables from lagoon API
+if [ ! -z "$LAGOON_ORGANIZATION_VARIABLES" ]; then
+  HAS_ORGANIZATION_RUNTIME_VARS=$(echo $LAGOON_ORGANIZATION_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") )')
+
+  if [ ! "$HAS_ORGANIZATION_RUNTIME_VARS" = "[]" ]; then
+    kubectl patch \
+      -n ${NAMESPACE} \
+      configmap lagoon-env \
+      -p "{\"data\":$(echo $LAGOON_ORGANIZATION_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") ) | map( { (.name) : .value } ) | add | tostring')}"
+  fi
+fi
 if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
   HAS_PROJECT_RUNTIME_VARS=$(echo $LAGOON_PROJECT_VARIABLES | jq -r 'map( select(.scope == "runtime" or .scope == "global") )')
 
@@ -1351,17 +1297,7 @@ beginBuildStep "Backup Configuration" "configuringBackups"
 
 # Run the backup generation script
 
-BACKUPS_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
-  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
-fi 
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
-  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
-    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
-  fi 
-fi 
-
+BACKUPS_DISABLED=$(apiEnvironmentVariableCheck LAGOON_BACKUPS_DISABLED false)
 if [ ! "$BACKUPS_DISABLED" == true ]; then
   # check if k8up v2 feature flag is enabled
   LAGOON_BACKUP_YAML_FOLDER="/kubectl-build-deploy/lagoon/backup"

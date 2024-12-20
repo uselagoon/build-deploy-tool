@@ -2,6 +2,7 @@ package lagoon
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 )
@@ -14,44 +15,51 @@ type EnvironmentVariable struct {
 }
 
 // MergeVariables merges lagoon environment variables.
-func MergeVariables(project, environment []EnvironmentVariable) []EnvironmentVariable {
-	allVars := []EnvironmentVariable{}
-	existsInEnvironment := false
-	// replace any variables from the project with ones from the environment
-	// this only modifies ones that exist in project
-	for _, pVar := range project {
-		add := EnvironmentVariable{}
-		for _, eVar := range environment {
-			// internal_system scoped variables are only added to the projects variabled during a build
-			// this make sure that any that may exist in the environment variables are not merged
-			// and also makes sure that internal_system variables are not replaced by other scopes
-			if eVar.Name == pVar.Name && pVar.Scope != "internal_system" && eVar.Scope != "internal_system" {
-				existsInEnvironment = true
-				add = eVar
-			}
-		}
-		if existsInEnvironment {
-			allVars = append(allVars, add)
-			existsInEnvironment = false
-		} else {
-			allVars = append(allVars, pVar)
-		}
+func MergeVariables(organization, project, environment, config []EnvironmentVariable) []EnvironmentVariable {
+
+	// Helper function to compare environment variable names.
+	findByName := func(name string) func(EnvironmentVariable) bool {
+		return func(eVar EnvironmentVariable) bool { return eVar.Name == name }
 	}
-	// add any that exist in the environment only to the final variables list
-	existsInProject := false
+
+	// Start with config variables since they are most specific.
+	allVars := make([]EnvironmentVariable, len(config))
+	copy(allVars, config)
+
 	for _, eVar := range environment {
-		add := eVar
-		for _, aVar := range allVars {
-			if eVar.Name == aVar.Name {
-				existsInProject = true
-			}
-		}
-		if existsInProject {
-			existsInProject = false
-		} else {
-			allVars = append(allVars, add)
+		idx := slices.IndexFunc(allVars, findByName(eVar.Name))
+
+		// Append environment variables that are distinct.
+		if idx == -1 {
+			allVars = append(allVars, eVar)
 		}
 	}
+
+	for _, pVar := range project {
+		idx := slices.IndexFunc(allVars, findByName(pVar.Name))
+
+		// Append project variables that are distinct.
+		if idx == -1 {
+			allVars = append(allVars, pVar)
+			continue
+		}
+
+		// Overwrite environment variables if they are suppossed to be internally
+		// scoped.
+		if pVar.Scope == "internal_system" {
+			allVars[idx] = pVar
+		}
+	}
+
+	for _, oVar := range organization {
+		idx := slices.IndexFunc(allVars, findByName(oVar.Name))
+
+		// Append organization variables that are distinct.
+		if idx == -1 {
+			allVars = append(allVars, oVar)
+		}
+	}
+
 	return allVars
 }
 

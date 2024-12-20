@@ -124,6 +124,8 @@ func init() {
 		"The pullrequest base branch")
 	rootCmd.PersistentFlags().StringP("lagoon-version", "L", "",
 		"The lagoon version")
+	rootCmd.PersistentFlags().StringP("organization-variables", "", "",
+		"The JSON payload for organization scope variables")
 	rootCmd.PersistentFlags().StringP("project-variables", "", "",
 		"The JSON payload for project scope variables")
 	rootCmd.PersistentFlags().StringP("environment-variables", "", "",
