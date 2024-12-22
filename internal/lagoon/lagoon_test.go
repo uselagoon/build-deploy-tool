@@ -442,6 +442,82 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 			},
 		},
 		{
+			name: "test-polysite with project environment cronjobs",
+			args: args{
+				file:    "test-resources/lagoon-yaml/test9/lagoon.yml",
+				l:       &YAML{},
+				project: "multiproject2",
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "notdrush cron",
+								Command:  "notdrush cron",
+								Service:  "cli",
+								Schedule: "*/15 * * * *",
+							},
+							{
+								Name:     "drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/5 * * * *",
+							},
+							{
+								Name:     "some other drush cron",
+								Command:  "drush cron",
+								Service:  "cli",
+								Schedule: "*/5 * * * *",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
+			name: "test-polysite with project environment cronjobs no non-polysite",
+			args: args{
+				file:    "test-resources/lagoon-yaml/test9/polysite-only-lagoon.yml",
+				l:       &YAML{},
+				project: "multiproject2",
+			},
+			want: &YAML{
+				DockerComposeYAML: "docker-compose.yml",
+				Environments: Environments{
+					"main": Environment{
+						Routes: []map[string][]Route{
+							{
+								"nginx": {
+									{
+										Name: "a.example.com",
+									},
+								},
+							},
+						},
+						Cronjobs: []Cronjob{
+							{
+								Name:     "notdrush cron",
+								Command:  "notdrush cron",
+								Service:  "cli",
+								Schedule: "*/15 * * * *",
+							},
+						},
+					},
+				},
+			},
+		},
+		{
 			name: "test-cronjobs-inpod-only",
 			args: args{
 				file: "test-resources/lagoon-yaml/test10/lagoon.yml",
