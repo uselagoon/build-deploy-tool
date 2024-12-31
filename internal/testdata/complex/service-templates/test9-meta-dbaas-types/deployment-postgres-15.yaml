@@ -57,7 +57,9 @@ spec:
         - name: SERVICE_NAME
           value: postgres-15
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example/example-project/main/postgres-15@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
