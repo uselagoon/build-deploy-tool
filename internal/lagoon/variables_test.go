@@ -7,8 +7,10 @@ import (
 
 func TestMergeVariables(t *testing.T) {
 	type args struct {
-		project     []EnvironmentVariable
-		environment []EnvironmentVariable
+		organization []EnvironmentVariable
+		project      []EnvironmentVariable
+		environment  []EnvironmentVariable
+		config       []EnvironmentVariable
 	}
 	tests := []struct {
 		name string
@@ -18,6 +20,7 @@ func TestMergeVariables(t *testing.T) {
 		{
 			name: "test1",
 			args: args{
+				organization: []EnvironmentVariable{},
 				project: []EnvironmentVariable{
 					{
 						Name:  "PROJECT_SPECIFIC_VARIABLE",
@@ -37,16 +40,17 @@ func TestMergeVariables(t *testing.T) {
 						Scope: "global",
 					},
 				},
+				config: []EnvironmentVariable{},
 			},
 			want: []EnvironmentVariable{
 				{
-					Name:  "PROJECT_SPECIFIC_VARIABLE",
-					Value: "projectvariable",
+					Name:  "LAGOON_FASTLY_SERVICE_ID",
+					Value: "1234567",
 					Scope: "global",
 				},
 				{
-					Name:  "LAGOON_FASTLY_SERVICE_ID",
-					Value: "1234567",
+					Name:  "PROJECT_SPECIFIC_VARIABLE",
+					Value: "projectvariable",
 					Scope: "global",
 				},
 			},
@@ -54,6 +58,7 @@ func TestMergeVariables(t *testing.T) {
 		{
 			name: "test2",
 			args: args{
+				organization: []EnvironmentVariable{},
 				project: []EnvironmentVariable{
 					{
 						Name:  "PROJECT_SPECIFIC_VARIABLE",
@@ -68,24 +73,26 @@ func TestMergeVariables(t *testing.T) {
 						Scope: "build",
 					},
 				},
+				config: []EnvironmentVariable{},
 			},
 			want: []EnvironmentVariable{
-				{
-					Name:  "PROJECT_SPECIFIC_VARIABLE",
-					Value: "projectvariable",
-					Scope: "global",
-				},
 				{
 					Name:  "LAGOON_ROUTES_JSON",
 					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
 					Scope: "build",
+				},
+				{
+					Name:  "PROJECT_SPECIFIC_VARIABLE",
+					Value: "projectvariable",
+					Scope: "global",
 				},
 			},
 		},
 		{
 			name: "test3",
 			args: args{
-				project: []EnvironmentVariable{},
+				organization: []EnvironmentVariable{},
+				project:      []EnvironmentVariable{},
 				environment: []EnvironmentVariable{
 					{
 						Name:  "LAGOON_ROUTES_JSON",
@@ -93,6 +100,7 @@ func TestMergeVariables(t *testing.T) {
 						Scope: "build",
 					},
 				},
+				config: []EnvironmentVariable{},
 			},
 			want: []EnvironmentVariable{
 				{
@@ -123,13 +131,8 @@ func TestMergeVariables(t *testing.T) {
 						Value: "123",
 						Scope: "build",
 					},
-					{
-						// this will be ignored
-						Name:  "LAGOON_ROUTE_QUOTA",
-						Value: "321",
-						Scope: "internal_system",
-					},
 				},
+				config: []EnvironmentVariable{},
 			},
 			want: []EnvironmentVariable{
 				{
@@ -137,17 +140,200 @@ func TestMergeVariables(t *testing.T) {
 					Value: "1234",
 					Scope: "internal_system",
 				},
-				{
-					Name:  "LAGOON_ROUTE_QUOTA",
-					Value: "123",
+			},
+		},
+		{
+			name: "test5",
+			args: args{
+				organization: []EnvironmentVariable{},
+				project: []EnvironmentVariable{{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
 					Scope: "build",
+				}},
+				environment: []EnvironmentVariable{},
+				config:      []EnvironmentVariable{},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				},
+			},
+		},
+		{
+			name: "test6",
+			args: args{
+				organization: []EnvironmentVariable{{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				}},
+				project:     []EnvironmentVariable{},
+				environment: []EnvironmentVariable{},
+				config:      []EnvironmentVariable{},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				},
+			},
+		},
+		{
+			name: "test7",
+			args: args{
+				organization: []EnvironmentVariable{},
+				project:      []EnvironmentVariable{},
+				environment:  []EnvironmentVariable{},
+				config: []EnvironmentVariable{{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				}},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "LAGOON_ROUTES_JSON",
+					Value: "eyJyb3V0ZXMiOlt7ImRvbWFpbiI6InRlc3QxLmV4YW1wbGUuY29tIiwic2VydmljZSI6Im5naW54IiwidGxzLWFjbWUiOmZhbHNlLCJtb25pdG9yaW5nLXBhdGgiOiIvYnlwYXNzLWNhY2hlIn1dfQo=",
+					Scope: "build",
+				},
+			},
+		},
+		{
+			name: "test8",
+			args: args{
+				organization: []EnvironmentVariable{{
+					Name:  "ORG_KEEP",
+					Value: "ORG_KEEP",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_1",
+					Value: "org",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_2",
+					Value: "org",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_3",
+					Value: "org",
+					Scope: "global",
+				}},
+				project: []EnvironmentVariable{{
+					Name:  "PROJ_KEEP",
+					Value: "PROJ_KEEP",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_1",
+					Value: "proj",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_2",
+					Value: "proj",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_3",
+					Value: "proj",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_4",
+					Value: "proj",
+					Scope: "global",
+				}},
+				environment: []EnvironmentVariable{{
+					Name:  "ENV_KEEP",
+					Value: "ENV_KEEP",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_1",
+					Value: "env",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_2",
+					Value: "env",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_4",
+					Value: "env",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_5",
+					Value: "env",
+					Scope: "global",
+				}},
+				config: []EnvironmentVariable{{
+					Name:  "CONFIG_KEEP",
+					Value: "CONFIG_KEEP",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_1",
+					Value: "config",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_4",
+					Value: "config",
+					Scope: "global",
+				}, {
+					Name:  "OVERRIDE_5",
+					Value: "config",
+					Scope: "global",
+				}},
+			},
+			want: []EnvironmentVariable{
+				{
+					Name:  "CONFIG_KEEP",
+					Value: "CONFIG_KEEP",
+					Scope: "global",
+				},
+				{
+					Name:  "OVERRIDE_1",
+					Value: "config",
+					Scope: "global",
+				},
+				{
+					Name:  "OVERRIDE_4",
+					Value: "config",
+					Scope: "global",
+				},
+				{
+					Name:  "OVERRIDE_5",
+					Value: "config",
+					Scope: "global",
+				},
+				{
+					Name:  "ENV_KEEP",
+					Value: "ENV_KEEP",
+					Scope: "global",
+				},
+				{
+					Name:  "OVERRIDE_2",
+					Value: "env",
+					Scope: "global",
+				},
+				{
+					Name:  "PROJ_KEEP",
+					Value: "PROJ_KEEP",
+					Scope: "global",
+				},
+				{
+					Name:  "OVERRIDE_3",
+					Value: "proj",
+					Scope: "global",
+				},
+				{
+					Name:  "ORG_KEEP",
+					Value: "ORG_KEEP",
+					Scope: "global",
 				},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := MergeVariables(tt.args.project, tt.args.environment); !reflect.DeepEqual(got, tt.want) {
+			if got := MergeVariables(tt.args.organization, tt.args.project, tt.args.environment, tt.args.config); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("MergeVariables() = %v, want %v", got, tt.want)
 			}
 		})

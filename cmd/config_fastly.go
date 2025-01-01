@@ -40,6 +40,10 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	if err != nil {
 		return lagoon.Fastly{}, fmt.Errorf("error reading fastly-service-id flag: %v", err)
 	}
+	organizationVariables, err := rootCmd.PersistentFlags().GetString("organization-variables")
+	if err != nil {
+		return lagoon.Fastly{}, fmt.Errorf("error reading organization-variables flag: %v", err)
+	}
 	projectVariables, err := rootCmd.PersistentFlags().GetString("project-variables")
 	if err != nil {
 		return lagoon.Fastly{}, fmt.Errorf("error reading project-variables flag: %v", err)
@@ -53,15 +57,18 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
 
 	// get the project and environment variables
+	organizationVariables = helpers.GetEnv("LAGOON_ORGANIZATION_VARIABLES", organizationVariables, debug)
 	projectVariables = helpers.GetEnv("LAGOON_PROJECT_VARIABLES", projectVariables, debug)
 	environmentVariables = helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", environmentVariables, debug)
 
 	// unmarshal and then merge the two so there is only 1 set of variables to iterate over
+	orgVars := []lagoon.EnvironmentVariable{}
 	projectVars := []lagoon.EnvironmentVariable{}
 	envVars := []lagoon.EnvironmentVariable{}
+	json.Unmarshal([]byte(organizationVariables), &orgVars)
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
-	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
+	lagoonEnvVars := lagoon.MergeVariables(orgVars, projectVars, envVars, []lagoon.EnvironmentVariable{})
 
 	// generate the fastly configuration from the provided flags/variables
 	f := &lagoon.Fastly{}

@@ -39,6 +39,7 @@ These are variables that are injected into a build pod by `remote-controller`, s
 * `PROMOTION_SOURCE_ENVIRONMENT` contains the source environment name if this is a promotion type build
 
 #### Environment Variables
+* `LAGOON_ORGANIZATION_VARIABLES` contains any organization specific environment variables
 * `LAGOON_PROJECT_VARIABLES` contains any project specific environment variables
 * `LAGOON_ENVIRONMENT_VARIABLES` contains any environment specific environment variables
 

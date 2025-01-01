@@ -158,6 +158,26 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 			},
 			want: "enabled",
 		},
+		{
+			name:    "test7 check if flag is defined in lagoon organization variables",
+			varName: "ROOTLESS_WORKLOAD",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					OrganizationVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "enabled",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

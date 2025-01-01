@@ -33,6 +33,7 @@ type GeneratorInput struct {
 	EnvironmentType            string
 	ActiveEnvironment          string
 	StandbyEnvironment         string
+	OrganizationVariables      string
 	ProjectVariables           string
 	EnvironmentVariables       string
 	BuildType                  string
@@ -139,6 +140,7 @@ func NewGenerator(
 	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
 
 	// get the project and environment variables
+	organizationVariables := helpers.GetEnv("LAGOON_ORGANIZATION_VARIABLES", generator.OrganizationVariables, generator.Debug)
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
 	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", generator.EnvironmentVariables, generator.Debug)
 
@@ -245,16 +247,15 @@ func NewGenerator(
 	}
 
 	// unmarshal and then merge the two so there is only 1 set of variables to iterate over
+	orgVars := []lagoon.EnvironmentVariable{}
 	projectVars := []lagoon.EnvironmentVariable{}
 	envVars := []lagoon.EnvironmentVariable{}
+	json.Unmarshal([]byte(organizationVariables), &orgVars)
 	json.Unmarshal([]byte(projectVariables), &projectVars)
 	json.Unmarshal([]byte(environmentVariables), &envVars)
-	mergedVariables := lagoon.MergeVariables(projectVars, envVars)
 	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
 	configVars := collectBuildVariables(buildValues)
-	// add the calculated build runtime variables into the existing variable slice
-	// this will later be used to add `runtime|global` scope into the `lagoon-env` configmap
-	buildValues.EnvironmentVariables = lagoon.MergeVariables(mergedVariables, configVars)
+	buildValues.EnvironmentVariables = lagoon.MergeVariables(orgVars, projectVars, envVars, configVars)
 
 	// if the core version is provided from the API, set the buildvalues LagoonVersion to this instead
 	lagoonCoreVersion, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_CORE_VERSION", []string{"internal_system"}, buildValues.EnvironmentVariables)
