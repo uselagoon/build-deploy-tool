@@ -25,6 +25,7 @@ spec:
     metadata:
       creationTimestamp: null
     spec:
+      activeDeadlineSeconds: 14400
       template:
         metadata:
           annotations:
@@ -115,6 +116,7 @@ spec:
     metadata:
       creationTimestamp: null
     spec:
+      activeDeadlineSeconds: 14400
       template:
         metadata:
           annotations:
@@ -205,6 +207,7 @@ spec:
     metadata:
       creationTimestamp: null
     spec:
+      activeDeadlineSeconds: 14400
       template:
         metadata:
           annotations:
