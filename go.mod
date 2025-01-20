@@ -9,7 +9,7 @@ require (
 	github.com/PaesslerAG/gval v1.2.4
 	github.com/amazeeio/dbaas-operator v0.3.0
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
-	github.com/compose-spec/compose-go v1.20.2
+	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
 	github.com/distribution/reference v0.6.0
 	github.com/drone/envsubst v1.0.3
@@ -90,6 +90,6 @@ require (
 
 replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
 
-replace github.com/compose-spec/compose-go v1.20.2 => github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1
+replace github.com/compose-spec/compose-go v1.2.7 => github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1
 
 // replace github.com/compose-spec/compose-go v1.2.7 => ../../compose-spec/compose-go
