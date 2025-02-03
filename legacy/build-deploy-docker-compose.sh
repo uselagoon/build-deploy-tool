@@ -1499,14 +1499,6 @@ do
   SERVICE_NAME=${SERVICE_TYPES_ENTRY_SPLIT[0]}
   SERVICE_TYPE=${SERVICE_TYPES_ENTRY_SPLIT[1]}
 
-  SERVICE_ROLLOUT_TYPE=$(cat $DOCKER_COMPOSE_YAML | shyaml get-value services.${SERVICE_NAME}.labels.lagoon\\.rollout deployment)
-
-  # Allow the rollout type to be overriden by environment in .lagoon.yml
-  ENVIRONMENT_SERVICE_ROLLOUT_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.rollouts.${SERVICE_NAME} false)
-  if [ ! $ENVIRONMENT_SERVICE_ROLLOUT_TYPE == "false" ]; then
-    SERVICE_ROLLOUT_TYPE=$ENVIRONMENT_SERVICE_ROLLOUT_TYPE
-  fi
-
   # check if this service is a dbaas service and transform the service_type accordingly
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
@@ -1518,19 +1510,9 @@ do
     fi
   done
 
-  if [ $SERVICE_TYPE == "mariadb-dbaas" ]; then
-
+  if [[ $SERVICE_TYPE == *"-dbaas" ]]; then
     echo "nothing to monitor for $SERVICE_TYPE"
-
-  elif [ $SERVICE_TYPE == "postgres-dbaas" ]; then
-
-    echo "nothing to monitor for $SERVICE_TYPE"
-
-  elif [ $SERVICE_TYPE == "mongodb-dbaas" ]; then
-
-    echo "nothing to monitor for $SERVICE_TYPE"
-
-  elif [ ! $SERVICE_ROLLOUT_TYPE == "false" ]; then
+  else
     . /kubectl-build-deploy/scripts/exec-monitor-deploy.sh
   fi
 done
