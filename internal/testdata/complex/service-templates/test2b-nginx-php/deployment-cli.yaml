@@ -50,7 +50,7 @@ spec:
           value: "0000000000000000000000000000000000000000"
         - name: CRONJOBS
           value: |
-            3,18,33,48 * * * * drush cron
+            3,18,33,48 * * * * flock -n /tmp/cron.lock.932b8586d96eb88e1574cb8a1223a0b964763c7d0ce90d9aff64d2d92e60fd8d -c 'drush cron'
         - name: SERVICE_NAME
           value: cli
         envFrom:
