@@ -97,6 +97,7 @@ function projectEnvironmentVariableCheck() {
 
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
 
+# begin build step will echo the step start delimeter and then patch kubernetes resource with the value
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
   [ "$2" ] || return #buildstep
@@ -112,7 +113,8 @@ function beginBuildStep() {
   fi
 }
 
-function patchBuildStep() {
+# finalize build step will echo the end delimeter only
+function finalizeBuildStep() {
   [ "$1" ] || return #total start time
   [ "$2" ] || return #step start time
   [ "$3" ] || return #previous step end time
@@ -201,7 +203,7 @@ fi
 
 set +e
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
+finalizeBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
 DOCKER_COMPOSE_WARNING_COUNT=0
@@ -213,7 +215,7 @@ dccOutput=$(bash -c 'build-deploy-tool validate docker-compose --docker-compose 
 dccExit=$?
 if [ "${dccExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationError" "Docker Compose Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -300,11 +302,11 @@ if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
 "
   echo "##############################################"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
   previousStepEnd=${currentStepEnd}
 else
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
   previousStepEnd=${currentStepEnd}
 fi
 
@@ -328,7 +330,7 @@ lyvExit=$?
 
 if [ "${lyvExit}" != "0" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidationError" ".lagoon.yml Validation" "false"
   previousStepEnd=${currentStepEnd}
   echo "
 ##############################################
@@ -376,7 +378,7 @@ fi
 ##################
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
 DEPLOY_TYPE=$(cat .lagoon.yml | shyaml get-value environments.${BRANCH//./\\.}.deploy-type default)
@@ -566,7 +568,7 @@ if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
+finalizeBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Container Registry Login" "registryLogin"
 
@@ -610,10 +612,9 @@ do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
+finalizeBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Image Builds" "buildingImages"
-
 
 ##############################################
 ### BUILD IMAGES
@@ -648,19 +649,23 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     echo "Pulling Image: ${FPI}"
     docker pull "${FPI}"
   done
-
+  HAS_PULLED_IMAGES=false
   # now we loop through the images in the build data and determine if they need to be pulled or build
   for IMAGE_BUILD_DATA in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.images[]')
   do
     SERVICE_NAME=$(echo "$IMAGE_BUILD_DATA" | jq -r '.name // false')
+    SERVICE_NAME_TITLE=$(echo "$SERVICE_NAME" | tr '[:upper:]' '[:lower:]' | tr -d '-')
     DOCKERFILE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.dockerFile // false')
     # if there is no dockerfile, then this image needs to be pulled from somewhere else
     if [ $DOCKERFILE == "false" ]; then
       PULL_IMAGE=$(echo "$IMAGE_BUILD_DATA" | jq -r '.imageBuild.pullImage // false')
       if [ "$PULL_IMAGE" != "false" ]; then
         IMAGES_PULL["${SERVICE_NAME}"]="${PULL_IMAGE}"
+        HAS_PULLED_IMAGES=true
       fi
     else
+      previousStepEnd=${currentStepEnd}
+      beginBuildStep "Building Image ${SERVICE_NAME}" "buildingImage-${SERVICE_NAME_TITLE}"
       # otherwise extract build information from the image build data payload
       # this is a temporary image name to use for the build, it is based on the namespace and service, this can probably be deprecated and the images could just be
       # built with the name they are meant to be. only 1 build can run at a time within a namespace
@@ -693,28 +698,50 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
 
       # adding the build image to the list of arguments passed into the next image builds
       SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]')
+      currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+      finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuild${SERVICE_NAME_TITLE}Complete" "Building Image ${SERVICE_NAME}" "false"
     fi
   done
+
+  if [ $HAS_PULLED_IMAGES == "true" ]; then
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pulled Images" "pulledImageInfo"
+    echo "The following images will be pulled and then pushed directly with no building required"
+    for IMAGE_NAME in "${!IMAGES_PULL[@]}"
+    do
+      PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+      echo "- ${IMAGE_NAME}: ${PULL_IMAGE}"
+    done
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pulledImageInfoComplete" "Pulled Images" "false"
+  fi
+
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Image Build Stats" "imageBuildStats"
+
+  # print information about built image sizes
+  function printBytes {
+      local -i bytes=$1;
+      echo "$(( (bytes + 1000000)/1000000 ))MB"
+  }
+  if [[ "${IMAGES_BUILD[@]}" ]]; then
+    echo "##############################################"
+    echo "Built image sizes:"
+    echo "##############################################"
+  fi
+  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
+  do
+    TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
+    echo -e "- image: ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
+  done
+
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildStatsComplete" "Image Build Stats" "false"
+fi
+if [[ "$BUILD_TYPE" == "promote" ]]; then
+    echo "No images built for promote environments"
 fi
 
-# print information about built image sizes
-function printBytes {
-    local -i bytes=$1;
-    echo "$(( (bytes + 1000000)/1000000 ))MB"
-}
-if [[ "${IMAGES_BUILD[@]}" ]]; then
-  echo "##############################################"
-  echo "Built image sizes:"
-  echo "##############################################"
-fi
-for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
-do
-  TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
-  echo -e "Image ${TEMPORARY_IMAGE_NAME}\t\t$(printBytes $(docker inspect ${TEMPORARY_IMAGE_NAME} | jq -r '.[0].Size'))"
-done
-
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imageBuildComplete" "Image Builds" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 1" "serviceConfigurationPhase1"
 
@@ -791,7 +818,7 @@ LAGOON_PR_NUMBER=${PR_NUMBER}\n\
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase 1" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 
@@ -898,7 +925,7 @@ if [ -n "$(ls -A $LAGOON_DBAAS_YAML_FOLDER/ 2>/dev/null)" ]; then
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfiguration2Complete" "Service Configuration Phase 2" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 
@@ -938,7 +965,7 @@ else
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "configuringRoutesComplete" "Route/Ingress Configuration" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "configuringRoutesComplete" "Route/Ingress Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Cleanup" "cleanupRoutes"
 
@@ -1015,7 +1042,7 @@ else
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeCleanupComplete" "Route/Ingress Cleanup" "${CLEANUP_WARNINGS}"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "routeCleanupComplete" "Route/Ingress Cleanup" "${CLEANUP_WARNINGS}"
 
 ##############################################
 ### Report any ingress that have stale or stalled acme challenges, this accordion will only show if there are stale challenges
@@ -1044,7 +1071,7 @@ if [ "${CURRENT_CHALLENGE_ROUTES[@]}" != "" ]; then
   done
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "staleChallengesComplete" "Route/Ingress Certificate Challenges" "true"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "staleChallengesComplete" "Route/Ingress Certificate Challenges" "true"
 fi
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Update Configmap" "updateConfigmap"
@@ -1206,9 +1233,7 @@ do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateConfigmapComplete" "Update Configmap" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Push to Registry" "pushingImages"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "updateConfigmapComplete" "Update Configmap" "false"
 
 ##############################################
 ### REDEPLOY DEPLOYMENTS IF CONFIG MAP CHANGES
@@ -1232,33 +1257,7 @@ declare -A DEPRECATED_IMAGE_SUGGESTION
 
 # pullrequest/branch start
 if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
-
-  # All images that should be pulled are copied to the harbor registry
-  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
-  do
-    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-
-    # Try to handle private registries first
-
-    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
-    # from being a promote image, or an image from an imagecache or from some other registry entirely
-    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
-
-    # store the resulting image hash
-    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
-    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
-
-    # check if the pull through image is deprecated
-    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
-    if [ "${DEPRECATED_STATUS}" != false ]; then
-      DEPRECATED_IMAGE_WARNINGS="true"
-      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
-      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
-    fi
-  done
-
+  # calculate the images required to be pushed to the registry
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
     PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
@@ -1281,6 +1280,8 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     fi
   done
 
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Pushing Images" "pushingImages"
   # If we have images to push to the registry, let's do so
   if [ -f /kubectl-build-deploy/lagoon/push ]; then
     parallel --retries 4 < /kubectl-build-deploy/lagoon/push
@@ -1293,6 +1294,37 @@ if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
     JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
     IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
   done
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImagesComplete" "Pushing Images" "false"
+
+  # All images that should be pulled are copied to the harbor registry
+  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
+  do
+    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+
+    # Try to handle private registries first
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
+    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
+    # from being a promote image, or an image from an imagecache or from some other registry entirely
+    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
+
+    # store the resulting image hash
+    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
+    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
+
+    # check if the pull through image is deprecated
+    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
+    fi
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Image ${IMAGE_NAME}" "false"
+  done
 
 # pullrequest/branch end
 # promote start
@@ -1300,17 +1332,18 @@ elif [ "$BUILD_TYPE" == "promote" ]; then
 
   for IMAGE_NAME in "${IMAGES[@]}"
   do
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Promote Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
     PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
     skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
 
     IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Promote Image ${IMAGE_NAME}" "false"
   done
 # promote end
 fi
-
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "imagePushComplete" "Image Push to Registry" "false"
 
 ##############################################
 ### Check for deprecated images
@@ -1338,7 +1371,7 @@ if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
   done
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
 fi
 
 previousStepEnd=${currentStepEnd}
@@ -1404,7 +1437,7 @@ else
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 
@@ -1417,7 +1450,7 @@ if [ "${LAGOON_PREROLLOUT_DISABLED}" != "true" ]; then
 else
   echo "pre-rollout tasks are currently disabled LAGOON_PREROLLOUT_DISABLED is set to true"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "preRolloutsCompleted" "Pre-Rollout Tasks" "false"
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1459,7 +1492,7 @@ mkdir -p $LAGOON_SERVICES_YAML_FOLDER
 build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images /kubectl-build-deploy/images.yaml
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Applying Deployments" "applyingDeployments"
 
@@ -1518,7 +1551,7 @@ do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 
@@ -1551,7 +1584,7 @@ for DC in ${!DELETE_CRONJOBS[@]}; do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 
@@ -1565,7 +1598,7 @@ if [ "${LAGOON_POSTROLLOUT_DISABLED}" != "true" ]; then
 else
   echo "post-rollout tasks are currently disabled LAGOON_POSTROLLOUT_DISABLED is set to true"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "postRolloutsCompleted" "Post-Rollout Tasks" "false"
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
@@ -1612,7 +1645,7 @@ for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
 previousStepEnd=${currentStepEnd}
 
 if [ "$(featureFlag INSIGHTS)" = enabled ]; then
@@ -1638,11 +1671,11 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
     ((++BUILD_WARNING_COUNT))
     echo "##############################################"
     currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsWarning" "Insights Gathering" "true"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsWarning" "Insights Gathering" "true"
     previousStepEnd=${currentStepEnd}
   else
     currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
     previousStepEnd=${currentStepEnd}
   fi
 
@@ -1651,7 +1684,7 @@ fi
 if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
   beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
   echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
   previousStepEnd=${currentStepEnd}
   # patch the buildpod with the buildstep
   if [ "${SCC_CHECK}" == false ]; then
