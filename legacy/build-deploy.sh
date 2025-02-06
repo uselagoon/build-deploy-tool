@@ -11,10 +11,10 @@ REGISTRY=$REGISTRY
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 LAGOON_VERSION=$(cat /lagoon/version)
 
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  INTERNAL_REGISTRY_URL=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_URL") | .value' | sed -e 's#^http://##' | sed -e 's#^https://##')
-  INTERNAL_REGISTRY_USERNAME=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_USERNAME") | .value')
-  INTERNAL_REGISTRY_PASSWORD=$(jq --argjson data "$LAGOON_PROJECT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_PASSWORD") | .value')
+if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
+  INTERNAL_REGISTRY_URL=$(jq --argjson data "$LAGOON_ENVIRONMENT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_URL") | .value' | sed -e 's#^http://##' | sed -e 's#^https://##')
+  INTERNAL_REGISTRY_USERNAME=$(jq --argjson data "$LAGOON_ENVIRONMENT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_USERNAME") | .value')
+  INTERNAL_REGISTRY_PASSWORD=$(jq --argjson data "$LAGOON_ENVIRONMENT_VARIABLES" -n -r '$data | .[] | select(.scope == "internal_container_registry") | select(.name == "INTERNAL_REGISTRY_PASSWORD") | .value')
 fi
 
 echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
