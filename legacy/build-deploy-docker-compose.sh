@@ -45,7 +45,8 @@ function contains() {
 #
 # 3. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the
 #    Lagoon project global scoped env-vars. This allows policy control at the
-#    project level.
+#    project level. Lagoon core consolidates all env-vars into the environment.
+#    Project env-vars are only checked for backwards compatibility.
 #
 # 4. The cluster-default feature flag, prefixed with
 #    LAGOON_FEATURE_FLAG_DEFAULT_, as a build pod environment variable. This is
@@ -78,21 +79,43 @@ function featureFlag() {
 	echo "${!defaultFlagVar}"
 }
 
-function projectEnvironmentVariableCheck() {
-	# check for argument
-	[ "$1" ] || return
+# Checks for a build/runtime/global scoped env var from Lagoon API. All env vars
+# are consolidated into the environment, project env-vars are only checked for
+# backwards compatibility.
+function apiEnvVarCheck() {
+  # check for argument
+  [ "$1" ] || return
 
-	local flagVar
+  local flagVar
 
-	flagVar="$1"
-	# check Lagoon environment variables
-	flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_ENVIRONMENT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
-	# check Lagoon project variables
-	flagValue=$(jq -r '.[] | select(.name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
+  flagVar="$1"
+  # check Lagoon environment variables
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "runtime" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon project variables
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "runtime" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
 
-	echo "$2"
+  echo "$2"
+}
+
+# Checks for a internal_container_registry scoped env var. These are set in
+# lagoon-remote.
+function internalContainerRegistryCheck() {
+  # check for argument
+  [ "$1" ] || return
+
+  local flagVar
+
+  flagVar="$1"
+  # check Lagoon environment variables
+  flagValue=$(jq -r '.[] | select(.scope == "internal_container_registry" and .name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon project variables
+  flagValue=$(jq -r '.[] | select(.scope == "internal_container_registry" and .name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+
+  echo "$2"
 }
 
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
@@ -146,10 +169,6 @@ function patchBuildStep() {
 buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 beginBuildStep "Initial Environment Setup" "initialSetup"
 echo "STEP: Preparation started ${buildStartTime}"
-
-##############################################
-### PUSH the latest .lagoon.yml into lagoon-yaml configmap as a pre-deploy field
-##############################################
 
 # set the imagecache registry if it is provided
 IMAGECACHE_REGISTRY=""
@@ -419,28 +438,9 @@ declare -A IMAGE_HASHES
 # separated by commas
 # Example 1: mariadb:mariadb-dbaas < tells any docker-compose services named mariadb to use the mariadb-dbaas service type
 # Example 2: mariadb:mariadb-dbaas,nginx:nginx-persistent
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_SERVICE_TYPES=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_SERVICE_TYPES") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_SERVICE_TYPES=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_SERVICE_TYPES") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_SERVICE_TYPES ]; then
-    LAGOON_SERVICE_TYPES=$TEMP_LAGOON_SERVICE_TYPES
-  fi
-fi
-# Allow the dbaas environment type to be overridden by the lagoon API
-# This accepts colon separated values like so `SERVICE_NAME:DBAAS_ENVIRONMENT_TYPE`, and multiple overrides
-# separated by commas
-# Example 1: mariadb:production < tells any docker-compose services named mariadb to use the production dbaas environment type
-# Example 2: mariadb:production,mariadb-test:development
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_DBAAS_ENVIRONMENT_TYPES=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_DBAAS_ENVIRONMENT_TYPES") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_DBAAS_ENVIRONMENT_TYPES") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES ]; then
-    LAGOON_DBAAS_ENVIRONMENT_TYPES=$TEMP_LAGOON_DBAAS_ENVIRONMENT_TYPES
-  fi
+TEMP_LAGOON_SERVICE_TYPES=$(apiEnvVarCheck LAGOON_SERVICE_TYPES)
+if [ -n "$TEMP_LAGOON_SERVICE_TYPES" ]; then
+  LAGOON_SERVICE_TYPES=$TEMP_LAGOON_SERVICE_TYPES
 fi
 
 # loop through created DBAAS templates
@@ -550,45 +550,62 @@ do
 done
 
 # Get the pre-rollout and post-rollout vars
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-  LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_PREROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_PREROLLOUT_DISABLED") | "\(.value)"'))
-  TEMP_LAGOON_POSTROLLOUT_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_POSTROLLOUT_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_PREROLLOUT_DISABLED ]; then
-    LAGOON_PREROLLOUT_DISABLED=$TEMP_LAGOON_PREROLLOUT_DISABLED
-  fi
-  if [ ! -z $TEMP_LAGOON_POSTROLLOUT_DISABLED ]; then
-    LAGOON_POSTROLLOUT_DISABLED=$TEMP_LAGOON_POSTROLLOUT_DISABLED
-  fi
-fi
+LAGOON_PREROLLOUT_DISABLED=$(apiEnvVarCheck LAGOON_PREROLLOUT_DISABLED "false")
+LAGOON_POSTROLLOUT_DISABLED=$(apiEnvVarCheck LAGOON_POSTROLLOUT_DISABLED "false")
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Container Registry Login" "registryLogin"
 
-# seed all the push images for use later on, push images relate to images that may not be built by this build
-# but are required from somewhere else like a promote environment or from another registry
-ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+##############################################
+### CONTAINER REGISTRY LOGIN
+##############################################
 
-# log in to the provided registry if details are provided
-if [ ! -z ${INTERNAL_REGISTRY_URL} ] ; then
-  echo "Logging in to Lagoon main registry"
-  if [ ! -z ${INTERNAL_REGISTRY_USERNAME} ] && [ ! -z ${INTERNAL_REGISTRY_PASSWORD} ] ; then
-    echo "docker login -u '${INTERNAL_REGISTRY_USERNAME}' -p '${INTERNAL_REGISTRY_PASSWORD}' ${INTERNAL_REGISTRY_URL}" | /bin/bash
-    # create lagoon-internal-registry-secret if it does not exist yet 
-    # TODO: remove this, the secret is created by the remote-controller, builds only need to log in to it now
-    # if ! kubectl -n ${NAMESPACE} get secret lagoon-internal-registry-secret &> /dev/null; then
-    #   kubectl create secret docker-registry lagoon-internal-registry-secret --docker-server=${INTERNAL_REGISTRY_URL} --docker-username=${INTERNAL_REGISTRY_USERNAME} --docker-password=${INTERNAL_REGISTRY_PASSWORD} --dry-run -o yaml | kubectl apply -f -
-    # fi
-    echo "Set internal registry secrets for token ${INTERNAL_REGISTRY_USERNAME} in ${REGISTRY}"
+# $REGISTRY is set as the fallback unauthenticated registry. For use when harbor
+# isn't available, like locally or in CI.
+REGISTRY="$REGISTRY"
+
+# The internal container registry is configured in lagoon-remote and will be set
+# when an authenticated registry, like harbor, is available.
+INTERNAL_REGISTRY_URL=$(internalContainerRegistryCheck INTERNAL_REGISTRY_URL)
+INTERNAL_REGISTRY_USERNAME=$(internalContainerRegistryCheck INTERNAL_REGISTRY_USERNAME)
+INTERNAL_REGISTRY_PASSWORD=$(internalContainerRegistryCheck INTERNAL_REGISTRY_PASSWORD)
+if [ -n "$INTERNAL_REGISTRY_URL" ] ; then
+  if [ -n "$INTERNAL_REGISTRY_USERNAME" ] && [ -n "$INTERNAL_REGISTRY_PASSWORD" ] ; then
+    echo "Logging in to Lagoon main registry"
+    docker login -u "$INTERNAL_REGISTRY_USERNAME" -p "$INTERNAL_REGISTRY_PASSWORD" "$INTERNAL_REGISTRY_URL"
+
+    # The $REGISTRY env var is used by the generator, set it to match the internal registry.
+    REGISTRY="$INTERNAL_REGISTRY_URL"
+  else
+    echo "Could not log in to Lagoon main registry"
+    if [ -z "$INTERNAL_REGISTRY_USERNAME" ]; then
+      echo "No token created for registry ${INTERNAL_REGISTRY_URL}";
+    fi
+    if [ -z "$INTERNAL_REGISTRY_PASSWORD" ]; then
+      echo "No password retrieved for token ${INTERNAL_REGISTRY_USERNAME} in registry ${INTERNAL_REGISTRY_URL}";
+    fi
+
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
+    previousStepEnd=${currentStepEnd}
+    exit 1;
   fi
+else
+  echo "Using unauthenticated registry"
 fi
 
-# log in to any container registries before building or pulling images
+# Generates information needed to build containers:
+# - BuildKit enabled/disabled
+# - List of "push images"
+# - List of "force pull" images
+# - Build args
+# - Private container registries
+ENVIRONMENT_IMAGE_BUILD_DATA=$(build-deploy-tool identify image-builds)
+
+# Private container registries can be configured in Lagoon projects to allow
+# pulling private images. If any were set, log in to them now.
 for PCR in $(echo "$ENVIRONMENT_IMAGE_BUILD_DATA" | jq -c '.containerRegistries[]? | @base64')
 do
   PRIVATE_CONTAINER_REGISTRY=$(echo "${PCR}" | jq -rc '@base64d')
@@ -795,43 +812,12 @@ patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${N
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase 2" "serviceConfigurationPhase2"
 
-# FASTLY SERVICE ID PER INGRESS OVERRIDE FROM LAGOON API VARIABLE
-# Allow the fastly serviceid for specific ingress to be overridden by the lagoon API
-# This accepts colon separated values like so `INGRESS_DOMAIN:FASTLY_SERVICE_ID:WATCH_STATUS:SECRET_NAME(OPTIONAL)`, and multiple overrides
-# separated by commas
-# Example 1: www.example.com:x1s8asfafasf7ssf:true
-# ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
-# Example 2: www.example.com:x1s8asfafasf7ssf:true,www.not-example.com:fa23rsdgsdgas:false
-# ^^^ same as above, but also tells the ingress creation to use the service id fa23rsdgsdgas for ingress www.not-example.com, with the watch status of false
-# Example 3: www.example.com:x1s8asfafasf7ssf:true:examplecom
-# ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
-# but it will also be annotated to be told to use the secret named `examplecom` that could be defined elsewhere
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  LAGOON_FASTLY_SERVICE_IDS=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_FASTLY_SERVICE_IDS") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_LAGOON_FASTLY_SERVICE_IDS=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.name == "LAGOON_FASTLY_SERVICE_IDS") | "\(.value)"'))
-  if [ ! -z $TEMP_LAGOON_FASTLY_SERVICE_IDS ]; then
-    LAGOON_FASTLY_SERVICE_IDS=$TEMP_LAGOON_FASTLY_SERVICE_IDS
-  fi
-fi
-
 ##############################################
 ### CREATE SERVICES, AUTOGENERATED ROUTES AND DBAAS CONFIG
 ##############################################
-# start custom routes disabled
-AUTOGEN_ROUTES_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_AUTOGEN_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_AUTOGEN_ROUTES_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_AUTOGEN_ROUTES_DISABLED ]; then
-    AUTOGEN_ROUTES_DISABLED=$TEMP_AUTOGEN_ROUTES_DISABLED
-  fi
-fi
 
 # generate the autogenerated ingress
+AUTOGEN_ROUTES_DISABLED=$(apiEnvVarCheck LAGOON_AUTOGEN_ROUTES_DISABLED false)
 if [ ! "$AUTOGEN_ROUTES_DISABLED" == true ]; then
   LAGOON_AUTOGEN_YAML_FOLDER="/kubectl-build-deploy/lagoon/autogen-routes"
   mkdir -p $LAGOON_AUTOGEN_YAML_FOLDER
@@ -908,20 +894,7 @@ TEMPLATE_PARAMETERS=()
 ### CUSTOM ROUTES
 ##############################################
 
-# Run the route generation process
-
-# start custom routes disabled
-CUSTOM_ROUTES_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then
-  CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
-fi
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then
-  TEMP_CUSTOM_ROUTES_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_CUSTOM_ROUTES_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_CUSTOM_ROUTES_DISABLED ]; then
-    CUSTOM_ROUTES_DISABLED=$TEMP_CUSTOM_ROUTES_DISABLED
-  fi
-fi
-
+CUSTOM_ROUTES_DISABLED=$(apiEnvVarCheck LAGOON_CUSTOM_ROUTES_DISABLED false)
 if [ ! "$CUSTOM_ROUTES_DISABLED" == true ]; then
   LAGOON_ROUTES_YAML_FOLDER="/kubectl-build-deploy/lagoon/routes"
   mkdir -p $LAGOON_ROUTES_YAML_FOLDER
@@ -1346,17 +1319,7 @@ beginBuildStep "Backup Configuration" "configuringBackups"
 
 # Run the backup generation script
 
-BACKUPS_DISABLED=false
-if [ ! -z "$LAGOON_PROJECT_VARIABLES" ]; then 
-  BACKUPS_DISABLED=($(echo $LAGOON_PROJECT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"')) 
-fi 
-if [ ! -z "$LAGOON_ENVIRONMENT_VARIABLES" ]; then 
-  TEMP_BACKUPS_DISABLED=($(echo $LAGOON_ENVIRONMENT_VARIABLES | jq -r '.[] | select(.scope == "build") | select(.name == "LAGOON_BACKUPS_DISABLED") | "\(.value)"'))
-  if [ ! -z $TEMP_BACKUPS_DISABLED ]; then
-    BACKUPS_DISABLED=$TEMP_BACKUPS_DISABLED
-  fi 
-fi 
-
+BACKUPS_DISABLED=$(apiEnvVarCheck LAGOON_BACKUPS_DISABLED false)
 if [ ! "$BACKUPS_DISABLED" == true ]; then
   # check if k8up v2 feature flag is enabled
   LAGOON_BACKUP_YAML_FOLDER="/kubectl-build-deploy/lagoon/backup"
