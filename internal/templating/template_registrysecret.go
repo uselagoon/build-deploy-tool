@@ -2,8 +2,11 @@ package templating
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 
+	dockerconfig "github.com/docker/cli/cli/config/configfile"
+	dockertypes "github.com/docker/cli/cli/config/types"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
@@ -50,6 +53,20 @@ func GenerateRegistrySecretTemplate(
 		additionalLabels["app.kubernetes.io/instance"] = "internal-registry-secret"
 		additionalLabels["lagoon.sh/template"] = fmt.Sprintf("internal-registry-secret-%s", "0.1.0")
 
+		// generate the auths config for the secret
+		auths := dockerconfig.ConfigFile{
+			AuthConfigs: map[string]dockertypes.AuthConfig{
+				containerRegistry.URL: {
+					Username: containerRegistry.Username,
+					Password: containerRegistry.Password,
+					Auth:     base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", containerRegistry.Username, containerRegistry.Password))),
+				},
+			},
+		}
+		authsBytes, err := json.Marshal(auths)
+		if err != nil {
+			return nil, fmt.Errorf("unable to marshal registry secret to json")
+		}
 		irs := &corev1.Secret{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Secret",
@@ -60,11 +77,7 @@ func GenerateRegistrySecretTemplate(
 			},
 			Type: corev1.SecretTypeDockerConfigJson,
 			Data: map[string][]byte{
-				".dockerconfigjson": []byte(fmt.Sprintf(`{"auths":{"%s":{"username":"%s","password":"%s","auth":"%s"}}}`,
-					containerRegistry.URL,
-					containerRegistry.Username,
-					containerRegistry.Password,
-					base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", containerRegistry.Username, containerRegistry.Password))))),
+				".dockerconfigjson": authsBytes,
 			},
 		}
 
@@ -95,7 +108,7 @@ func GenerateRegistrySecretTemplate(
 			}
 		}
 		// check length of labels
-		err := helpers.CheckLabelLength(irs.ObjectMeta.Labels)
+		err = helpers.CheckLabelLength(irs.ObjectMeta.Labels)
 		if err != nil {
 			return nil, err
 		}

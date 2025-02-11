@@ -14,10 +14,11 @@ func TestGenerateRegistrySecretTemplate(t *testing.T) {
 		buildValues generator.BuildValues
 	}
 	tests := []struct {
-		name    string
-		args    args
-		want    string
-		wantErr bool
+		name        string
+		description string
+		args        args
+		want        string
+		wantErr     bool
 	}{
 		{
 			name: "test1",
@@ -58,6 +59,46 @@ func TestGenerateRegistrySecretTemplate(t *testing.T) {
 				},
 			},
 			want: "test-resources/regsecret/registry-secret1.yaml",
+		}, {
+			name:        "test2",
+			description: "test a password with quotes",
+			args: args{
+				buildValues: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-name",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-name",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "generator.local",
+					Branch:          "environment-name",
+					Services: []generator.ServiceValues{
+						{
+							Name:             "myservice",
+							OverrideName:     "myservice",
+							Type:             "basic",
+							DBaaSEnvironment: "development",
+						},
+						{
+							Name:             "myservice-po",
+							OverrideName:     "myservice-po",
+							Type:             "basic",
+							DBaaSEnvironment: "development",
+							ServicePort:      8080,
+						},
+					},
+					ContainerRegistry: []generator.ContainerRegistry{
+						{
+							Name:       "secret2",
+							SecretName: "internal-registry-secret-secret2",
+							Username:   "username",
+							Password:   `pass"word`,
+							URL:        "my.registry.example.com",
+						},
+					},
+				},
+			},
+			want: "test-resources/regsecret/registry-secret2.yaml",
 		},
 	}
 	for _, tt := range tests {
