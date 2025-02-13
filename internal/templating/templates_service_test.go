@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
-	"github.com/compose-spec/compose-go/types"
+	"github.com/compose-spec/compose-go/v2/types"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 )
 
