@@ -696,13 +696,24 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
           echo "Using BuildKit for $DOCKERFILE"
       fi
 
+      # Decide whether to use a dedicated project builder for Docker builds - disabled by default.
+      DOCKER_PROJECT_BUILDER=default
+      if [ "$(featureFlag DOCKER_PROJECT_BUILDER)" = enabled ]; then
+          DOCKER_PROJECT_BUILDER=${PROJECT}
+          docker builder create --name $DOCKER_PROJECT_BUILDER --driver docker-container || true
+      fi
+
       # now do the actual image build
       if [ $BUILD_TARGET == "false" ]; then
           echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+            if [ $DOCKER_BUILDKIT -eq 0 ]; then
+              DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+            else
+              DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host --builder $DOCKER_PROJECT_BUILDER --load "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+            fi
       else
           echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
+          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host --builder $DOCKER_PROJECT_BUILDER --load "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
       fi
 
       # Keep a list of the images we have built, as we need to push them to the registry later
@@ -713,6 +724,11 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
     fi
   done
 fi
+
+if [ "$(featureFlag DOCKER_PROJECT_BUILDER)" = enabled ]; then  
+  echo "stopping builder $DOCKER_PROJECT_BUILDER"
+  docker builder stop --builder $DOCKER_PROJECT_BUILDER 
+fi  
 
 # print information about built image sizes
 function printBytes {
