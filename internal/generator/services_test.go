@@ -944,6 +944,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						Service:  "cli",
 						Schedule: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *",
 						Command:  "drush cron",
+						Timeout:  "4h",
 					},
 				},
 				NativeCronjobs: []lagoon.Cronjob{
@@ -952,12 +953,14 @@ func Test_composeToServiceValues(t *testing.T) {
 						Service:  "cli",
 						Schedule: "5 2 * * *",
 						Command:  "env",
+						Timeout:  "4h",
 					},
 					{
 						Name:     "cronjob-cli-my-cronjob-that-has-a-very-very-v-znwv36",
 						Service:  "cli",
 						Schedule: "5 2 * * *",
 						Command:  "drush cron",
+						Timeout:  "4h",
 					},
 				},
 				ImageBuild: &ImageBuild{
@@ -1273,6 +1276,88 @@ func Test_composeToServiceValues(t *testing.T) {
 						"lagoon.base.image": "this-is-an-invalid-reference!",
 					},
 					Image: "uselagoon/fake-redis:7",
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test24 - failure on cronjob timeout longer than 24h",
+			args: args{
+				buildValues: &BuildValues{
+					Namespace:            "example-project-main",
+					Project:              "example-project",
+					ImageRegistry:        "harbor.example",
+					Environment:          "main",
+					Branch:               "main",
+					BuildType:            "branch",
+					ServiceTypeOverrides: &lagoon.EnvironmentVariable{},
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Cronjobs: []lagoon.Cronjob{
+									{
+										Name:     "My Cronjob that has a very very very long timeout",
+										Command:  "drush cron",
+										Service:  "cli",
+										Schedule: "5 2 * * *",
+										Timeout:  "48h",
+									},
+								},
+							},
+						},
+					},
+				},
+				composeService: "cli",
+				composeServiceValues: composetypes.ServiceConfig{
+					Labels: composetypes.Labels{
+						"lagoon.type": "cli",
+					},
+					Build: &composetypes.BuildConfig{
+						Context:    ".",
+						Dockerfile: "../testdata/basic/docker/basic.dockerfile",
+					},
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+		{
+			name: "test25 - failure on invalid cronjob timeout",
+			args: args{
+				buildValues: &BuildValues{
+					Namespace:            "example-project-main",
+					Project:              "example-project",
+					ImageRegistry:        "harbor.example",
+					Environment:          "main",
+					Branch:               "main",
+					BuildType:            "branch",
+					ServiceTypeOverrides: &lagoon.EnvironmentVariable{},
+					LagoonYAML: lagoon.YAML{
+						Environments: lagoon.Environments{
+							"main": lagoon.Environment{
+								Cronjobs: []lagoon.Cronjob{
+									{
+										Name:     "My Cronjob that has an invalid timeout",
+										Command:  "drush cron",
+										Service:  "cli",
+										Schedule: "5 2 * * *",
+										Timeout:  "2hrs",
+									},
+								},
+							},
+						},
+					},
+				},
+				composeService: "cli",
+				composeServiceValues: composetypes.ServiceConfig{
+					Labels: composetypes.Labels{
+						"lagoon.type": "cli",
+					},
+					Build: &composetypes.BuildConfig{
+						Context:    ".",
+						Dockerfile: "../testdata/basic/docker/basic.dockerfile",
+					},
 				},
 			},
 			want:    nil,

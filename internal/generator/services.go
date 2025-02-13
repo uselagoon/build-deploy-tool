@@ -6,6 +6,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -489,6 +490,21 @@ func composeToServiceValues(
 					cronjob.Schedule, err = helpers.ConvertCrontab(buildValues.Namespace, cronjob.Schedule)
 					if err != nil {
 						return nil, fmt.Errorf("unable to convert crontab for cronjob %s: %v", cronjob.Name, err)
+					}
+					// handle setting the cronjob timeout here
+					// can't be greater than 24hrs and must match go time duration https://pkg.go.dev/time#ParseDuration
+					if cronjob.Timeout != "" {
+						cronjobTimeout, err := time.ParseDuration(cronjob.Timeout)
+						if err != nil {
+							return nil, fmt.Errorf("unable to convert timeout for cronjob %s: %v", cronjob.Name, err)
+						}
+						// max cronjob timeout is 24 hours
+						if cronjobTimeout > time.Duration(24*time.Hour) {
+							return nil, fmt.Errorf("timeout for cronjob %s cannot be longer than 24 hours", cronjob.Name)
+						}
+					} else {
+						// default cronjob timeout is 4h
+						cronjob.Timeout = "4h"
 					}
 					// if the cronjob is inpod, or the cronjob has an inpod flag override
 					if inpod || (cronjob.InPod != nil && *cronjob.InPod) {
