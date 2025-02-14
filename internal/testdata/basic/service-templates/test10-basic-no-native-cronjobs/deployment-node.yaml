@@ -50,8 +50,8 @@ spec:
           value: abcdefg123456
         - name: CRONJOBS
           value: |
-            3,18,33,48 * * * * drush cron
-            18,48 * * * * drush cron
+            3,18,33,48 * * * * flock -n /tmp/cron.lock.932b8586d96eb88e1574cb8a1223a0b964763c7d0ce90d9aff64d2d92e60fd8d -c 'drush cron'
+            18,48 * * * * flock -n /tmp/cron.lock.f6d199ad6c0075de8176b5c0a14a5d571a473001ced482bc9289182da3d90083 -c 'drush cron'
         - name: SERVICE_NAME
           value: node
         envFrom:

@@ -7,6 +7,7 @@ toolchain go1.23.3
 require (
 	dario.cat/mergo v1.0.1
 	github.com/PaesslerAG/gval v1.2.4
+	github.com/alessio/shellescape v1.4.1
 	github.com/amazeeio/dbaas-operator v0.3.0
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/compose-spec/compose-go v1.2.7
