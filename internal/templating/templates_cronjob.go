@@ -346,7 +346,13 @@ func GenerateCronjobTemplate(
 				container.Container.Env = append(container.Container.Env, envvars...)
 				container.Container.EnvFrom = []corev1.EnvFromSource{
 					{
-						ConfigMapRef: &corev1.ConfigMapEnvSource{
+						SecretRef: &corev1.SecretEnvSource{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "lagoon-platform-env",
+							},
+						},
+					}, {
+						SecretRef: &corev1.SecretEnvSource{
 							LocalObjectReference: corev1.LocalObjectReference{
 								Name: "lagoon-env",
 							},
