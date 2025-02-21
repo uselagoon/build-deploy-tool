@@ -184,13 +184,18 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					K8UPVersion:     "v2",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
 							Value: "imagecache.example.com",
 							Scope: "global",
+						},
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_K8UP_V2",
+							Value: "enabled",
 						},
 					},
 				}, true),
@@ -204,13 +209,18 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					K8UPVersion:     "v2",
 					LagoonYAML:      "internal/testdata/node/lagoon.nostorage.yml",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
 							Value: "imagecache.example.com",
 							Scope: "global",
+						},
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_K8UP_V2",
+							Value: "enabled",
 						},
 					},
 				}, true),
@@ -273,12 +283,17 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					Branch:          "main",
 					EnvironmentType: "production",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
-					K8UPVersion:     "v2",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
 							Value: "enabled",
 							Scope: "global",
+						},
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_K8UP_V2",
+							Value: "enabled",
 						},
 					},
 				}, true),
@@ -295,7 +310,6 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					Branch:          "main",
 					EnvironmentType: "production",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
-					K8UPVersion:     "v2",
 					ProjectVariables: []lagoon.EnvironmentVariable{
 						{
 							Name:  "LAGOON_FEATURE_FLAG_ROOTLESS_WORKLOAD",
@@ -306,6 +320,12 @@ func TestBackupTemplateGeneration(t *testing.T) {
 							Name:  "LAGOON_FEATURE_FLAG_FS_ON_ROOT_MISMATCH",
 							Value: "enabled",
 							Scope: "global",
+						},
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_K8UP_V2",
+							Value: "enabled",
 						},
 					},
 				}, true),

@@ -1,0 +1,8 @@
+version: '2'
+services:
+  redis:
+    image: uselagoon/redis:latest
+    labels:
+      lagoon.type: redis-persistent
+    ports:
+      - '6379'

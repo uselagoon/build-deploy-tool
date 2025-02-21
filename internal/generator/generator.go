@@ -136,8 +136,13 @@ func NewGenerator(
 		return nil, err
 	}
 
-	buildValues.Backup.K8upVersion = helpers.GetEnv("K8UP_VERSION", generator.BackupConfiguration.K8upVersion, generator.Debug)
-
+	// default to k8up v1 (backup.appuio.ch/v1alpha1) version
+	buildValues.Backup.K8upVersion = "v1"
+	k8upV2 := CheckFeatureFlag("K8UP_V2", buildValues.EnvironmentVariables, false)
+	if k8upV2 == "enabled" {
+		// if k8upv2 (k8up.io/v1) version is specified by remote, set that here
+		buildValues.Backup.K8upVersion = "v2"
+	}
 	// get the project and environment variables
 	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
 	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", generator.EnvironmentVariables, generator.Debug)
