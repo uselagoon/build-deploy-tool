@@ -3,8 +3,8 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   annotations:
-    k8up.io/backup: "true"
-    k8up.syn.tools/backup: "true"
+    k8up.io/backup: "false"
+    k8up.syn.tools/backup: "false"
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
   creationTimestamp: null
