@@ -3,62 +3,62 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    lagoon.sh/branch: environment-name
-    lagoon.sh/version: v2.x.x
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/instance: basic
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: basic-single
     lagoon.sh/buildType: branch
-    lagoon.sh/environment: environment-name
+    lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: myservice
+    lagoon.sh/service: basic
     lagoon.sh/service-type: basic-single
     lagoon.sh/template: basic-single-0.1.0
-  name: myservice
+  name: basic
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app.kubernetes.io/instance: myservice
+      app.kubernetes.io/instance: basic
       app.kubernetes.io/name: basic-single
   strategy:
     type: Recreate
   template:
     metadata:
       annotations:
-        k8up.syn.tools/backupcommand: /bin/sh -c 'tar -cf - -C "/app/storage" --exclude="lost\+found"
+        k8up.io/backupcommand: /bin/sh -c 'tar -cf - -C "/app/storage" --exclude="lost\+found"
           . || [ $? -eq 1 ]'
-        k8up.syn.tools/file-extension: .myservice.tar
-        lagoon.sh/branch: environment-name
-        lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
-        lagoon.sh/version: v2.x.x
+        k8up.io/file-extension: .basic.tar
+        lagoon.sh/branch: main
+        lagoon.sh/configMapSha: abcdefg1234567890
+        lagoon.sh/version: v2.7.x
       creationTimestamp: null
       labels:
-        app.kubernetes.io/instance: myservice
+        app.kubernetes.io/instance: basic
         app.kubernetes.io/managed-by: build-deploy-tool
         app.kubernetes.io/name: basic-single
         lagoon.sh/buildType: branch
-        lagoon.sh/environment: environment-name
+        lagoon.sh/environment: main
         lagoon.sh/environmentType: production
         lagoon.sh/project: example-project
-        lagoon.sh/service: myservice
+        lagoon.sh/service: basic
         lagoon.sh/service-type: basic-single
         lagoon.sh/template: basic-single-0.1.0
     spec:
       containers:
       - env:
         - name: LAGOON_GIT_SHA
-          value: "0"
+          value: abcdefg123456
         - name: CRONJOBS
         - name: SERVICE_NAME
-          value: myservice
+          value: basic
         envFrom:
         - configMapRef:
             name: lagoon-env
-        image: harbor.example.com/example-project/environment-name/myservice@latest
+        image: harbor.example/example-project/main/basic@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8
         imagePullPolicy: Always
         livenessProbe:
           initialDelaySeconds: 60
@@ -82,13 +82,13 @@ spec:
         securityContext: {}
         volumeMounts:
         - mountPath: /app/storage
-          name: myservice
+          name: basic
       enableServiceLinks: false
       imagePullSecrets:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       volumes:
-      - name: myservice
+      - name: basic
         persistentVolumeClaim:
-          claimName: myservice
+          claimName: basic
 status: {}

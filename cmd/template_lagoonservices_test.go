@@ -605,6 +605,28 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/complex/service-templates/test-redis-persistent-k8upv2",
 		},
+		{
+			name:        "test-basic-single-k8upv2",
+			description: "tests a basic deployment with a basic-single with k8up v2 featureflag",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.basic-single.yml",
+					ImageReferences: map[string]string{
+						"basic": "harbor.example/example-project/main/basic@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_K8UP_V2",
+							Value: "enabled",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test-basic-single-k8upv2",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
