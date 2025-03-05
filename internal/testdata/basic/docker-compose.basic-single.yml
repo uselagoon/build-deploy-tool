@@ -1,0 +1,12 @@
+version: '2'
+services:
+  basic:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic-single
+      lagoon.service.port: 8080
+      lagoon.persistent: /app/storage
+    ports:
+      - '8080'

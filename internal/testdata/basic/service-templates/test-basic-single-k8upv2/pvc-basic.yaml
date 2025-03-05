@@ -5,21 +5,21 @@ metadata:
   annotations:
     k8up.io/backup: "false"
     k8up.syn.tools/backup: "false"
-    lagoon.sh/branch: environment-name
-    lagoon.sh/version: v2.x.x
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
   creationTimestamp: null
   labels:
-    app.kubernetes.io/instance: myservice
+    app.kubernetes.io/instance: basic
     app.kubernetes.io/managed-by: build-deploy-tool
     app.kubernetes.io/name: basic-single
     lagoon.sh/buildType: branch
-    lagoon.sh/environment: environment-name
+    lagoon.sh/environment: main
     lagoon.sh/environmentType: production
     lagoon.sh/project: example-project
-    lagoon.sh/service: myservice
+    lagoon.sh/service: basic
     lagoon.sh/service-type: basic-single
     lagoon.sh/template: basic-single-0.1.0
-  name: myservice
+  name: basic
 spec:
   accessModes:
   - ReadWriteOnce

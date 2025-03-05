@@ -107,6 +107,9 @@ var basicSingle = ServiceType{
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
 		PersistentVolumeType: corev1.ReadWriteOnce,
-		Backup:               true,
+		BackupConfiguration: BackupConfiguration{
+			Command:       `/bin/sh -c 'tar -cf - -C "{{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}}" --exclude="lost\+found" . || [ $? -eq 1 ]'`,
+			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
+		},
 	},
 }
