@@ -1,0 +1,21 @@
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  annotations:
+    lagoon.sh/branch: environment-name
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: lagoon-env
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: lagoon-env
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: environment-name
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/template: lagoon-env-0.1.0
+  name: lagoon-env
+stringData:
+  MY_SPECIAL_VARIABLE: myspecialvariable
+  MY_SPECIAL_VARIABLE1: myspecialvariable1
+  MY_SPECIAL_VARIABLE2: myspecialvariable2

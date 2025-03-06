@@ -56,7 +56,9 @@ spec:
         - name: SERVICE_NAME
           value: myservice
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice@latest
         imagePullPolicy: Always
@@ -153,7 +155,9 @@ spec:
         - name: SERVICE_NAME
           value: myservice-size
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/myservice-size@latest
         imagePullPolicy: Always

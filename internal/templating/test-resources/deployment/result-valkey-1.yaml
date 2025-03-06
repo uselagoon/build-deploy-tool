@@ -52,7 +52,9 @@ spec:
         - name: SERVICE_NAME
           value: valkey
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/valkey@latest
         imagePullPolicy: Always
@@ -146,7 +148,9 @@ spec:
         - name: SERVICE_NAME
           value: valkey-persist
         envFrom:
-        - configMapRef:
+        - secretRef:
+            name: lagoon-platform-env
+        - secretRef:
             name: lagoon-env
         image: harbor.example.com/example-project/environment-name/valkey-persist@latest
         imagePullPolicy: Always
