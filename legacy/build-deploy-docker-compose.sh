@@ -1185,6 +1185,15 @@ if kubectl -n ${NAMESPACE} get configmap lagoon-env &> /dev/null; then
   # the old lagoon-env configmap will be removed at the end of the applying deployments step so that in the event of a failure between this point
   # and the rollouts completing, the configmap will still exist if the failure occurs before the deployments are applied
 fi
+# if the lagoon-platform-env secret doesn't exist, create an empty one
+if ! kubectl -n ${NAMESPACE} get secret lagoon-platform-env &> /dev/null; then
+  build-deploy-tool template lagoon-env \
+    --secret-name "lagoon-platform-env" \
+    --saved-templates-path ${LAGOON_ENV_YAML_FOLDER} \
+    --dbaas-creds /kubectl-build-deploy/dbaas-creds.json \
+    --routes "${ROUTES}"
+  kubectl apply -n ${NAMESPACE} -f ${LAGOON_ENV_YAML_FOLDER}/lagoon-platform-env-secret.yaml
+fi
 
 # now remove any vars from the lagoon-env secret that were deleted from the API
 EXISTING_LAGOONENV_VARS=$(kubectl -n ${NAMESPACE} get secret lagoon-env -o json  2> /dev/null | jq -r '.data | keys[]')
