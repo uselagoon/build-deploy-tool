@@ -45,6 +45,7 @@ spec:
             lagoon.sh/service-type: cli
             lagoon.sh/template: cli-0.1.0
         spec:
+          automountServiceAccountToken: false
           containers:
           - command:
             - /lagoon/cronjob.sh
@@ -143,6 +144,7 @@ spec:
             lagoon.sh/service-type: cli
             lagoon.sh/template: cli-0.1.0
         spec:
+          automountServiceAccountToken: false
           containers:
           - command:
             - /lagoon/cronjob.sh
@@ -241,6 +243,7 @@ spec:
             lagoon.sh/service-type: cli-persistent
             lagoon.sh/template: cli-persistent-0.1.0
         spec:
+          automountServiceAccountToken: false
           containers:
           - command:
             - /lagoon/cronjob.sh
