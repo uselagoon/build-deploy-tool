@@ -44,6 +44,7 @@ spec:
         lagoon.sh/service-type: varnish
         lagoon.sh/template: varnish-0.1.0
     spec:
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: LAGOON_GIT_SHA
@@ -140,6 +141,7 @@ spec:
         lagoon.sh/service-type: varnish-persistent
         lagoon.sh/template: varnish-persistent-0.1.0
     spec:
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: LAGOON_GIT_SHA

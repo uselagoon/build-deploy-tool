@@ -48,6 +48,7 @@ spec:
         lagoon.sh/service-type: rabbitmq
         lagoon.sh/template: rabbitmq-0.1.0
     spec:
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: RABBITMQ_NODENAME
