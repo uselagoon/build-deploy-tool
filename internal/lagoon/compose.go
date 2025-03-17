@@ -45,6 +45,11 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	for _, service := range l.Services {
+		if err := CheckServiceNameValidity(service); err != nil {
+			return nil, nil, nil, err
+		}
+	}
 	originalOrder, originalVolume, err := UnmarshalLagoonDockerComposeYAML(file)
 	if err != nil {
 		return nil, nil, nil, err
@@ -70,9 +75,6 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, []Or
 		// extract the services only
 		if item.Key.(string) == "services" {
 			for idx, v := range item.Value.(goyaml.MapSlice) {
-				if err := CheckServiceNameValidity(v); err != nil {
-					return nil, nil, err
-				}
 				ls = append(ls, OriginalServiceOrder{Index: idx, Name: v.Key.(string)})
 			}
 		}
@@ -101,18 +103,13 @@ func ValidateUnmarshalDockerComposeYAML(file string) error {
 }
 
 // Checks the validity of the service name against the RFC1035 DNS label standard
-func CheckServiceNameValidity(v goyaml.MapItem) error {
+func CheckServiceNameValidity(v composetypes.ServiceConfig) error {
 	// go over the service map looking for the labels slice
-	for _, s := range v.Value.(goyaml.MapSlice) {
-		if s.Key == "labels" {
-			// go over the labels looking for the lagoon.type label
-			for _, label := range s.Value.(goyaml.MapSlice) {
-				// check if the lagoon.type != none
-				if label.Key == "lagoon.type" && label.Value != "none" {
-					if err := utilvalidation.IsDNS1035Label(v.Key.(string)); err != nil {
-						return fmt.Errorf("service name is invalid. Please refer to the documentation regarding service naming requirements")
-					}
-				}
+	for key, value := range v.Labels {
+		// check if the lagoon.type != none
+		if key == "lagoon.type" && value != "none" {
+			if err := utilvalidation.IsDNS1035Label(v.Name); err != nil {
+				return fmt.Errorf("service name is invalid. Please refer to the documentation regarding service naming requirements")
 			}
 		}
 	}
