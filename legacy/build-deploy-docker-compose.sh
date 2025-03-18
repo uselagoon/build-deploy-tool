@@ -456,7 +456,7 @@ do
   SERVICE_TYPE=$(cat $DOCKER_COMPOSE_YAML | yq -o json | jq -r '.services.'\"$COMPOSE_SERVICE\"'.labels."lagoon.type" // "custom"')
 
   # Allow the servicetype to be overriden by environment in .lagoon.yml
-  ENVIRONMENT_SERVICE_TYPE_OVERRIDE=$(cat .lagoon.yml | yq -o json | jq -r '.environments.'\"${BRANCH//./\\.}\"'.types.'\"$SERVICE_NAME\"' // false')
+  ENVIRONMENT_SERVICE_TYPE_OVERRIDE=$(cat .lagoon.yml | yq -o json | jq -r '.environments.'\"${BRANCH}\"'.types.'\"$SERVICE_NAME\"' // false')
   if [ ! $ENVIRONMENT_SERVICE_TYPE_OVERRIDE == "false" ]; then
     SERVICE_TYPE=$ENVIRONMENT_SERVICE_TYPE_OVERRIDE
   fi
