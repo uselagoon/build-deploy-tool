@@ -8,8 +8,8 @@ services:
       context: internal/testdata/basic/docker
       dockerfile: basic.dockerfile
     labels:
-      lagoon.type: basic
-      lagoon.service.usecomposeports: true
+      - "lagoon.type=basic"
+      - "lagoon.service.usecomposeports=true"
     volumes:
       - .:/app:delegated
     ports:
