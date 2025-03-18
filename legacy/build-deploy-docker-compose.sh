@@ -394,7 +394,6 @@ currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
-DEPLOY_TYPE=$(cat .lagoon.yml | yq -o json | jq -r '.environments.'\"${BRANCH//.\//.}\"'."deploy-type" // "default"')
 
 # Load all Services that are defined
 COMPOSE_SERVICES=($(cat $DOCKER_COMPOSE_YAML | yq -o json | jq -r '.services | keys_unsorted | .[]'))
