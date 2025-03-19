@@ -34,47 +34,47 @@ spec:
         env:
         - name: BACKUP_DB_HOST
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_HOST
               name: lagoon-env
         - name: BACKUP_DB_USERNAME
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_USERNAME
               name: lagoon-env
         - name: BACKUP_DB_PASSWORD
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_PASSWORD
               name: lagoon-env
         - name: BACKUP_DB_DATABASE
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_DATABASE
               name: lagoon-env
         - name: BACKUP_DB_PORT
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_PORT
               name: lagoon-env
         - name: BACKUP_DB_AUTHSOURCE
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_AUTHSOURCE
               name: lagoon-env
         - name: BACKUP_DB_AUTHMECHANISM
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_AUTHMECHANISM
               name: lagoon-env
         - name: BACKUP_DB_AUTHTLS
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_AUTHTLS
               name: lagoon-env
         - name: BACKUP_DB_READREPLICA_HOSTS
           valueFrom:
-            configMapKeyRef:
+            secretKeyRef:
               key: MONGODB_DATABASE_READREPLICA_HOSTS
               name: lagoon-env
         image: uselagoon/database-tools:latest
