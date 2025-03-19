@@ -122,7 +122,7 @@ func GeneratePreBackupPod(
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
 						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
-							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+							SecretKeyRef: &v1.SecretKeySelector{
 								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
@@ -212,7 +212,7 @@ func GeneratePreBackupPod(
 					prebackuppod.Spec.Pod.Spec.Containers[0].Env = append(prebackuppod.Spec.Pod.Spec.Containers[0].Env, v1.EnvVar{
 						Name: "BACKUP_DB_READREPLICA_HOSTS",
 						ValueFrom: &v1.EnvVarSource{
-							ConfigMapKeyRef: &v1.ConfigMapKeySelector{
+							SecretKeyRef: &v1.SecretKeySelector{
 								Key: fmt.Sprintf("%s_READREPLICA_HOSTS", varFix(serviceValues.OverrideName)),
 								LocalObjectReference: v1.LocalObjectReference{
 									Name: "lagoon-env",
@@ -337,22 +337,22 @@ pod:
       env:
       - name: BACKUP_DB_HOST
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_HOST
             name: lagoon-env
       - name: BACKUP_DB_USERNAME
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_USERNAME
             name: lagoon-env
       - name: BACKUP_DB_PASSWORD
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_PASSWORD
             name: lagoon-env
       - name: BACKUP_DB_DATABASE
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_DATABASE
             name: lagoon-env
       image: uselagoon/database-tools:latest
@@ -377,22 +377,22 @@ pod:
       env:
       - name: BACKUP_DB_HOST
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_HOST
             name: lagoon-env
       - name: BACKUP_DB_USERNAME
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_USERNAME
             name: lagoon-env
       - name: BACKUP_DB_PASSWORD
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_PASSWORD
             name: lagoon-env
       - name: BACKUP_DB_DATABASE
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_DATABASE
             name: lagoon-env
       image: uselagoon/database-tools:latest
@@ -409,42 +409,42 @@ pod:
       env:
       - name: BACKUP_DB_HOST
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_HOST
             name: lagoon-env
       - name: BACKUP_DB_USERNAME
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_USERNAME
             name: lagoon-env
       - name: BACKUP_DB_PASSWORD
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_PASSWORD
             name: lagoon-env
       - name: BACKUP_DB_DATABASE
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_DATABASE
             name: lagoon-env
       - name: BACKUP_DB_PORT
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_PORT
             name: lagoon-env
       - name: BACKUP_DB_AUTHSOURCE
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_AUTHSOURCE
             name: lagoon-env
       - name: BACKUP_DB_AUTHMECHANISM
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_AUTHMECHANISM
             name: lagoon-env
       - name: BACKUP_DB_AUTHTLS
         valueFrom:
-          configMapKeyRef:
+          secretKeyRef:
             key: {{ .Service.Name | VarFix }}_AUTHTLS
             name: lagoon-env
       image: uselagoon/database-tools:latest
