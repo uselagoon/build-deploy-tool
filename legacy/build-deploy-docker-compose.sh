@@ -689,19 +689,50 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
       # determine if buildkit should be disabled for this build
       DOCKER_BUILDKIT=1
       if [ "$(echo "${ENVIRONMENT_IMAGE_BUILD_DATA}" | jq -r '.buildKit')" == "false" ]; then
-          DOCKER_BUILDKIT=0
-          echo "Not using BuildKit for $DOCKERFILE"
+        DOCKER_BUILDKIT=0
+        echo "Not using BuildKit for $DOCKERFILE"
       else
-          echo "Using BuildKit for $DOCKERFILE"
+        echo "Using BuildKit for $DOCKERFILE"
       fi
-
-      # now do the actual image build
+      export DOCKER_BUILDKIT
+      BUILD_TARGET_ARGS=""
       if [ $BUILD_TARGET == "false" ]; then
-          echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_CONTEXT
+        echo "Building ${BUILD_CONTEXT}/${DOCKERFILE}"
       else
-          echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
-          DOCKER_BUILDKIT=$DOCKER_BUILDKIT docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE --target $BUILD_TARGET $BUILD_CONTEXT
+        echo "Building target ${BUILD_TARGET} for ${BUILD_CONTEXT}/${DOCKERFILE}"
+        BUILD_TARGET_ARGS="--target ${BUILD_TARGET}"
+      fi
+      # now do the actual image build, this pipes to tee so that the build output is still realtime in any logs 
+      # ie, if someone was looking at the build container logs in k8s
+      # this also captures any errors that this command will encounter so that the process can then check the output file to see if the
+      # error condition we are looking for is there
+      set +e
+      (docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_TARGET_ARGS $BUILD_CONTEXT 2>&1 | tee /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME; exit ${PIPESTATUS[0]})
+      buildExit=$?
+      set -e
+      if [ "${buildExit}" != "0" ]; then
+        # if the build errors and contains the message we are looking for, then it is probably a buildkit related failure
+        # attempt to run run again with --no-cache so that it forces layer invalidation. this will make the build slower, but hopefully succeed
+        # why this happens is still to be determined. there isn't enough information in the error to be able to know which layers are the problem
+        # or what the actual cause is, making it incredibly difficult to reproduce
+        # without being able to reproduce we have to use this workaround to retry :'(
+        capErr=0
+        if cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: layer does not exist"; then
+          capErr=1
+        elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: failed to prepare"; then
+          capErr=1
+        fi
+        if [ "${capErr}" != "0" ]; then
+          # at least drop a message saying that this was encountered
+          echo "##############################################
+The first attempt to build ${BUILD_CONTEXT}/${DOCKERFILE} failed due to a layer error
+Retrying build for ${BUILD_CONTEXT}/${DOCKERFILE} without cache
+##############################################"
+          docker build --no-cache --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_TARGET_ARGS $BUILD_CONTEXT
+        else
+          # if the failure is not one that matches the buildkit layer issue, then exit as a normal build failure
+          exit 1
+        fi
       fi
 
       # Keep a list of the images we have built, as we need to push them to the registry later
