@@ -13,6 +13,10 @@ export NAMESPACE
 export LAGOON_VERSION
 
 echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
+# check if a http/https url is defined, and if a username/password are supplied for it
+if [ "$(build-deploy-tool template git-credential --credential-file /home/.git-credentials)" == "store" ]; then
+  git config --global credential.helper 'store --file /home/.git-credentials'
+fi
 if [ "$BUILD_TYPE" == "pullrequest" ]; then
   /kubectl-build-deploy/scripts/git-checkout-pull-merge.sh "$SOURCE_REPOSITORY" "$PR_HEAD_SHA" "$PR_BASE_SHA"
 else
