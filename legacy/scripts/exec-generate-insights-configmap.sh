@@ -45,6 +45,7 @@ processImageInspect() {
       lagoon.sh/project=${PROJECT} \
       lagoon.sh/environment=${ENVIRONMENT} \
       lagoon.sh/service=${IMAGE_NAME} \
+      lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
       insights.lagoon.sh/type=inspect
 }
 
@@ -90,6 +91,7 @@ processSbom() {
         lagoon.sh/project=${PROJECT} \
         lagoon.sh/environment=${ENVIRONMENT} \
         lagoon.sh/service=${IMAGE_NAME} \
+        lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
         insights.lagoon.sh/type=sbom
   fi
 }
