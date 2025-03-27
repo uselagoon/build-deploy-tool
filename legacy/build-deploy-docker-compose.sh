@@ -721,6 +721,8 @@ if [[ "$BUILD_TYPE" == "pullrequest"  ||  "$BUILD_TYPE" == "branch" ]]; then
           capErr=1
         elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: failed to prepare"; then
           capErr=1
+        elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: failed to get layer"; then
+          capErr=1
         fi
         if [ "${capErr}" != "0" ]; then
           # at least drop a message saying that this was encountered
