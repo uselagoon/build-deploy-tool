@@ -1,0 +1,39 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: node
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: basic
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: node
+    lagoon.sh/service-type: basic
+    lagoon.sh/template: basic-0.1.0
+  name: node
+spec:
+  ports:
+  - name: tcp-1234
+    port: 1234
+    protocol: TCP
+    targetPort: tcp-1234
+  - name: tcp-8191
+    port: 8191
+    protocol: TCP
+    targetPort: tcp-8191
+  - name: udp-9001
+    port: 9001
+    protocol: UDP
+    targetPort: udp-9001
+  selector:
+    app.kubernetes.io/instance: node
+    app.kubernetes.io/name: basic
+status:
+  loadBalancer: {}
