@@ -218,16 +218,16 @@ func GenerateDBaaSTemplate(
 	return &dbaasTemplates, nil
 }
 
-func TemplateConsumers(dbaas *DBaaSTemplates) ([]byte, error) {
+func TemplateConsumers(dbaas *DBaaSTemplates) (map[string][]byte, error) {
 	separator := []byte("---\n")
-	var templateYAML []byte
+	templateYAML := map[string][]byte{}
 	for _, db := range dbaas.MariaDB {
 		dbBytes, err := yaml.Marshal(db)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
 		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML[db.Name] = append(templateYAML[db.Name], restoreResult[:]...)
 	}
 	for _, db := range dbaas.MongoDB {
 		dbBytes, err := yaml.Marshal(db)
@@ -235,7 +235,7 @@ func TemplateConsumers(dbaas *DBaaSTemplates) ([]byte, error) {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
 		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML[db.Name] = append(templateYAML[db.Name], restoreResult[:]...)
 	}
 	for _, db := range dbaas.PostgreSQL {
 		dbBytes, err := yaml.Marshal(db)
@@ -243,7 +243,7 @@ func TemplateConsumers(dbaas *DBaaSTemplates) ([]byte, error) {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
 		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML[db.Name] = append(templateYAML[db.Name], restoreResult[:]...)
 	}
 	return templateYAML, nil
 }
