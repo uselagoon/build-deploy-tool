@@ -54,6 +54,7 @@ spec:
               - key: lagoon.sh/spot
                 operator: Exists
             weight: 1
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: LAGOON_GIT_SHA
