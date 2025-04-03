@@ -41,20 +41,9 @@ spec:
               name: http
         path: /
         pathType: Prefix
-  - host: www.example.com
-    http:
-      paths:
-      - backend:
-          service:
-            name: nginx
-            port:
-              name: http
-        path: /
-        pathType: Prefix
   tls:
   - hosts:
     - '*.www.example.com'
-    - www.example.com
     secretName: wildcard-www.example.com-tls
 status:
   loadBalancer: {}

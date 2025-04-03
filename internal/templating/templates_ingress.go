@@ -52,6 +52,9 @@ func GenerateIngressTemplate(
 			truncatedRouteDomain = fmt.Sprintf("%s-%s", strings.Split(subdomain, "-")[0], helpers.GetMD5HashWithNewLine(route.Domain)[:5])
 		}
 		// set the domain to include the wildcard prefix
+		if route.WildcardApex != nil && *route.WildcardApex {
+			route.AlternativeNames = append(route.AlternativeNames, route.Domain)
+		}
 		route.Domain = fmt.Sprintf("*.%s", route.Domain)
 	}
 
