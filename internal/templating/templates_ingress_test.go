@@ -456,6 +456,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					Wildcard:     helpers.BoolPtr(true),
+					WildcardApex: helpers.BoolPtr(true),
 					IngressName:  "wildcard-www.example.com",
 				},
 				values: generator.BuildValues{
@@ -502,6 +503,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					Wildcard:     helpers.BoolPtr(true),
+					WildcardApex: helpers.BoolPtr(true),
 					IngressName:  "wildcard-this-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.e-f1945",
 				},
 				values: generator.BuildValues{
@@ -699,6 +701,53 @@ func TestGenerateIngressTemplate(t *testing.T) {
 				activeStandby: false,
 			},
 			want: "test-resources/ingress/result-custom-ingress9.yaml",
+		},
+		{
+			name: "wildcard ingress no apex",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(false),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressClass: "nginx",
+					Wildcard:     helpers.BoolPtr(true),
+					WildcardApex: helpers.BoolPtr(false),
+					IngressName:  "wildcard-www.example.com",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment",
+					EnvironmentType: "development",
+					Namespace:       "myexample-project-environment",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/ingress/result-wildcard-ingress3.yaml",
 		},
 	}
 	for _, tt := range tests {
