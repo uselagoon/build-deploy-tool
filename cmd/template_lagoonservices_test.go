@@ -659,6 +659,23 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test-basic-external-service-environment",
 		},
+		{
+			name:        "basic-custom-volumes-nfs",
+			description: "create a basic with custom volumes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					BuildType:       "branch",
+					LagoonYAML:      "internal/testdata/basic/lagoon.multiple-volumes-4.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/basic-custom-volumes-nfs",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	maxAdditionalVolumes        int    = 6
+	maxAdditionalVolumes        int    = 10
 	defaultAdditionalVolumeSize string = "5Gi"
 	maxAdditionalVolumeSize     string = "4Ti"
 )
@@ -52,6 +52,33 @@ func composeToVolumeValues(
 		volumeType := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.type")
 		if volumeType == "" || volumeType == "none" {
 			return nil, nil
+		} else if volumeType == "nfs" {
+			originalVolumeName := lagoon.GetVolumeNameFromComposeName(composeName, composeVolumeValues.Name)
+			lagoonVolumeName := lagoon.GetLagoonVolumeName(originalVolumeName)
+			nfsServer := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.nfs.server")
+			if nfsServer == "" {
+				return nil, fmt.Errorf("provided nfs server for %s is not provided", originalVolumeName)
+			}
+			nfsServerPath := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.nfs.server.path")
+			if nfsServerPath == "" {
+				return nil, fmt.Errorf("provided nfs server path for %s is not provided", originalVolumeName)
+			}
+			// create the volume values
+			cVolume := &ComposeVolume{
+				// use the lagoonVolumename which contains the `custom-` prefix
+				Name: lagoonVolumeName,
+				// backup volumes by default
+				Backup:        true,
+				Type:          NFS,
+				NFSServer:     nfsServer,
+				NFSServerPath: nfsServerPath,
+			}
+			// allow volumes to have the backup flag to disable it from being backed up
+			volumeBackup := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.backup")
+			if volumeBackup == "false" {
+				cVolume.Backup = false
+			}
+			return cVolume, nil
 		} else if volumeType == "persistent" {
 			originalVolumeName := lagoon.GetVolumeNameFromComposeName(composeName, composeVolumeValues.Name)
 			lagoonVolumeName := lagoon.GetLagoonVolumeName(originalVolumeName)
@@ -80,6 +107,7 @@ func composeToVolumeValues(
 				Size: volumeSize,
 				// backup volumes by default
 				Backup: true,
+				Type:   Persistent,
 			}
 			// allow volumes to have the backup flag to disable it from being backed up
 			volumeBackup := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.backup")
