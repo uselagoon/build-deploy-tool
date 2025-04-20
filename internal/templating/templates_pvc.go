@@ -75,7 +75,7 @@ func GeneratePVCTemplate(
 					exists = true
 				}
 			}
-			if !exists {
+			if !exists && vol.Type == generator.Persistent {
 				pvc, err := generateAdditionalPVC(buildValues, vol, labels, annotations)
 				if err != nil {
 					return nil, err

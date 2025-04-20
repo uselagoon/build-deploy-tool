@@ -180,15 +180,29 @@ func generatePodTemplateSpec(
 
 	// add any additional volumes with volumes
 	for _, av := range serviceValues.AdditionalVolumes {
-		volume := corev1.Volume{
-			Name: av.Name,
-			VolumeSource: corev1.VolumeSource{
-				PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
-					ClaimName: av.Name,
+		switch av.Type {
+		case generator.Persistent:
+			volume := corev1.Volume{
+				Name: av.Name,
+				VolumeSource: corev1.VolumeSource{
+					PersistentVolumeClaim: &corev1.PersistentVolumeClaimVolumeSource{
+						ClaimName: av.Name,
+					},
 				},
-			},
+			}
+			podTemplateSpec.Spec.Volumes = append(podTemplateSpec.Spec.Volumes, volume)
+		case generator.NFS:
+			volume := corev1.Volume{
+				Name: av.Name,
+				VolumeSource: corev1.VolumeSource{
+					NFS: &corev1.NFSVolumeSource{
+						Server: av.NFSServer,
+						Path:   av.NFSServerPath,
+					},
+				},
+			}
+			podTemplateSpec.Spec.Volumes = append(podTemplateSpec.Spec.Volumes, volume)
 		}
-		podTemplateSpec.Spec.Volumes = append(podTemplateSpec.Spec.Volumes, volume)
 	}
 
 	// if there is a persistent volume attached to this service, handle adding that here
