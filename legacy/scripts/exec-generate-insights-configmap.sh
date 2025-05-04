@@ -7,7 +7,6 @@ SBOM_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.cyclonedx.json.gz"
 SBOM_CONFIGMAP="lagoon-insights-sbom-${IMAGE_NAME}"
 IMAGE_INSPECT_CONFIGMAP="lagoon-insights-image-${IMAGE_NAME}"
 IMAGE_INSPECT_OUTPUT_FILE="${TMP_DIR}/${IMAGE_NAME}.image-inspect.json.gz"
-JAVAOPT="--skip-java-db-update"
 
 # Here we give the cluster administrator the ability to override the insights scan image
 INSIGHTS_SCAN_IMAGE="uselagoon/insights-trivy"
@@ -56,7 +55,8 @@ echo "Running sbom scan using trivy"
 echo "Image being scanned: ${IMAGE_FULL}"
 echo "Using image for scan ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE}"
 
-
+# Setting JAVAOPT to skip the java db update, as the upstream image comes with a pre-populated database
+JAVAOPT="--skip-java-db-update"
 DOCKER_HOST=docker-host.lagoon.svc docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${JAVAOPT} ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
