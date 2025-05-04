@@ -101,6 +101,9 @@ func GenerateDeploymentTemplate(
 			deployment.ObjectMeta.Labels = labels
 			deployment.ObjectMeta.Annotations = annotations
 
+			// disable automounted service account
+			deployment.Spec.Template.Spec.AutomountServiceAccountToken = helpers.BoolPtr(false)
+
 			if serviceValues.UseSpotInstances {
 				// handle spot instance label and affinity/tolerations/selectors
 				additionalLabels["lagoon.sh/spot"] = "true"

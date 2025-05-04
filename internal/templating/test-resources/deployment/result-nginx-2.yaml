@@ -44,6 +44,7 @@ spec:
         lagoon.sh/service-type: nginx-php
         lagoon.sh/template: nginx-php-0.1.0
     spec:
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: NGINX_FASTCGI_PASS
@@ -173,6 +174,7 @@ spec:
         lagoon.sh/service-type: nginx-php-persistent
         lagoon.sh/template: nginx-php-persistent-0.1.0
     spec:
+      automountServiceAccountToken: false
       containers:
       - env:
         - name: NGINX_FASTCGI_PASS
