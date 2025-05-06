@@ -171,7 +171,7 @@ func TestValidateLagoonYml(t *testing.T) {
 
 			err = yaml.Unmarshal(wantsLYAMLString, wantsLYAML)
 			if err != nil {
-				t.Errorf(err.Error())
+				t.Errorf("couldn't unmarshal yaml: %v", err)
 				return
 			}
 
