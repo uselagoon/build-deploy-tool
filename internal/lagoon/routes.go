@@ -390,6 +390,7 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 		if err := validation.IsDNS1123Subdomain(strings.ToLower(apiRoute.IngressName)); err != nil {
 			apiRoute.IngressName = fmt.Sprintf("%s-%s", apiRoute.IngressName[:len(apiRoute.IngressName)-10], helpers.GetMD5HashWithNewLine(apiRoute.Domain)[:5])
 		}
+		routeAdd.IngressName = apiRoute.IngressName
 	}
 
 	if apiRoute.RequestVerification != nil {

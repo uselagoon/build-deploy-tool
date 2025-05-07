@@ -672,7 +672,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						AlternativeNames:    []string{},
 						Wildcard:            helpers.BoolPtr(true),
 						WildcardApex:        helpers.BoolPtr(true),
-						IngressName:         "example.com",
+						IngressName:         "wildcard-example.com",
 						RequestVerification: helpers.BoolPtr(false),
 					},
 					{
@@ -685,7 +685,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						AlternativeNames:    []string{},
 						Wildcard:            helpers.BoolPtr(true),
 						WildcardApex:        helpers.BoolPtr(true),
-						IngressName:         "a.example.com",
+						IngressName:         "wildcard-a.example.com",
 						RequestVerification: helpers.BoolPtr(false),
 					},
 				},
