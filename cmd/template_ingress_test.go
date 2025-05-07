@@ -413,6 +413,25 @@ func TestTemplateRoutes(t *testing.T) {
 			templatePath: "testdata/output",
 			want:         "internal/testdata/basic/ingress-templates/test25-pathroutes",
 		},
+		{
+			name: "test25 check wildcard LAGOON_ROUTES_JSON",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "wildcardjson",
+					Branch:          "wildcardjson",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ROUTES_JSON",
+							Value: base64.StdEncoding.EncodeToString([]byte(`{"routes":[{"domain":"test1.example.com","wildcard":true,"service":"node","tls-acme":false,"monitoring-path":"/bypass-cache"}]}`)),
+							Scope: "build",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/ingress-templates/ingress-24",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

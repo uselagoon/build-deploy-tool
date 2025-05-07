@@ -402,6 +402,44 @@ func TestGenerateRouteStructure(t *testing.T) {
 						Annotations:         map[string]string{},
 						AlternativeNames:    []string{},
 						Wildcard:            helpers.BoolPtr(true),
+						WildcardApex:        helpers.BoolPtr(true),
+						IngressName:         "wildcard-www.example.com",
+						RequestVerification: helpers.BoolPtr(false),
+					},
+				},
+			},
+		},
+		{
+			name: "test8 - wildcard with tls-acme false wildcard apex disabled",
+			args: args{
+				yamlRoutes: &RoutesV2{},
+				yamlRouteMap: map[string][]Route{
+					"nginx": {
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									TLSAcme:      helpers.BoolPtr(false),
+									Wildcard:     helpers.BoolPtr(true),
+									WildcardApex: helpers.BoolPtr(false),
+								},
+							},
+						},
+					},
+				},
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:              "www.example.com",
+						LagoonService:       "nginx",
+						MonitoringPath:      "/",
+						Insecure:            helpers.StrPtr("Redirect"),
+						TLSAcme:             helpers.BoolPtr(false),
+						Annotations:         map[string]string{},
+						AlternativeNames:    []string{},
+						Wildcard:            helpers.BoolPtr(true),
+						WildcardApex:        helpers.BoolPtr(false),
 						IngressName:         "wildcard-www.example.com",
 						RequestVerification: helpers.BoolPtr(false),
 					},
@@ -633,7 +671,8 @@ func TestMergeRouteStructures(t *testing.T) {
 						Annotations:         map[string]string{},
 						AlternativeNames:    []string{},
 						Wildcard:            helpers.BoolPtr(true),
-						IngressName:         "example.com",
+						WildcardApex:        helpers.BoolPtr(true),
+						IngressName:         "wildcard-example.com",
 						RequestVerification: helpers.BoolPtr(false),
 					},
 					{
@@ -645,7 +684,8 @@ func TestMergeRouteStructures(t *testing.T) {
 						Annotations:         map[string]string{},
 						AlternativeNames:    []string{},
 						Wildcard:            helpers.BoolPtr(true),
-						IngressName:         "a.example.com",
+						WildcardApex:        helpers.BoolPtr(true),
+						IngressName:         "wildcard-a.example.com",
 						RequestVerification: helpers.BoolPtr(false),
 					},
 				},
