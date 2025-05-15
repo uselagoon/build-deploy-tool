@@ -30,3 +30,7 @@ build: fmt vet
 docker-build:
 	DOCKER_BUILDKIT=1 docker build --pull --build-arg GO_VER=${GO_VER} --build-arg VERSION=${VERSION} --build-arg BUILD=${BUILD} --rm -f Dockerfile -t lagoon/build-deploy-image:local .
 	docker run --entrypoint /bin/bash lagoon/build-deploy-image:local -c 'build-deploy-tool version'
+
+tag-and-push:
+	docker tag lagoon/build-deploy-image:local uselagoon/build-deploy-image:${VERSION}
+	docker push uselagoon/build-deploy-image:${VERSION}
