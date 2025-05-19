@@ -102,7 +102,7 @@ func GenerateDeploymentTemplate(
 			deployment.ObjectMeta.Annotations = annotations
 
 			// disable automounted service account
-			deployment.Spec.Template.Spec.AutomountServiceAccountToken = helpers.BoolPtr(false)
+			deployment.Spec.Template.Spec.AutomountServiceAccountToken = &buildValues.AutoMountServiceAccountToken
 
 			if serviceValues.UseSpotInstances {
 				// handle spot instance label and affinity/tolerations/selectors
