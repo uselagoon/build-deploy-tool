@@ -352,6 +352,8 @@ func NewGenerator(
 	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
 	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)
 	buildValues.Resources.Requests.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_REQUESTS", false)
+	automount, _ := strconv.ParseBool(CheckAdminFeatureFlag("AUTOMOUNT_SERVICE_ACCOUNT_TOKEN", false))
+	buildValues.AutoMountServiceAccountToken = automount
 	// validate that what is provided
 	if buildValues.Resources.Limits.Memory != "" {
 		err := ValidateResourceQuantity(buildValues.Resources.Limits.Memory)

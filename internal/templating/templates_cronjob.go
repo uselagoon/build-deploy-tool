@@ -101,7 +101,7 @@ func GenerateCronjobTemplate(
 				}
 
 				// disable automounted service account
-				cronjob.Spec.JobTemplate.Spec.Template.Spec.AutomountServiceAccountToken = helpers.BoolPtr(false)
+				cronjob.Spec.JobTemplate.Spec.Template.Spec.AutomountServiceAccountToken = &buildValues.AutoMountServiceAccountToken
 
 				cronjob.Spec.Schedule = nCronjob.Schedule
 				cronjob.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent

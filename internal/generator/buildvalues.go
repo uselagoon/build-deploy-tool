@@ -89,7 +89,8 @@ type BuildValues struct {
 	ConfigSSHHost                 string                       `json:"configSSHHost"`
 	ConfigSSHPort                 string                       `json:"configSSHPort"`
 	LagoonEnvVariables            map[string]string            `json:"lagoonEnvVariables" description:"map of variables that will be saved into the lagoon-env secret"`
-	LagoonPlatformEnvVariables    map[string]string            `json:"agoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
+	LagoonPlatformEnvVariables    map[string]string            `json:"lagoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
+	AutoMountServiceAccountToken  bool                         `json:"autoMountServiceAccountToken" description:"flag to enable automounting the service account token"`
 }
 
 type Resources struct {
