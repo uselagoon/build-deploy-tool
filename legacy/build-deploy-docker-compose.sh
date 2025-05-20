@@ -678,8 +678,6 @@ done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "registryLogin" "Container Registry Login" "false"
-previousStepEnd=${currentStepEnd}
-beginBuildStep "Image Builds" "buildingImages"
 
 ##############################################
 ### BUILD IMAGES
@@ -838,6 +836,135 @@ Retrying build for ${BUILD_CONTEXT}/${DOCKERFILE} without cache
 fi
 if [[ "$BUILD_TYPE" == "promote" ]]; then
     echo "No images built for promote environments"
+fi
+
+##############################################
+### PUSH IMAGES TO REGISTRY
+##############################################
+
+# set up image deprecation warnings
+DEPRECATED_IMAGE_WARNINGS="false"
+declare -A DEPRECATED_IMAGE_NAME
+declare -A DEPRECATED_IMAGE_STATUS
+declare -A DEPRECATED_IMAGE_SUGGESTION
+
+# pullrequest/branch start
+if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
+  # calculate the images required to be pushed to the registry
+  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
+  do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    # Before the push the temporary name is resolved to the future tag with the registry in the image name
+    TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
+
+    # This will actually not push any images and instead just add them to the file /kubectl-build-deploy/lagoon/push
+    # this file is used to perform parallel image pushes next
+    docker tag ${TEMPORARY_IMAGE_NAME} ${PUSH_IMAGE}
+    echo "docker push ${PUSH_IMAGE}" >> /kubectl-build-deploy/lagoon/push
+
+    # check if the built image is deprecated
+    DOCKER_IMAGE_OUTPUT=$(docker inspect ${TEMPORARY_IMAGE_NAME})
+    DEPRECATED_STATUS=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$TEMPORARY_IMAGE_NAME
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
+    fi
+  done
+
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Pushing Images" "pushingImages"
+  # If we have images to push to the registry, let's do so
+  if [ -f /kubectl-build-deploy/lagoon/push ]; then
+    parallel --retries 4 < /kubectl-build-deploy/lagoon/push
+  fi
+
+  # load the image hashes for just pushed images
+  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
+  do
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
+    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
+  done
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImagesComplete" "Pushing Images" "false"
+
+  # All images that should be pulled are copied to the harbor registry
+  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
+  do
+    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+
+    # Try to handle private registries first
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
+    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
+    # from being a promote image, or an image from an imagecache or from some other registry entirely
+    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
+
+    # store the resulting image hash
+    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
+    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
+
+    # check if the pull through image is deprecated
+    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
+    if [ "${DEPRECATED_STATUS}" != false ]; then
+      DEPRECATED_IMAGE_WARNINGS="true"
+      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
+      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
+      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
+    fi
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Image ${IMAGE_NAME}" "false"
+  done
+
+# pullrequest/branch end
+# promote start
+elif [ "$BUILD_TYPE" == "promote" ]; then
+
+  for IMAGE_NAME in "${IMAGES[@]}"
+  do
+    previousStepEnd=${currentStepEnd}
+    beginBuildStep "Pushing Pulled Promote Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
+    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
+    skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
+
+    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
+    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Promote Image ${IMAGE_NAME}" "false"
+  done
+# promote end
+fi
+
+##############################################
+### Check for deprecated images
+##############################################
+
+if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
+  previousStepEnd=${currentStepEnd}
+  beginBuildStep "Deprecated Image Warnings" "deprecatedImages"
+  ((++BUILD_WARNING_COUNT))
+  echo ">> Lagoon detected deprecated images during the build"
+  echo "  This indicates that an image you're using in the build has been flagged as deprecated."
+  echo "  You should stop using these images as soon as possible."
+  echo "  If the deprecated image has a suggested replacement, it will be mentioned in the warning."
+  echo "  Please visit ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/deprecated-images for more information."
+  echo ""
+  for IMAGE_NAME in "${!DEPRECATED_IMAGE_NAME[@]}"
+  do
+    echo ">> The image (or an image used in the build for) ${DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]} has been deprecated, marked ${DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]}"
+    if [ "${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}" != "false" ]; then
+      echo "  A suggested replacement image is ${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}"
+    else
+      echo "  No replacement image has been suggested"
+    fi
+    echo ""
+  done
+
+  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
 fi
 
 previousStepEnd=${currentStepEnd}
@@ -1341,135 +1468,6 @@ LAGOONENV_SHA=$(kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret la
 LAGOONPLATFORMENV_SHA=$(kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get secret lagoon-platform-env -o yaml | yq -M '.data' | sha256sum | awk '{print $1}')
 CONFIG_MAP_SHA=$(echo $LAGOONENV_SHA$LAGOONPLATFORMENV_SHA | sha256sum | awk '{print $1}')
 export CONFIG_MAP_SHA
-
-##############################################
-### PUSH IMAGES TO REGISTRY
-##############################################
-
-# set up image deprecation warnings
-DEPRECATED_IMAGE_WARNINGS="false"
-declare -A DEPRECATED_IMAGE_NAME
-declare -A DEPRECATED_IMAGE_STATUS
-declare -A DEPRECATED_IMAGE_SUGGESTION
-
-# pullrequest/branch start
-if [ "$BUILD_TYPE" == "pullrequest" ] || [ "$BUILD_TYPE" == "branch" ]; then
-  # calculate the images required to be pushed to the registry
-  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
-  do
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-    # Before the push the temporary name is resolved to the future tag with the registry in the image name
-    TEMPORARY_IMAGE_NAME="${IMAGES_BUILD[${IMAGE_NAME}]}"
-
-    # This will actually not push any images and instead just add them to the file /kubectl-build-deploy/lagoon/push
-    # this file is used to perform parallel image pushes next
-    docker tag ${TEMPORARY_IMAGE_NAME} ${PUSH_IMAGE}
-    echo "docker push ${PUSH_IMAGE}" >> /kubectl-build-deploy/lagoon/push
-
-    # check if the built image is deprecated
-    DOCKER_IMAGE_OUTPUT=$(docker inspect ${TEMPORARY_IMAGE_NAME})
-    DEPRECATED_STATUS=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.status" // false')
-    if [ "${DEPRECATED_STATUS}" != false ]; then
-      DEPRECATED_IMAGE_WARNINGS="true"
-      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=$TEMPORARY_IMAGE_NAME
-      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${DOCKER_IMAGE_OUTPUT}" | jq -r '.[] | .Config.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
-    fi
-  done
-
-  previousStepEnd=${currentStepEnd}
-  beginBuildStep "Pushing Images" "pushingImages"
-  # If we have images to push to the registry, let's do so
-  if [ -f /kubectl-build-deploy/lagoon/push ]; then
-    parallel --retries 4 < /kubectl-build-deploy/lagoon/push
-  fi
-
-  # load the image hashes for just pushed images
-  for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
-  do
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-    JQ_QUERY=(jq -r ".[]|select(test(\"${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}@\"))")
-    IMAGE_HASHES[${IMAGE_NAME}]=$(docker inspect ${PUSH_IMAGE} --format '{{json .RepoDigests}}' | "${JQ_QUERY[@]}")
-  done
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImagesComplete" "Pushing Images" "false"
-
-  # All images that should be pulled are copied to the harbor registry
-  for IMAGE_NAME in "${!IMAGES_PULL[@]}"
-  do
-    PULL_IMAGE="${IMAGES_PULL[${IMAGE_NAME}]}" #extract the pull image name from the images to pull list
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-
-    # Try to handle private registries first
-    previousStepEnd=${currentStepEnd}
-    beginBuildStep "Pushing Pulled Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
-    # the external pull image name is all calculated in the build-deploy tool now, it knows how to calculate it
-    # from being a promote image, or an image from an imagecache or from some other registry entirely
-    skopeo copy --retry-times 5 --dest-tls-verify=false docker://${PULL_IMAGE} docker://${PUSH_IMAGE}
-
-    # store the resulting image hash
-    SKOPEO_INSPECT=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false)
-    IMAGE_HASHES[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq ".Name + \"@\" + .Digest" -r)
-
-    # check if the pull through image is deprecated
-    DEPRECATED_STATUS=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.status" // false')
-    if [ "${DEPRECATED_STATUS}" != false ]; then
-      DEPRECATED_IMAGE_WARNINGS="true"
-      DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]=${PULL_IMAGE#$IMAGECACHE_REGISTRY}
-      DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]=$DEPRECATED_STATUS
-      DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]=$(echo "${SKOPEO_INSPECT}" | jq -r '.Labels."sh.lagoon.image.deprecated.suggested" | sub("docker.io\/";"")? // false')
-    fi
-    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Image ${IMAGE_NAME}" "false"
-  done
-
-# pullrequest/branch end
-# promote start
-elif [ "$BUILD_TYPE" == "promote" ]; then
-
-  for IMAGE_NAME in "${IMAGES[@]}"
-  do
-    previousStepEnd=${currentStepEnd}
-    beginBuildStep "Pushing Pulled Promote Image ${IMAGE_NAME}" "pushingImage${IMAGE_NAME}"
-    PUSH_IMAGE="${IMAGES_PUSH[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-    PROMOTE_IMAGE="${IMAGES_PROMOTE[${IMAGE_NAME}]}" #extract the push image name from the images to push list
-    skopeo copy --retry-times 5 --src-tls-verify=false --dest-tls-verify=false docker://${PROMOTE_IMAGE} docker://${PUSH_IMAGE}
-
-    IMAGE_HASHES[${IMAGE_NAME}]=$(skopeo inspect --retry-times 5 docker://${PUSH_IMAGE} --tls-verify=false | jq ".Name + \"@\" + .Digest" -r)
-    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "pushingImage${IMAGE_NAME}Complete" "Pushing Pulled Promote Image ${IMAGE_NAME}" "false"
-  done
-# promote end
-fi
-
-##############################################
-### Check for deprecated images
-##############################################
-
-if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
-  previousStepEnd=${currentStepEnd}
-  beginBuildStep "Deprecated Image Warnings" "deprecatedImages"
-  ((++BUILD_WARNING_COUNT))
-  echo ">> Lagoon detected deprecated images during the build"
-  echo "  This indicates that an image you're using in the build has been flagged as deprecated."
-  echo "  You should stop using these images as soon as possible."
-  echo "  If the deprecated image has a suggested replacement, it will be mentioned in the warning."
-  echo "  Please visit ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/deprecated-images for more information."
-  echo ""
-  for IMAGE_NAME in "${!DEPRECATED_IMAGE_NAME[@]}"
-  do
-    echo ">> The image (or an image used in the build for) ${DEPRECATED_IMAGE_NAME[${IMAGE_NAME}]} has been deprecated, marked ${DEPRECATED_IMAGE_STATUS[${IMAGE_NAME}]}"
-    if [ "${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}" != "false" ]; then
-      echo "  A suggested replacement image is ${DEPRECATED_IMAGE_SUGGESTION[${IMAGE_NAME}]}"
-    else
-      echo "  No replacement image has been suggested"
-    fi
-    echo ""
-  done
-
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
-fi
 
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
