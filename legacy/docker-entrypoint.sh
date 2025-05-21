@@ -11,7 +11,9 @@ if [ $DOCKER_HOST_COUNTER -lt $DOCKER_HOST_TIMEOUT ]; then
     echo "${DOCKER_HOST} not available yet, waiting for 5 secs"
     sleep 5
 else
-    echo "could not connect to ${DOCKER_HOST}"
+    echo "Error: could not connect to ${DOCKER_HOST}"
+    echo "Please trigger another deployment."
+    echo "If the error persists please contact support."
     exit 1
 fi
 done
