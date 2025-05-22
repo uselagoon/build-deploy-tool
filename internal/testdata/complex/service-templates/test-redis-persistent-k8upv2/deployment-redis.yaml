@@ -50,6 +50,8 @@ spec:
       automountServiceAccountToken: false
       containers:
       - env:
+        - name: REDIS_FLAVOR
+          value: persistent
         - name: LAGOON_GIT_SHA
           value: abcdefg123456
         - name: CRONJOBS

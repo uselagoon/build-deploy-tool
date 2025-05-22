@@ -79,6 +79,12 @@ var redisPersistent = ServiceType{
 	PrimaryContainer: ServiceContainer{
 		Name:      redis.PrimaryContainer.Name,
 		Container: redis.PrimaryContainer.Container,
+		EnvVars: []corev1.EnvVar{
+			{
+				Name:  "REDIS_FLAVOR",
+				Value: "persistent",
+			},
+		},
 	},
 	Volumes: ServiceVolume{
 		PersistentVolumeSize: "5Gi",
