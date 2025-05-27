@@ -7,3 +7,8 @@ builds:
     -X github.com/uselagoon/build-deploy-tool/cmd.bdtVersion={{.Version}}
   env:
   - CGO_ENABLED=0
+
+release:
+  extra_files:
+  - glob: ./sbom.spdx.json
+    name_template: "{{ .ProjectName }}.v{{ .Version }}.sbom.spdx.json"
