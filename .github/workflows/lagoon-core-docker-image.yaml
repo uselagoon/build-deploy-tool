@@ -87,13 +87,6 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
-      - name: Attest dockerhub image
-        uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd # v2.3.0
-        with:
-          subject-digest: ${{steps.build-and-push.outputs.digest}}
-          subject-name: index.docker.io/${{ github.repository_owner }}/build-deploy-image
-          push-to-registry: true
-
       - name: Attest ghcr image
         uses: actions/attest-build-provenance@db473fddc028af60658334401dc6fa3ffd8669fd # v2.3.0
         with:
