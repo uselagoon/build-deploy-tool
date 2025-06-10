@@ -66,7 +66,7 @@ func GenerateServiceTemplate(
 }
 
 func GenerateService(serviceType *servicetypes.ServiceType, serviceValues generator.ServiceValues, labels, annotations map[string]string) (*corev1.Service, error) {
-	if serviceValues.AdditionalServicePorts == nil && serviceType.Ports.Ports == nil {
+	if serviceValues.AdditionalServicePorts == nil && serviceType.Ports.Ports == nil && serviceValues.Type != "external" {
 		// there are no additional ports provided, and this servicetype has no default ports associated to it
 		// just drop out
 		return nil, nil
@@ -121,50 +121,57 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 		return nil, err
 	}
 
-	// start service template
-	if serviceType.Ports.CanChangePort {
-		if serviceValues.ServicePort != 0 {
-			serviceType.Ports.Ports[0].Port = serviceValues.ServicePort
+	if serviceValues.Type == "external" {
+		service.Spec = corev1.ServiceSpec{
+			Type:         corev1.ServiceTypeExternalName,
+			ExternalName: serviceValues.ExternalServiceName,
 		}
-	}
-
-	// start compose service port override templating here
-	if serviceValues.AdditionalServicePorts != nil {
-		// blank out the provided ports from the servicetype
-		serviceType.Ports.Ports = nil
-		// if the service is set to consume the additional services only, then generate those here
-		for _, addPort := range serviceValues.AdditionalServicePorts {
-			port := corev1.ServicePort{
-				Protocol: corev1.ProtocolTCP,
-				Name:     fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
-				TargetPort: intstr.IntOrString{
-					StrVal: fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
-					Type:   intstr.String,
-				},
-				Port: int32(addPort.ServicePort.Target),
+	} else {
+		// start service template
+		if serviceType.Ports.CanChangePort {
+			if serviceValues.ServicePort != 0 {
+				serviceType.Ports.Ports[0].Port = serviceValues.ServicePort
 			}
-			// set protocol to anything but tcp if required
-			switch addPort.ServicePort.Protocol {
-			case "udp":
-				port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
-				port.TargetPort = intstr.IntOrString{
-					StrVal: fmt.Sprintf("udp-%d", addPort.ServicePort.Target),
-					Type:   intstr.String,
+		}
+
+		// start compose service port override templating here
+		if serviceValues.AdditionalServicePorts != nil {
+			// blank out the provided ports from the servicetype
+			serviceType.Ports.Ports = nil
+			// if the service is set to consume the additional services only, then generate those here
+			for _, addPort := range serviceValues.AdditionalServicePorts {
+				port := corev1.ServicePort{
+					Protocol: corev1.ProtocolTCP,
+					Name:     fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
+					TargetPort: intstr.IntOrString{
+						StrVal: fmt.Sprintf("tcp-%d", addPort.ServicePort.Target),
+						Type:   intstr.String,
+					},
+					Port: int32(addPort.ServicePort.Target),
 				}
-				port.Protocol = corev1.ProtocolUDP
+				// set protocol to anything but tcp if required
+				switch addPort.ServicePort.Protocol {
+				case "udp":
+					port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
+					port.TargetPort = intstr.IntOrString{
+						StrVal: fmt.Sprintf("udp-%d", addPort.ServicePort.Target),
+						Type:   intstr.String,
+					}
+					port.Protocol = corev1.ProtocolUDP
+				}
+				serviceType.Ports.Ports = append(serviceType.Ports.Ports, port)
 			}
-			serviceType.Ports.Ports = append(serviceType.Ports.Ports, port)
 		}
-	}
-	// end compose service port override templating here
+		// end compose service port override templating here
 
-	service.Spec = corev1.ServiceSpec{
-		Ports: serviceType.Ports.Ports,
-	}
+		service.Spec = corev1.ServiceSpec{
+			Ports: serviceType.Ports.Ports,
+		}
 
-	service.Spec.Selector = map[string]string{
-		"app.kubernetes.io/name":     serviceType.Name,
-		"app.kubernetes.io/instance": serviceValues.OverrideName,
+		service.Spec.Selector = map[string]string{
+			"app.kubernetes.io/name":     serviceType.Name,
+			"app.kubernetes.io/instance": serviceValues.OverrideName,
+		}
 	}
 	// end service template
 	return service, nil

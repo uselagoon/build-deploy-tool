@@ -1,0 +1,61 @@
+docker-compose-yaml: internal/testdata/basic/docker-compose.basic-externalservice.yml
+
+environment_variables:
+  git_sha: "true"
+
+environments:
+  main:
+    routes:
+      - node:
+          - example.com
+  stage:
+    routes:
+      - node:
+          - example.com
+    # this is an example of defining a simple network policy directly on an environment
+    network-policies:
+      # the name of the service you want to allow connections to
+      - service: basic1
+        organizations: 
+        # this allows anything in this organization
+        - name: example-org1
+
+# network-policies allow you to restrict which organizations, projects, or environments, can access a specific service
+# in the environment this policy is created in
+# network-policies only work if the environments are in the same cluster
+# this example is only to show how it could be used to create complex network policies if required
+# default network policies are to reject all ingress traffic from other lagoon environments
+# so all network policies are configured to allow from other environments only
+# there are some ways to exclude some traffic by setting policies that use exclude-projects or exclude-environments within
+# network-policies can also be defined under an environment in the environments section
+network-policies:
+  # the name of the service you want to allow connections to
+  - service: basic1
+    organizations: 
+    # this allows anything in this organization
+    - name: example-org1
+    # this allows anything in this organization from a production environment only
+    - name: example-org2
+      environment-type: production
+    # this allows anything in this organization except projects listed
+    - name: example-org3
+      exclude-projects:
+      - name: projecta
+      - name: projectb
+    projects:
+    # this allows anything from this projects main environment
+    - name: my-project1
+      environment: main
+    # this allows anything from this projects production environment
+    - name: my-project2
+      environment-type: production
+    # this allows anything from this project excluding specific environments
+    - name: my-project3
+      exclude-environments:
+      # these are the name of the environment from lagoon, not the escaped/safe versions used by machines
+      # the build-tool will handle conversions to the machine version as required
+      - name: feature/branch
+      - name: feature/environment-with-really-really-really-really-really-really-long-branch-name-that-will-truncate
+    # this allows anything from this project except pullrequest environment
+    - name: my-project4
+      exclude-pullrequests: true
