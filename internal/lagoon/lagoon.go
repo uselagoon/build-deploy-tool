@@ -131,10 +131,9 @@ type NetworkPolicy struct {
 }
 
 type OrgNetworkPolicies struct {
-	Name                string           `json:"name"`
-	EnvironmentType     string           `json:"environment-type,omitempty"`
-	ExcludeProjects     []ExcludeProject `json:"exclude-projects,omitempty"`
-	ExcludePullrequests bool             `json:"exclude-pullrequests,omitempty"`
+	Name            string           `json:"name"`
+	EnvironmentType string           `json:"environment-type,omitempty"`
+	ExcludeProjects []ExcludeProject `json:"exclude-projects,omitempty"`
 }
 
 type ProjectNetworkPolicies struct {
