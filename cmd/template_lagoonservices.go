@@ -145,6 +145,20 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 		}
 		helpers.WriteTemplateFile(fmt.Sprintf("%s/isolation-network-policy.yaml", savedTemplates), templateBytes)
 	}
+	serviceNetPols, err := servicestemplates.GenerateServiceNetworkPolicies(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	for _, serviceNetPol := range serviceNetPols {
+		templateBytes, err := servicestemplates.TemplateNetworkPolicy(&serviceNetPol)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		if g.Debug {
+			fmt.Printf("Templating networkpolicy manifests %s\n", fmt.Sprintf("%s/networkpolicy-%s.yaml", savedTemplates, serviceNetPol.Name))
+		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/networkpolicy-%s.yaml", savedTemplates, serviceNetPol.Name), templateBytes)
+	}
 	return nil
 }
 

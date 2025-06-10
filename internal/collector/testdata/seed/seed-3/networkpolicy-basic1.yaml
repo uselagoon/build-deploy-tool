@@ -1,0 +1,82 @@
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: service-network-policy
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: service-network-policy
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: basic1
+    lagoon.sh/service-type: network-policy
+    lagoon.sh/template: service-network-policy-0.1.0
+  name: basic1
+spec:
+  ingress:
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: lagoon.sh/project
+          operator: In
+          values:
+          - my-project
+        - key: lagoon.sh/environment
+          operator: In
+          values:
+          - main
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: lagoon.sh/project
+          operator: In
+          values:
+          - my-other-project
+        - key: lagoon.sh/environmentType
+          operator: In
+          values:
+          - production
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: organization.lagoon.sh/name
+          operator: In
+          values:
+          - nameoforg
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: organization.lagoon.sh/name
+          operator: In
+          values:
+          - anotherorg
+        - key: lagoon.sh/environmentType
+          operator: In
+          values:
+          - production
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: organization.lagoon.sh/name
+          operator: In
+          values:
+          - someotherorg
+        - key: lagoon.sh/project
+          operator: NotIn
+          values:
+          - projecta
+          - projectb
+  podSelector:
+    matchLabels:
+      lagoon.sh/service: basic1
