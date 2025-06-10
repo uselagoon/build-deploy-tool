@@ -721,5 +721,9 @@
   "postgresqlconsumers": {
     "metadata": {},
     "items": []
+  },
+  "networkpolicies": {
+    "metadata": {},
+    "items": []
   }
 }
