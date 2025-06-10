@@ -1597,7 +1597,7 @@ do
     fi
   done
 
-  if [[ $SERVICE_TYPE == *"-dbaas" ]]; then
+  if [[ $SERVICE_TYPE == *"-dbaas" ]] || [[ "$SERVICE_TYPE" == "external" ]]; then
     echo "nothing to monitor for $SERVICE_TYPE"
   else
     . /kubectl-build-deploy/scripts/exec-monitor-deploy.sh
