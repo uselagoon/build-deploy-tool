@@ -26,6 +26,7 @@ type Environment struct {
 	Cronjobs               []Cronjob               `json:"cronjobs"`
 	Overrides              map[string]Override     `json:"overrides,omitempty"`
 	AutogeneratePathRoutes []AutogeneratePathRoute `json:"autogeneratePathRoutes,omitempty"`
+	NetworkPolicies        []NetworkPolicy         `json:"network-policies,omitempty"`
 }
 
 // Cronjob represents a Lagoon cronjob.
@@ -73,6 +74,7 @@ type YAML struct {
 	BackupSchedule       BackupSchedule               `json:"backup-schedule"`
 	EnvironmentVariables EnvironmentVariables         `json:"environment_variables,omitempty"`
 	ContainerRegistries  map[string]ContainerRegistry `json:"container-registries,omitempty"`
+	NetworkPolicies      []NetworkPolicy              `json:"network-policies,omitempty"`
 }
 
 type ContainerRegistry struct {
@@ -120,6 +122,34 @@ type Autogenerate struct {
 type AutogeneratePathRoute struct {
 	PathRoute
 	FromService string `json:"fromService"`
+}
+
+type NetworkPolicy struct {
+	Service       string                   `json:"service"`
+	Organizations []OrgNetworkPolicies     `json:"organizations"`
+	Projects      []ProjectNetworkPolicies `json:"projects"`
+}
+
+type OrgNetworkPolicies struct {
+	Name            string           `json:"name"`
+	EnvironmentType string           `json:"environment-type,omitempty"`
+	ExcludeProjects []ExcludeProject `json:"exclude-projects,omitempty"`
+}
+
+type ProjectNetworkPolicies struct {
+	Name                string               `json:"name"`
+	Environment         string               `json:"environment,omitempty"`
+	EnvironmentType     string               `json:"environment-type,omitempty"`
+	ExcludeEnvironments []ExcludeEnvironment `json:"exclude-environments,omitempty"`
+	ExcludePullrequests bool                 `json:"exclude-pullrequests,omitempty"`
+}
+
+type ExcludeProject struct {
+	Name string `json:"name"`
+}
+
+type ExcludeEnvironment struct {
+	Name string `json:"name"`
 }
 
 func (a *Routes) UnmarshalJSON(data []byte) error {

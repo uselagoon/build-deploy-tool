@@ -27,7 +27,7 @@ func GenerateCronjobTemplate(
 	// for all the services that the build values generated
 	// iterate over them and generate any kubernetes cronjobs
 	for _, serviceValues := range checkedServices {
-		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
+		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok && serviceValues.Type != "external" {
 			for _, nCronjob := range serviceValues.NativeCronjobs {
 				serviceTypeValues := &servicetypes.ServiceType{}
 				helpers.DeepCopy(val, serviceTypeValues)

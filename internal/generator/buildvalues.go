@@ -209,6 +209,14 @@ type ServiceValues struct {
 	IsSingle                               bool                    `json:"isSingle"`
 	AdditionalVolumes                      []ServiceVolume         `json:"additonalVolumes,omitempty"`
 	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
+	ExternalServiceName                    string                  `json:"externalServiceName,omitempty"`
+}
+
+type ExternalService struct {
+	Name        string `json:"name,omitempty"`
+	Project     string `json:"project,omitempty"`
+	Environment string `json:"environment,omitempty"`
+	Domain      string `json:"domain,omitempty"`
 }
 
 type ImageBuild struct {

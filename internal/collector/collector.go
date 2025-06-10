@@ -37,6 +37,7 @@ type LagoonEnvState struct {
 	MariaDBConsumers      *mariadbv1.MariaDBConsumerList     `json:"mariadbconsumers"`
 	MongoDBConsumers      *mongodbv1.MongoDBConsumerList     `json:"mongodbconsumers"`
 	PostgreSQLConsumers   *postgresv1.PostgreSQLConsumerList `json:"postgresqlconsumers"`
+	NetworkPolicies       *networkv1.NetworkPolicyList       `json:"networkpolicies"`
 }
 
 func NewCollector(client client.Client) *Collector {
@@ -127,6 +128,10 @@ func (c *Collector) Collect(ctx context.Context, namespace string) (*LagoonEnvSt
 			fmt.Fprintln(os.Stderr, err)
 			return nil, err
 		}
+	}
+	state.NetworkPolicies, err = c.CollectNetworkPolicies(ctx, namespace)
+	if err != nil {
+		return nil, err
 	}
 	return &state, nil
 }

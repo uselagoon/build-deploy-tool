@@ -1,0 +1,34 @@
+services:
+  basic1:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.port: 8080
+    ports:
+      - '8080'
+  basic2:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: external
+      # this service would be classed as an internal cluster externalname, the port to access it would be the same port
+      # as it would if it was running in the environment
+      lagoon.external.service: '{"name":"basic","project":"other-project","environment":"main"}'
+    ports:
+      # this is ignored by lagoon when the type is external
+      - '8181'
+  basic3:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: external
+      # when defining an external service domain, the port may not be the same as if it was an internal cluster externalname
+      # the user would have to know more about the application and the external domain endpoint to know which port can be used
+      lagoon.external.service: '{"domain":"some-domain.example.com"}'
+    ports:
+      # this is ignored by lagoon when the type is external
+      - '8282' 
