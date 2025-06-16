@@ -92,6 +92,7 @@ type BuildValues struct {
 	LagoonEnvVariables            map[string]string            `json:"lagoonEnvVariables" description:"map of variables that will be saved into the lagoon-env secret"`
 	LagoonPlatformEnvVariables    map[string]string            `json:"lagoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
 	AutoMountServiceAccountToken  bool                         `json:"autoMountServiceAccountToken" description:"flag to enable automounting the service account token"`
+	Oauth2ProxyDomain             string                       `json:"Oauth2ProxyDomain" description:"Externally accessible domain of the Oauth2Proxy core serivce"`
 }
 
 type Resources struct {

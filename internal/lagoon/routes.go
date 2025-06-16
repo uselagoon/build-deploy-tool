@@ -40,6 +40,7 @@ type RouteV2 struct {
 	WildcardApex          *bool             `json:"wildcardApex,omitempty"`
 	RequestVerification   *bool             `json:"disableRequestVerification,omitempty"`
 	PathRoutes            []PathRoute       `json:"pathRoutes,omitempty"`
+	OauthProtected        *bool             `json:"oauthProtected,omitempty"`
 }
 
 // Ingress represents a Lagoon route.
@@ -60,6 +61,7 @@ type Ingress struct {
 	WildcardApex          *bool             `json:"wildcardApex,omitempty"`
 	RequestVerification   *bool             `json:"disableRequestVerification,omitempty"`
 	PathRoutes            []PathRoute       `json:"pathRoutes,omitempty"`
+	OauthProtected        *bool             `json:"oauthProtected,omitempty"`
 }
 
 // Route can be either a string or a map[string]Ingress, so we must
@@ -85,6 +87,7 @@ var (
 	defaultActiveStandby       *bool             = helpers.BoolPtr(true)
 	defaultRequestVerification *bool             = helpers.BoolPtr(false)
 	defaultAnnotations         map[string]string = map[string]string{}
+	defaultOauthProtected      *bool             = helpers.BoolPtr(true)
 )
 
 // UnmarshalJSON implements json.Unmarshaler.
@@ -105,6 +108,14 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 					vBool, err := strconv.ParseBool(tmpMap[k].(map[string]interface{})["tls-acme"].(string))
 					if err == nil {
 						tmpMap[k].(map[string]interface{})["tls-acme"] = vBool
+					}
+				}
+			}
+			if _, ok := tmpMap[k].(map[string]interface{})["oauthProtected"]; ok {
+				if reflect.TypeOf(tmpMap[k].(map[string]interface{})["oauthProtected"]).Kind() == reflect.String {
+					vBool, err := strconv.ParseBool(tmpMap[k].(map[string]interface{})["oauthProtected"].(string))
+					if err == nil {
+						tmpMap[k].(map[string]interface{})["oauthProtected"] = vBool
 					}
 				}
 			}
@@ -138,6 +149,7 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 			newRoute.AlternativeNames = []string{}
 			newRoute.IngressClass = defaultIngressClass
 			newRoute.RequestVerification = defaultRequestVerification
+			newRoute.OauthProtected = defaultOauthProtected
 			if activeStandby {
 				newRoute.Migrate = defaultActiveStandby
 			}
@@ -167,6 +179,9 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 					}
 					if ingress.MonitoringPath != "" {
 						newRoute.MonitoringPath = ingress.MonitoringPath
+					}
+					if ingress.OauthProtected != nil {
+						newRoute.OauthProtected = ingress.OauthProtected
 					}
 
 					// handle hsts here
@@ -334,6 +349,11 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 		routeAdd.Insecure = apiRoute.Insecure
 	} else {
 		routeAdd.Insecure = defaultInsecure
+	}
+	if apiRoute.OauthProtected != nil {
+		routeAdd.OauthProtected = apiRoute.OauthProtected
+	} else {
+		routeAdd.OauthProtected = defaultOauthProtected
 	}
 	if apiRoute.Annotations != nil {
 		routeAdd.Annotations = apiRoute.Annotations

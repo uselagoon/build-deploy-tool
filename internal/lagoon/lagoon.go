@@ -110,6 +110,7 @@ type Autogenerate struct {
 	IngressClass        string                  `json:"ingressClass"`
 	RequestVerification *bool                   `json:"disableRequestVerification,omitempty"`
 	PathRoutes          []AutogeneratePathRoute `json:"pathRoutes,omitempty"`
+	OauthProtected      *bool                   `json:"oauthProtected,omitempty"`
 }
 
 type AutogeneratePathRoute struct {
@@ -180,6 +181,16 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
 					// this could warn in a yaml validation step at the start of builds
 					value.(map[string]interface{})["allowPullRequests"] = vBool
+				}
+			}
+		}
+		if _, ok := value.(map[string]interface{})["oauthProtected"]; ok {
+			if reflect.TypeOf(value.(map[string]interface{})["oauthProtected"]).Kind() == reflect.String {
+				vBool, err := strconv.ParseBool(value.(map[string]interface{})["oauthProtected"].(string))
+				if err == nil {
+					// @TODO: add warning functionality here to inform that users should fix their yaml to be boolean not string
+					// this could warn in a yaml validation step at the start of builds
+					value.(map[string]interface{})["oauthProtected"] = vBool
 				}
 			}
 		}

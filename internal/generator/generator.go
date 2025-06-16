@@ -349,6 +349,11 @@ func NewGenerator(
 		buildValues.PodSecurityContext.OnRootMismatch = true
 	}
 
+	oauth2proxyDomain := helpers.GetEnv("LAGOON_FEATURE_FLAG_OAUTH2PROXY_DOMAIN", generator.EnvironmentVariables, generator.Debug)
+	if oauth2proxyDomain != "" {
+		buildValues.Oauth2ProxyDomain = oauth2proxyDomain
+	}
+
 	// check admin features for resources
 	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
 	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)
