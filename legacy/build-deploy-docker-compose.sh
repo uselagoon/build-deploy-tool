@@ -5,6 +5,7 @@
 export LAGOON_BUILD_NAME=$HOSTNAME
 
 BUILD_WARNING_COUNT=0
+IMAGE_BUILD_PUSH_COMPLETE="false"
 
 function cronScheduleMoreOftenThan30Minutes() {
   #takes a unexpanded cron schedule, returns 0 if it's more often that 30 minutes
@@ -150,7 +151,7 @@ function beginBuildStep() {
   # patch the buildpod with the buildstep
   if [ "${SCC_CHECK}" == false ]; then
     kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\"}}}" &> /dev/null
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\",\"build.lagoon.sh/images-complete\":\"${IMAGE_BUILD_PUSH_COMPLETE}\"}}}" &> /dev/null
     # tiny sleep to allow patch to complete before logs roll again
     sleep 0.5s
   fi
@@ -966,6 +967,9 @@ if [ "${DEPRECATED_IMAGE_WARNINGS}" == "true" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deprecatedImagesComplete" "Deprecated Image Warnings" "true"
 fi
+
+# set that the image build and push phase has ended
+IMAGE_BUILD_PUSH_COMPLETE="true"
 
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase" "serviceConfigurationPhase"
