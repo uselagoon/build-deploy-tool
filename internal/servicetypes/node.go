@@ -57,8 +57,11 @@ var node = ServiceType{
 						},
 					},
 				},
+				TimeoutSeconds: 10,
+				// Wait 180 seconds before liveness probe fails.
 				InitialDelaySeconds: 60,
-				TimeoutSeconds:      10,
+				PeriodSeconds:       10,
+				FailureThreshold:    12,
 			},
 			Resources: corev1.ResourceRequirements{
 				Requests: corev1.ResourceList{

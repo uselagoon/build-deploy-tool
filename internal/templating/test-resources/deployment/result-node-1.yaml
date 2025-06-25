@@ -60,7 +60,9 @@ spec:
         image: harbor.example.com/example-project/environment-name/node@latest
         imagePullPolicy: Always
         livenessProbe:
+          failureThreshold: 12
           initialDelaySeconds: 60
+          periodSeconds: 10
           tcpSocket:
             port: 3000
           timeoutSeconds: 10
@@ -151,7 +153,9 @@ spec:
         image: harbor.example.com/example-project/environment-name/node-persist@latest
         imagePullPolicy: Always
         livenessProbe:
+          failureThreshold: 12
           initialDelaySeconds: 60
+          periodSeconds: 10
           tcpSocket:
             port: 3000
           timeoutSeconds: 10
