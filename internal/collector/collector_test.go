@@ -32,7 +32,7 @@ func TestCollector_Collect(t *testing.T) {
 				namespace: "example-project-main",
 			},
 			seedDir: "testdata/seed/seed-1",
-			want:    "testdata/result/result-1/",
+			want:    "testdata/result/result-1",
 			wantErr: false,
 		},
 		{
@@ -42,7 +42,17 @@ func TestCollector_Collect(t *testing.T) {
 				namespace: "example-project-main",
 			},
 			seedDir: "testdata/seed/seed-2",
-			want:    "testdata/result/result-2/",
+			want:    "testdata/result/result-2",
+			wantErr: false,
+		},
+		{
+			name: "list-environment-netpol",
+			args: args{
+				ctx:       context.Background(),
+				namespace: "example-project-main",
+			},
+			seedDir: "testdata/seed/seed-3",
+			want:    "testdata/result/result-3",
 			wantErr: false,
 		},
 	}
@@ -64,84 +74,65 @@ func TestCollector_Collect(t *testing.T) {
 				t.Errorf("Collector.Collect() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			results, err := os.ReadDir(tt.want)
-			if err != nil {
-				t.Errorf("couldn't read directory %v: %v", tt.want, err)
+			if len(got.Deployments.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-deployments.yaml"), got.Deployments)
 			}
-			for _, r := range results {
-				var rBytes []byte
-				switch r.Name() {
-				case "lagoon-deployments.yaml":
-					rBytes, err = yaml.Marshal(got.Deployments)
-					if err != nil {
-						t.Errorf("couldn't marshal deployments: %v", err)
-					}
-				case "lagoon-cronjobs.yaml":
-					rBytes, err = yaml.Marshal(got.Cronjobs)
-					if err != nil {
-						t.Errorf("couldn't marshal cronjobs: %v", err)
-					}
-				case "lagoon-ingress.yaml":
-					rBytes, err = yaml.Marshal(got.Ingress)
-					if err != nil {
-						t.Errorf("couldn't marshal ingress: %v", err)
-					}
-				case "lagoon-services.yaml":
-					rBytes, err = yaml.Marshal(got.Services)
-					if err != nil {
-						t.Errorf("couldn't marshal services: %v", err)
-					}
-				case "lagoon-secrets.yaml":
-					rBytes, err = yaml.Marshal(got.Secrets)
-					if err != nil {
-						t.Errorf("couldn't marshal secrets: %v", err)
-					}
-				case "lagoon-mariadb-consumers.yaml":
-					rBytes, err = yaml.Marshal(got.MariaDBConsumers)
-					if err != nil {
-						t.Errorf("couldn't marshal mariadb-consumers: %v", err)
-					}
-				case "lagoon-mongodb-consumers.yaml":
-					rBytes, err = yaml.Marshal(got.MongoDBConsumers)
-					if err != nil {
-						t.Errorf("couldn't marshal mongodb-consumers: %v", err)
-					}
-				case "lagoon-postgres-consumers.yaml":
-					rBytes, err = yaml.Marshal(got.PostgreSQLConsumers)
-					if err != nil {
-						t.Errorf("couldn't marshal postgres-consumers: %v", err)
-					}
-				case "lagoon-schedules-v1.yaml":
-					rBytes, err = yaml.Marshal(got.SchedulesV1)
-					if err != nil {
-						t.Errorf("couldn't marshal schedules-v1: %v", err)
-					}
-				case "lagoon-schedules-v1alpha1.yaml":
-					rBytes, err = yaml.Marshal(got.SchedulesV1Alpha1)
-					if err != nil {
-						t.Errorf("couldn't marshal schedules-v1alpha1: %v", err)
-					}
-				case "lagoon-prebackuppods-v1.yaml":
-					rBytes, err = yaml.Marshal(got.PreBackupPodsV1)
-					if err != nil {
-						t.Errorf("couldn't marshal prebackuppods-v1: %v", err)
-					}
-				case "lagoon-prebackuppods-v1alpha1.yaml":
-					rBytes, err = yaml.Marshal(got.PreBackupPodsV1Alpha1)
-					if err != nil {
-						t.Errorf("couldn't marshal prebackuppods-v1alpha1: %v", err)
-					}
-				default:
-					continue
-				}
-				r1, err := os.ReadFile(fmt.Sprintf("%s/%s", tt.want, r.Name()))
-				if err != nil {
-					t.Errorf("couldn't read file %v: %v", fmt.Sprintf("%s/%s", tt.want, r.Name()), err)
-				}
-				if !reflect.DeepEqual(rBytes, r1) {
-					t.Errorf("Collect() = \n%v", diff.LineDiff(string(r1), string(rBytes)))
-				}
+			if len(got.Cronjobs.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-cronjobs.yaml"), got.Cronjobs)
+			}
+			if len(got.Ingress.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-ingress.yaml"), got.Ingress)
+			}
+			if len(got.Services.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-services.yaml"), got.Services)
+			}
+			if len(got.Secrets.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-secrets.yaml"), got.Secrets)
+			}
+			if len(got.MariaDBConsumers.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-mariadb-consumers.yaml"), got.MariaDBConsumers)
+			}
+			if len(got.MongoDBConsumers.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-mongodb-consumers.yaml"), got.MongoDBConsumers)
+			}
+			if len(got.PostgreSQLConsumers.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-postgres-consumers.yaml"), got.PostgreSQLConsumers)
+			}
+			if len(got.SchedulesV1.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-schedules-v1.yaml"), got.SchedulesV1)
+			}
+			if len(got.SchedulesV1Alpha1.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-schedules-v1alpha1.yaml"), got.SchedulesV1Alpha1)
+			}
+			if len(got.PreBackupPodsV1.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-prebackuppods-v1.yaml"), got.PreBackupPodsV1)
+			}
+			if len(got.PreBackupPodsV1Alpha1.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-prebackuppods-v1alpha1.yaml"), got.PreBackupPodsV1Alpha1)
+			}
+			if len(got.NetworkPolicies.Items) > 0 {
+				checkResult(t, fmt.Sprintf("%s/%s", tt.want, "lagoon-networkpolicies.yaml"), got.NetworkPolicies)
 			}
 		})
+	}
+}
+
+func checkResult(t *testing.T, want string, got interface{}) {
+	rBytes, err := yaml.Marshal(got)
+	if err != nil {
+		t.Errorf("couldn't marshal deployments: %v", err)
+	}
+	r1, err := os.ReadFile(want)
+	if err != nil {
+		// try create the file if it doesn't exist
+		err := os.WriteFile(want, rBytes, 0644)
+		if err != nil {
+			t.Errorf("couldn't write file %v: %v", want, err)
+		} else {
+			t.Errorf("couldn't read file %v: %v", want, err)
+		}
+	}
+	if !reflect.DeepEqual(rBytes, r1) {
+		t.Errorf("Collect() = \n%v", diff.LineDiff(string(r1), string(rBytes)))
 	}
 }

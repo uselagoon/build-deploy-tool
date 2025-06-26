@@ -627,6 +627,38 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test-basic-single-k8upv2",
 		},
+		{
+			name:        "test-basic-external-service",
+			description: "tests a basic deployment with a basic and an external service and network policy to share a service",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.externalservice.yml",
+					ImageReferences: map[string]string{
+						"basic1": "harbor.example/example-project/main/basic1@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test-basic-external-service",
+		},
+		{
+			name:        "test-basic-external-service-environment",
+			description: "tests a basic deployment with a basic and an external service and network policy to share when defined under the environment",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "stage",
+					Branch:          "stage",
+					LagoonYAML:      "internal/testdata/basic/lagoon.externalservice.yml",
+					ImageReferences: map[string]string{
+						"basic1": "harbor.example/example-project/stage/basic1@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test-basic-external-service-environment",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -88,4 +88,5 @@ var ServiceTypes = map[string]ServiceType{
 	"worker":               worker,
 	"worker-persistent":    workerPersistent,
 	"rabbitmq":             rabbitmq,
+	"external":             external,
 }
