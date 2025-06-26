@@ -36,6 +36,17 @@ processImageInspect() {
           create configmap ${IMAGE_INSPECT_CONFIGMAP} \
           --from-file=${IMAGE_INSPECT_OUTPUT_FILE}
   fi
+  if [[ "$BUILD_TYPE" == "pullrequest" ]]; then
+    kubectl -n ${NAMESPACE} \
+      annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+      lagoon.sh/branch=${PR_NUMBER} \
+      lagoon.sh/prHeadBranch=${PR_HEAD_BRANCH} \
+      lagoon.sh/prBaseBranch=${PR_BASE_BRANCH}
+  else
+    kubectl -n ${NAMESPACE} \
+      annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+      lagoon.sh/branch=${BRANCH}
+  fi
   kubectl \
       -n ${NAMESPACE} \
       label configmap ${IMAGE_INSPECT_CONFIGMAP} \
@@ -46,6 +57,7 @@ processImageInspect() {
       lagoon.sh/environment=${ENVIRONMENT} \
       lagoon.sh/service=${IMAGE_NAME} \
       lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
+      lagoon.sh/buildType=${BUILD_TYPE} \
       insights.lagoon.sh/type=inspect
 }
 
@@ -84,6 +96,17 @@ processSbom() {
             create configmap ${SBOM_CONFIGMAP} \
             --from-file=${SBOM_OUTPUT_FILE}
     fi
+    if [[ "$BUILD_TYPE" == "pullrequest" ]]; then
+      kubectl -n ${NAMESPACE} \
+        annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+        lagoon.sh/branch=${PR_NUMBER} \
+        lagoon.sh/prHeadBranch=${PR_HEAD_BRANCH} \
+        lagoon.sh/prBaseBranch=${PR_BASE_BRANCH}
+    else
+      kubectl -n ${NAMESPACE} \
+        annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+        lagoon.sh/branch=${BRANCH}
+    fi
     kubectl \
         -n ${NAMESPACE} \
         label configmap ${SBOM_CONFIGMAP} \
@@ -94,6 +117,7 @@ processSbom() {
         lagoon.sh/environment=${ENVIRONMENT} \
         lagoon.sh/service=${IMAGE_NAME} \
         lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
+        lagoon.sh/buildType=${BUILD_TYPE} \
         insights.lagoon.sh/type=sbom
   fi
 }
