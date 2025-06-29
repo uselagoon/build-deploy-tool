@@ -896,10 +896,51 @@ LAGOON_DBAAS_YAML_FOLDER="/kubectl-build-deploy/lagoon/dbaas"
 mkdir -p $LAGOON_DBAAS_YAML_FOLDER
 build-deploy-tool template dbaas --saved-templates-path ${LAGOON_DBAAS_YAML_FOLDER}
 
-# apply dbaas
+# apply dbaas only if it doesn't already exist, this prevents environment spec changes from occuring on the dbaas which can make deprovisioning difficult
+# changing the spec is the only modification that can be performed, but the current dbaas operator does nothing with this change
+# this causes issues with deprovisioning if the spec is changed after it is created because the current dbaas operator doesn't know what to do
+# additionally, migrations of these types of resources are mostly manual if they are done, and the manual operations
+# change these resources. this blocking operation will also prevent issues after migrations take place from the consumer spec being modified
+# once the new dbaas controller is ready with the new CRD types, this functionality won't be required anymore as the entire provisioning mechanism is different
 if [ -n "$(ls -A $LAGOON_DBAAS_YAML_FOLDER/ 2>/dev/null)" ]; then
-  find $LAGOON_DBAAS_YAML_FOLDER -type f -exec cat {} \;
-  kubectl apply -n ${NAMESPACE} -f $LAGOON_DBAAS_YAML_FOLDER/
+  DBAAS=($(build-deploy-tool identify dbaas))
+  for DBAAS_ENTRY in "${DBAAS[@]}"
+  do
+    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
+
+    SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
+    SERVICE_TYPE=${DBAAS_ENTRY_SPLIT[1]}
+    SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+    if [[ "$SERVICE_TYPE}" =~ "-single" ]]; then
+      # skip to next if this type is a single
+      continue
+    fi
+    CONSUMER_NAME=mariadbconsumer
+    case "$SERVICE_TYPE" in
+      mariadb-dbaas)
+          CONSUMER_NAME=mariadbconsumer
+          ;;
+
+      postgres-dbaas)
+          CONSUMER_NAME=postgresqlconsumer
+          ;;
+
+      mongodb-dbaas)
+          CONSUMER_NAME=mongodbconsumer
+          ;;
+    esac
+    cat $LAGOON_DBAAS_YAML_FOLDER/${SERVICE_NAME}.yaml
+    # check if the dbaas consumer has already been created
+    if ! kubectl -n ${NAMESPACE} get ${CONSUMER_NAME} ${SERVICE_NAME} &> /dev/null; then
+      # only apply this dbaas if it doesn't exist already
+      kubectl apply -n ${NAMESPACE} -f $LAGOON_DBAAS_YAML_FOLDER/${SERVICE_NAME}.yaml
+    else
+      # drop a note that it is already created
+      echo "> DBaaS ${CONSUMER_NAME} ${SERVICE_NAME} already created"
+      # maybe update labels still by clearing out the spec?
+      cat  $LAGOON_DBAAS_YAML_FOLDER/${SERVICE_NAME}.yaml | yq eval 'del(.spec)' | kubectl apply -n ${NAMESPACE} -f -
+    fi
+  done
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
