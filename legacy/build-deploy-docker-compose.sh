@@ -252,19 +252,19 @@ buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 ##############################################
 # run the collector
 ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
-# echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.metadata.name'
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 # @TODO: uncomment when collector is introduced
@@ -1750,7 +1750,7 @@ LAGOON_DEPLOYMENTS_TO_JSON=$(build-deploy-tool identify lagoon-services --images
 echo "${LAGOON_DEPLOYMENTS_TO_JSON}"
 MATCHED_MARIADB=false
 DELETE_MARIADB=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.name'); do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.metadata.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1769,7 +1769,7 @@ done
 
 MATCHED_POSTGRES=false
 DELETE_POSTGRES=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.name'); do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.metadata.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1787,7 +1787,7 @@ done
 
 MATCHED_MONGODB=false
 DELETE_MONGODB=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.name'); do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.metadata.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1806,7 +1806,7 @@ done
 # check the current deployments in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_DEPLOYMENT=false
 DELETE_DEPLOYMENT=()
-for EXIST_DEPLOYMENT in $(echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'); do
+for EXIST_DEPLOYMENT in $(echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.metadata.name'); do
   for DEPLOYMENT in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.deployments[]?')
   do
     if [ "${EXIST_DEPLOYMENT}" == "${DEPLOYMENT}" ]; then
@@ -1822,7 +1822,7 @@ done
 # check the current volumes in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_VOLUME=false
 DELETE_VOLUME=()
-for EXIST_PVC in $(echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.name'); do
+for EXIST_PVC in $(echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.metadata.name'); do
   for VOLUME in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.volumes[]?')
   do
     if [ "${EXIST_PVC}" == "${VOLUME}" ]; then
@@ -1838,7 +1838,7 @@ done
 # check the current services in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_SERVICE=false
 DELETE_SERVICE=()
-for EXIST_SERVICE in $(echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name'); do
+for EXIST_SERVICE in $(echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.metadata.name'); do
   for SERVICE in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.services[]?')
   do
     if [ "${EXIST_SERVICE}" == "${SERVICE}" ]; then
@@ -1852,13 +1852,13 @@ for EXIST_SERVICE in $(echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name
   MATCHED_SERVICE=false  
 done
 
-# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.metadata.name'
 
 if [[ ${#DELETE_DEPLOYMENT[@]} -ne 0 ]] || [[ ${#DELETE_SERVICE[@]} -ne 0 ]] || [[ ${#DELETE_VOLUME[@]} -ne 0 ]] || [[ ${#DELETE_MARIADB[@]} -ne 0 ]] || [[ ${#DELETE_POSTGRES[@]} -ne 0 ]] || [[ ${#DELETE_MONGODB[@]} -ne 0 ]]; then
   # only show the service cleanup section if there is anything to actually clean up
