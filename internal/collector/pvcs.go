@@ -10,7 +10,7 @@ import (
 )
 
 func (c *Collector) CollectPVCs(ctx context.Context, namespace string) (*corev1.PersistentVolumeClaimList, error) {
-	labelRequirements1, _ := labels.NewRequirement("lagoon.sh/service", selection.Exists, nil)
+	labelRequirements1, _ := labels.NewRequirement("lagoon.sh/template", selection.Exists, nil)
 	listOption := (&client.ListOptions{}).ApplyOptions([]client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabelsSelector{
