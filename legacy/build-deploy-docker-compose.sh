@@ -198,9 +198,7 @@ buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 ### COLLECT INFORMATION
 ##############################################
 # run the collector
-# @TODO: uncomment when collector is introduced
-# @TODO: don't run the collector yet, leave this as placeholder to prevent possible introduction of issues
-# ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
+ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
 # echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'
 # echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
 # echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
@@ -1655,22 +1653,13 @@ previousStepEnd=${currentStepEnd}
 ### CLEANUP services which have been removed from docker-compose.yaml
 ##############################################s
 
-# collect the current deployments, volumes, and services in the environment
-CURRENT_DEPLOYMENTS=$(kubectl -n ${NAMESPACE} get deployments -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
-CURRENT_PVCS=$(kubectl -n ${NAMESPACE} get pvc -l "lagoon.sh/service-type" --no-headers | cut -d " " -f 1 | xargs)
-CURRENT_SERVICES=$(kubectl -n ${NAMESPACE} get services -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
-
-CURRENT_MARIADB_CONSUMERS=$(kubectl -n ${NAMESPACE} get mariadbconsumers -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
-CURRENT_POSTGRES_CONSUMERS=$(kubectl -n ${NAMESPACE} get postgresqlconsumers -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
-CURRENT_MONGODB_CONSUMERS=$(kubectl -n ${NAMESPACE} get mongodbconsumers -l "lagoon.sh/service-type" -l "lagoon.sh/service" --no-headers | cut -d " " -f 1 | xargs)
-
 # using the build-deploy-tool identify the deployments, volumes, and services that this build has created
 LAGOON_DEPLOYMENTS_TO_JSON=$(build-deploy-tool identify lagoon-services --images /kubectl-build-deploy/images.yaml | jq -r )
 
 echo "${LAGOON_DEPLOYMENTS_TO_JSON}"
 MATCHED_MARIADB=false
 DELETE_MARIADB=()
-for EXIST_CONSUMERS in ${CURRENT_MARIADB_CONSUMERS}; do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1689,7 +1678,7 @@ done
 
 MATCHED_POSTGRES=false
 DELETE_POSTGRES=()
-for EXIST_CONSUMERS in ${CURRENT_POSTGRES_CONSUMERS}; do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1707,7 +1696,7 @@ done
 
 MATCHED_MONGODB=false
 DELETE_MONGODB=()
-for EXIST_CONSUMERS in ${CURRENT_MONGODB_CONSUMERS}; do
+for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.name'); do
   for DBAAS_ENTRY in "${DBAAS[@]}"
   do
     IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
@@ -1726,7 +1715,7 @@ done
 # check the current deployments in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_DEPLOYMENT=false
 DELETE_DEPLOYMENT=()
-for EXIST_DEPLOYMENT in ${CURRENT_DEPLOYMENTS}; do
+for EXIST_DEPLOYMENT in $(echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'); do
   for DEPLOYMENT in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.deployments[]?')
   do
     if [ "${EXIST_DEPLOYMENT}" == "${DEPLOYMENT}" ]; then
@@ -1742,7 +1731,7 @@ done
 # check the current volumes in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_VOLUME=false
 DELETE_VOLUME=()
-for EXIST_PVC in ${CURRENT_PVCS}; do
+for EXIST_PVC in $(echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.name'); do
   for VOLUME in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.volumes[]?')
   do
     if [ "${EXIST_PVC}" == "${VOLUME}" ]; then
@@ -1758,7 +1747,7 @@ done
 # check the current services in the environment against what the build has created and mark anything that isnt in this build as needing removal
 MATCHED_SERVICE=false
 DELETE_SERVICE=()
-for EXIST_SERVICE in ${CURRENT_SERVICES}; do
+for EXIST_SERVICE in $(echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name'); do
   for SERVICE in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.services[]?')
   do
     if [ "${EXIST_SERVICE}" == "${SERVICE}" ]; then
@@ -1771,6 +1760,14 @@ for EXIST_SERVICE in ${CURRENT_SERVICES}; do
   fi
   MATCHED_SERVICE=false  
 done
+
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.name'
 
 if [[ ${#DELETE_DEPLOYMENT[@]} -ne 0 ]] || [[ ${#DELETE_SERVICE[@]} -ne 0 ]] || [[ ${#DELETE_VOLUME[@]} -ne 0 ]] || [[ ${#DELETE_MARIADB[@]} -ne 0 ]] || [[ ${#DELETE_POSTGRES[@]} -ne 0 ]] || [[ ${#DELETE_MONGODB[@]} -ne 0 ]]; then
   # only show the service cleanup section if there is anything to actually clean up
