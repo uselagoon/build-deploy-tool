@@ -1679,9 +1679,9 @@ beginBuildStep "Applying Deployments" "applyingDeployments"
 ##############################################
 
 # remove any storage calculator pods before applying deployments to prevent storage binding issues
-STORAGE_CALCULATOR_PODS=$(kubectl -n ${NAMESPACE} get pods -l lagoon.sh/storageCalculator=true --no-headers | cut -d " " -f 1 | xargs)
+STORAGE_CALCULATOR_PODS=$(kubectl -n ${NAMESPACE} get pods -l lagoon.sh/storageCalculator=true --no-headers 2>/dev/null | cut -d " " -f 1 | xargs)
 for STORAGE_CALCULATOR_POD in $STORAGE_CALCULATOR_PODS; do
-  kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD}
+  kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD} 2>/dev/null
 done
 
 if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
@@ -1745,210 +1745,25 @@ previousStepEnd=${currentStepEnd}
 ##############################################s
 
 # using the build-deploy-tool identify the deployments, volumes, and services that this build has created
-LAGOON_DEPLOYMENTS_TO_JSON=$(build-deploy-tool identify lagoon-services --images /kubectl-build-deploy/images.yaml | jq -r )
-
-echo "${LAGOON_DEPLOYMENTS_TO_JSON}"
-MATCHED_MARIADB=false
-DELETE_MARIADB=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.metadata.name'); do
-  for DBAAS_ENTRY in "${DBAAS[@]}"
-  do
-    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
-    SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
-    if [ "${EXIST_CONSUMERS}" == "${SERVICE_NAME}" ]; then
-      MATCHED_MARIADB=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_MARIADB}" != "true" ]; then
-    DELETE_MARIADB+=($EXIST_CONSUMERS)
-  fi
-  MATCHED_MARIADB=false 
-done
-
-
-MATCHED_POSTGRES=false
-DELETE_POSTGRES=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.metadata.name'); do
-  for DBAAS_ENTRY in "${DBAAS[@]}"
-  do
-    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
-    SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
-    if [ "${EXIST_CONSUMERS}" == "${SERVICE_NAME}" ]; then
-      MATCHED_POSTGRES=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_POSTGRES}" != "true" ]; then
-    DELETE_POSTGRES+=($EXIST_CONSUMERS)
-  fi
-  MATCHED_POSTGRES=false 
-done
-
-MATCHED_MONGODB=false
-DELETE_MONGODB=()
-for EXIST_CONSUMERS in $(echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.metadata.name'); do
-  for DBAAS_ENTRY in "${DBAAS[@]}"
-  do
-    IFS=':' read -ra DBAAS_ENTRY_SPLIT <<< "$DBAAS_ENTRY"
-    SERVICE_NAME=${DBAAS_ENTRY_SPLIT[0]}
-    if [ "${EXIST_CONSUMERS}" == "${SERVICE_NAME}" ]; then
-      MATCHED_MONGODB=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_MONGODB}" != "true" ]; then
-    DELETE_MONGODB+=($EXIST_CONSUMERS)
-  fi
-  MATCHED_MONGODB=false 
-done
-
-# check the current deployments in the environment against what the build has created and mark anything that isnt in this build as needing removal
-MATCHED_DEPLOYMENT=false
-DELETE_DEPLOYMENT=()
-for EXIST_DEPLOYMENT in $(echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.metadata.name'); do
-  for DEPLOYMENT in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.deployments[]?')
-  do
-    if [ "${EXIST_DEPLOYMENT}" == "${DEPLOYMENT}" ]; then
-      MATCHED_DEPLOYMENT=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_DEPLOYMENT}" != "true" ]; then
-    DELETE_DEPLOYMENT+=($EXIST_DEPLOYMENT)
-  fi
-  MATCHED_DEPLOYMENT=false 
-done
-# check the current volumes in the environment against what the build has created and mark anything that isnt in this build as needing removal
-MATCHED_VOLUME=false
-DELETE_VOLUME=()
-for EXIST_PVC in $(echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.metadata.name'); do
-  for VOLUME in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.volumes[]?')
-  do
-    if [ "${EXIST_PVC}" == "${VOLUME}" ]; then
-      MATCHED_VOLUME=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_VOLUME}" != "true" ]; then
-    DELETE_VOLUME+=($EXIST_PVC)
-  fi
-  MATCHED_VOLUME=false  
-done
-# check the current services in the environment against what the build has created and mark anything that isnt in this build as needing removal
-MATCHED_SERVICE=false
-DELETE_SERVICE=()
-for EXIST_SERVICE in $(echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.metadata.name'); do
-  for SERVICE in $(echo "$LAGOON_DEPLOYMENTS_TO_JSON" | jq -rc '.services[]?')
-  do
-    if [ "${EXIST_SERVICE}" == "${SERVICE}" ]; then
-      MATCHED_SERVICE=true
-      continue
-    fi
-  done
-  if [ "${MATCHED_SERVICE}" != "true" ]; then
-    DELETE_SERVICE+=($EXIST_SERVICE)
-  fi
-  MATCHED_SERVICE=false  
-done
-
-# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.metadata.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.metadata.name'
-
-if [[ ${#DELETE_DEPLOYMENT[@]} -ne 0 ]] || [[ ${#DELETE_SERVICE[@]} -ne 0 ]] || [[ ${#DELETE_VOLUME[@]} -ne 0 ]] || [[ ${#DELETE_MARIADB[@]} -ne 0 ]] || [[ ${#DELETE_POSTGRES[@]} -ne 0 ]] || [[ ${#DELETE_MONGODB[@]} -ne 0 ]]; then
-  # only show the service cleanup section if there is anything to actually clean up
-  beginBuildStep "Unused Service Cleanup" "unusedServiceCleanup"
-  ((++BUILD_WARNING_COUNT))
-  echo ">> Lagoon detected services or volumes that have been removed from the docker-compose file"
-  if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" != enabled ]; then
-    echo "> If you no longer need these services, you can instruct Lagoon to remove it from the environment by setting the following variable"
-    echo "  'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_SERVICES=enabled' as a GLOBAL scoped variable to this environment or project."
-    echo "  Removing unused resources will result in the services and any data they had being deleted."
-    echo "  Ensure your application is no longer configured to use these resources before removing them."
-    echo "  If you're not sure, contact your support team with a link to this build."
-  else
-    echo "> The flag 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_SERVICES' is enabled."
-    echo "  Resources that were removed from the docker-compose file will now be removed from the environment."
-    echo "  The services and any data they had will be deleted."
-    echo "  You should remove this variable if you don't want services to be removed automatically in the future."
-  fi
-  echo "> Future releases of Lagoon may remove services automatically, you should ensure that your services are up always up to date if you see this warning."
-  for DD in ${DELETE_DEPLOYMENT[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get deployments ${DD} &> /dev/null; then
-        echo ">> Removing deployment ${DD}"
-        kubectl -n ${NAMESPACE} delete deployment ${DD}
-      fi
-    else
-      echo ">> Would remove deployment ${DD}"
-    fi
-  done
-  for DD in ${DELETE_SERVICE[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get services ${DD} &> /dev/null; then
-        echo ">> Removing service reference ${DD}"
-        kubectl -n ${NAMESPACE} delete service ${DD}
-      fi
-    else
-      echo ">> Would remove service ${DD}"
-    fi
-  done
-  for DD in ${DELETE_VOLUME[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get pvc ${DD} &> /dev/null; then
-        echo ">> Removing volume ${DD}"
-        kubectl -n ${NAMESPACE} delete pvc ${DD}
-      fi
-    else
-      echo ">> Would remove volume ${DD}"
-    fi
-  done
-  for DD in ${DELETE_MARIADB[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get mariadbconsumers ${DD} &> /dev/null; then
-        echo ">> Removing mariadb-dbaas ${DD}"
-        kubectl -n ${NAMESPACE} delete mariadbconsumer ${DD}
-      fi
-    else
-      echo ">> Would remove mariadb-dbaas ${DD}"
-    fi
-  done
-  for DD in ${DELETE_POSTGRES[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get postgresqlconsumers ${DD} &> /dev/null; then
-        echo ">> Removing postgres-dbaas ${DD}"
-        kubectl -n ${NAMESPACE} delete postgresqlconsumer ${DD}
-      fi
-    else
-      echo ">> Would remove postgres-dbaas ${DD}"
-    fi
-  done
-  for DD in ${DELETE_MONGODB[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" = enabled ]; then
-      if kubectl -n ${NAMESPACE} get mongodbconsumers ${DD} &> /dev/null; then
-        echo ">> Removing mongodb-dbaas ${DD}"
-        kubectl -n ${NAMESPACE} delete mongodbconsumer ${DD}
-      fi
-    else
-      echo ">> Would remove mongodb-dbaas ${DD}"
-    fi
-  done
-  # finalize the service cleanup
-  currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "unusedServiceCleanupComplete" "Unused Service Cleanup" "true"
-  previousStepEnd=${currentStepEnd}
+beginBuildStep "Unused Service Cleanup" "unusedServiceCleanup"
+CLEANUP_OUTPUT=""
+if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" != enabled ]; then
+  CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml)
+else
+  CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml --delete=true)
 fi
+CLEANUP_WARNING=false
+if [ "$CLEANUP_OUTPUT" != "" ]; then
+  echo "${CLEANUP_OUTPUT}"
+  CLEANUP_WARNING=true
+  ((++BUILD_WARNING_COUNT))
+else
+  echo ">> No services detected that require clean up"
+fi
+# finalize the service cleanup
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "unusedServiceCleanupComplete" "Unused Service Cleanup" "${CLEANUP_WARNING}"
+previousStepEnd=${currentStepEnd}
 
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 
