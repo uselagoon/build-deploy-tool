@@ -1,10 +1,10 @@
 package cron
 
 import (
-	"testing"
-	"sort"
 	"reflect"
+	"sort"
 	"strings"
+	"testing"
 
 	mapset "github.com/deckarep/golang-set/v2"
 )
@@ -125,7 +125,6 @@ func TestStandardizeSchedule(t *testing.T) {
 	}
 }
 
-
 func TestNormalizeSchedule(t *testing.T) {
 	tests := []struct {
 		name           string
@@ -137,10 +136,10 @@ func TestNormalizeSchedule(t *testing.T) {
 		{
 			name: "valid multiple values",
 			input: &CronSchedule{
-				Minute: "0,15,30,45",
-				Hour:   "0,6,12,18",
-				Day:    "*",
-				Month:  "*",
+				Minute:    "0,15,30,45",
+				Hour:      "0,6,12,18",
+				Day:       "*",
+				Month:     "*",
 				DayOfWeek: "*",
 			},
 			expectedMinute: []int{0, 15, 30, 45},
@@ -150,10 +149,10 @@ func TestNormalizeSchedule(t *testing.T) {
 		{
 			name: "valid range",
 			input: &CronSchedule{
-				Minute: "0-10",
-				Hour:   "0",
-				Day:    "*",
-				Month:  "*",
+				Minute:    "0-10",
+				Hour:      "0",
+				Day:       "*",
+				Month:     "*",
 				DayOfWeek: "*",
 			},
 			expectedMinute: []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
@@ -163,10 +162,10 @@ func TestNormalizeSchedule(t *testing.T) {
 		{
 			name: "valid star increment",
 			input: &CronSchedule{
-				Minute: "*/15",
-				Hour:   "0",
-				Day:    "*",
-				Month:  "*",
+				Minute:    "*/15",
+				Hour:      "0",
+				Day:       "*",
+				Month:     "*",
 				DayOfWeek: "*",
 			},
 			expectedMinute: []int{0, 15, 30, 45},
@@ -176,10 +175,10 @@ func TestNormalizeSchedule(t *testing.T) {
 		{
 			name: "invalid minute range",
 			input: &CronSchedule{
-				Minute: "0,100", // 100 invalid minute
-				Hour:   "0",
-				Day:    "*",
-				Month:  "*",
+				Minute:    "0,100", // 100 invalid minute
+				Hour:      "0",
+				Day:       "*",
+				Month:     "*",
 				DayOfWeek: "*",
 			},
 			expectError: true,
@@ -187,10 +186,10 @@ func TestNormalizeSchedule(t *testing.T) {
 		{
 			name: "empty schedule fields",
 			input: &CronSchedule{
-				Minute: "",
-				Hour:   "",
-				Day:    "*",
-				Month:  "*",
+				Minute:    "",
+				Hour:      "",
+				Day:       "*",
+				Month:     "*",
 				DayOfWeek: "*",
 			},
 			expectedMinute: []int{},
@@ -242,14 +241,14 @@ func TestFlattenSchedule(t *testing.T) {
 	tests := []struct {
 		name        string
 		schedule    []mapset.Set[int]
-		expected    []int 
+		expected    []int
 		expectError bool
 	}{
 		{
 			name: "valid schedule with 2 minutes and 2 hours",
 			schedule: []mapset.Set[int]{
-				makeSet(0, 30),        // minutes
-				makeSet(1, 2),         // hours
+				makeSet(0, 30),                  // minutes
+				makeSet(1, 2),                   // hours
 				makeSet(), makeSet(), makeSet(), // ignored fields
 			},
 			expected: []int{60, 90, 120, 150},
@@ -257,16 +256,16 @@ func TestFlattenSchedule(t *testing.T) {
 		{
 			name: "valid schedule with some hours set",
 			schedule: []mapset.Set[int]{
-				makeSet(0),        // minutes
-				makeSet(0, 6, 12, 18),         // hours
+				makeSet(0),                      // minutes
+				makeSet(0, 6, 12, 18),           // hours
 				makeSet(), makeSet(), makeSet(), // ignored fields
 			},
-			expected: []int{0, 360, 720, 1080}, 
+			expected: []int{0, 360, 720, 1080},
 		},
 		{
 			name: "invalid schedule length",
 			schedule: []mapset.Set[int]{
-				makeSet(0), 
+				makeSet(0),
 			},
 			expectError: true,
 		},
@@ -300,13 +299,12 @@ func TestFlattenSchedule(t *testing.T) {
 	}
 }
 
-
 func TestDecideRunner(t *testing.T) {
 	tests := []struct {
-		name           string
-		cronjob        Cronjob
-		expectedInPod  *bool
-		expectError    bool
+		name          string
+		cronjob       Cronjob
+		expectedInPod *bool
+		expectError   bool
 	}{
 		{
 			name: "InPod is already set - skip logic",
@@ -387,8 +385,8 @@ func TestDecideRunner(t *testing.T) {
 func TestCalculateMetric(t *testing.T) {
 	tests := []struct {
 		name     string
-		input    []int           // Times in minutes
-		expected int             // Expected median distance
+		input    []int // Times in minutes
+		expected int   // Expected median distance
 		wantErr  bool
 	}{
 		{

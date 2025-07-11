@@ -518,7 +518,7 @@ func composeToServiceValues(
 						continue
 					}
 
-					err := cronjob.ValidateCronjob()
+					err := cronjob.ValidateCronjob(buildValues.Namespace)
 					if err != nil {
 						return nil, err
 					}

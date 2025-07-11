@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/cxmcc/unixsums/cksum"
 	mapset "github.com/deckarep/golang-set/v2"
 	cron "github.com/robfig/cron/v3"
-	"github.com/cxmcc/unixsums/cksum"
 )
 
 // Cronjob represents a Lagoon cronjob.
@@ -147,10 +147,11 @@ func getCaptureBlocks(regex, val string) (captureMap map[string]string) {
 }
 
 // Process lagoon cronjob to ensure it meets our constraints.
-func (cj *Cronjob) ValidateCronjob() error {
+// Uses namespace name as seed.
+func (cj *Cronjob) ValidateCronjob(namespace string) error {
 
 	// Use checksum of cron command as the seed
-	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", cj.Command)))
+	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", namespace)))
 	schedule, err := StandardizeSchedule(cj.Schedule, seed)
 	if err != nil {
 		return err
@@ -234,7 +235,7 @@ func (cj *Cronjob) decideRunner() (int, error) {
 		return 0, err
 	}
 
-	inPod := (metric <= SCHEDULE_METRIC_CEILING)
+	inPod := (metric < SCHEDULE_METRIC_CEILING)
 	cj.InPod = &inPod
 
 	return metric, nil
@@ -341,7 +342,7 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 	}
 
 	var set = mapset.NewSet[int]()
-	// All pattern 
+	// All pattern
 	allPattern := regexp.MustCompile(`^\*$`)
 	// Increment pattern
 	stepOnlyPattern := regexp.MustCompile(`^\*/(\d{1,2})$`)

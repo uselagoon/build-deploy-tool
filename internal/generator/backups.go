@@ -153,7 +153,7 @@ func generateBackupValues(
 		buildValues.Backup.PruneRetention.Monthly = *buildValues.LagoonYAML.BackupRetention.Production.Monthly
 	}
 	if buildValues.LagoonYAML.BackupSchedule.Production != "" && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(buildValues.LagoonYAML.BackupSchedule.Production, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace)))) 
+		buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(buildValues.LagoonYAML.BackupSchedule.Production, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace))))
 		if err != nil {
 			return fmt.Errorf("unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}
