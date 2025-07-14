@@ -98,13 +98,13 @@ processSbom() {
     fi
     if [[ "$BUILD_TYPE" == "pullrequest" ]]; then
       kubectl -n ${NAMESPACE} \
-        annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+        annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${PR_NUMBER} \
         lagoon.sh/prHeadBranch=${PR_HEAD_BRANCH} \
         lagoon.sh/prBaseBranch=${PR_BASE_BRANCH}
     else
       kubectl -n ${NAMESPACE} \
-        annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+        annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
     fi
     kubectl \
