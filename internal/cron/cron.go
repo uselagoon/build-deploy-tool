@@ -280,6 +280,14 @@ func calculateScheduleMetric(schedule string) (int, error) {
 		DayOfWeek: splitSchedule[4],
 	}
 
+	// There are many subtleties with correctly dealing with months and days-of-week.
+	// To avoid this entirely, we use the 'not-asterisk' heuristic: if any of the last three
+	// schedule fields are not "*", we immediately put the cronjob in a k8s job.
+	if cs.Day != "*" || cs.Month != "*" || cs.DayOfWeek != "*" {
+		// Ensures the returned metric is always greater than the defined ceiling.
+		return SCHEDULE_METRIC_CEILING + 1, nil
+	}
+
 	timeSets, err := normalizeSchedule(cs)
 	if err != nil {
 		return 0, err

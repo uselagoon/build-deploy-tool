@@ -309,21 +309,49 @@ func TestDecideRunner(t *testing.T) {
 		{
 			name: "InPod is already set - skip logic",
 			cronjob: Cronjob{
-				InPod: ptr(true), // assume ptr returns *bool
+				InPod: ptr(true),
 			},
 			expectedInPod: ptr(true),
 		},
 		{
 			name: "metric below ceiling - should set InPod true",
 			cronjob: Cronjob{
-				Schedule: "0,15,30,45 * * * *", // well-spaced
+				Schedule: "0,15,30,45 * * * *",
 			},
 			expectedInPod: ptr(true),
 		},
 		{
+			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
+			cronjob: Cronjob{
+				Schedule: "0,15,30,45 * 4 * *",
+			},
+			expectedInPod: ptr(false),
+		},
+		{
+			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
+			cronjob: Cronjob{
+				Schedule: "0,15,30,45 * * */5 *",
+			},
+			expectedInPod: ptr(false),
+		},
+		{
+			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
+			cronjob: Cronjob{
+				Schedule: "0,15,30,45 * * * 1-5",
+			},
+			expectedInPod: ptr(false),
+		},
+		{
+			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
+			cronjob: Cronjob{
+				Schedule: "0,15,30,45 * * * MON",
+			},
+			expectedInPod: ptr(false),
+		},
+		{
 			name: "metric above ceiling - should set InPod false",
 			cronjob: Cronjob{
-				Schedule: "0 0,6,12,18 * * *", // widely spaced
+				Schedule: "0 0,6,12,18 * * *",
 			},
 			expectedInPod: ptr(false),
 		},
@@ -337,21 +365,21 @@ func TestDecideRunner(t *testing.T) {
 		{
 			name: "InPod=true test 2-59/10 * * * *",
 			cronjob: Cronjob{
-				Schedule: "2-59/10 * * * *", // well-spaced
+				Schedule: "2-59/10 * * * *",
 			},
 			expectedInPod: ptr(true),
 		},
 		{
 			name: "InPod=true test 1-59/10 * * * *",
 			cronjob: Cronjob{
-				Schedule: "1-59/10 * * * *", // well-spaced
+				Schedule: "1-59/10 * * * *",
 			},
 			expectedInPod: ptr(true),
 		},
 		{
 			name: "InPod=true test 3-59/5 * * * *",
 			cronjob: Cronjob{
-				Schedule: "3-59/5 * * * *", // well-spaced
+				Schedule: "3-59/5 * * * *",
 			},
 			expectedInPod: ptr(true),
 		},
