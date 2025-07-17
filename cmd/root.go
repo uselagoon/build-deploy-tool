@@ -67,6 +67,13 @@ var collectCmd = &cobra.Command{
 	Long:    `Collect resource information for Lagoon builds`,
 }
 
+var runCmd = &cobra.Command{
+	Use:     "run",
+	Aliases: []string{"r"},
+	Short:   "Run a process",
+	Long:    `Run a process`,
+}
+
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
@@ -107,6 +114,7 @@ func init() {
 	rootCmd.AddCommand(identifyCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(collectCmd)
+	rootCmd.AddCommand(runCmd)
 
 	rootCmd.PersistentFlags().StringP("lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")
