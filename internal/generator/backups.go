@@ -6,8 +6,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/cron"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
-
-	"github.com/cxmcc/unixsums/cksum"
 )
 
 const (
@@ -95,7 +93,7 @@ func generateBackupValues(
 		}
 	}
 
-	buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(newBackupSchedule, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace))))
+	buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(newBackupSchedule, buildValues.Namespace)
 	if err != nil {
 		return fmt.Errorf("unable to convert crontab for default backup schedule: %v", err)
 	}
@@ -106,7 +104,7 @@ func generateBackupValues(
 	if flagCheckSchedule == "enabled" || lffCheckSchedule == "enabled" {
 		buildValues.Backup.CheckSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.CheckSchedule, err = cron.StandardizeSchedule(defaultCheckSchedule, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace))))
+		buildValues.Backup.CheckSchedule, err = cron.StandardizeSchedule(defaultCheckSchedule, buildValues.Namespace)
 		if err != nil {
 			return fmt.Errorf("unable to convert crontab for default check schedule: %v", err)
 		}
@@ -116,7 +114,7 @@ func generateBackupValues(
 	if flagPruneSchedule == "enabled" || lffPruneSchedule == "enabled" {
 		buildValues.Backup.PruneSchedule = "@weekly-random"
 	} else {
-		buildValues.Backup.PruneSchedule, err = cron.StandardizeSchedule(defaultPruneSchedule, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace))))
+		buildValues.Backup.PruneSchedule, err = cron.StandardizeSchedule(defaultPruneSchedule, buildValues.Namespace)
 		if err != nil {
 			return fmt.Errorf("unable to convert crontab for default prune schedule: %v", err)
 		}
@@ -153,7 +151,7 @@ func generateBackupValues(
 		buildValues.Backup.PruneRetention.Monthly = *buildValues.LagoonYAML.BackupRetention.Production.Monthly
 	}
 	if buildValues.LagoonYAML.BackupSchedule.Production != "" && buildValues.EnvironmentType == "production" {
-		buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(buildValues.LagoonYAML.BackupSchedule.Production, cksum.Cksum([]byte(fmt.Sprintf("%s\n", buildValues.Namespace))))
+		buildValues.Backup.BackupSchedule, err = cron.StandardizeSchedule(buildValues.LagoonYAML.BackupSchedule.Production, buildValues.Namespace)
 		if err != nil {
 			return fmt.Errorf("unable to convert crontab for default backup schedule from .lagoon.yml: %v", err)
 		}

@@ -149,10 +149,7 @@ func getCaptureBlocks(regex, val string) (captureMap map[string]string) {
 // Process lagoon cronjob to ensure it meets our constraints.
 // Uses namespace name as seed.
 func (cj *Cronjob) ValidateCronjob(namespace string) error {
-
-	// Use checksum of cron command as the seed
-	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", namespace)))
-	schedule, err := StandardizeSchedule(cj.Schedule, seed)
+	schedule, err := StandardizeSchedule(cj.Schedule, namespace)
 	if err != nil {
 		return err
 	}
@@ -174,7 +171,8 @@ func (cj *Cronjob) ValidateCronjob(namespace string) error {
 // Convert and validate a cron schedule to the stanardized format.
 // In particular, this means derandomizing, i.e removing the "H" and "M" that may be present.
 // We consume the seed so that we can enforce determinism for testing purposes.
-func StandardizeSchedule(schedule string, seed uint32) (string, error) {
+func StandardizeSchedule(schedule string, namespaceAsSeed string) (string, error) {
+	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", namespaceAsSeed)))
 	splitSchedule := strings.Split(strings.Trim(schedule, " "), " ")
 
 	if len(splitSchedule) <= 0 {
@@ -264,12 +262,12 @@ func (cj *Cronjob) validateTimeout() error {
 
 func calculateScheduleMetric(schedule string) (int, error) {
 	if schedule == "" {
-		return 0, fmt.Errorf("Schedule cant be empty")
+		return 0, fmt.Errorf("schedule cant be empty")
 	}
 
 	splitSchedule := strings.Split(strings.Trim(schedule, " "), " ")
 	if len(splitSchedule) != 5 {
-		return 0, fmt.Errorf("Bad schedule string %s", schedule)
+		return 0, fmt.Errorf("bad schedule string %s", schedule)
 	}
 
 	cs := &CronSchedule{
@@ -394,7 +392,7 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			}
 
 			if end < start || start < min || end > max {
-				return nil, fmt.Errorf("Invalid range %s", timeRange)
+				return nil, fmt.Errorf("invalid range %s", timeRange)
 			}
 
 			for i := start; i <= end; i++ {
@@ -405,7 +403,7 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			// The range with increment pattern has 3 capture groups,
 			// so parts should definitely be of size 4.
 			if len(parts) != 4 {
-				return nil, fmt.Errorf("Broken Invariant: wrong number of capture groups (%d) returned from %s", len(parts), timeRange)
+				return nil, fmt.Errorf("broken invariant: wrong number of capture groups (%d) returned from %s", len(parts), timeRange)
 			}
 
 			start, err := strconv.Atoi(parts[1])
@@ -424,14 +422,14 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			}
 
 			if end < start || inc <= 0 || inc > 60 {
-				return nil, fmt.Errorf("Invalid range %s", timeRange)
+				return nil, fmt.Errorf("invalid range %s", timeRange)
 			}
 
 			for i := start; i <= end; i += inc {
 				set.Add(i)
 			}
 		} else {
-			return nil, fmt.Errorf("Invalid range in schedule %s, range %s", field, timeRange)
+			return nil, fmt.Errorf("invalid range in schedule %s, range %s", field, timeRange)
 		}
 	}
 
@@ -445,7 +443,7 @@ func flattenSchedule(schedule []mapset.Set[int]) (mapset.Set[int], error) {
 	var flat = mapset.NewSet[int]()
 
 	if len(schedule) != 5 {
-		return nil, fmt.Errorf("Schedule of wrong size passed in. Should be 5, was %d", len(schedule))
+		return nil, fmt.Errorf("schedule of wrong size passed in. Should be 5, was %d", len(schedule))
 	}
 
 	for _, minute := range schedule[0].ToSlice() {
@@ -459,7 +457,7 @@ func flattenSchedule(schedule []mapset.Set[int]) (mapset.Set[int], error) {
 
 func calculateMetric(times mapset.Set[int]) (int, error) {
 	if times == nil || times.Cardinality() == 0 {
-		return 0, fmt.Errorf("Cannot calculateMetric on empty set")
+		return 0, fmt.Errorf("cannot calculateMetric on empty set")
 	}
 
 	if times.Cardinality() == 1 {

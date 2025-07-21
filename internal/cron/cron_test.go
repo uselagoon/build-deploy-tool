@@ -6,12 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+
 	mapset "github.com/deckarep/golang-set/v2"
 )
-
-func ptr(b bool) *bool {
-	return &b
-}
 
 func TestStandardizeSchedule(t *testing.T) {
 	tests := []struct {
@@ -24,77 +22,77 @@ func TestStandardizeSchedule(t *testing.T) {
 		{
 			name: "test1",
 			cron: "M * * * *",
-			want: "42 * * * *",
+			want: "53 * * * *",
 		},
 		{
 			name: "test2",
 			cron: "M/5 * * * *",
-			want: "2,7,12,17,22,27,32,37,42,47,52,57 * * * *",
+			want: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *",
 		},
 		{
 			name: "test3",
 			cron: "M H(2-4) * * *",
-			want: "42 2 * * *",
+			want: "53 3 * * *",
 		},
 		{
 			name: "test4",
 			cron: "M H(22-2) * * *",
-			want: "42 0 * * *",
+			want: "53 23 * * *",
 		},
 		{
 			name: "test5",
 			cron: "M/15 H(22-2) * * *",
-			want: "12,27,42,57 0 * * *",
+			want: "8,23,38,53 23 * * *",
 		},
 		{
 			name: "test8",
 			cron: "M/15 H(22-2) 3,5 * *",
-			want: "12,27,42,57 0 3,5 * *",
+			want: "8,23,38,53 23 3,5 * *",
 		},
 		{
 			name: "test9",
 			cron: "M/15 H(22-2) * 10-12 *",
-			want: "12,27,42,57 0 * 10-12 *",
+			want: "8,23,38,53 23 * 10-12 *",
 		},
 		{
 			name: "test14 - set hours",
 			cron: "M/15 23 * * 0-5",
-			want: "12,27,42,57 23 * * 0-5",
+			want: "8,23,38,53 23 * * 0-5",
 		},
 		{
 			name: "test15 - set day",
 			cron: "M/15 * 31 * 0-5",
-			want: "12,27,42,57 * 31 * 0-5",
+			want: "8,23,38,53 * 31 * 0-5",
 		},
 		{
 			name: "test16 - set month",
 			cron: "M/15 * * 11 0-5",
-			want: "12,27,42,57 * * 11 0-5",
+			want: "8,23,38,53 * * 11 0-5",
 		},
 		{
 			name: "test17 - hourly interval",
 			cron: "M */6 * * *",
-			want: "42 0,6,12,18 * * *",
+			want: "53 5,11,17,23 * * *",
 		},
 		{
 			name: "test18 - day and month string",
 			cron: "M */6 * JAN MON",
-			want: "42 0,6,12,18 * JAN MON",
+			want: "53 5,11,17,23 * JAN MON",
 		},
 		{
 			name: "test19 - whitespace",
 			cron: "M * * * * ",
-			want: "42 * * * *",
+			want: "53 * * * *",
 		},
 		{
 			name: "test22 - split range hours",
 			cron: "*/30 0-12,22-23 * * *",
-			want: "12,42 0-12,22-23 * * *",
+			want: "23,53 0-12,22-23 * * *",
 		},
 		{
 			name: "test25 - random minute with step and range hours",
 			cron: "M/30 17/12,0-23 * * *",
-			want: "12,42 17/12,0-23 * * *",
+			want: "23,53 17/12,0-23 * * *",
 		},
 	}
 
@@ -104,7 +102,7 @@ func TestStandardizeSchedule(t *testing.T) {
 				Schedule: tt.cron,
 			}
 
-			schedule, err := StandardizeSchedule(cj.Schedule, 42)
+			schedule, err := StandardizeSchedule(cj.Schedule, "test-namespace")
 
 			if err != nil {
 				if !tt.wantErr {
@@ -309,51 +307,51 @@ func TestDecideRunner(t *testing.T) {
 		{
 			name: "InPod is already set - skip logic",
 			cronjob: Cronjob{
-				InPod: ptr(true),
+				InPod: helpers.BoolPtr(true),
 			},
-			expectedInPod: ptr(true),
+			expectedInPod: helpers.BoolPtr(true),
 		},
 		{
 			name: "metric below ceiling - should set InPod true",
 			cronjob: Cronjob{
 				Schedule: "0,15,30,45 * * * *",
 			},
-			expectedInPod: ptr(true),
+			expectedInPod: helpers.BoolPtr(true),
 		},
 		{
 			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
 			cronjob: Cronjob{
 				Schedule: "0,15,30,45 * 4 * *",
 			},
-			expectedInPod: ptr(false),
+			expectedInPod: helpers.BoolPtr(false),
 		},
 		{
 			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
 			cronjob: Cronjob{
 				Schedule: "0,15,30,45 * * */5 *",
 			},
-			expectedInPod: ptr(false),
+			expectedInPod: helpers.BoolPtr(false),
 		},
 		{
 			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
 			cronjob: Cronjob{
 				Schedule: "0,15,30,45 * * * 1-5",
 			},
-			expectedInPod: ptr(false),
+			expectedInPod: helpers.BoolPtr(false),
 		},
 		{
 			name: "metric below ceiling - should set InPod false due to not-asterisk heuristic",
 			cronjob: Cronjob{
 				Schedule: "0,15,30,45 * * * MON",
 			},
-			expectedInPod: ptr(false),
+			expectedInPod: helpers.BoolPtr(false),
 		},
 		{
 			name: "metric above ceiling - should set InPod false",
 			cronjob: Cronjob{
 				Schedule: "0 0,6,12,18 * * *",
 			},
-			expectedInPod: ptr(false),
+			expectedInPod: helpers.BoolPtr(false),
 		},
 		{
 			name: "invalid schedule - returns error",
@@ -367,21 +365,21 @@ func TestDecideRunner(t *testing.T) {
 			cronjob: Cronjob{
 				Schedule: "2-59/10 * * * *",
 			},
-			expectedInPod: ptr(true),
+			expectedInPod: helpers.BoolPtr(true),
 		},
 		{
 			name: "InPod=true test 1-59/10 * * * *",
 			cronjob: Cronjob{
 				Schedule: "1-59/10 * * * *",
 			},
-			expectedInPod: ptr(true),
+			expectedInPod: helpers.BoolPtr(true),
 		},
 		{
 			name: "InPod=true test 3-59/5 * * * *",
 			cronjob: Cronjob{
 				Schedule: "3-59/5 * * * *",
 			},
-			expectedInPod: ptr(true),
+			expectedInPod: helpers.BoolPtr(true),
 		},
 	}
 
