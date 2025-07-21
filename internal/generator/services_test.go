@@ -13,10 +13,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
 
-func ptr(b bool) *bool {
-	return &b
-}
-
 func Test_composeToServiceValues(t *testing.T) {
 	type args struct {
 		buildValues          *BuildValues
@@ -949,7 +945,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						Schedule: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *",
 						Command:  "flock -n /tmp/cron.lock.f6d199ad6c0075de8176b5c0a14a5d571a473001ced482bc9289182da3d90083 -c 'drush cron'",
 						Timeout:  "4h",
-						InPod:    ptr(true),
+						InPod:    helpers.BoolPtr(true),
 					},
 				},
 				NativeCronjobs: []lagoon.Cronjob{
@@ -959,7 +955,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						Schedule: "5 2 * * *",
 						Command:  "env",
 						Timeout:  "4h",
-						InPod:    ptr(false),
+						InPod:    helpers.BoolPtr(false),
 					},
 					{
 						Name:     "cronjob-cli-my-cronjob-that-has-a-very-very-v-znwv36",
@@ -967,7 +963,7 @@ func Test_composeToServiceValues(t *testing.T) {
 						Schedule: "5 2 * * *",
 						Command:  "drush cron",
 						Timeout:  "4h",
-						InPod:    ptr(false),
+						InPod:    helpers.BoolPtr(false),
 					},
 				},
 				ImageBuild: &ImageBuild{
