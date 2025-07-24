@@ -25,8 +25,7 @@ func StrPtr(str string) *string {
 
 // BoolPtr .
 func BoolPtr(b bool) *bool {
-	v := b
-	return &v
+	return &b
 }
 
 // IntPTr

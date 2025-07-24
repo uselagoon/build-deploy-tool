@@ -9,6 +9,7 @@ import (
 	"strconv"
 
 	"dario.cat/mergo"
+	"github.com/uselagoon/build-deploy-tool/internal/cron"
 	"sigs.k8s.io/yaml"
 )
 
@@ -17,6 +18,8 @@ type ProductionRoutes struct {
 	Active  *Environment `json:"active"`
 	Standby *Environment `json:"standby"`
 }
+
+type Cronjob = cron.Cronjob
 
 // Environment represents a Lagoon environment.
 type Environment struct {
@@ -27,16 +30,6 @@ type Environment struct {
 	Overrides              map[string]Override     `json:"overrides,omitempty"`
 	AutogeneratePathRoutes []AutogeneratePathRoute `json:"autogeneratePathRoutes,omitempty"`
 	NetworkPolicies        []NetworkPolicy         `json:"network-policies,omitempty"`
-}
-
-// Cronjob represents a Lagoon cronjob.
-type Cronjob struct {
-	Name     string `json:"name"`
-	Service  string `json:"service"`
-	Schedule string `json:"schedule"`
-	Command  string `json:"command"`
-	InPod    *bool  `json:"inPod"`
-	Timeout  string `json:"timeout"`
 }
 
 type Override struct {
