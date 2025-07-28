@@ -123,7 +123,7 @@ func ExecuteTaskInEnvironment(task Task, prePost string) error {
 	fmt.Printf("##############################################\nBEGIN %s %s\n##############################################\n", prePost, task.Name)
 	st := time.Now()
 
-	err := ExecTaskInPod(task, command, false) //(task.Service, task.Namespace, command, false, task.Container, task.ScaleWaitTime, task.ScaleMaxIterations)
+	err := ExecTaskInPod(task, command, false)
 
 	if err != nil {
 		fmt.Printf("Failed to execute task `%v` due to reason `%v`\n", task.Name, err.Error())
@@ -270,13 +270,26 @@ func ExecTaskInPod(
 		return fmt.Errorf("error while creating Executor: %v", err)
 	}
 
-	err = exec.Stream(remotecommand.StreamOptions{
+	// After replacing exec.Stream with exec.StreamWithContext, we can now pass a context to the stream
+	// this will allow us, eventually, to set limits on how long the exec can run, among other things.
+	err = exec.StreamWithContext(context.TODO(), remotecommand.StreamOptions{
 		Stdout: os.Stdout,
 		Stderr: os.Stderr,
 		Tty:    tty,
 	})
+
 	if err != nil {
 		return fmt.Errorf("Error returned: %v", err)
+	}
+
+	if debug {
+		fmt.Printf("Task '%v' executed in pod %v \n", task.Name, pod.Name)
+		if numIterations > 1 {
+			fmt.Printf("Scaled up pods to %d replicas before executing task\n", numIterations)
+		}
+		if task.ScaleWaitTime > 0 {
+			fmt.Printf("Waited %d seconds before executing task\n", task.ScaleWaitTime)
+		}
 	}
 
 	return nil
