@@ -85,7 +85,7 @@ func init() {
 // ValidateCronjob returns an error if the command for the cronjob has any
 // newlines, and nil otherwise.
 func ValidateCronjob(c *lagoon.Cronjob) error {
-	if strings.Contains(c.Command, "\n") {
+	if strings.Contains(strings.TrimSpace(c.Command), "\n") {
 		return fmt.Errorf("invalid cronjob, multiline commands are not supported: %q",
 			c.Command)
 	}
