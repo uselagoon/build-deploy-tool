@@ -78,7 +78,7 @@ func TestValidateDockerCompose(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := ValidateDockerCompose(tt.args.file, tt.args.ignoreNonStringKeyErrors, tt.args.ignoreMissingEnvFiles); err != nil {
+			if _, _, err := ValidateDockerCompose(tt.args.file, tt.args.ignoreNonStringKeyErrors, tt.args.ignoreMissingEnvFiles); err != nil {
 				if tt.wantErr {
 					if !strings.Contains(err.Error(), tt.wantErrMsg) {
 						t.Errorf("ValidateDockerCompose() error = %v, wantErr %v", err, tt.wantErr)

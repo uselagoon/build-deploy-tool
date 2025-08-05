@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
+	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
@@ -30,12 +32,25 @@ var validateDockerCompose = &cobra.Command{
 			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
 			os.Exit(1)
 		}
-
-		err = ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
+		outputJSON, err := cmd.Flags().GetBool("json")
 		if err != nil {
+			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			os.Exit(1)
+		}
+		spec, svcOrder, err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
+		if err != nil && !outputJSON {
 			fmt.Println(err.Error())
 			os.Exit(1)
 		}
+		if outputJSON {
+			result := map[string]interface{}{
+				"order": svcOrder,
+				"spec":  spec,
+			}
+			sBytes, _ := json.Marshal(result)
+			fmt.Println(string(sBytes))
+		}
+
 	},
 }
 
@@ -59,12 +74,12 @@ var validateDockerComposeWithErrors = &cobra.Command{
 }
 
 // ValidateDockerCompose validate a docker-compose file
-func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) error {
-	_, _, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
+func ValidateDockerCompose(file string, ignoreErrors, ignoreMisEnvFiles bool) (*composetypes.Project, []lagoon.OriginalServiceOrder, error) {
+	composeSpec, serviceOrder, _, err := lagoon.UnmarshaDockerComposeYAML(file, ignoreErrors, ignoreMisEnvFiles, map[string]string{})
 	if err != nil {
-		return err
+		return composeSpec, serviceOrder, err
 	}
-	return nil
+	return composeSpec, serviceOrder, nil
 }
 
 // validateDockerComposeWithErrors validate a docker-compose file yaml structure properly
@@ -79,6 +94,8 @@ func validateDockerComposeWithError(file string) error {
 func init() {
 	validateCmd.AddCommand(validateDockerCompose)
 	validateCmd.AddCommand(validateDockerComposeWithErrors)
+	validateDockerCompose.Flags().Bool("json", false,
+		"Flag output the resulting docker-compose file in JSON.")
 	validateDockerCompose.Flags().StringP("docker-compose", "", "docker-compose.yml",
 		"The docker-compose.yml file to read.")
 	validateDockerComposeWithErrors.Flags().StringP("docker-compose", "", "docker-compose.yml",
