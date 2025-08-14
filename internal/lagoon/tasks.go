@@ -285,7 +285,7 @@ func ExecTaskInPod(
 	if debug {
 		fmt.Printf("Task '%v' executed in pod %v \n", task.Name, pod.Name)
 		if numIterations > 1 {
-			fmt.Printf("Pod scaling function called %d times before executing task\n", (numIterations - 1))
+			fmt.Printf("Pod scaling function called %d time(s) before executing task\n", (numIterations - 1))
 		}
 		if task.ScaleWaitTime > 0 {
 			fmt.Printf("Waited %d seconds before executing task\n", task.ScaleWaitTime)
