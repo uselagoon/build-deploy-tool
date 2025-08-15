@@ -160,7 +160,7 @@ func generateAutogenRoutes(
 						return err
 					}
 				}
-				insecure := "Allow"
+				insecure := "Redirect"
 				if buildValues.LagoonYAML.Routes.Autogenerate.Insecure != "" {
 					insecure = buildValues.LagoonYAML.Routes.Autogenerate.Insecure
 				}
