@@ -140,7 +140,11 @@ func GenerateDeploymentTemplate(
 			}
 			deployment.Spec.Strategy = serviceTypeValues.Strategy
 
-			podTemplateSpec, _ := generatePodTemplateSpec(buildValues, serviceValues, serviceTypeValues, deployment.ObjectMeta, templateAnnotations, serviceTypeValues.PrimaryContainer.Name, "")
+			podTemplateSpec, err := generatePodTemplateSpec(buildValues, serviceValues, serviceTypeValues, deployment.ObjectMeta, templateAnnotations, serviceTypeValues.PrimaryContainer.Name, "")
+			if err != nil {
+				return nil, err
+			}
+
 			// end cronjob template
 			deployment.Spec.Template = *podTemplateSpec
 			if buildValues.PodSpreadConstraints {
