@@ -34,11 +34,8 @@ var backupGeneration = &cobra.Command{
 }
 
 // BackupTemplateGeneration .
-func BackupTemplateGeneration(g generator.GeneratorInput,
-) error {
-	lagoonBuild, err := generator.NewGenerator(
-		g,
-	)
+func BackupTemplateGeneration(g generator.GeneratorInput) error {
+	lagoonBuild, err := generator.NewGenerator(g)
 	if err != nil {
 		return err
 	}
