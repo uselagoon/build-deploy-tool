@@ -107,6 +107,16 @@ processSbom() {
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
     fi
+    # Support org/project specific Depdency Track integration.
+    local endpoint=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_ENDPOINT)
+    if [ ! -z "$endpoint" ]; then
+      # Use `jq` to escape user input.
+      local patch=$(jq -n --arg e "$endpoint" '{data: {dependency_track_endpoint: $e}}')
+      kubectl -n ${NAMESPACE} \
+        patch configmap $SBOM_CONFIGMAP \
+        --type merge \
+        -p "$patch"
+    fi
     kubectl \
         -n ${NAMESPACE} \
         label configmap ${SBOM_CONFIGMAP} \
