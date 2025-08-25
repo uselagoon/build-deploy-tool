@@ -69,7 +69,7 @@ echo "Using image for scan ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE}"
 
 # Setting JAVAOPT to skip the java db update, as the upstream image comes with a pre-populated database
 JAVAOPT="--skip-java-db-update"
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${JAVAOPT} ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${JAVAOPT} ${IMAGE_FULL} --format ${SBOM_OUTPUT} --skip-version-check | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
 echo "Size of ${SBOM_OUTPUT_FILE} = $FILESIZE bytes."
@@ -106,6 +106,16 @@ processSbom() {
       kubectl -n ${NAMESPACE} \
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
+    fi
+    # Support org/project specific Depdency Track integration.
+    local endpoint=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_ENDPOINT)
+    if [ ! -z "$endpoint" ]; then
+      # Use `jq` to escape user input.
+      local patch=$(jq -n --arg e "$endpoint" '{data: {dependency_track_endpoint: $e}}')
+      kubectl -n ${NAMESPACE} \
+        patch configmap $SBOM_CONFIGMAP \
+        --type merge \
+        -p "$patch"
     fi
     kubectl \
         -n ${NAMESPACE} \
