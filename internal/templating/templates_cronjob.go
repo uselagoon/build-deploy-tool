@@ -119,7 +119,10 @@ func GenerateCronjobTemplate(
 				if err != nil {
 					return nil, err
 				}
-				podTemplateSpec, _ := generatePodTemplateSpec(buildValues, serviceValues, serviceTypeValues, cronjob.ObjectMeta, templateAnnotations, nCronjob.Name, nCronjob.Command)
+				podTemplateSpec, err := generatePodTemplateSpec(buildValues, serviceValues, serviceTypeValues, cronjob.ObjectMeta, templateAnnotations, nCronjob.Name, nCronjob.Command)
+				if err != nil {
+					return nil, fmt.Errorf("couldn't generate cronjob template for service %s: %v", serviceValues.OverrideName, err)
+				}
 				// end cronjob template
 				cronjob.Spec.JobTemplate.Spec.Template = *podTemplateSpec
 				result = append(result, *cronjob)
