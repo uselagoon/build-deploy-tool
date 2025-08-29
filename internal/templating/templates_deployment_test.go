@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andreyvit/diff"
@@ -1174,5 +1175,38 @@ func TestLinkedServiceCalculator(t *testing.T) {
 				t.Errorf("LinkedServiceCalculator() = \n%v", diff.LineDiff(string(lValues), string(wValues)))
 			}
 		})
+	}
+}
+
+func TestGenerateDeploymentTemplate_ErrorHandling(t *testing.T) {
+	// Test that errors from generatePodTemplateSpec are properly propagated
+	buildValues := generator.BuildValues{
+		Project:         "test-project",
+		Environment:     "test-env",
+		EnvironmentType: "production",
+		Namespace:       "test-namespace",
+		Branch:          "main",
+		GitSHA:          "abcd1234",
+		LagoonVersion:   "v2.0.0",
+		Kubernetes:      "local",
+		Services: []generator.ServiceValues{
+			{
+				Name:         "nginx",
+				OverrideName: "nginx",
+				Type:         "nginx",
+			},
+		},
+		// Intentionally missing ImageReferences to trigger error
+		ImageReferences: map[string]string{},
+	}
+
+	_, err := GenerateDeploymentTemplate(buildValues)
+	if err == nil {
+		t.Error("GenerateDeploymentTemplate() should return error when image reference is missing")
+	}
+	
+	expectedErrMsg := "couldn't generate deployment template for service nginx"
+	if err != nil && !strings.Contains(err.Error(), expectedErrMsg) {
+		t.Errorf("GenerateDeploymentTemplate() error = %v, want error containing %v", err, expectedErrMsg)
 	}
 }
