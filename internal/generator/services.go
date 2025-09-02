@@ -560,6 +560,12 @@ func composeToServiceValues(
 
 			}
 		}
+		// if there are any additional volumes that have backups configured, enable the backup schedule
+		for _, v := range serviceVolumes {
+			if v.Backup {
+				backupsEnabled = true
+			}
+		}
 
 		// create the service values
 		cService := &ServiceValues{
