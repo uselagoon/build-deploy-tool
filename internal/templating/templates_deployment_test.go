@@ -1204,7 +1204,7 @@ func TestGenerateDeploymentTemplate_ErrorHandling(t *testing.T) {
 	if err == nil {
 		t.Error("GenerateDeploymentTemplate() should return error when image reference is missing")
 	}
-	
+
 	expectedErrMsg := "couldn't generate deployment template for service nginx"
 	if err != nil && !strings.Contains(err.Error(), expectedErrMsg) {
 		t.Errorf("GenerateDeploymentTemplate() error = %v, want error containing %v", err, expectedErrMsg)

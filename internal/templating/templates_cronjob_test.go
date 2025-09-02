@@ -257,7 +257,7 @@ func TestGenerateCronjobTemplate_ErrorHandling(t *testing.T) {
 	if err == nil {
 		t.Error("GenerateCronjobTemplate() should return error when image reference is missing")
 	}
-	
+
 	expectedErrMsg := "couldn't generate cronjob template for service cli"
 	if err != nil && !strings.Contains(err.Error(), expectedErrMsg) {
 		t.Errorf("GenerateCronjobTemplate() error = %v, want error containing %v", err, expectedErrMsg)
