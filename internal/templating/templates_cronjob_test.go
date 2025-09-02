@@ -3,6 +3,7 @@ package templating
 import (
 	"os"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/andreyvit/diff"
@@ -220,5 +221,45 @@ func TestGenerateCronjobTemplate(t *testing.T) {
 				t.Errorf("GenerateCronjobTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
 			}
 		})
+	}
+}
+
+func TestGenerateCronjobTemplate_ErrorHandling(t *testing.T) {
+	// Test that errors from generatePodTemplateSpec are properly propagated
+	buildValues := generator.BuildValues{
+		Project:         "test-project",
+		Environment:     "test-env",
+		EnvironmentType: "production",
+		Namespace:       "test-namespace",
+		Branch:          "main",
+		GitSHA:          "abcd1234",
+		LagoonVersion:   "v2.0.0",
+		Kubernetes:      "local",
+		Services: []generator.ServiceValues{
+			{
+				Name:         "cli",
+				OverrideName: "cli",
+				Type:         "cli",
+				NativeCronjobs: []lagoon.Cronjob{
+					{
+						Name:     "test-cronjob",
+						Schedule: "0 * * * *",
+						Command:  "echo test",
+					},
+				},
+			},
+		},
+		// Intentionally missing ImageReferences to trigger error
+		ImageReferences: map[string]string{},
+	}
+
+	_, err := GenerateCronjobTemplate(buildValues)
+	if err == nil {
+		t.Error("GenerateCronjobTemplate() should return error when image reference is missing")
+	}
+
+	expectedErrMsg := "couldn't generate cronjob template for service cli"
+	if err != nil && !strings.Contains(err.Error(), expectedErrMsg) {
+		t.Errorf("GenerateCronjobTemplate() error = %v, want error containing %v", err, expectedErrMsg)
 	}
 }
