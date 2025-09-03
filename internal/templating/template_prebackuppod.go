@@ -44,7 +44,7 @@ func TemplatePreBackupPods(pods []k8upv1.PreBackupPod) ([]byte, error) {
 	return templateYAML, nil
 }
 
-// Build a list of PrebBackup Pods  
+// Build a list of PreBackup Pods
 func GeneratePreBackupPod(buildValues generator.BuildValues) ([]k8upv1.PreBackupPod, error) {
 	var pods []k8upv1.PreBackupPod
 
