@@ -13,7 +13,7 @@ var nativeCronjobsIdentify = &cobra.Command{
 	Aliases: []string{"nc"},
 	Short:   "Identify any native cronjobs for a specific environment",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generator.GenerateInput(*rootCmd, false)
+		generator, err := GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}

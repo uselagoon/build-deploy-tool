@@ -13,7 +13,7 @@ var imageBuildIdentify = &cobra.Command{
 	Aliases: []string{"image-build", "img-build", "ib"},
 	Short:   "Identify the configuration for building images for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		gen, err := generator.GenerateInput(*rootCmd, false)
+		gen, err := GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}

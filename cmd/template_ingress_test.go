@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -510,7 +511,7 @@ func TestTemplateRoutes(t *testing.T) {
 			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
