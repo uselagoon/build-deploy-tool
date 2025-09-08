@@ -1,4 +1,4 @@
-package cmd
+package identify
 
 import (
 	"encoding/json"
@@ -8,6 +8,7 @@ import (
 
 	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -21,7 +22,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 		name        string
 		description string
 		args        testdata.TestData
-		want        *identifyServices
+		want        *IdentifyServices
 	}{
 		{
 			name: "test1 basic deployment",
@@ -35,7 +36,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"node",
 				},
@@ -60,7 +61,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"cli",
 					"redis",
@@ -100,7 +101,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"cli",
 					"redis",
@@ -139,7 +140,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"lnd",
 					"thunderhub",
@@ -176,7 +177,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"lnd",
 					"tor",
@@ -208,7 +209,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			want: &identifyServices{
+			want: &IdentifyServices{
 				Deployments: []string{
 					"cli",
 					"mariadb",
@@ -231,7 +232,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := "testoutput"
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -250,7 +251,7 @@ func TestIdentifyLagoonServices(t *testing.T) {
 				t.Errorf("%v", err)
 			}
 
-			out, err := LagoonServiceTemplateIdentification(generator)
+			out, _, err := LagoonServiceTemplateIdentification(generator)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
