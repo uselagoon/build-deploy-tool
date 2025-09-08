@@ -1760,9 +1760,22 @@ if [ "$CLEANUP_OUTPUT" != "" ]; then
 else
   echo ">> No services detected that require clean up"
 fi
+
+# collect data and save in configmap structured json of environment status, remote-controller will check for this configmap to provide to the api environment services
+if build-deploy-tool identify lagoon-services --images /kubectl-build-deploy/images.yaml > /kubectl-build-deploy/lagoon-services.json; then
+  echo "Updating lagoon-services configmap with a current service configurations"
+  if kubectl -n ${NAMESPACE} get configmap lagoon-services &> /dev/null; then
+    # replace it, no need to check if the key is different, as that will happen in the pre-deploy phase
+    kubectl -n ${NAMESPACE} get configmap lagoon-services -o json | jq --arg add "`cat /kubectl-build-deploy/lagoon-services.json`" '.data."post-deploy" = $add' | kubectl apply -f -
+  else
+    # create it
+    kubectl -n ${NAMESPACE} create configmap lagoon-services --from-file=post-deploy=/kubectl-build-deploy/lagoon-services.json
+  fi
+fi
+
 # finalize the service cleanup
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "unusedServiceCleanupComplete" "Unused Service Cleanup" "${CLEANUP_WARNING}"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "unusedServiceCleanupComplete" "Unused Service Cleanup" "${CLEANUP_WARNING}"
 previousStepEnd=${currentStepEnd}
 
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
