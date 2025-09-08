@@ -12,6 +12,7 @@ require (
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
+	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v27.5.1+incompatible
 	github.com/drone/envsubst v1.0.3
@@ -20,7 +21,7 @@ require (
 	github.com/k8up-io/k8up/v2 v2.11.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.8.1
-	github.com/uselagoon/machinery v0.0.31
+	github.com/uselagoon/machinery v0.0.35-0.20250907230447-55e831cff5b2
 	github.com/vshn/k8up v1.99.99
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -33,7 +34,6 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
-	github.com/deckarep/golang-set/v2 v2.8.0 // indirect
 	github.com/distribution/distribution/v3 v3.0.0-20210316161203-a01c71e2477e // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
@@ -51,6 +51,7 @@ require (
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/websocket v1.5.3 // indirect
+	github.com/guregu/null v4.0.0+incompatible // indirect
 	github.com/hashicorp/go-cleanhttp v0.5.2 // indirect
 	github.com/imdario/mergo v1.0.1 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
