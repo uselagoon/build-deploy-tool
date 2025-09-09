@@ -1,0 +1,24 @@
+version: '2'
+services:
+  node:
+    networks:
+      - amazeeio-network
+      - default
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.volumes.scratch.path: /scratch
+    volumes:
+      - scratch:/scratch
+
+networks:
+  amazeeio-network:
+    external: true
+
+volumes:
+  scratch:
+    labels:
+      lagoon.type: persistent
+      lagoon.backup: false
