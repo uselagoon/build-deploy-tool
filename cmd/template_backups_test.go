@@ -351,6 +351,26 @@ func TestBackupTemplateGeneration(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/backup-templates/schedules-with-additional-volumes",
 		},
+		{
+			name: "no-schedules-with-additional-volumes-with-no-backups",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.additional-volumes-no-backup.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_IMAGECACHE_REGISTRY",
+							Value: "imagecache.example.com",
+							Scope: "global",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			emptyDir:     true,
+			want:         "internal/testdata/basic/backup-templates/schedules-with-additional-volumes-no-backup",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
