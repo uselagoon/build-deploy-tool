@@ -282,6 +282,20 @@ https://docs.lagoon.sh/using-lagoon-the-basics/lagoon-yml/
   exit 1
 fi
 
+# Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
+# aren't in build-deploy-tool.
+if ! lagoon-linter; then
+	echo "${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
+	echo "If you require assistance to fix this error, please contact support."
+	exit 1
+else
+	echo "lagoon-linter found no issues with the .lagoon.yml file"
+fi
+
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
+previousStepEnd=${currentStepEnd}
+
 # The attempt to valid the `docker-compose.yaml` file
 beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
 
@@ -412,16 +426,6 @@ else
 fi
 set -e
 
-# Validate .lagoon.yml only, no overrides. lagoon-linter still has checks that
-# aren't in build-deploy-tool.
-if ! lagoon-linter; then
-	echo "${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/lagoon/using-lagoon-the-basics/lagoon-yml#restrictions describes some possible reasons for this build failure."
-	echo "If you require assistance to fix this error, please contact support."
-	exit 1
-else
-	echo "lagoon-linter found no issues with the .lagoon.yml file"
-fi
-
 ##################
 # build deploy-tool can collect this value now from the lagoon.yml file
 # this means further use of `LAGOON_GIT_SHA` can eventually be
@@ -442,9 +446,6 @@ else
 fi
 ##################
 
-currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
-previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
 
 # Load all Services that are defined
