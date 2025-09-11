@@ -3,6 +3,7 @@ docker-compose-yaml: internal/testdata/node/docker-compose.yml
 routes:
   autogenerate:
     enabled: true
+    insecure: "Allow"
 
 environment_variables:
   git_sha: "true"
