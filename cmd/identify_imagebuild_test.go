@@ -820,7 +820,7 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 			}
 			// set the environment variables from args
 			savedTemplates := "testoutput"
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}

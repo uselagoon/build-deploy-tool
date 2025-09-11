@@ -198,22 +198,20 @@ buildStartTime="$(date +"%Y-%m-%d %H:%M:%S")"
 ### COLLECT INFORMATION
 ##############################################
 # run the collector
-# @TODO: uncomment when collector is introduced
-# @TODO: don't run the collector yet, leave this as placeholder to prevent possible introduction of issues
-# ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
-# echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.name'
-# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.name'
+ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
+# echo "$ENVIRONMENT_DATA" | jq -r '.deployments.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.cronjobs.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.ingress.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.services.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.secrets.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.pvcs.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.schedulesv1alpha1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.prebackuppodsv1alpha1.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]?.metadata.name'
+# echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]?.metadata.name'
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 # @TODO: uncomment when collector is introduced
@@ -1591,9 +1589,9 @@ beginBuildStep "Applying Deployments" "applyingDeployments"
 ##############################################
 
 # remove any storage calculator pods before applying deployments to prevent storage binding issues
-STORAGE_CALCULATOR_PODS=$(kubectl -n ${NAMESPACE} get pods -l lagoon.sh/storageCalculator=true --no-headers | cut -d " " -f 1 | xargs)
+STORAGE_CALCULATOR_PODS=$(kubectl -n ${NAMESPACE} get pods -l lagoon.sh/storageCalculator=true --no-headers 2>/dev/null | cut -d " " -f 1 | xargs)
 for STORAGE_CALCULATOR_POD in $STORAGE_CALCULATOR_PODS; do
-  kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD}
+  kubectl -n ${NAMESPACE} delete pod ${STORAGE_CALCULATOR_POD} 2>/dev/null
 done
 
 if [ "$(ls -A $LAGOON_SERVICES_YAML_FOLDER/)" ]; then
@@ -1650,6 +1648,45 @@ fi
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
 previousStepEnd=${currentStepEnd}
+
+##############################################
+### CLEANUP services which have been removed from docker-compose.yaml
+##############################################s
+
+# using the build-deploy-tool identify the deployments, volumes, and services that this build has created
+beginBuildStep "Unused Service Cleanup" "unusedServiceCleanup"
+CLEANUP_OUTPUT=""
+if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" != enabled ]; then
+  CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml)
+else
+  CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml --delete=true)
+fi
+CLEANUP_WARNING=false
+if [ "$CLEANUP_OUTPUT" != "" ]; then
+  echo "${CLEANUP_OUTPUT}"
+  CLEANUP_WARNING=true
+  ((++BUILD_WARNING_COUNT))
+else
+  echo ">> No services detected that require clean up"
+fi
+
+# collect data and save in configmap structured json of environment status, remote-controller will check for this configmap to provide to the api environment services
+if build-deploy-tool identify lagoon-services --images /kubectl-build-deploy/images.yaml > /kubectl-build-deploy/lagoon-services.json; then
+  echo "Updating lagoon-services configmap with a current service configurations"
+  if kubectl -n ${NAMESPACE} get configmap lagoon-services &> /dev/null; then
+    # replace it, no need to check if the key is different, as that will happen in the pre-deploy phase
+    kubectl -n ${NAMESPACE} get configmap lagoon-services -o json | jq --arg add "`cat /kubectl-build-deploy/lagoon-services.json`" '.data."post-deploy" = $add' | kubectl apply -f -
+  else
+    # create it
+    kubectl -n ${NAMESPACE} create configmap lagoon-services --from-file=post-deploy=/kubectl-build-deploy/lagoon-services.json
+  fi
+fi
+
+# finalize the service cleanup
+currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "unusedServiceCleanupComplete" "Unused Service Cleanup" "${CLEANUP_WARNING}"
+previousStepEnd=${currentStepEnd}
+
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 
 ##############################################
