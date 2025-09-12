@@ -1754,6 +1754,7 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
+  set +e # Ensure failures in exec-generate-insights-configmap.sh don't halt the entire build
   INSIGHTS_WARNING_COUNT=0
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
@@ -1769,6 +1770,7 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
     fi
     echo ""
   done
+  set -e
   if [[ "$INSIGHTS_WARNING_COUNT" -gt 0 ]]; then
     ((++BUILD_WARNING_COUNT))
     echo "##############################################"
