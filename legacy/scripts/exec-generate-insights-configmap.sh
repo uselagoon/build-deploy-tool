@@ -107,6 +107,18 @@ processSbom() {
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
     fi
+    # Support custom Depdency Track integration.
+    local endpoint=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_ENDPOINT)
+    local dtWarn
+    if [ ! -z "$endpoint" ]; then
+      if [ ! -z "$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_KEY)" ]; then
+        kubectl -n ${NAMESPACE} \
+          annotate configmap ${SBOM_CONFIGMAP} \
+          dependencytrack.insights.lagoon.sh/custom-endpoint=${endpoint}
+      else
+        dtWarn="\n\n**********\nCustom Dependency Track not enabled: Missing LAGOON_FEATURE_FLAG_INSIGHTS_DEPENDENCY_TRACK_API_KEY\n**********\n\n"
+      fi
+    fi
     kubectl \
         -n ${NAMESPACE} \
         label configmap ${SBOM_CONFIGMAP} \
@@ -119,6 +131,11 @@ processSbom() {
         lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
         lagoon.sh/buildType=${BUILD_TYPE} \
         insights.lagoon.sh/type=sbom
+
+    if [ ! -z "$dtWarn" ]; then
+      printf "$dtWarn"
+      return 1
+    fi
   fi
 }
 
