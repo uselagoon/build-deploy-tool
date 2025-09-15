@@ -300,14 +300,18 @@ previousStepEnd=${currentStepEnd}
 beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
 
 # Load path of docker-compose that should be used
-DOCKER_COMPOSE_YAML=($(cat .lagoon.yml | yq -o json | jq -r '."docker-compose-yaml"'))
+DOCKER_COMPOSE_YAML=($(build-deploy-tool validate lagoon-yml --print-resulting-lagoonyml --json | jq -r '."docker-compose-yaml"'))
+if [ ! -f "${DOCKER_COMPOSE_YAML}" ]; then
+  # thsi check also happens in the build-deploy-tool, this is a secondary check
+  echo "docker-compose file referenced in .lagoon.yml not found"
+fi
 
 DOCKER_COMPOSE_WARNING_COUNT=0
 ##############################################
 ### RUN docker compose config check against the provided docker-compose file
 ### use the `build-validate` built in validater to run over the provided docker-compose file
 ##############################################
-dccOutput=$(build-deploy-tool validate docker-compose --docker-compose "${DOCKER_COMPOSE_YAML}"; exit $? 2>&1)
+dccOutput=$(build-deploy-tool validate docker-compose --lagoon-yml .lagoon.yml; exit $? 2>&1)
 dccExit=$?
 
 echo "Updating docker-compose-yaml configmap with a pre-deploy version of the docker-compose.yml file"
@@ -321,11 +325,11 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
     kubectl -n ${NAMESPACE} get configmap docker-compose-yaml -o json | jq --arg add "`cat ${DOCKER_COMPOSE_YAML}`" '.data."pre-deploy" = $add' | kubectl apply -f -
   else
     # if the key does exist, then nuke it and put the new key
-    kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy=${DOCKER_COMPOSE_YAML} -o yaml --dry-run=client | kubectl replace -f -
+    kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy="${DOCKER_COMPOSE_YAML}" -o yaml --dry-run=client | kubectl replace -f -
   fi
  else
   # create it
-  kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy=${DOCKER_COMPOSE_YAML}
+  kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=pre-deploy="${DOCKER_COMPOSE_YAML}"
 fi
 
 if [ "${dccExit}" != "0" ]; then
@@ -346,7 +350,7 @@ You can run docker compose config locally to check that your docker-compose file
 fi
 
 ## validate the docker-compose in a way to eventually phase out forked library by displaying warnings
-dccOutput=$(build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --docker-compose "${DOCKER_COMPOSE_YAML}"; exit $? 2>&1)
+dccOutput=$(build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --lagoon-yml .lagoon.yml; exit $? 2>&1)
 dccExit=$?
 if [ "${dccExit}" != "0" ]; then
   ((++BUILD_WARNING_COUNT))
@@ -367,7 +371,7 @@ You can run docker compose config locally to check that your docker-compose file
   echo ""
 fi
 
-dccOutput=$(build-deploy-tool validate docker-compose-with-errors --docker-compose "${DOCKER_COMPOSE_YAML}"; exit $? 2>&1)
+dccOutput=$(build-deploy-tool validate docker-compose-with-errors --lagoon-yml .lagoon.yml; exit $? 2>&1)
 dccExit2=$?
 if [ "${dccExit2}" != "0" ]; then
   ((++DOCKER_COMPOSE_WARNING_COUNT))
@@ -495,7 +499,7 @@ fi
 # loop through created DBAAS templates
 DBAAS=($(build-deploy-tool identify dbaas))
 # Load all Services that are defined
-COMPOSE_SERVICES=$(build-deploy-tool validate docker-compose --docker-compose "${DOCKER_COMPOSE_YAML}" --json)
+COMPOSE_SERVICES=$(build-deploy-tool validate docker-compose --lagoon-yml .lagoon.yml --json)
 for COMPOSE_SERVICE in $(echo "$COMPOSE_SERVICES" | jq -rc '.order[]?.Name')
 do
   SERVICE_JSON=$(echo "$COMPOSE_SERVICES" | jq --arg COMPOSE_SERVICE "$COMPOSE_SERVICE" -c '.spec.services[$COMPOSE_SERVICE]')
@@ -1720,7 +1724,7 @@ if kubectl -n ${NAMESPACE} get configmap docker-compose-yaml &> /dev/null; then
   kubectl -n ${NAMESPACE} get configmap docker-compose-yaml -o json | jq --arg add "`cat ${DOCKER_COMPOSE_YAML}`" '.data."post-deploy" = $add' | kubectl apply -f -
  else
   # create it
-  kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=post-deploy=${DOCKER_COMPOSE_YAML}
+  kubectl -n ${NAMESPACE} create configmap docker-compose-yaml --from-file=post-deploy="${DOCKER_COMPOSE_YAML}"
 fi
 
 # remove any certificates for tls-acme false ingress to prevent reissuing attempts

@@ -27,17 +27,17 @@ var validateDockerCompose = &cobra.Command{
 			fmt.Println(fmt.Errorf("error reading ignore-non-string-key-errors flag: %v", err))
 			os.Exit(1)
 		}
-		dockerComposeFile, err := cmd.Flags().GetString("docker-compose")
+		lagoonYamlFile, err := cmd.Flags().GetString("lagoon-yml")
 		if err != nil {
-			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			fmt.Println(fmt.Errorf("error reading lagoon-yml flag: %v", err))
 			os.Exit(1)
 		}
 		outputJSON, err := cmd.Flags().GetBool("json")
 		if err != nil {
-			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			fmt.Println(fmt.Errorf("error reading json flag: %v", err))
 			os.Exit(1)
 		}
-		spec, svcOrder, err := ValidateDockerCompose(dockerComposeFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
+		spec, svcOrder, err := ValidateDockerCompose(lagoonYamlFile, ignoreNonStringKeyErrors, ignoreMissingEnvFiles)
 		if err != nil && !outputJSON {
 			fmt.Println(err.Error())
 			os.Exit(1)
@@ -59,13 +59,13 @@ var validateDockerComposeWithErrors = &cobra.Command{
 	Aliases: []string{"dcwe"},
 	Short:   "Verify docker-compose file for compatability with this tool with next versions of compose-go library",
 	Run: func(cmd *cobra.Command, args []string) {
-		dockerComposeFile, err := cmd.Flags().GetString("docker-compose")
+		lagoonYamlFile, err := cmd.Flags().GetString("lagoon-yml")
 		if err != nil {
-			fmt.Println(fmt.Errorf("error reading docker-compose flag: %v", err))
+			fmt.Println(fmt.Errorf("error reading lagoon-yml flag: %v", err))
 			os.Exit(1)
 		}
 
-		err = validateDockerComposeWithError(dockerComposeFile)
+		err = validateDockerComposeWithError(lagoonYamlFile)
 		if err != nil {
 			fmt.Println(err.Error())
 			os.Exit(1)
@@ -96,8 +96,8 @@ func init() {
 	validateCmd.AddCommand(validateDockerComposeWithErrors)
 	validateDockerCompose.Flags().Bool("json", false,
 		"Flag output the resulting docker-compose file in JSON.")
-	validateDockerCompose.Flags().StringP("docker-compose", "", "docker-compose.yml",
-		"The docker-compose.yml file to read.")
-	validateDockerComposeWithErrors.Flags().StringP("docker-compose", "", "docker-compose.yml",
-		"The docker-compose.yml file to read.")
+	validateDockerCompose.Flags().StringP("lagoon-yml", "", ".lagoon.yml",
+		"The .lagoon.yml file to read.")
+	validateDockerComposeWithErrors.Flags().StringP("lagoon-yml", "", ".lagoon.yml",
+		"The .lagoon.yml file to read.")
 }

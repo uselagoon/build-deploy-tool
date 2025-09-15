@@ -1,0 +1,1 @@
+docker-compose-yaml: internal/testdata/docker-compose/test3/docker-compose.yml

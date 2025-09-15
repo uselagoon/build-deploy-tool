@@ -16,7 +16,6 @@ func LoadAndUnmarshalLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoo
 	if err := lagoon.UnmarshalLagoonYAML(lagoonYml, lYAML, projectName); err != nil {
 		return fmt.Errorf("couldn't unmarshal file %v: %v", lagoonYml, err)
 	}
-
 	// Here we try and merge in .lagoon.yml override
 	if _, err := os.Stat(lagoonYmlOverride); err == nil {
 		overLagoonYaml := &lagoon.YAML{}

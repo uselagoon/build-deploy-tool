@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -35,6 +36,11 @@ var validateLagoonYml = &cobra.Command{
 			fmt.Println(fmt.Errorf("error reading print-resulting-lagoonyml flag: %v", err))
 			os.Exit(1)
 		}
+		outputJSON, err := cmd.Flags().GetBool("json")
+		if err != nil {
+			fmt.Println(fmt.Errorf("error reading json flag: %v", err))
+			os.Exit(1)
+		}
 
 		lYAML := &lagoon.YAML{}
 		err = ValidateLagoonYml(lagoonYAML, lagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, false)
@@ -44,12 +50,21 @@ var validateLagoonYml = &cobra.Command{
 		}
 
 		if printOutput {
-			resultingBS, err := yaml.Marshal(lYAML)
-			if err != nil {
-				fmt.Println("Unable to unmarshal resulting yml for printing: ", err)
-				os.Exit(1)
+			if outputJSON {
+				resultingBS, err := json.Marshal(lYAML)
+				if err != nil {
+					fmt.Println("Unable to unmarshal resulting yml for printing: ", err)
+					os.Exit(1)
+				}
+				fmt.Println(string(resultingBS))
+			} else {
+				resultingBS, err := yaml.Marshal(lYAML)
+				if err != nil {
+					fmt.Println("Unable to unmarshal resulting yml for printing: ", err)
+					os.Exit(1)
+				}
+				fmt.Println(string(resultingBS))
 			}
-			fmt.Println(string(resultingBS))
 		}
 	},
 }
@@ -77,8 +92,10 @@ func ValidateLagoonYml(lagoonYml string, lagoonYmlOverride string, lagoonYmlEnvV
 }
 
 func init() {
-	validateCmd.PersistentFlags().BoolP("print-resulting-lagoonyml", "", false,
+	validateLagoonYml.PersistentFlags().BoolP("print-resulting-lagoonyml", "", false,
 		"Display the resulting, post merging, lagoon.yml file.")
+	validateLagoonYml.Flags().Bool("json", false,
+		"Flag output the resulting .lagoon.yml file in JSON.")
 	validateCmd.AddCommand(validateLagoonYml)
 }
 

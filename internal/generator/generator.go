@@ -169,6 +169,7 @@ func NewGenerator(
 	if err := LoadAndUnmarshalLagoonYml(generator.LagoonYAML, generator.LagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, generator.Debug); err != nil {
 		return nil, err
 	}
+	buildValues.LagoonYAMLFile = generator.LagoonYAML
 	buildValues.LagoonYAML = *lYAML
 	if buildValues.LagoonYAML.EnvironmentVariables.GitSHA == nil || !*buildValues.LagoonYAML.EnvironmentVariables.GitSHA {
 		buildValues.GitSHA = "0000000000000000000000000000000000000000"
