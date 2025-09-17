@@ -77,8 +77,7 @@ func GetK8sClient(config *rest.Config) (*kubernetes.Clientset, error) {
 }
 
 func getConfig() (*rest.Config, error) {
-	var kubeconfig *string
-	kubeconfig = new(string)
+	kubeconfig := new(string)
 	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
 
 	if *kubeconfig == "" {
@@ -179,7 +178,7 @@ func ExecTaskInPod(
 			return errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Println(fmt.Sprintf("No ready replicas found, scaling up. Attempt %d/%d", numIterations, task.ScaleMaxIterations))
+			fmt.Printf("No ready replicas found, scaling up. Attempt %d/%d\n", numIterations, task.ScaleMaxIterations)
 
 			scale, err := clientset.AppsV1().Deployments(task.Namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {
@@ -320,7 +319,7 @@ func unidleReplicas(deploy appsv1.Deployment) int {
 // "idling.amazee.io/watch=true" label up to the number of replicas in the
 // "idling.amazee.io/unidle-replicas" label.
 
-var NamespaceUnidlingTimeoutError = errors.New("Unable to scale idled deployments due to timeout")
+var ErrNamespaceUnidlingTimeout = errors.New("unable to scale idled deployments due to timeout")
 
 func UnidleNamespace(ctx context.Context, namespace string, retries int, waitTime int) error {
 	restCfg, err := getConfig()
@@ -382,7 +381,7 @@ func UnidleNamespace(ctx context.Context, namespace string, retries int, waitTim
 	}
 
 	if !scaled {
-		return NamespaceUnidlingTimeoutError
+		return ErrNamespaceUnidlingTimeout
 	}
 
 	return nil

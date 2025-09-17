@@ -32,7 +32,7 @@ func unidleThenRun(namespace string, prePost string, incoming lagoon.Task) error
 	err := lagoon.UnidleNamespace(context.TODO(), namespace, incoming.ScaleMaxIterations, incoming.ScaleWaitTime)
 	if err != nil {
 		switch {
-		case errors.Is(err, lagoon.NamespaceUnidlingTimeoutError):
+		case errors.Is(err, lagoon.ErrNamespaceUnidlingTimeout):
 			if !incoming.RequiresEnvironment { // we don't have to kill this build if we can't bring the services up, so we just note the issue and continue
 				fmt.Println("Namespace unidling is taking longer than expected - this might affect pre-rollout tasks that rely on multiple services")
 			} else {

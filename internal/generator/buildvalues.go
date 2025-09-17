@@ -68,6 +68,7 @@ type BuildValues struct {
 	ImageBuildArguments           map[string]string            `json:"imageBuildArguments" description:"where the calculated image build arguments are stored"`
 	EnvironmentVariables          []lagoon.EnvironmentVariable `json:"environmentVariables" description:"the merged project and environment variables for this environment"`
 	LagoonYAML                    lagoon.YAML                  `json:"lagoonYAML" description:"the unmarshalled lagoon yaml file"`
+	LagoonYAMLFile                string                       `json:"lagoonYAMLFile"`
 	PromotionSourceEnvironment    string                       `json:"promotionSourceEnvironment" buildtype:"promote" description:"the promotion source environment to pull images from"`
 	IsCI                          bool                         `json:"isCI" description:"this controls aspects of the environment or build depending on if a CI job"`
 	RWX2RWO                       bool                         `json:"RWX2RWO" description:"this controls whether the ReadWriteMany to ReadWriteOnce override should be used"`

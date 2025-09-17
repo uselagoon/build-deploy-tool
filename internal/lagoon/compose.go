@@ -8,6 +8,7 @@ import (
 	"github.com/compose-spec/compose-go/cli"
 	"github.com/compose-spec/compose-go/loader"
 	composetypes "github.com/compose-spec/compose-go/types"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	goyaml "gopkg.in/yaml.v2"
 	goyamlv3 "gopkg.in/yaml.v3"
 	utilvalidation "k8s.io/apimachinery/pkg/util/validation"
@@ -26,7 +27,16 @@ type OriginalVolumeOrder OriginalServiceOrder
 
 // UnmarshaDockerComposeYAML unmarshal the lagoon.yml file into a YAML and map for consumption.
 func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles bool, envvars map[string]string) (*composetypes.Project, []OriginalServiceOrder, []OriginalVolumeOrder, error) {
-	options, err := cli.NewProjectOptions([]string{file},
+	lYAML := &YAML{}
+	projectName := helpers.GetEnv("PROJECT", "", false)
+	err := UnmarshalLagoonYAML(file, lYAML, projectName)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	if _, err := os.Stat(lYAML.DockerComposeYAML); err != nil {
+		return nil, nil, nil, fmt.Errorf("docker-compose file referenced in .lagoon.yml not found")
+	}
+	options, err := cli.NewProjectOptions([]string{lYAML.DockerComposeYAML},
 		cli.WithResolvedPaths(false),
 		cli.WithLoadOptions(
 			loader.WithSkipValidation,
@@ -50,7 +60,7 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 			return nil, nil, nil, err
 		}
 	}
-	originalOrder, originalVolume, err := UnmarshalLagoonDockerComposeYAML(file)
+	originalOrder, originalVolume, err := UnmarshalLagoonDockerComposeYAML(lYAML.DockerComposeYAML)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -90,9 +100,15 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, []Or
 
 // use goyamlv3 that newer versions of compose-go uses to validate
 func ValidateUnmarshalDockerComposeYAML(file string) error {
-	rawYAML, err := os.ReadFile(file)
+	lYAML := &YAML{}
+	projectName := helpers.GetEnv("PROJECT", "", false)
+	err := UnmarshalLagoonYAML(file, lYAML, projectName)
 	if err != nil {
-		return fmt.Errorf("couldn't read %v: %v", file, err)
+		return err
+	}
+	rawYAML, err := os.ReadFile(lYAML.DockerComposeYAML)
+	if err != nil {
+		return fmt.Errorf("couldn't read %v: %v", lYAML.DockerComposeYAML, err)
 	}
 	var m interface{}
 	err = goyamlv3.Unmarshal(rawYAML, &m)

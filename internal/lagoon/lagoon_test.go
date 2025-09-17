@@ -22,7 +22,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-strings",
 			args: args{
-				file: "test-resources/lagoon-yaml/test1/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test1/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -89,7 +89,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-booleans",
 			args: args{
-				file: "test-resources/lagoon-yaml/test2/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test2/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -156,7 +156,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-booleans-represented-as-strings-and-booleans",
 			args: args{
-				file: "test-resources/lagoon-yaml/test3/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test3/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -223,7 +223,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-backup-retention",
 			args: args{
-				file: "test-resources/lagoon-yaml/test4/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test4/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -257,7 +257,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-cronjobs",
 			args: args{
-				file: "test-resources/lagoon-yaml/test5/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test5/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -288,7 +288,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-polysite",
 			args: args{
-				file:    "test-resources/lagoon-yaml/test6/lagoon.yml",
+				file:    "internal/lagoon/test-resources/lagoon-yaml/test6/lagoon.yml",
 				l:       &YAML{},
 				project: "multiproject1",
 			},
@@ -326,7 +326,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test overrides",
 			args: args{
-				file: "test-resources/lagoon-yaml/test7/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test7/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -363,7 +363,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test container registries",
 			args: args{
-				file: "test-resources/lagoon-yaml/test8/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test8/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -406,7 +406,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-polysite without project environment cronjobs",
 			args: args{
-				file:    "test-resources/lagoon-yaml/test9/lagoon.yml",
+				file:    "internal/lagoon/test-resources/lagoon-yaml/test9/lagoon.yml",
 				l:       &YAML{},
 				project: "multiproject1",
 			},
@@ -444,7 +444,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-polysite with project environment cronjobs",
 			args: args{
-				file:    "test-resources/lagoon-yaml/test9/lagoon.yml",
+				file:    "internal/lagoon/test-resources/lagoon-yaml/test9/lagoon.yml",
 				l:       &YAML{},
 				project: "multiproject2",
 			},
@@ -488,7 +488,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-polysite with project environment cronjobs no non-polysite",
 			args: args{
-				file:    "test-resources/lagoon-yaml/test9/polysite-only-lagoon.yml",
+				file:    "internal/lagoon/test-resources/lagoon-yaml/test9/polysite-only-lagoon.yml",
 				l:       &YAML{},
 				project: "multiproject2",
 			},
@@ -520,7 +520,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-cronjobs-inpod-only",
 			args: args{
-				file: "test-resources/lagoon-yaml/test10/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test10/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
@@ -552,7 +552,7 @@ func TestUnmarshalLagoonYAML(t *testing.T) {
 		{
 			name: "test-path-routes",
 			args: args{
-				file: "test-resources/lagoon-yaml/test11/lagoon.yml",
+				file: "internal/lagoon/test-resources/lagoon-yaml/test11/lagoon.yml",
 				l:    &YAML{},
 			},
 			want: &YAML{
