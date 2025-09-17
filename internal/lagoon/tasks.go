@@ -178,7 +178,7 @@ func ExecTaskInPod(
 			return errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
-			fmt.Printf("No ready replicas found, scaling up. Attempt %d/%d/n", numIterations, task.ScaleMaxIterations)
+			fmt.Printf("No ready replicas found, scaling up. Attempt %d/%d\n", numIterations, task.ScaleMaxIterations)
 
 			scale, err := clientset.AppsV1().Deployments(task.Namespace).GetScale(context.TODO(), deployment.Name, v1.GetOptions{})
 			if err != nil {

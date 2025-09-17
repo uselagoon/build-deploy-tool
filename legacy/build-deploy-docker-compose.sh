@@ -302,7 +302,7 @@ beginBuildStep "Docker Compose Validation" "dockerComposeValidation"
 # Load path of docker-compose that should be used
 DOCKER_COMPOSE_YAML=($(build-deploy-tool validate lagoon-yml --print-resulting-lagoonyml --json | jq -r '."docker-compose-yaml"'))
 if [ ! -f "${DOCKER_COMPOSE_YAML}" ]; then
-  # thsi check also happens in the build-deploy-tool, this is a secondary check
+  # this check also happens in the build-deploy-tool, this is a secondary check
   echo "docker-compose file referenced in .lagoon.yml not found"
 fi
 

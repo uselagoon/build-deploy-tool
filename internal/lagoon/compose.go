@@ -34,7 +34,7 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 		return nil, nil, nil, err
 	}
 	if _, err := os.Stat(lYAML.DockerComposeYAML); err != nil {
-		return nil, nil, nil, fmt.Errorf("docker-compose file referenced in .lagoon.yml not foun")
+		return nil, nil, nil, fmt.Errorf("docker-compose file referenced in .lagoon.yml not found")
 	}
 	options, err := cli.NewProjectOptions([]string{lYAML.DockerComposeYAML},
 		cli.WithResolvedPaths(false),
