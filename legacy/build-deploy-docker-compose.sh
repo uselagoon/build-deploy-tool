@@ -185,6 +185,26 @@ function finalizeBuildStep() {
   echo -e "##############################################\nSTEP ${6}: Completed at ${3} (${timeZone}) Duration ${diffTime} Elapsed ${diffTotalTime}${hasWarnings}\n##############################################"
 }
 
+function cleanupCertificates() {
+  [ "$1" ] || return #ingress
+  TLS_SECRETS=$(kubectl -n ${NAMESPACE} get ingress ${1} -o json | jq -r '.spec.tls[]?.secretName')
+  for TLS_SECRET in $TLS_SECRETS; do
+    echo ">> Cleaning up certificate for ${TLS_SECRET}"
+    # if cleanup secret certs is true, then clean up the secrets
+    if [ "$2" == "true" ]; then
+      if kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} &> /dev/null; then
+        # check if it is a lets encrypt certificate
+        if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
+          # don't block execution
+          kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET} &> /dev/null
+        fi
+      fi
+    fi
+    # delete the certmanager certificate to prevent renewals
+    kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET} &> /dev/null
+  done
+}
+
 ##############################################
 ### PREPARATION
 ##############################################
@@ -1158,8 +1178,8 @@ if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
     if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
       if kubectl -n ${NAMESPACE} get ingress ${DI} &> /dev/null; then
         echo ">> Removing ingress ${DI}"
+        cleanupCertificates "${DI}" "false"
         kubectl -n ${NAMESPACE} delete ingress ${DI}
-        #delete anything else?
       fi
     else
       echo "> The route '${DI}' would be removed"
@@ -1730,19 +1750,7 @@ fi
 # remove any certificates for tls-acme false ingress to prevent reissuing attempts
 TLS_FALSE_INGRESSES=$(kubectl -n ${NAMESPACE} get ingress -o json | jq -r '.items[] | select(.metadata.annotations["kubernetes.io/tls-acme"] == "false") | .metadata.name')
 for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
-  TLS_SECRETS=$(kubectl -n ${NAMESPACE} get ingress ${TLS_FALSE_INGRESS} -o json | jq -r '.spec.tls[]?.secretName')
-  for TLS_SECRET in $TLS_SECRETS; do
-    echo ">> Cleaning up certificate for ${TLS_SECRET} as tls-acme is set to false"
-    # check if it is a lets encrypt certificate
-    if kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} &> /dev/null; then
-      if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
-        kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET}
-      fi
-    fi
-    if kubectl -n ${NAMESPACE} get certificates.cert-manager.io ${TLS_SECRET} &> /dev/null; then
-      kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET}
-    fi
-  done
+  cleanupCertificates "${DI}" "true"
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
