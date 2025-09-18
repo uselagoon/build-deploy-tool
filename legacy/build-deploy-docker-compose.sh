@@ -1754,12 +1754,13 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
   ##############################################
   ### RUN insights gathering and store in configmap
   ##############################################
+  set +e # Ensure failures in exec-generate-insights-configmap.sh don't halt the entire build
   INSIGHTS_WARNING_COUNT=0
   for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
   do
     IMAGE_TAG="${IMAGE_TAG:-latest}"
     IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
-    insightsOutput=$(. /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh)
+    insightsOutput=$(. /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh 2>&1)
     if (exit $?); then
       echo "${insightsOutput}"
     else
@@ -1767,7 +1768,9 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
       echo "> This insights run failed, this warning is for information only."
       echo "${insightsOutput}"
     fi
+    echo ""
   done
+  set -e
   if [[ "$INSIGHTS_WARNING_COUNT" -gt 0 ]]; then
     ((++BUILD_WARNING_COUNT))
     echo "##############################################"

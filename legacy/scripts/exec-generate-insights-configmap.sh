@@ -69,7 +69,7 @@ echo "Using image for scan ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE}"
 
 # Setting JAVAOPT to skip the java db update, as the upstream image comes with a pre-populated database
 JAVAOPT="--skip-java-db-update"
-docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${JAVAOPT} ${IMAGE_FULL} --format ${SBOM_OUTPUT} | gzip > ${SBOM_OUTPUT_FILE}
+docker run --rm -v /var/run/docker.sock:/var/run/docker.sock ${IMAGECACHE_REGISTRY}${INSIGHTS_SCAN_IMAGE} image ${JAVAOPT} ${IMAGE_FULL} --format ${SBOM_OUTPUT} --skip-version-check | gzip > ${SBOM_OUTPUT_FILE}
 
 FILESIZE=$(stat -c%s "$SBOM_OUTPUT_FILE")
 echo "Size of ${SBOM_OUTPUT_FILE} = $FILESIZE bytes."
@@ -107,6 +107,27 @@ processSbom() {
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
     fi
+    # Support custom Depdency Track integration.
+    local apiEndpoint
+    apiEndpoint=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_ENDPOINT)
+    local apiKey
+    apiKey=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_KEY)
+    local dtWarn
+    if [ -n "$apiEndpoint" ]; then
+      if [ -n "$apiKey" ]; then
+        # Test API access
+        local resp
+        if ! resp=$(curl -sSf -m 60 -H "X-Api-Key:${apiKey}" "${apiEndpoint}/api/v1/project?pageSize=1" 2>&1); then
+          dtWarn="\n\n**********\nCustom Dependency Track not enabled: API Error: ${resp}\n**********\n\n"
+        else
+          kubectl -n ${NAMESPACE} \
+            annotate configmap ${SBOM_CONFIGMAP} \
+            dependencytrack.insights.lagoon.sh/custom-endpoint="${apiEndpoint}"
+        fi
+      else
+        dtWarn="\n\n**********\nCustom Dependency Track not enabled: Missing LAGOON_FEATURE_FLAG_INSIGHTS_DEPENDENCY_TRACK_API_KEY\n**********\n\n"
+      fi
+    fi
     kubectl \
         -n ${NAMESPACE} \
         label configmap ${SBOM_CONFIGMAP} \
@@ -119,6 +140,11 @@ processSbom() {
         lagoon.sh/environmentType=${ENVIRONMENT_TYPE} \
         lagoon.sh/buildType=${BUILD_TYPE} \
         insights.lagoon.sh/type=sbom
+
+    if [ -n "$dtWarn" ]; then
+      printf '%b' "$dtWarn"
+      return 1
+    fi
   fi
 }
 
