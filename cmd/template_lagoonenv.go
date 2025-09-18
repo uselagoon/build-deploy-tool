@@ -19,7 +19,7 @@ var lagoonEnvGeneration = &cobra.Command{
 	Aliases: []string{"le"},
 	Short:   "Generate the lagoon-env secret template for a Lagoon build",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generator.GenerateInput(*rootCmd, false)
+		generator, err := GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}

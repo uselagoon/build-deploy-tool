@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -352,7 +353,7 @@ func TestIdentifyRoute(t *testing.T) {
 			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
@@ -383,6 +384,10 @@ func TestIdentifyRoute(t *testing.T) {
 			if string(retJSON) != tt.wantJSON {
 				t.Errorf("returned autogen %v doesn't match want %v", string(retJSON), tt.wantJSON)
 			}
+			t.Cleanup(func() {
+				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
+			})
 		})
 	}
 }
@@ -502,7 +507,7 @@ func TestCreatedIngressIdentification(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// set the environment variables from args
 			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
