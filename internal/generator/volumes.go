@@ -3,7 +3,7 @@ package generator
 import (
 	"fmt"
 
-	composetypes "github.com/compose-spec/compose-go/types"
+	composetypes "github.com/compose-spec/compose-go/v2/types"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 )
