@@ -179,7 +179,7 @@ func init() {
 func initConfig() {
 }
 
-// helper function that reads flag overrides and retruns a generated input dataset
+// helper function that reads flag overrides and returns a generated input dataset
 // this is called from within the main environment setup helper function
 func GenerateInput(rootCmd cobra.Command, debug bool) (generator.GeneratorInput, error) {
 	lagoonYAML, err := rootCmd.PersistentFlags().GetString("lagoon-yml")

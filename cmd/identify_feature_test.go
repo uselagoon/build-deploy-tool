@@ -15,13 +15,12 @@ import (
 
 func TestIdentifyFeatureFlag(t *testing.T) {
 	tests := []struct {
-		name         string
-		args         testdata.TestData
-		templatePath string
-		varName      string
-		vars         []helpers.EnvironmentVariable
-		want         string
-		wantErr      bool
+		name    string
+		args    testdata.TestData
+		varName string
+		vars    []helpers.EnvironmentVariable
+		want    string
+		wantErr bool
 	}{
 		{
 			name:    "test1 check if flag is defined in lagoon project variables",
@@ -40,8 +39,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "enabled",
+			want: "enabled",
 		},
 		{
 			name:    "test2 check if flag is defined in lagoon environment variables",
@@ -60,8 +58,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "enabled",
+			want: "enabled",
 		},
 		{
 			name:    "test3 check if force flag is defined in build variables",
@@ -73,7 +70,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -92,7 +88,6 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
 			vars: []helpers.EnvironmentVariable{
 				{
 					Name:  "LAGOON_FEATURE_FLAG_FORCE_ROOTLESS_WORKLOAD",
@@ -164,7 +159,10 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			helpers.UnsetEnvVars(tt.vars) //unset variables before running tests
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
