@@ -19,13 +19,12 @@ import (
 
 func TestBackupTemplateGeneration(t *testing.T) {
 	tests := []struct {
-		name         string
-		description  string
-		args         testdata.TestData
-		templatePath string
-		want         string
-		emptyDir     bool // if no templates are generated, then there will be a .gitkeep file in there
-		wantErr      bool
+		name        string
+		description string
+		args        testdata.TestData
+		want        string
+		emptyDir    bool // if no templates are generated, then there will be a .gitkeep file in there
+		wantErr     bool
 	}{
 		{
 			name: "test1 - change the image registry used for prebackup pods",
@@ -43,8 +42,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/backup-templates/backup-1",
+			want: "internal/testdata/complex/backup-templates/backup-1",
 		},
 		{
 			name: "test2 - custom dev only schedule but global config change enabled",
@@ -68,8 +66,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-1",
+			want: "internal/testdata/node/backup-templates/backup-1",
 		},
 		{
 			name: "test3 - custom dev only schedule but global config change not configured (use defaults)",
@@ -88,8 +85,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-2",
+			want: "internal/testdata/node/backup-templates/backup-2",
 		},
 		{
 			name: "test4 - custom schedule and custom backup keys",
@@ -118,8 +114,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-3",
+			want: "internal/testdata/node/backup-templates/backup-3",
 		},
 		{
 			name: "test5 - custom schedule and custom restore keys",
@@ -148,8 +143,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PR_SCHEDULE", Value: "3,33 12 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-4",
+			want: "internal/testdata/node/backup-templates/backup-4",
 		},
 		{
 			name: "test6 - generic backup",
@@ -161,8 +155,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					EnvironmentType: "production",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-5",
+			want: "internal/testdata/node/backup-templates/backup-5",
 		},
 		{
 			name: "test7 - changed default backup schedule",
@@ -175,8 +168,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 					DefaultBackupSchedule: "M */6 * * *",
 					LagoonYAML:            "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-6",
+			want: "internal/testdata/node/backup-templates/backup-6",
 		},
 		{
 			name: "test8 - change the image registry used for prebackup pods k8upv2",
@@ -200,8 +192,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/backup-templates/backup-2",
+			want: "internal/testdata/complex/backup-templates/backup-2",
 		},
 		{
 			name: "test9 - nothing to backup so no schedule",
@@ -225,9 +216,8 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			emptyDir:     true,
-			want:         "internal/testdata/node/backup-templates/backup-7",
+			emptyDir: true,
+			want:     "internal/testdata/node/backup-templates/backup-7",
 		}, {
 			name: "test10 - generic backup with random check prune feature flags",
 			args: testdata.GetSeedData(
@@ -250,8 +240,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			want:         "internal/testdata/node/backup-templates/backup-8",
+			want: "internal/testdata/node/backup-templates/backup-8",
 		},
 		{
 			name: "test11 - custom prod schedule",
@@ -271,8 +260,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						{Name: "LAGOON_BACKUP_PROD_SCHEDULE", Value: "2,21 22 * * *", Scope: "build"},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/backup-9",
+			want: "internal/testdata/node/backup-templates/backup-9",
 		},
 		{
 			name:        "test-generic-backup-rootless-workloads",
@@ -298,8 +286,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads",
+			want: "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads",
 		},
 		{
 			name:        "test-generic-backup-rootless-workloads-onrootmismatch",
@@ -330,8 +317,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads-onrootmismatch",
+			want: "internal/testdata/node/backup-templates/test-generic-backup-rootless-workloads-onrootmismatch",
 		},
 		{
 			name: "schedules-with-additional-volumes",
@@ -349,8 +335,7 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/backup-templates/schedules-with-additional-volumes",
+			want: "internal/testdata/basic/backup-templates/schedules-with-additional-volumes",
 		},
 		{
 			name: "no-schedules-with-additional-volumes-with-no-backups",
@@ -368,23 +353,21 @@ func TestBackupTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			emptyDir:     true,
-			want:         "internal/testdata/basic/backup-templates/schedules-with-additional-volumes-no-backup",
+			emptyDir: true,
+			want:     "internal/testdata/basic/backup-templates/schedules-with-additional-volumes-no-backup",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			err = os.MkdirAll(savedTemplates, 0755)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
+				t.Errorf("%v", err)
 			}
 			defer os.RemoveAll(savedTemplates)
 

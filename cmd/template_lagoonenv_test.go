@@ -21,7 +21,6 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 		secretName    string
 		args          testdata.TestData
 		configMapVars map[string]string
-		templatePath  string
 		want          string
 		dbaasCreds    string
 		vars          []helpers.EnvironmentVariable
@@ -80,9 +79,8 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			secretName:   "lagoon-env",
-			want:         "internal/testdata/basic/secret-templates/test-basic-deployment-lagoon-env",
+			secretName: "lagoon-env",
+			want:       "internal/testdata/basic/secret-templates/test-basic-deployment-lagoon-env",
 		},
 		{
 			name:        "test-basic-deployment-mariadbcreds-lagoon-env",
@@ -138,10 +136,9 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 						},
 					},
 				}, true),
-			dbaasCreds:   "internal/testdata/basic/basic-mariadb-creds.json",
-			templatePath: "testoutput",
-			secretName:   "lagoon-env",
-			want:         "internal/testdata/basic/secret-templates/test-basic-deployment-mariadbcreds-lagoon-env",
+			dbaasCreds: "internal/testdata/basic/basic-mariadb-creds.json",
+			secretName: "lagoon-env",
+			want:       "internal/testdata/basic/secret-templates/test-basic-deployment-mariadbcreds-lagoon-env",
 		},
 		{
 			name:        "lagoon-env-with-configmap-vars",
@@ -204,9 +201,8 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 				"MY_SPECIAL_VARIABLE3": "myspecialvariable3",
 				"MY_SPECIAL_VARIABLE4": "myspecialvariable4",
 			},
-			templatePath: "testoutput",
-			secretName:   "lagoon-env",
-			want:         "internal/testdata/basic/secret-templates/lagoon-env-with-configmap-vars",
+			secretName: "lagoon-env",
+			want:       "internal/testdata/basic/secret-templates/lagoon-env-with-configmap-vars",
 		},
 		{
 			name: "lagoon-platform-env-with-configmap-vars",
@@ -270,9 +266,8 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 				"MY_SPECIAL_VARIABLE3": "myspecialvariable3",
 				"MY_SPECIAL_VARIABLE4": "myspecialvariable4",
 			},
-			templatePath: "testoutput",
-			secretName:   "lagoon-platform-env",
-			want:         "internal/testdata/basic/secret-templates/lagoon-platform-env-with-configmap-vars",
+			secretName: "lagoon-platform-env",
+			want:       "internal/testdata/basic/secret-templates/lagoon-platform-env-with-configmap-vars",
 		},
 	}
 	for _, tt := range tests {
@@ -285,17 +280,14 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 				}
 			}
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-
-			err = os.MkdirAll(savedTemplates, 0755)
-			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
-			}
-
 			defer os.RemoveAll(savedTemplates)
 
 			ts := dbaasclient.TestDBaaSHTTPServer()

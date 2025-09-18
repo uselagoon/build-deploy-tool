@@ -19,13 +19,12 @@ import (
 
 func TestTemplateLagoonServices(t *testing.T) {
 	tests := []struct {
-		name         string
-		description  string
-		args         testdata.TestData
-		templatePath string
-		want         string
-		imageData    string
-		vars         []helpers.EnvironmentVariable
+		name        string
+		description string
+		args        testdata.TestData
+		want        string
+		imageData   string
+		vars        []helpers.EnvironmentVariable
 	}{
 		{
 			name:        "test1-basic-deployment",
@@ -67,8 +66,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test1-basic-deployment",
+			want: "internal/testdata/basic/service-templates/test1-basic-deployment",
 		},
 		{
 			name:        "test2-nginx-php",
@@ -87,8 +85,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"varnish": "harbor.example/example-project/main/varnish@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test2-nginx-php",
+			want: "internal/testdata/complex/service-templates/test2-nginx-php",
 		},
 		{
 			name:        "test2a-nginx-php",
@@ -100,9 +97,8 @@ func TestTemplateLagoonServices(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/complex/lagoon.varnish.yml",
 				}, true),
-			imageData:    "internal/testdata/complex/images-service1.yaml",
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test2-nginx-php",
+			imageData: "internal/testdata/complex/images-service1.yaml",
+			want:      "internal/testdata/complex/service-templates/test2-nginx-php",
 		},
 		{
 			name:        "test2b-nginx-php",
@@ -128,8 +124,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test2b-nginx-php",
+			want: "internal/testdata/complex/service-templates/test2b-nginx-php",
 		},
 		{
 			name:        "test2c-nginx-php",
@@ -170,8 +165,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test2c-nginx-php",
+			want: "internal/testdata/complex/service-templates/test2c-nginx-php",
 		},
 		{
 			name:        "test2d-nginx-php",
@@ -211,8 +205,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test2d-nginx-php",
+			want: "internal/testdata/complex/service-templates/test2d-nginx-php",
 		},
 		{
 			name:        "test3-funky-pvcs",
@@ -236,8 +229,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test3-funky-pvcs",
+			want: "internal/testdata/basic/service-templates/test3-funky-pvcs",
 		},
 		{
 			name:        "test4-basic-worker",
@@ -260,8 +252,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test4-basic-worker",
+			want: "internal/testdata/basic/service-templates/test4-basic-worker",
 		},
 		{
 			name:        "test5-basic-promote",
@@ -277,8 +268,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test5-basic-promote",
+			want: "internal/testdata/basic/service-templates/test5-basic-promote",
 		},
 		{
 			name:        "test6-basic-networkpolicy",
@@ -305,8 +295,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test6-basic-networkpolicy",
+			want: "internal/testdata/basic/service-templates/test6-basic-networkpolicy",
 		},
 		{
 			name:        "test7-basic-dynamic-secrets",
@@ -323,8 +312,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 					DynamicSecrets:      []string{"insights-token"},
 					DynamicDBaaSSecrets: []string{"mariadb-dbaas-a4hs12h3"},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test7-basic-dynamic-secrets",
+			want: "internal/testdata/basic/service-templates/test7-basic-dynamic-secrets",
 		},
 		{
 			name:        "test8-multiple-services",
@@ -345,8 +333,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"solr-8":       "harbor.example/example-project/main/solr-8@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test8-multiple-services",
+			want: "internal/testdata/complex/service-templates/test8-multiple-services",
 		},
 		{
 			name:        "test9-meta-dbaas-types",
@@ -376,8 +363,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test9-meta-dbaas-types",
+			want: "internal/testdata/complex/service-templates/test9-meta-dbaas-types",
 		},
 		{
 			name:        "test10-basic-no-native-cronjobs",
@@ -392,8 +378,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test10-basic-no-native-cronjobs",
+			want: "internal/testdata/basic/service-templates/test10-basic-no-native-cronjobs",
 		},
 		{
 			name:        "test11-basic-polysite-cronjobs",
@@ -408,8 +393,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test11-basic-polysite-cronjobs",
+			want: "internal/testdata/basic/service-templates/test11-basic-polysite-cronjobs",
 		},
 		{
 			name:        "test12-basic-persistent-custom-volumes",
@@ -425,8 +409,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test12-basic-persistent-custom-volumes",
+			want: "internal/testdata/basic/service-templates/test12-basic-persistent-custom-volumes",
 		},
 		{
 			name:        "test13-basic-custom-volumes",
@@ -442,8 +425,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test13-basic-custom-volumes",
+			want: "internal/testdata/basic/service-templates/test13-basic-custom-volumes",
 		},
 		{
 			name: "test14-complex-custom-volumes",
@@ -463,8 +445,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"mariadb": "harbor.example/example-project/main/mariadb@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test14-complex-custom-volumes",
+			want: "internal/testdata/complex/service-templates/test14-complex-custom-volumes",
 		},
 		{
 			name:        "test15-basic-custom-volume-no-backup",
@@ -480,8 +461,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test15-basic-custom-volume-no-backup",
+			want: "internal/testdata/basic/service-templates/test15-basic-custom-volume-no-backup",
 		},
 		{
 			name: "test-basic-spot-affinity",
@@ -519,8 +499,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-spot-affinity",
+			want: "internal/testdata/basic/service-templates/test-basic-spot-affinity",
 		},
 		{
 			name:        "test-basic-persistent-name",
@@ -535,8 +514,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"basic": "harbor.example/example-project/main/basic@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-persistent-name",
+			want: "internal/testdata/basic/service-templates/test-basic-persistent-name",
 		},
 		{
 			name:        "test-basic-persistent-names",
@@ -552,8 +530,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"basic2": "harbor.example/example-project/main/basic2@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-persistent-names",
+			want: "internal/testdata/basic/service-templates/test-basic-persistent-names",
 		},
 		{
 			name:        "test-complex-persistent-names",
@@ -581,8 +558,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"queue-worker-priority-medium":  "harbor.example/example-project/main/queue-worker-priority-medium@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test-complex-persistent-names",
+			want: "internal/testdata/complex/service-templates/test-complex-persistent-names",
 		},
 		{
 			name:        "test-redis-persistent-k8upv2",
@@ -603,8 +579,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/service-templates/test-redis-persistent-k8upv2",
+			want: "internal/testdata/complex/service-templates/test-redis-persistent-k8upv2",
 		},
 		{
 			name:        "test-basic-single-k8upv2",
@@ -625,8 +600,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-single-k8upv2",
+			want: "internal/testdata/basic/service-templates/test-basic-single-k8upv2",
 		},
 		{
 			name:        "test-basic-external-service",
@@ -641,8 +615,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"basic1": "harbor.example/example-project/main/basic1@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-external-service",
+			want: "internal/testdata/basic/service-templates/test-basic-external-service",
 		},
 		{
 			name:        "test-basic-external-service-environment",
@@ -657,8 +630,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						"basic1": "harbor.example/example-project/stage/basic1@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-external-service-environment",
+			want: "internal/testdata/basic/service-templates/test-basic-external-service-environment",
 		},
 		{
 			name:        "test-basic-deployment-revision-history",
@@ -693,17 +665,14 @@ func TestTemplateLagoonServices(t *testing.T) {
 				}
 			}
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
+			if err != nil {
+				t.Errorf("%v", err)
+			}
 			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-
-			err = os.MkdirAll(savedTemplates, 0755)
-			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
-			}
-
 			defer os.RemoveAll(savedTemplates)
 
 			ts := dbaasclient.TestDBaaSHTTPServer()
