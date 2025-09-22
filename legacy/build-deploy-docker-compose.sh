@@ -196,12 +196,12 @@ function cleanupCertificates() {
         # check if it is a lets encrypt certificate
         if openssl x509 -in <(kubectl -n ${NAMESPACE} get secret ${TLS_SECRET} -o json | jq -r '.data."tls.crt" | @base64d') -text -noout | grep -o -q "Let's Encrypt" &> /dev/null; then
           # don't block execution
-          kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET} &> /dev/null
+          kubectl -n ${NAMESPACE} delete secret ${TLS_SECRET} &> /dev/null || true
         fi
       fi
     fi
     # delete the certmanager certificate to prevent renewals
-    kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET} &> /dev/null
+    kubectl -n ${NAMESPACE} delete certificates.cert-manager.io ${TLS_SECRET} &> /dev/null || true
   done
 }
 
@@ -1750,7 +1750,7 @@ fi
 # remove any certificates for tls-acme false ingress to prevent reissuing attempts
 TLS_FALSE_INGRESSES=$(kubectl -n ${NAMESPACE} get ingress -o json | jq -r '.items[] | select(.metadata.annotations["kubernetes.io/tls-acme"] == "false") | .metadata.name')
 for TLS_FALSE_INGRESS in $TLS_FALSE_INGRESSES; do
-  cleanupCertificates "${DI}" "true"
+  cleanupCertificates "${TLS_FALSE_INGRESS}" "true"
 done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
