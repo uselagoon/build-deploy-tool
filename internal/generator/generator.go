@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -408,6 +409,13 @@ func NewGenerator(
 		err := ValidateResourceQuantity(buildValues.Resources.Requests.EphemeralStorage)
 		if err != nil {
 			return nil, fmt.Errorf("provided  ephemeral storage requests %s is not a valid resource quantity, contact your Lagoon administrator", buildValues.Resources.Requests.EphemeralStorage)
+		}
+	}
+	externalLoadBalancer := CheckAdminFeatureFlag("EXTERNAL_LOADBALANCER_SUPPORT", false)
+	if externalLoadBalancer != "" {
+		supportedProjects := strings.Split(externalLoadBalancer, ",")
+		if slices.Contains(supportedProjects, projectName) {
+			buildValues.Features.ExternalLoadBalancer = true
 		}
 	}
 

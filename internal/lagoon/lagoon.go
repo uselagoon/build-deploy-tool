@@ -11,6 +11,8 @@ import (
 	"dario.cat/mergo"
 	"github.com/uselagoon/build-deploy-tool/internal/cron"
 	"sigs.k8s.io/yaml"
+
+	networkv1 "k8s.io/api/networking/v1"
 )
 
 // ProductionRoutes represents an active/standby configuration.
@@ -138,9 +140,11 @@ type AutogeneratePathRoute struct {
 }
 
 type NetworkPolicy struct {
-	Service       string                   `json:"service"`
-	Organizations []OrgNetworkPolicies     `json:"organizations"`
-	Projects      []ProjectNetworkPolicies `json:"projects"`
+	Service           string                               `json:"service"`
+	Organizations     []OrgNetworkPolicies                 `json:"organizations"`
+	Projects          []ProjectNetworkPolicies             `json:"projects"`
+	LoadBalancer      bool                                 `json:"-"`
+	LoadBalancerRules []networkv1.NetworkPolicyIngressRule `json:"-"`
 }
 
 type OrgNetworkPolicies struct {
