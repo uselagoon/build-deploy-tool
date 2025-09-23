@@ -1,7 +1,7 @@
 docker-compose-yaml: docker-compose.yml
 
 # if an environment has `autogeneratePathRoutes` defined like `environments.main.autogeneratePathRoutes`
-# then thes global lagoon yaml `routes.autogenerate.pathRoutes` are ignored
+# then these global lagoon yaml `routes.autogenerate.pathRoutes` are ignored
 routes:
   autogenerate:
     pathRoutes:

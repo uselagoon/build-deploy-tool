@@ -119,7 +119,7 @@ func Test_runTasks(t *testing.T) {
 							{
 								Run: lagoon.Task{
 									Command: "",
-									When:    "NONEXISTANT == true",
+									When:    "NONEXISTENT == true",
 								},
 							},
 						},

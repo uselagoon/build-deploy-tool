@@ -14,7 +14,7 @@ import (
 
 var validateLagoonYml = &cobra.Command{
 	Use:   "lagoon-yml",
-	Short: "Verify .lagoon.yml and environment for compatability with this tool",
+	Short: "Verify .lagoon.yml and environment for compatibility with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		lagoonYAML, err := rootCmd.PersistentFlags().GetString("lagoon-yml")
 		if err != nil {

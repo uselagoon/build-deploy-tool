@@ -16,7 +16,7 @@ func collectLagoonEnvConfigmapVariables(buildValues BuildValues) []lagoon.Enviro
 	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_ENVIRONMENT_TYPE", Value: buildValues.EnvironmentType, Scope: "runtime"})
 	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SHA", Value: buildValues.GitSHA, Scope: "runtime"})
 	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_KUBERNETES", Value: buildValues.Kubernetes, Scope: "runtime"})
-	// LAGOON_GIT_SAFE_BRANCH is pointing to the enviornment name, therefore also is filled if this environment
+	// LAGOON_GIT_SAFE_BRANCH is pointing to the environment name, therefore also is filled if this environment
 	// is created by a PR or Promote workflow. This technically wrong, therefore will be removed
 	vars = append(vars, lagoon.EnvironmentVariable{Name: "LAGOON_GIT_SAFE_BRANCH", Value: buildValues.Environment, Scope: "runtime"}) //deprecated??? (https://github.com/uselagoon/lagoon/blob/1053965321495213591f4c9110f90a9d9dcfc946/images/kubectl-build-deploy-dind/build-deploy-docker-compose.sh#L748)
 	if buildValues.BuildType == "branch" {

@@ -93,7 +93,7 @@ func TestCheckDBaaSHealth(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "test2 - should not responsd to health check",
+			name: "test2 - should not responds to health check",
 			args: args{
 				dbaasEndpoint: "http://this-does-not-exist",
 			},
