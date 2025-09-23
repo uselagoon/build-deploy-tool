@@ -167,6 +167,9 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 		service.Spec = corev1.ServiceSpec{
 			Ports: serviceType.Ports.Ports,
 		}
+		if serviceValues.ExternalLoadBalancer {
+			service.Spec.Type = corev1.ServiceTypeLoadBalancer
+		}
 
 		service.Spec.Selector = map[string]string{
 			"app.kubernetes.io/name":     serviceType.Name,
