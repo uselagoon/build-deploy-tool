@@ -15,6 +15,7 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 	machinerynamespace "github.com/uselagoon/machinery/utils/namespace"
+	networkv1 "k8s.io/api/networking/v1"
 )
 
 // this is a map that maps old service types to their new service types
@@ -625,6 +626,54 @@ func composeToServiceValues(
 					ServiceOverrideName: composeService,
 				}
 				cService.AdditionalServicePorts = append(cService.AdditionalServicePorts, newService)
+			}
+		}
+		externalLoadBalancer := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.service.loadbalancer")
+		if externalLoadBalancer != "" {
+			if externalLoadBalancer == "true" && buildValues.Features.ExternalLoadBalancer {
+				cService.ExternalLoadBalancer = true
+				// set an internally crafted network policy rule to block inter namespace, but still allow external traffic
+				// other policies may apply too to allow internal communications
+				// this may need more options or settings potentially to "relax" them a bit if required, ie, allow all, even internal
+				// but this opens it up to access via the `$service.$namespace.svc:$port` access too, not just on the external LB
+				/*
+					apiVersion: networking.k8s.io/v1
+					kind: NetworkPolicy
+					metadata:
+					  name: nginx-loadbalancer
+					spec:
+					  podSelector:
+					    matchLabels:
+					      lagoon.sh/service: nginx
+					  ingress:
+					  - from:
+					    - ipBlock:
+					        cidr: '0.0.0.0/0'
+					        except: ['10.0.0.0/8']
+				*/
+				buildValues.LagoonYAML.NetworkPolicies = append(buildValues.LagoonYAML.NetworkPolicies, lagoon.NetworkPolicy{
+					Service:      cService.OverrideName,
+					LoadBalancer: true,
+					LoadBalancerRules: []networkv1.NetworkPolicyIngressRule{
+						{
+							From: []networkv1.NetworkPolicyPeer{
+								{
+									IPBlock: &networkv1.IPBlock{
+										CIDR: "0.0.0.0/0",
+										Except: []string{
+											"10.0.0.0/8",
+										},
+									},
+								},
+							},
+						},
+					},
+				})
+			} else {
+				return nil, fmt.Errorf(
+					"the requested loadbalancer type for service %s is not a allowed",
+					composeService,
+				)
 			}
 		}
 		return cService, nil

@@ -92,6 +92,11 @@ type BuildValues struct {
 	LagoonEnvVariables            map[string]string            `json:"lagoonEnvVariables" description:"map of variables that will be saved into the lagoon-env secret"`
 	LagoonPlatformEnvVariables    map[string]string            `json:"lagoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
 	AutoMountServiceAccountToken  bool                         `json:"autoMountServiceAccountToken" description:"flag to enable automounting the service account token"`
+	Features                      Features                     `json:"features,omitempty"`
+}
+
+type Features struct {
+	ExternalLoadBalancer bool `json:"externalLoadBalancer"`
 }
 
 type Resources struct {
@@ -211,6 +216,7 @@ type ServiceValues struct {
 	AdditionalVolumes                      []ServiceVolume         `json:"additionalVolumes,omitempty"`
 	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
 	ExternalServiceName                    string                  `json:"externalServiceName,omitempty"`
+	ExternalLoadBalancer                   bool                    `json:"externalLoadBalancer,omitempty"`
 }
 
 type ExternalService struct {
