@@ -417,7 +417,7 @@ func generatePodTemplateSpec(
 		container.Container.LivenessProbe = nil
 	} else {
 		if serviceValues.AdditionalServicePorts != nil {
-			// nulify the existing ports
+			// nullify the existing ports
 			container.Container.Ports = []corev1.ContainerPort{}
 			// start compose service port override templating here
 			for idx, addPort := range serviceValues.AdditionalServicePorts {

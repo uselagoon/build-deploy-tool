@@ -13,7 +13,7 @@ import (
 var validateDockerCompose = &cobra.Command{
 	Use:     "docker-compose",
 	Aliases: []string{"compose", "dc"},
-	Short:   "Verify docker-compose file for compatability with this tool",
+	Short:   "Verify docker-compose file for compatibility with this tool",
 	Run: func(cmd *cobra.Command, args []string) {
 		// @TODO: ignoreNonStringKeyErrors is `true` by default because Lagoon doesn't enforce
 		// docker-compose compliance yet
@@ -57,7 +57,7 @@ var validateDockerCompose = &cobra.Command{
 var validateDockerComposeWithErrors = &cobra.Command{
 	Use:     "docker-compose-with-errors",
 	Aliases: []string{"dcwe"},
-	Short:   "Verify docker-compose file for compatability with this tool with next versions of compose-go library",
+	Short:   "Verify docker-compose file for compatibility with this tool with next versions of compose-go library",
 	Run: func(cmd *cobra.Command, args []string) {
 		lagoonYamlFile, err := cmd.Flags().GetString("lagoon-yml")
 		if err != nil {

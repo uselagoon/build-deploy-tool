@@ -32,7 +32,7 @@ var fastlyConfigGeneration = &cobra.Command{
 // FastlyConfigGeneration .
 func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	// environment variables will override what is provided by flags
-	fastlyCacheNoCahce, err := rootCmd.PersistentFlags().GetString("fastly-cache-no-cache-id")
+	fastlyCacheNoCache, err := rootCmd.PersistentFlags().GetString("fastly-cache-no-cache-id")
 	if err != nil {
 		return lagoon.Fastly{}, fmt.Errorf("error reading fastly-cache-no-cache-id flag: %v", err)
 	}
@@ -49,7 +49,7 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 		return lagoon.Fastly{}, fmt.Errorf("error reading environment-variables flag: %v", err)
 	}
 
-	fastlyCacheNoCahce = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCahce, debug)
+	fastlyCacheNoCache = helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", fastlyCacheNoCache, debug)
 	fastlyServiceID = helpers.GetEnv("ROUTE_FASTLY_SERVICE_ID", fastlyServiceID, debug)
 
 	// get the project and environment variables
@@ -65,7 +65,7 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 
 	// generate the fastly configuration from the provided flags/variables
 	f := &lagoon.Fastly{}
-	err = lagoon.GenerateFastlyConfiguration(f, fastlyCacheNoCahce, fastlyServiceID, domain, lagoonEnvVars)
+	err = lagoon.GenerateFastlyConfiguration(f, fastlyCacheNoCache, fastlyServiceID, domain, lagoonEnvVars)
 	if err != nil {
 		return lagoon.Fastly{}, err
 	}

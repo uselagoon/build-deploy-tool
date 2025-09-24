@@ -47,7 +47,7 @@ type GeneratorInput struct {
 	PromotionSourceEnvironment string
 	MonitoringContact          string
 	MonitoringStatusPageID     string
-	FastlyCacheNoCahce         string
+	FastlyCacheNoCache         string
 	SavedTemplatesPath         string
 	ConfigMapSha               string
 	BackupConfiguration        BackupConfiguration
@@ -102,7 +102,7 @@ func NewGenerator(
 	buildType := helpers.GetEnv("BUILD_TYPE", generator.BuildType, generator.Debug)
 	activeEnvironment := helpers.GetEnv("ACTIVE_ENVIRONMENT", generator.ActiveEnvironment, generator.Debug)
 	standbyEnvironment := helpers.GetEnv("STANDBY_ENVIRONMENT", generator.StandbyEnvironment, generator.Debug)
-	fastlyCacheNoCahce := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCahce, generator.Debug)
+	fastlyCacheNoCache := helpers.GetEnv("LAGOON_FASTLY_NOCACHE_SERVICE_ID", generator.FastlyCacheNoCache, generator.Debug)
 	lagoonVersion := helpers.GetEnv("LAGOON_VERSION", generator.LagoonVersion, generator.Debug)
 	configMapSha := helpers.GetEnv("CONFIG_MAP_SHA", generator.ConfigMapSha, generator.Debug)
 	imageRegistry := helpers.GetEnv("REGISTRY", generator.ImageRegistry, generator.Debug)
@@ -195,7 +195,7 @@ func NewGenerator(
 	buildValues.LagoonVersion = lagoonVersion
 	buildValues.ActiveEnvironment = activeEnvironment
 	buildValues.StandbyEnvironment = standbyEnvironment
-	buildValues.FastlyCacheNoCache = fastlyCacheNoCahce
+	buildValues.FastlyCacheNoCache = fastlyCacheNoCache
 	switch buildType {
 	case "branch", "promote":
 		buildValues.Branch = branch

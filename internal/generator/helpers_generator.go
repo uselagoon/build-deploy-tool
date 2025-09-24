@@ -16,7 +16,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 )
 
-// helper function that reads flag overrides and retruns a generated input dataset
+// helper function that reads flag overrides and returns a generated input dataset
 // this is called from within the main environment setup helper function
 func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 	lagoonYAML, err := rootCmd.PersistentFlags().GetString("lagoon-yml")
@@ -91,7 +91,7 @@ func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 	if err != nil {
 		return GeneratorInput{}, fmt.Errorf("error reading monitoring-status-page-id flag: %v", err)
 	}
-	fastlyCacheNoCahce, err := rootCmd.PersistentFlags().GetString("fastly-cache-no-cache-id")
+	fastlyCacheNoCache, err := rootCmd.PersistentFlags().GetString("fastly-cache-no-cache-id")
 	if err != nil {
 		return GeneratorInput{}, fmt.Errorf("error reading fastly-cache-no-cache-id flag: %v", err)
 	}
@@ -133,7 +133,7 @@ func GenerateInput(rootCmd cobra.Command, debug bool) (GeneratorInput, error) {
 		PRBaseBranch:             prBaseBranch,
 		MonitoringContact:        monitoringContact,
 		MonitoringStatusPageID:   monitoringStatusPageID,
-		FastlyCacheNoCahce:       fastlyCacheNoCahce,
+		FastlyCacheNoCache:       fastlyCacheNoCache,
 		SavedTemplatesPath:       savedTemplates,
 		IgnoreMissingEnvFiles:    ignoreMissingEnvFiles,
 		IgnoreNonStringKeyErrors: ignoreNonStringKeyErrors,

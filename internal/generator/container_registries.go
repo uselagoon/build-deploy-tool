@@ -31,7 +31,7 @@ func configureContainerRegistries(buildValues *BuildValues) error {
 				passwordSource = fmt.Sprintf("Lagoon API environment variable %s", cr.Password)
 			}
 		}
-		// if no overide is found
+		// if no override is found
 		if password == nil {
 			// check if one is defined in the yaml
 			if cr.Password == "" {

@@ -141,7 +141,7 @@ function internalContainerRegistryCheck() {
 
 SCC_CHECK=$(kubectl -n ${NAMESPACE} get pod ${LAGOON_BUILD_NAME} -o json | jq -r '.metadata.annotations."openshift.io/scc" // false')
 
-# begin build step will echo the step start delimeter and then patch kubernetes resource with the value
+# begin build step will echo the step start delimiter and then patch kubernetes resource with the value
 function beginBuildStep() {
   [ "$1" ] || return #Buildstep start
   [ "$2" ] || return #buildstep
@@ -157,7 +157,7 @@ function beginBuildStep() {
   fi
 }
 
-# finalize build step will echo the end delimeter only
+# finalize build step will echo the end delimiter only
 function finalizeBuildStep() {
   [ "$1" ] || return #total start time
   [ "$2" ] || return #step start time
@@ -532,7 +532,7 @@ do
   # Load the servicetype. If it's "none" we will not care about this service at all
   SERVICE_TYPE=$(echo "$SERVICE_JSON" | jq -r '.labels."lagoon.type" // "custom"')
 
-  # Allow the servicetype to be overriden by environment in .lagoon.yml
+  # Allow the servicetype to be overridden by environment in .lagoon.yml
   ENVIRONMENT_SERVICE_TYPE_OVERRIDE=$(cat .lagoon.yml | yq -o json | jq -r '.environments.'\"${BRANCH}\"'.types.'\"$SERVICE_NAME\"' // false')
   if [ ! $ENVIRONMENT_SERVICE_TYPE_OVERRIDE == "false" ]; then
     SERVICE_TYPE=$ENVIRONMENT_SERVICE_TYPE_OVERRIDE
@@ -1009,7 +1009,7 @@ mkdir -p $YAML_FOLDER
 # BC for routes.insecure, which is now called routes.autogenerate.insecure
 BC_ROUTES_AUTOGENERATE_INSECURE=$(cat .lagoon.yml | yq -o json | jq -r '.routes.insecure // false')
 if [ ! $BC_ROUTES_AUTOGENERATE_INSECURE == "false" ]; then
-  echo "=== routes.insecure is now defined in routes.autogenerate.insecure, pleae update your .lagoon.yml file"
+  echo "=== routes.insecure is now defined in routes.autogenerate.insecure, please update your .lagoon.yml file"
   # update the .lagoon.yml with the new location for build-deploy-tool to read
   yq -i '.routes.autogenerate.insecure = "'${BC_ROUTES_AUTOGENERATE_INSECURE}'"' .lagoon.yml
 fi
@@ -1795,7 +1795,7 @@ fi
 
 if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
   beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
-  echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as neccessary"
+  echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as necessary"
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompletedWithWarnings" "Completed With Warnings" "true"
   previousStepEnd=${currentStepEnd}
   # patch the buildpod with the buildstep

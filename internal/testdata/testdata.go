@@ -231,7 +231,7 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 }
 
 func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
-	// set up the default values, but all values are overwriteable via the input
+	// set up the default values, but all values are overwritable via the input
 	rt := TestData{
 		AlertContact:    "alertcontact", // will be deprecated eventually
 		StatusPageID:    "statuspageid", // will be deprecated eventually

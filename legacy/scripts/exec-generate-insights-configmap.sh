@@ -22,7 +22,7 @@ skopeo inspect --retry-times 5 docker://${IMAGE_FULL} --tls-verify=false | gzip 
 processImageInspect() {
   echo "Successfully generated image inspection data for ${IMAGE_FULL}"
 
-  # If lagoon-insights-image-inpsect-[IMAGE] configmap already exists then we need to update, else create new
+  # If lagoon-insights-image-inspect-[IMAGE] configmap already exists then we need to update, else create new
   if kubectl -n ${NAMESPACE} get configmap $IMAGE_INSPECT_CONFIGMAP &> /dev/null; then
       kubectl \
           -n ${NAMESPACE} \
@@ -107,7 +107,7 @@ processSbom() {
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
     fi
-    # Support custom Depdency Track integration.
+    # Support custom Dependency Track integration.
     local apiEndpoint
     apiEndpoint=$(featureFlag INSIGHTS_DEPENDENCY_TRACK_API_ENDPOINT)
     local apiKey
