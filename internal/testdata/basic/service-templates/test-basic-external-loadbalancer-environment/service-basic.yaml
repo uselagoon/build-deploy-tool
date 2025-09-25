@@ -5,6 +5,8 @@ metadata:
   annotations:
     lagoon.sh/branch: stage
     lagoon.sh/version: v2.7.x
+    service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout: "600"
+    service.beta.kubernetes.io/aws-load-balancer-scheme: internet-facing
   creationTimestamp: null
   labels:
     app.kubernetes.io/instance: basic
