@@ -101,6 +101,10 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 	for key, value := range additionalAnnotations {
 		(*annotationsCopy)[key] = value
 	}
+	if serviceValues.ExternalLoadBalancer {
+		(*annotationsCopy)["service.beta.kubernetes.io/aws-load-balancer-scheme"] = "internet-facing"
+		(*annotationsCopy)["service.beta.kubernetes.io/aws-load-balancer-connection-idle-timeout"] = "600"
+	}
 	service.ObjectMeta.Labels = *labelsCopy
 	service.ObjectMeta.Annotations = *annotationsCopy
 	// validate any annotations
