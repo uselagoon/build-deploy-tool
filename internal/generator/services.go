@@ -660,9 +660,10 @@ func composeToServiceValues(
 								{
 									IPBlock: &networkv1.IPBlock{
 										CIDR: "0.0.0.0/0",
-										Except: []string{
-											"10.0.0.0/8",
-										},
+										// this might be too restrictive :'(
+										// Except: []string{
+										// 	"10.0.0.0/8",
+										// },
 									},
 								},
 							},
