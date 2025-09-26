@@ -319,9 +319,14 @@ func getRoutesFromAPIEnvVar(
 ) (*lagoon.RoutesV2, error) {
 	apiRoutes := &lagoon.RoutesV2{}
 	lagoonRoutesJSON, _ := lagoon.GetLagoonVariable("LAGOON_ROUTES_JSON", []string{"build", "global"}, envVars)
+	lagoonAPIRoutes, _ := lagoon.GetLagoonVariable("LAGOON_API_ROUTES", []string{"internal_system"}, envVars)
+	// if `LAGOON_ROUTES_JSON` is present, prefer it first to so not to break existing configurations
 	if lagoonRoutesJSON != nil {
 		if debug {
 			fmt.Println("Collecting routes from environment variable LAGOON_ROUTES_JSON")
+		}
+		if lagoonAPIRoutes != nil {
+			fmt.Println("Routes have also been defined in the API, these are ignored as LAGOON_ROUTES_JSON is configured. You should migrate all routes to the API.")
 		}
 		// if the routesJSON is populated, then attempt to decode and unmarshal it
 		rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonRoutesJSON.Value)
@@ -329,6 +334,19 @@ func getRoutesFromAPIEnvVar(
 		err := json.Unmarshal(rawJSON, apiRoutes)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't unmarshal routes from Lagoon API, is it actually JSON that has been base64 encoded?: %v", err)
+		}
+	} else {
+		if lagoonAPIRoutes != nil {
+			if debug {
+				fmt.Println("Collecting routes from environment variable LAGOON_ROUTES_JSON")
+			}
+			// if the routesJSON is populated, then attempt to decode and unmarshal it
+			rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonAPIRoutes.Value)
+			rawJSON := []byte(rawJSONStr)
+			err := json.Unmarshal(rawJSON, apiRoutes)
+			if err != nil {
+				return nil, fmt.Errorf("couldn't unmarshal routes from Lagoon API, is it actually JSON that has been base64 encoded?: %v", err)
+			}
 		}
 	}
 	return apiRoutes, nil
