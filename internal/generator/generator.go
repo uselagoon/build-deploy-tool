@@ -349,7 +349,7 @@ func NewGenerator(
 		buildValues.PodSecurityContext.OnRootMismatch = true
 	}
 
-	oauth2proxyDomain := helpers.GetEnv("LAGOON_FEATURE_FLAG_OAUTH2PROXY_DOMAIN", generator.EnvironmentVariables, generator.Debug)
+	oauth2proxyDomain := CheckFeatureFlag("OAUTH2PROXY_DOMAIN", buildValues.EnvironmentVariables, generator.Debug)
 	if oauth2proxyDomain != "" {
 		buildValues.Oauth2ProxyDomain = oauth2proxyDomain
 	}
