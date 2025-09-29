@@ -135,6 +135,10 @@ func GenerateIngressTemplate(
 		additionalAnnotations["nginx.ingress.kubernetes.io/server-snippet"] = "add_header X-Robots-Tag \"noindex, nofollow\";\n"
 	}
 
+	if route.Source != "" {
+		additionalLabels["route.lagoon.sh/source"] = strings.ToLower(route.Source)
+	}
+
 	// if idling request verification is in the `.lagoon.yml` and true, add the annotation. this supports production and development environment types
 	// in the event that production environments support idling properly that option could be available to then
 	// idle standby environments or production environments generally in opensource lagoon

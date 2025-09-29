@@ -20,7 +20,7 @@ type RoutesV2 struct {
 type RouteV2 struct {
 	Domain                string            `json:"domain"`
 	LagoonService         string            `json:"service"`
-	ComposeService        string            `json:"composeService"` // the
+	ComposeService        string            `json:"composeService"`
 	TLSAcme               *bool             `json:"tls-acme"`
 	Migrate               *bool             `json:"migrate,omitempty"`
 	Insecure              *string           `json:"insecure,omitempty"`
@@ -40,6 +40,31 @@ type RouteV2 struct {
 	WildcardApex          *bool             `json:"wildcardApex,omitempty"`
 	RequestVerification   *bool             `json:"disableRequestVerification,omitempty"`
 	PathRoutes            []PathRoute       `json:"pathRoutes,omitempty"`
+	Source                string            `json:"source,omitempty"`
+}
+
+// handle `tlsAcme`/`monitoringPath` from the API and `tls-acme`/`monitoring-path` from .lagoon.yml
+// :ugh: legacy stuff
+// maybe one day we can produce warnings/deprecation of certain fields but today is not that day
+func (r *RouteV2) UnmarshalJSON(data []byte) error {
+	type TempRouteV2 RouteV2
+	tr := &struct {
+		TLSAcme_        *bool   `json:"tlsAcme,omitempty"`
+		MonitoringPath_ *string `json:"monitoringPath,omitempty"`
+		*TempRouteV2
+	}{
+		TempRouteV2: (*TempRouteV2)(r),
+	}
+	if err := json.Unmarshal(data, tr); err != nil {
+		return err
+	}
+	if tr.TLSAcme_ != nil {
+		r.TLSAcme = tr.TLSAcme_
+	}
+	if tr.MonitoringPath_ != nil {
+		r.MonitoringPath = *tr.MonitoringPath_
+	}
+	return nil
 }
 
 // Ingress represents a Lagoon route.
