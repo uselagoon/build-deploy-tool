@@ -330,36 +330,36 @@ func RemoveCreationTimestamp(a []byte) ([]byte, error) {
 	return yaml.Marshal(tmpMap)
 }
 
-var mariadbBackupCommand = `/bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
-BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
-fi &&
-dump=$(mktemp)
-&& mysqldump --max-allowed-packet=1G --events --routines --quick
---add-locks --no-autocommit --single-transaction --no-create-db
---no-data --no-tablespaces
--h $BACKUP_DB_HOST
--u $BACKUP_DB_USERNAME
--p$BACKUP_DB_PASSWORD
-$BACKUP_DB_DATABASE
-> $dump
-&& mysqldump --max-allowed-packet=1G --events --routines --quick
---add-locks --no-autocommit --single-transaction --no-create-db
---ignore-table=$BACKUP_DB_DATABASE.watchdog
---no-create-info --no-tablespaces --skip-triggers
--h $BACKUP_DB_HOST
--u $BACKUP_DB_USERNAME
--p$BACKUP_DB_PASSWORD
-$BACKUP_DB_DATABASE
->> $dump
+var mariadbBackupCommand = `/bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then \
+BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); \
+fi && \
+dump=$(mktemp) \
+&& mysqldump --max-allowed-packet=1G --events --routines --quick \
+--add-locks --no-autocommit --single-transaction --no-create-db \
+--no-data --no-tablespaces \
+-h $BACKUP_DB_HOST \
+-u $BACKUP_DB_USERNAME \
+-p$BACKUP_DB_PASSWORD \
+$BACKUP_DB_DATABASE \
+> $dump \
+&& mysqldump --max-allowed-packet=1G --events --routines --quick \
+--add-locks --no-autocommit --single-transaction --no-create-db \
+--ignore-table=$BACKUP_DB_DATABASE.watchdog \
+--no-create-info --no-tablespaces --skip-triggers \
+-h $BACKUP_DB_HOST \
+-u $BACKUP_DB_USERNAME \
+-p$BACKUP_DB_PASSWORD \
+$BACKUP_DB_DATABASE \
+>> $dump \
 && cat $dump && rm $dump"`
 
-var postgresBackupCommand = `/bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then
-BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1);
-fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump
---host=$BACKUP_DB_HOST
---port=$BACKUP_DB_PORT
---dbname=$BACKUP_DB_DATABASE
---username=$BACKUP_DB_USERNAME
+var postgresBackupCommand = `/bin/sh -c "if [ ! -z $BACKUP_DB_READREPLICA_HOSTS ]; then \
+BACKUP_DB_HOST=$(echo $BACKUP_DB_READREPLICA_HOSTS | cut -d ',' -f1); \
+fi && PGPASSWORD=$BACKUP_DB_PASSWORD pg_dump \
+--host=$BACKUP_DB_HOST \
+--port=$BACKUP_DB_PORT \
+--dbname=$BACKUP_DB_DATABASE \
+--username=$BACKUP_DB_USERNAME \
 --format=t -w"`
 
 var mongoBackupCommand = `/bin/sh -c "dump=$(mktemp) && mongodump \
