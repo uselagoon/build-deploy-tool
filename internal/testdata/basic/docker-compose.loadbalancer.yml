@@ -1,0 +1,11 @@
+services:
+  basic:
+    build:
+      context: internal/testdata/basic/docker
+      dockerfile: basic.dockerfile
+    labels:
+      lagoon.type: basic
+      lagoon.service.usecomposeports: true
+      lagoon.service.loadbalancer: true
+    ports:
+      - '8080'

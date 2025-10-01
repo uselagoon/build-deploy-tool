@@ -659,6 +659,29 @@ func TestTemplateLagoonServices(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/basic/service-templates/test-basic-external-service-environment",
 		},
+		{
+			name:        "test-basic-loadbalancer-service-environment",
+			description: "tests a basic deployment with a basic and an external loadbalancer service",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "stage",
+					Branch:          "stage",
+					LagoonYAML:      "internal/testdata/basic/lagoon.loadbalancer.yml",
+					ImageReferences: map[string]string{
+						"basic": "harbor.example/example-project/stage/basic@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							// `ADMIN_` are only configurable by the remote-controller
+							Name:  "ADMIN_LAGOON_FEATURE_FLAG_EXTERNAL_LOADBALANCER_SUPPORT",
+							Value: "example-project",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/basic/service-templates/test-basic-external-loadbalancer-environment",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
