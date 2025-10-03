@@ -107,6 +107,7 @@ func init() {
 	rootCmd.AddCommand(identifyCmd)
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(collectCmd)
+	rootCmd.AddCommand(runCmd)
 
 	rootCmd.PersistentFlags().StringP("lagoon-yml", "l", ".lagoon.yml",
 		"The .lagoon.yml file to read")

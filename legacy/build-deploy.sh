@@ -9,6 +9,8 @@ echo "##############################################"
 
 NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
 LAGOON_VERSION=$(cat /lagoon/version)
+export NAMESPACE
+export LAGOON_VERSION
 
 echo -e "##############################################\nBEGIN Checkout Repository\n##############################################"
 if [ "$BUILD_TYPE" == "pullrequest" ]; then

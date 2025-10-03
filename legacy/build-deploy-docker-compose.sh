@@ -215,6 +215,8 @@ function cleanupCertificates() {
   done
 }
 
+touch /tmp/warnings
+
 ##############################################
 ### PREPARATION
 ##############################################
@@ -262,11 +264,12 @@ if [ ! -z "$(featureFlag IMAGECACHE_REGISTRY)" ]; then
   [[ $last_char != "/" ]] && IMAGECACHE_REGISTRY="$IMAGECACHE_REGISTRY/"; :
 fi
 
-set +e
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "initialSetup" "Initial Environment Setup" "false"
+build-deploy-tool run hooks --hook-name "Pre .lagoon.yml Validation" --hook-directory "pre-lagoon-yaml-validation"
 previousStepEnd=${currentStepEnd}
 
+set +e
 # Validate `lagoon.yml` first to try detect any errors here first
 beginBuildStep ".lagoon.yml Validation" "lagoonYmlValidation"
 ##############################################
@@ -324,6 +327,9 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "lagoonYmlValidation" ".lagoon.yml Validation" "false"
+set -e
+build-deploy-tool run hooks --hook-name "Pre Docker Compose Validation" --hook-directory "pre-docker-compose-validation"
+set +e
 previousStepEnd=${currentStepEnd}
 
 # The attempt to valid the `docker-compose.yaml` file
@@ -452,11 +458,9 @@ if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
   echo "##############################################"
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
-  previousStepEnd=${currentStepEnd}
 else
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
-  previousStepEnd=${currentStepEnd}
 fi
 set -e
 
@@ -480,6 +484,8 @@ else
 fi
 ##################
 
+build-deploy-tool run hooks --hook-name "Pre Configure Variables" --hook-directory "pre-configure-variables"
+previousStepEnd=${currentStepEnd}
 beginBuildStep "Configure Variables" "configuringVariables"
 
 ##############################################
@@ -641,6 +647,7 @@ LAGOON_POSTROLLOUT_DISABLED=$(apiEnvVarCheck LAGOON_POSTROLLOUT_DISABLED "false"
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${buildStartTime}" "${currentStepEnd}" "${NAMESPACE}" "configureVars" "Configure Variables" "false"
+build-deploy-tool run hooks --hook-name "Pre Container Registry Login" --hook-directory "pre-registry-login"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Container Registry Login" "registryLogin"
 
@@ -1006,6 +1013,7 @@ fi
 # set that the image build and push phase has ended
 IMAGE_BUILD_PUSH_COMPLETE="true"
 
+build-deploy-tool run hooks --hook-name "Pre Service Configuration Phase" --hook-directory "pre-service-configuration-phase"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Service Configuration Phase" "serviceConfigurationPhase"
 
@@ -1097,6 +1105,7 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "serviceConfigurationComplete" "Service Configuration Phase" "false"
+build-deploy-tool run hooks --hook-name "Pre Route Configuration" --hook-directory "pre-route-configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Configuration" "configuringRoutes"
 
@@ -1124,6 +1133,7 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "configuringRoutesComplete" "Route/Ingress Configuration" "false"
+build-deploy-tool run hooks --hook-name "Pre Route Cleanup" --hook-directory "pre-route-cleanup"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Route/Ingress Cleanup" "cleanupRoutes"
 
@@ -1231,6 +1241,7 @@ if [ "${CURRENT_CHALLENGE_ROUTES[@]}" != "" ]; then
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "staleChallengesComplete" "Route/Ingress Certificate Challenges" "true"
 fi
+build-deploy-tool run hooks --hook-name "Pre Update Secrets" --hook-directory "pre-update-secrets"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Update Environment Secrets" "updateEnvSecrets"
 
@@ -1508,6 +1519,7 @@ LAGOONPLATFORMENV_SHA=$(kubectl --insecure-skip-tls-verify -n ${NAMESPACE} get s
 CONFIG_MAP_SHA=$(echo $LAGOONENV_SHA$LAGOONPLATFORMENV_SHA | sha256sum | awk '{print $1}')
 export CONFIG_MAP_SHA
 
+build-deploy-tool run hooks --hook-name "Pre Backup Configuration" --hook-directory "pre-backup-configuration"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Backup Configuration" "configuringBackups"
 
@@ -1562,6 +1574,7 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "backupConfigurationComplete" "Backup Configuration" "false"
+build-deploy-tool run hooks --hook-name "Pre Pre-Rollout Tasks" --hook-directory "pre-pre-rollout"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Pre-Rollout Tasks" "runningPreRolloutTasks"
 
@@ -1578,6 +1591,7 @@ else
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+build-deploy-tool run hooks --hook-name "Pre Deployment Templating" --hook-directory "pre-deployment-templating"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Deployment Templating" "templatingDeployments"
 
@@ -1617,6 +1631,7 @@ build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVI
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
+build-deploy-tool run hooks --hook-name "Pre Applying Deployments" --hook-directory "pre-applying-deployments"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Applying Deployments" "applyingDeployments"
 
@@ -1683,6 +1698,7 @@ fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentApplyComplete" "Applying Deployments" "false"
+build-deploy-tool run hooks --hook-name "Pre Cronjob Cleanup" --hook-directory "pre-cronjob-cleanup"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Cronjob Cleanup" "cleaningUpCronjobs"
 
@@ -1716,6 +1732,7 @@ done
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "cronjobCleanupComplete" "Cronjob Cleanup" "false"
+build-deploy-tool run hooks --hook-name "Pre Post-Rollout Tasks" --hook-directory "pre-post-rollout"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Post-Rollout Tasks" "runningPostRolloutTasks"
 
@@ -1733,6 +1750,7 @@ else
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+build-deploy-tool run hooks --hook-name "Pre Finalizing Build" --hook-directory "pre-finalizing-build"
 previousStepEnd=${currentStepEnd}
 beginBuildStep "Build and Deploy" "finalizingBuild"
 
@@ -1803,6 +1821,8 @@ if [ "$(featureFlag INSIGHTS)" = enabled ]; then
 
 fi
 
+EXTRA_WARNINGS=$(cat /tmp/warnings | wc -l)
+BUILD_WARNING_COUNT=$((BUILD_WARNING_COUNT + EXTRA_WARNINGS))
 if [[ "$BUILD_WARNING_COUNT" -gt 0 ]]; then
   beginBuildStep "Completed With Warnings" "deployCompletedWithWarnings"
   echo "This build completed with ${BUILD_WARNING_COUNT} warnings, you should scan the build for warnings and correct them as necessary"
