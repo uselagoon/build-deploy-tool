@@ -4,7 +4,9 @@ import (
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	autoscalingv2 "k8s.io/api/autoscaling/v2"
 	corev1 "k8s.io/api/core/v1"
+	policyv1 "k8s.io/api/policy/v1"
 )
 
 const (
@@ -92,6 +94,8 @@ type BuildValues struct {
 	LagoonEnvVariables            map[string]string            `json:"lagoonEnvVariables" description:"map of variables that will be saved into the lagoon-env secret"`
 	LagoonPlatformEnvVariables    map[string]string            `json:"lagoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
 	AutoMountServiceAccountToken  bool                         `json:"autoMountServiceAccountToken" description:"flag to enable automounting the service account token"`
+	ResourceWorkloads             map[string]ResourceWorkloads `json:"resourceWorkloads"`
+	ResourceWorkloadOverrides     string                       `json:"resourceWorkloadOverrides"`
 }
 
 type Resources struct {
@@ -125,6 +129,28 @@ type PodSecurityContext struct {
 	RunAsUser      int64 `json:"runAsUser"`
 	OnRootMismatch bool  `json:"onRootMismatch"`
 }
+
+type ResourceWorkloads struct {
+	ServiceType string     `json:"serviceType"`
+	HPA         *HPASpec   `json:"hpa,omitempty"`
+	PDB         *PDBSpec   `json:"pdb,omitempty"`
+	Resources   []Resource `json:"resources"`
+}
+
+type Resource struct {
+	Name      string                      `json:"name"`
+	Resources corev1.ResourceRequirements `json:"resources"`
+}
+
+type HPASpec struct {
+	Spec autoscalingv2.HorizontalPodAutoscalerSpec `json:"spec"`
+}
+
+type PDBSpec struct {
+	Spec policyv1.PodDisruptionBudgetSpec `json:"spec"`
+}
+
+// type Resources map[string]corev1.ResourceRequirements
 
 type Fastly struct {
 	ServiceID     string `json:"serviceId"`
@@ -211,6 +237,7 @@ type ServiceValues struct {
 	AdditionalVolumes                      []ServiceVolume         `json:"additionalVolumes,omitempty"`
 	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
 	ExternalServiceName                    string                  `json:"externalServiceName,omitempty"`
+	ResourceWorkload                       string                  `json:"resourceWorkload,omitempty"`
 }
 
 type ExternalService struct {
