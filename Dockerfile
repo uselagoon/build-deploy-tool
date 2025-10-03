@@ -94,6 +94,7 @@ RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 |
 
 RUN mkdir -p /kubectl-build-deploy/git
 RUN mkdir -p /kubectl-build-deploy/lagoon
+RUN mkdir -p /kubectl-build-deploy/hooks
 
 WORKDIR /kubectl-build-deploy/git
 
