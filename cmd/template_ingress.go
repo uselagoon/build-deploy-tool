@@ -32,6 +32,17 @@ func IngressTemplateGeneration(g generator.GeneratorInput) error {
 	}
 	savedTemplates := g.SavedTemplatesPath
 	// generate the templates
+	if len(lagoonBuild.MainRoutes.Routes) != 0 {
+		o2pTempl, err := servicestemplates.GenerateOauth2ProxyTemplate(lagoonBuild.MainRoutes.Routes, *lagoonBuild.BuildValues)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		templateYAML, err := servicestemplates.TemplateOauth2Proxy(o2pTempl)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/%s.yaml", savedTemplates, "o2p" + lagoonBuild.BuildValues.Namespace), templateYAML)
+	}
 	for _, route := range lagoonBuild.MainRoutes.Routes {
 		if g.Debug {
 			fmt.Printf("Templating ingress manifest for %s to %s\n", route.Domain, fmt.Sprintf("%s/%s.yaml", savedTemplates, route.Domain))

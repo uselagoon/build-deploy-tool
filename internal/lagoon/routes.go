@@ -41,6 +41,7 @@ type RouteV2 struct {
 	RequestVerification   *bool             `json:"disableRequestVerification,omitempty"`
 	PathRoutes            []PathRoute       `json:"pathRoutes,omitempty"`
 	OauthProtected        *bool             `json:"oauthProtected,omitempty"`
+	Oauth2ProxyDomain     string            `json:"oauth2ProxyDomain,omitempty"`
 }
 
 // Ingress represents a Lagoon route.
