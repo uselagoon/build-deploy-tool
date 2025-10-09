@@ -33,7 +33,7 @@ func IngressTemplateGeneration(g generator.GeneratorInput) error {
 	savedTemplates := g.SavedTemplatesPath
 	// generate the templates
 	if len(lagoonBuild.MainRoutes.Routes) != 0 {
-		o2pTempl, err := servicestemplates.GenerateOauth2ProxyTemplate(lagoonBuild.MainRoutes.Routes, *lagoonBuild.BuildValues)
+		o2pTempl, err := servicestemplates.GenerateOauth2ProxyTemplate(&lagoonBuild.MainRoutes.Routes, *lagoonBuild.BuildValues)
 		if err != nil {
 			return fmt.Errorf("couldn't generate template: %v", err)
 		}
