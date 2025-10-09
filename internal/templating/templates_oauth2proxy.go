@@ -21,6 +21,7 @@ func GenerateOauth2ProxyTemplate(routes *[]lagoon.RouteV2, bValues generator.Bui
 	o2pServiceName := bValues.Namespace + "-oauth2proxy"
 	o2pServicePort := int32(4180)
 	keycloakURL := os.Getenv("LAGOON_FEATURE_FLAG_DEFAULT_KEYCLOAK_FRONTEND_URL") + "/auth/realms/lagoon"
+	apiURL := os.Getenv("LAGOON_CONFIG_API_HOST") + "/graphql"
 
 	var o2pHosts []string
 	var cookieDomains []string
@@ -191,7 +192,7 @@ func GenerateOauth2ProxyTemplate(routes *[]lagoon.RouteV2, bValues generator.Bui
 								TimeoutSeconds: 1,
 							},
 							Env: []corev1.EnvVar{
-								{Name: "OAUTH2_PROXY_LAGOON_ENDPOINT", Value: "http://lagoon-api.172.19.0.240.nip.io/graphql"},
+								{Name: "OAUTH2_PROXY_LAGOON_ENDPOINT", Value: apiURL },
 								{Name: "OAUTH2_PROXY_INSECURE_OIDC_SKIP_ISSUER_VERIFICATION", Value: "true"},
 								{Name: "OAUTH2_PROXY_INSECURE_OIDC_ALLOW_UNVERIFIED_EMAIL", Value: "true"},
 								//{

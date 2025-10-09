@@ -88,7 +88,7 @@ var (
 	defaultActiveStandby       *bool             = helpers.BoolPtr(true)
 	defaultRequestVerification *bool             = helpers.BoolPtr(false)
 	defaultAnnotations         map[string]string = map[string]string{}
-	defaultOauthProtected      *bool             = helpers.BoolPtr(true)
+	defaultOauthProtected      *bool             = helpers.BoolPtr(false)
 )
 
 // UnmarshalJSON implements json.Unmarshaler.
