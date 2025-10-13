@@ -1605,6 +1605,8 @@ LAGOON_SERVICES_YAML_FOLDER="/kubectl-build-deploy/lagoon/service-deployments"
 mkdir -p $LAGOON_SERVICES_YAML_FOLDER
 build-deploy-tool template lagoon-services --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER} --images /kubectl-build-deploy/images.yaml
 
+build-deploy-tool template resource-workloads --saved-templates-path ${LAGOON_SERVICES_YAML_FOLDER}
+
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
 finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentTemplatingComplete" "Deployment Templating" "false"
 previousStepEnd=${currentStepEnd}
