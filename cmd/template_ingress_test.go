@@ -432,6 +432,78 @@ func TestTemplateRoutes(t *testing.T) {
 			templatePath: "testoutput",
 			want:         "internal/testdata/node/ingress-templates/ingress-24",
 		},
+		{
+			name: "active-standby-api-routes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "prod-left",
+					Branch:          "prod-left",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name: "LAGOON_API_ROUTES",
+							Value: base64.URLEncoding.EncodeToString([]byte(`{"routes":[
+							{"type":"ACTIVE", "domain":"active.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":false,"source":"API"},
+							{"domain":"other.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":false,"source":"API"},
+							{"domain":"test.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":true,"source":"API"}
+							]}`)),
+							Scope: "internal_system",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/ingress-templates/active-standby-api-routes",
+		},
+		{
+			name: "api-defined-routes-with-lagoon-yml",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name: "LAGOON_API_ROUTES",
+							Value: base64.URLEncoding.EncodeToString([]byte(`{"routes":[
+							{"domain":"other.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":false,"source":"API"},
+							{"domain":"test.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":true,"source":"API"}
+							]}`)),
+							Scope: "internal_system",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml",
+		},
+		{
+			name: "api-defined-routes-with-lagoon-yml-fastly",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_ID",
+							Value: "service-id:true",
+							Scope: "build",
+						},
+						{
+							Name: "LAGOON_API_ROUTES",
+							Value: base64.URLEncoding.EncodeToString([]byte(`{"routes":[
+							{"domain":"other.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":false,"source":"API"},
+							{"domain":"test.example.com","service":"node","alternativeNames":[],"annotations":{},"pathRoutes":[],"tlsAcme":true,"insecure":"Redirect","hstsEnabled":false,"hstsIncludeSubdomains":false,"hstsPreload":false,"hstsMaxAge":3153600,"primary":true,"source":"API"}
+							]}`)),
+							Scope: "internal_system",
+						},
+					},
+				}, true),
+			templatePath: "testoutput",
+			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
