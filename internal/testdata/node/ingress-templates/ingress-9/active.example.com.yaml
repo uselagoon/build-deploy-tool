@@ -30,6 +30,7 @@ metadata:
     lagoon.sh/service: active.example.com
     lagoon.sh/service-type: custom-ingress
     lagoon.sh/template: custom-ingress-0.1.0
+    route.lagoon.sh/source: yaml
   name: active.example.com
 spec:
   rules:
