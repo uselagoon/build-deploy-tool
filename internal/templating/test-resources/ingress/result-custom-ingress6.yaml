@@ -27,6 +27,7 @@ metadata:
     lagoon.sh/service: hmm-this-is-a-really-long-branch-name-designed-to-tes-0eda7
     lagoon.sh/service-type: custom-ingress
     lagoon.sh/template: custom-ingress-0.1.0
+    route.lagoon.sh/source: yaml
   name: hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com
 spec:
   ingressClassName: nginx
