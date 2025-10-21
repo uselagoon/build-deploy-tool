@@ -150,8 +150,18 @@ function beginBuildStep() {
 
   # patch the buildpod with the buildstep
   if [ "${SCC_CHECK}" == false ]; then
+    # refresh the token as required
+    if [[ -f "/var/run/secrets/kubernetes.io/serviceaccount/token" ]]; then
+      DEPLOYER_TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    else
+      if [[ -f "/var/run/secrets/lagoon/deployer/token" ]]; then
+        DEPLOYER_TOKEN=$(cat /var/run/secrets/lagoon/deployer/token)
+      fi
+    fi
+    kubectl config set-credentials lagoon/kubernetes.default.svc --token="${DEPLOYER_TOKEN}" &> /dev/null
+    # try patch, ignore errors
     kubectl patch -n ${NAMESPACE} pod ${LAGOON_BUILD_NAME} \
-      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\",\"build.lagoon.sh/images-complete\":\"${IMAGE_BUILD_PUSH_COMPLETE}\"}}}" &> /dev/null
+      -p "{\"metadata\":{\"labels\":{\"lagoon.sh/buildStep\":\"${2}\",\"build.lagoon.sh/images-complete\":\"${IMAGE_BUILD_PUSH_COMPLETE}\"}}}" &> /dev/null || true
     # tiny sleep to allow patch to complete before logs roll again
     sleep 0.5s
   fi
