@@ -2,16 +2,18 @@ package identify
 
 import (
 	"encoding/json"
-	"fmt"
 	"os"
+	"reflect"
 	"testing"
 
+	"github.com/andreyvit/diff"
 	"github.com/uselagoon/build-deploy-tool/internal/collector"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/k8s"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
+	"github.com/uselagoon/machinery/api/schema"
 
 	// changes the testing to source from root so paths to test resources must be defined from repo root
 	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
@@ -25,10 +27,10 @@ func TestGetCurrentState(t *testing.T) {
 		deleteServices bool
 		wantErr        bool
 		seedDir        string
-		wantServices   string
+		wantServices   LagoonServices
 	}{
 		{
-			name: "basic deployment",
+			name: "basic-deployment",
 			args: testdata.GetSeedData(
 				testdata.TestData{
 					ProjectName:     "example-project",
@@ -42,7 +44,62 @@ func TestGetCurrentState(t *testing.T) {
 			deleteServices: true,
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/basic/cleanup-seed/basic-deployment",
-			wantServices:   "",
+			wantServices: LagoonServices{
+				Services: []schema.EnvironmentService{
+					{
+						Name:      "mariadb",
+						Type:      "mariadb-dbaas",
+						Abandoned: true,
+					},
+					{
+						Name:      "basic",
+						Type:      "basic",
+						Abandoned: true,
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "basic",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "tcp-1234",
+										Port: 1234,
+									},
+									{
+										Name: "tcp-8191",
+										Port: 8191,
+									},
+									{
+										Name: "udp-9001",
+										Port: 9001,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "node",
+						Type: "basic",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "basic",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "tcp-1234",
+										Port: 1234,
+									},
+									{
+										Name: "tcp-8191",
+										Port: 8191,
+									},
+									{
+										Name: "udp-9001",
+										Port: 9001,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 		{
 			name: "multivolumes",
@@ -59,7 +116,59 @@ func TestGetCurrentState(t *testing.T) {
 			deleteServices: false,
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/basic/service-templates/test12-basic-persistent-custom-volumes",
-			wantServices:   "",
+			wantServices: LagoonServices{
+				Services: []schema.EnvironmentService{
+					{
+						Name: "node",
+						Type: "basic-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "basic",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "custom-config",
+										Path: "/config",
+									},
+									{
+										Name: "custom-files",
+										Path: "/app/files/",
+									},
+									{
+										Name: "node",
+										Path: "/data",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "http",
+										Port: 3000,
+									},
+								},
+							},
+						},
+					},
+				},
+				Volumes: []schema.EnvironmentVolume{
+					{
+						Name:        "custom-config",
+						StorageType: "bulk",
+						Type:        "additional-volume",
+						Size:        "5Gi",
+					},
+					{
+						Name:        "custom-files",
+						StorageType: "bulk",
+						Type:        "additional-volume",
+						Size:        "10Gi",
+					},
+					{
+						Name:        "node",
+						StorageType: "bulk",
+						Type:        "basic-persistent",
+						Size:        "5Gi",
+					},
+				},
+			},
 		},
 		{
 			name: "complex-singles",
@@ -82,7 +191,189 @@ func TestGetCurrentState(t *testing.T) {
 			deleteServices: false,
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/complex/service-templates/test8-multiple-services",
-			wantServices:   "",
+			wantServices: LagoonServices{
+				Services: []schema.EnvironmentService{
+					{
+						Name: "mariadb-10-5",
+						Type: "mariadb-single",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "mariadb-single",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "mariadb-10-5",
+										Path: "/var/lib/mysql",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "3306-tcp",
+										Port: 3306,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "opensearch-2",
+						Type: "opensearch-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "opensearch",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "opensearch-2",
+										Path: "/usr/share/opensearch/data",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "9200-tcp",
+										Port: 9200,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "postgres-11",
+						Type: "postgres-single",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "postgres-single",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "postgres-11",
+										Path: "/var/lib/postgresql/data",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "5432-tcp",
+										Port: 5432,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "redis-6",
+						Type: "redis",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "redis",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "6379-tcp",
+										Port: 6379,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "redis-7",
+						Type: "redis",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "redis",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "6379-tcp",
+										Port: 6379,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "solr-8",
+						Type: "solr-php-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "solr",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "solr-8",
+										Path: "/var/solr",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "8983-tcp",
+										Port: 8983,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "web",
+						Type: "basic-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "basic",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "web",
+										Path: "/app/files",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "http",
+										Port: 3000,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "mariadb-10-11",
+						Type: "mariadb-dbaas",
+					},
+					{
+						Name: "postgres-15",
+						Type: "postgres-dbaas",
+					},
+					{
+						Name: "mongo-4",
+						Type: "mongodb-dbaas",
+					},
+				},
+				Volumes: []schema.EnvironmentVolume{
+					{
+						Name:        "mariadb-10-5",
+						StorageType: "block",
+						Type:        "mariadb-single",
+						Size:        "100Mi",
+					},
+					{
+						Name:        "opensearch-2",
+						StorageType: "block",
+						Type:        "opensearch-persistent",
+						Size:        "100Mi",
+					},
+					{
+						Name:        "postgres-11",
+						StorageType: "block",
+						Type:        "postgres-single",
+						Size:        "100Mi",
+					},
+					{
+						Name:        "solr-8",
+						StorageType: "block",
+						Type:        "solr-php-persistent",
+						Size:        "100Mi",
+					},
+					{
+						Name:        "web",
+						StorageType: "bulk",
+						Type:        "basic-persistent",
+						Size:        "10Mi",
+					},
+				},
+			},
 		},
 		{
 			name: "complex-nginx",
@@ -103,7 +394,107 @@ func TestGetCurrentState(t *testing.T) {
 			deleteServices: false,
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/complex/service-templates/test2-nginx-php",
-			wantServices:   "",
+			wantServices: LagoonServices{
+				Services: []schema.EnvironmentService{
+					{
+						Name: "cli",
+						Type: "cli-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "cli",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "nginx-php",
+										Path: "/app/docroot/sites/default/files/",
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "nginx-php",
+						Type: "nginx-php-persistent",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "nginx",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "nginx-php",
+										Path: "/app/docroot/sites/default/files/",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "http",
+										Port: 8080,
+									},
+								},
+							},
+							{
+								Name: "php",
+								Volumes: []schema.VolumeMount{
+									{
+										Name: "nginx-php",
+										Path: "/app/docroot/sites/default/files/",
+									},
+								},
+								Ports: []schema.ContainerPort{
+									{
+										Name: "php",
+										Port: 9000,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "redis",
+						Type: "redis",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "redis",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "6379-tcp",
+										Port: 6379,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "varnish",
+						Type: "varnish",
+						Containers: []schema.ServiceContainer{
+							{
+								Name: "varnish",
+								Ports: []schema.ContainerPort{
+									{
+										Name: "http",
+										Port: 8080,
+									},
+									{
+										Name: "controlport",
+										Port: 6082,
+									},
+								},
+							},
+						},
+					},
+					{
+						Name: "mariadb",
+						Type: "mariadb-dbaas",
+					},
+				},
+				Volumes: []schema.EnvironmentVolume{
+					{
+						Name:        "nginx-php",
+						StorageType: "bulk",
+						Type:        "nginx-php-persistent",
+						Size:        "5Gi",
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -143,8 +534,11 @@ func TestGetCurrentState(t *testing.T) {
 			if err != nil {
 				t.Errorf("GetCurrentState() %v ", err)
 			}
-			servs, _ := json.Marshal(lagoonServices)
-			fmt.Println(string(servs))
+			r1, _ := json.MarshalIndent(lagoonServices, "", " ")
+			s1, _ := json.MarshalIndent(tt.wantServices, "", " ")
+			if !reflect.DeepEqual(r1, s1) {
+				t.Errorf("GetCurrentState() = \n%v", diff.LineDiff(string(s1), string(r1)))
+			}
 		})
 	}
 }
