@@ -15,8 +15,8 @@ type IdentifyServices struct {
 }
 
 type LagoonServices struct {
-	Services []schema.EnvironmentService `json:"services"`
-	Volumes  []schema.EnvironmentVolume  `json:"volumes"`
+	Services []schema.EnvironmentService `json:"services,omitempty"`
+	Volumes  []schema.EnvironmentVolume  `json:"volumes,omitempty"`
 }
 
 // LagoonServiceTemplateIdentification takes the output of the generator and returns a JSON payload that contains information
