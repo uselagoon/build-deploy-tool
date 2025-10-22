@@ -1748,8 +1748,10 @@ previousStepEnd=${currentStepEnd}
 beginBuildStep "Unused Service Cleanup" "unusedServiceCleanup"
 CLEANUP_OUTPUT=""
 if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_SERVICES)" != enabled ]; then
+  # run it in dry-run mode
   CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml)
 else
+  # run it with the delete flag to actually remove services
   CLEANUP_OUTPUT=$(build-deploy-tool run cleanup --images /kubectl-build-deploy/images.yaml --delete=true)
 fi
 CLEANUP_WARNING=false
@@ -1761,7 +1763,11 @@ else
   echo ">> No services detected that require clean up"
 fi
 
-# collect data and save in configmap structured json of environment status, remote-controller will check for this configmap to provide to the api environment services
+# collect data and save in configmap structured json of environment state, remote-controller will check for this configmap to provide to the api environment services
+# this is run after the cleanup to ensure that only items that exist are stored in the configmap
+# if a service has been abandoned (removed from the docker-compose file) and not cleaned up
+# then the payload will contain the `abandoned` flag on the resource for when it is added to the lagoon api later on
+# this will allow for visual representation in the api/ui of things that probably don't need to exist
 if build-deploy-tool identify lagoon-services --images /kubectl-build-deploy/images.yaml > /kubectl-build-deploy/lagoon-services.json; then
   echo "Updating lagoon-services configmap with a current service configurations"
   if kubectl -n ${NAMESPACE} get configmap lagoon-services &> /dev/null; then
