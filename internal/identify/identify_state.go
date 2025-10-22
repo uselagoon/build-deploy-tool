@@ -9,7 +9,6 @@ import (
 	postgresv1 "github.com/amazeeio/dbaas-operator/apis/postgres/v1"
 	"github.com/uselagoon/build-deploy-tool/internal/collector"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
-	"github.com/uselagoon/machinery/api/schema"
 	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 )
@@ -26,8 +25,8 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	error,
 ) {
 	lagoonServices := LagoonServices{
-		Services: []schema.EnvironmentService{},
-		Volumes:  []schema.EnvironmentVolume{},
+		Services: []EnvironmentService{},
+		Volumes:  []EnvironmentVolume{},
 	}
 	out, currentServices, err := LagoonServiceTemplateIdentification(gen)
 	if err != nil {
@@ -47,7 +46,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	// add any dbaas that should exist to the current services
 	for _, prov := range dbaas {
 		sp := strings.Split(prov, ":")
-		currentServices.Services = append(currentServices.Services, schema.EnvironmentService{
+		currentServices.Services = append(currentServices.Services, EnvironmentService{
 			Name: sp[0],
 			Type: sp[1],
 		})
@@ -56,7 +55,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	mariadbMatch := false
 	var mariadbDelete []mariadbv1.MariaDBConsumer
 	for _, exist := range state.MariaDBConsumers.Items {
-		service := schema.EnvironmentService{
+		service := EnvironmentService{
 			Name: exist.Name,
 			Type: "mariadb-dbaas",
 		}
@@ -80,7 +79,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	mongodbMatch := false
 	var mongodbDelete []mongodbv1.MongoDBConsumer
 	for _, exist := range state.MongoDBConsumers.Items {
-		service := schema.EnvironmentService{
+		service := EnvironmentService{
 			Name: exist.Name,
 			Type: "mongodb-dbaas",
 		}
@@ -104,7 +103,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	postgresqlMatch := false
 	var postgresqlDelete []postgresv1.PostgreSQLConsumer
 	for _, exist := range state.PostgreSQLConsumers.Items {
-		service := schema.EnvironmentService{
+		service := EnvironmentService{
 			Name: exist.Name,
 			Type: "postgres-dbaas",
 		}
@@ -136,7 +135,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 				storeType = "bulk"
 			}
 		}
-		kubevol := schema.EnvironmentVolume{
+		kubevol := EnvironmentVolume{
 			Name:        exist.Name,
 			StorageType: storeType,
 			Type:        exist.Labels["lagoon.sh/service-type"],
@@ -174,33 +173,33 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	depMatch := false
 	var depDelete []appsv1.Deployment
 	for _, exist := range state.Deployments.Items {
-		containers := []schema.ServiceContainer{}
+		containers := []ServiceContainer{}
 		for _, c := range exist.Spec.Template.Spec.Containers {
-			volumes := []schema.VolumeMount{}
+			volumes := []VolumeMount{}
 			for _, v := range c.VolumeMounts {
 				for _, vo := range lagoonServices.Volumes {
 					if vo.Name == v.Name {
-						volumes = append(volumes, schema.VolumeMount{
+						volumes = append(volumes, VolumeMount{
 							Name: v.Name,
 							Path: v.MountPath,
 						})
 					}
 				}
 			}
-			ports := []schema.ContainerPort{}
+			ports := []ContainerPort{}
 			for _, p := range c.Ports {
-				ports = append(ports, schema.ContainerPort{
+				ports = append(ports, ContainerPort{
 					Name: p.Name,
 					Port: int(p.ContainerPort),
 				})
 			}
-			containers = append(containers, schema.ServiceContainer{
+			containers = append(containers, ServiceContainer{
 				Name:    c.Name,
 				Volumes: volumes,
 				Ports:   ports,
 			})
 		}
-		service := schema.EnvironmentService{
+		service := EnvironmentService{
 			Name:       exist.Name,
 			Type:       exist.Labels["lagoon.sh/service-type"],
 			Containers: containers,
@@ -234,7 +233,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	return lagoonServices, mariadbDelete, mongodbDelete, postgresqlDelete, depDelete, volDelete, servDelete, state, nil
 }
 
-func serviceExists(services []schema.EnvironmentService, serviceName string) bool {
+func serviceExists(services []EnvironmentService, serviceName string) bool {
 	for _, svc := range services {
 		if svc.Name == serviceName {
 			return true
@@ -243,7 +242,7 @@ func serviceExists(services []schema.EnvironmentService, serviceName string) boo
 	return false
 }
 
-func volumeExists(volumes []schema.EnvironmentVolume, volumeName string) bool {
+func volumeExists(volumes []EnvironmentVolume, volumeName string) bool {
 	for _, vol := range volumes {
 		if vol.Name == volumeName {
 			return true
