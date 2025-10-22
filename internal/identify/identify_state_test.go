@@ -13,7 +13,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/k8s"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
-	"github.com/uselagoon/machinery/api/schema"
 
 	// changes the testing to source from root so paths to test resources must be defined from repo root
 	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
@@ -45,7 +44,7 @@ func TestGetCurrentState(t *testing.T) {
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/basic/cleanup-seed/basic-deployment",
 			wantServices: LagoonServices{
-				Services: []schema.EnvironmentService{
+				Services: []EnvironmentService{
 					{
 						Name:      "mariadb",
 						Type:      "mariadb-dbaas",
@@ -55,10 +54,10 @@ func TestGetCurrentState(t *testing.T) {
 						Name:      "basic",
 						Type:      "basic",
 						Abandoned: true,
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "basic",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "tcp-1234",
 										Port: 1234,
@@ -78,10 +77,10 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "node",
 						Type: "basic",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "basic",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "tcp-1234",
 										Port: 1234,
@@ -117,14 +116,14 @@ func TestGetCurrentState(t *testing.T) {
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/basic/service-templates/test12-basic-persistent-custom-volumes",
 			wantServices: LagoonServices{
-				Services: []schema.EnvironmentService{
+				Services: []EnvironmentService{
 					{
 						Name: "node",
 						Type: "basic-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "basic",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "custom-config",
 										Path: "/config",
@@ -138,7 +137,7 @@ func TestGetCurrentState(t *testing.T) {
 										Path: "/data",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "http",
 										Port: 3000,
@@ -148,7 +147,7 @@ func TestGetCurrentState(t *testing.T) {
 						},
 					},
 				},
-				Volumes: []schema.EnvironmentVolume{
+				Volumes: []EnvironmentVolume{
 					{
 						Name:        "custom-config",
 						StorageType: "bulk",
@@ -192,20 +191,20 @@ func TestGetCurrentState(t *testing.T) {
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/complex/service-templates/test8-multiple-services",
 			wantServices: LagoonServices{
-				Services: []schema.EnvironmentService{
+				Services: []EnvironmentService{
 					{
 						Name: "mariadb-10-5",
 						Type: "mariadb-single",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "mariadb-single",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "mariadb-10-5",
 										Path: "/var/lib/mysql",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "3306-tcp",
 										Port: 3306,
@@ -217,16 +216,16 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "opensearch-2",
 						Type: "opensearch-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "opensearch",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "opensearch-2",
 										Path: "/usr/share/opensearch/data",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "9200-tcp",
 										Port: 9200,
@@ -238,16 +237,16 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "postgres-11",
 						Type: "postgres-single",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "postgres-single",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "postgres-11",
 										Path: "/var/lib/postgresql/data",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "5432-tcp",
 										Port: 5432,
@@ -259,10 +258,10 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "redis-6",
 						Type: "redis",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "redis",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "6379-tcp",
 										Port: 6379,
@@ -274,10 +273,10 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "redis-7",
 						Type: "redis",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "redis",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "6379-tcp",
 										Port: 6379,
@@ -289,16 +288,16 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "solr-8",
 						Type: "solr-php-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "solr",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "solr-8",
 										Path: "/var/solr",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "8983-tcp",
 										Port: 8983,
@@ -310,16 +309,16 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "web",
 						Type: "basic-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "basic",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "web",
 										Path: "/app/files",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "http",
 										Port: 3000,
@@ -341,7 +340,7 @@ func TestGetCurrentState(t *testing.T) {
 						Type: "mongodb-dbaas",
 					},
 				},
-				Volumes: []schema.EnvironmentVolume{
+				Volumes: []EnvironmentVolume{
 					{
 						Name:        "mariadb-10-5",
 						StorageType: "block",
@@ -395,14 +394,14 @@ func TestGetCurrentState(t *testing.T) {
 			namespace:      "example-project-main",
 			seedDir:        "internal/testdata/complex/service-templates/test2-nginx-php",
 			wantServices: LagoonServices{
-				Services: []schema.EnvironmentService{
+				Services: []EnvironmentService{
 					{
 						Name: "cli",
 						Type: "cli-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "cli",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "nginx-php",
 										Path: "/app/docroot/sites/default/files/",
@@ -414,16 +413,16 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "nginx-php",
 						Type: "nginx-php-persistent",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "nginx",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "nginx-php",
 										Path: "/app/docroot/sites/default/files/",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "http",
 										Port: 8080,
@@ -432,13 +431,13 @@ func TestGetCurrentState(t *testing.T) {
 							},
 							{
 								Name: "php",
-								Volumes: []schema.VolumeMount{
+								Volumes: []VolumeMount{
 									{
 										Name: "nginx-php",
 										Path: "/app/docroot/sites/default/files/",
 									},
 								},
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "php",
 										Port: 9000,
@@ -450,10 +449,10 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "redis",
 						Type: "redis",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "redis",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "6379-tcp",
 										Port: 6379,
@@ -465,10 +464,10 @@ func TestGetCurrentState(t *testing.T) {
 					{
 						Name: "varnish",
 						Type: "varnish",
-						Containers: []schema.ServiceContainer{
+						Containers: []ServiceContainer{
 							{
 								Name: "varnish",
-								Ports: []schema.ContainerPort{
+								Ports: []ContainerPort{
 									{
 										Name: "http",
 										Port: 8080,
@@ -486,7 +485,7 @@ func TestGetCurrentState(t *testing.T) {
 						Type: "mariadb-dbaas",
 					},
 				},
-				Volumes: []schema.EnvironmentVolume{
+				Volumes: []EnvironmentVolume{
 					{
 						Name:        "nginx-php",
 						StorageType: "bulk",

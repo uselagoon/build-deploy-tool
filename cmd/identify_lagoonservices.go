@@ -9,12 +9,11 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/identify"
 	"github.com/uselagoon/build-deploy-tool/internal/k8s"
-	"github.com/uselagoon/machinery/api/schema"
 )
 
 type LagoonServices struct {
-	Services []schema.EnvironmentService `json:"services"`
-	Volumes  []schema.EnvironmentVolume  `json:"volumes"`
+	Services []identify.EnvironmentService `json:"services"`
+	Volumes  []identify.EnvironmentVolume  `json:"volumes"`
 }
 
 var lagoonServiceIdentify = &cobra.Command{
