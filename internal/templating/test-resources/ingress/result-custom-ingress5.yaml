@@ -30,6 +30,7 @@ metadata:
     lagoon.sh/service: extra-long-name-f6c8a
     lagoon.sh/service-type: custom-ingress
     lagoon.sh/template: custom-ingress-0.1.0
+    route.lagoon.sh/source: yaml
   name: extra-long-name.a-really-long-name-that-should-truncate.www.example.com
 spec:
   ingressClassName: nginx

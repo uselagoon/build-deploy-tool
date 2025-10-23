@@ -120,6 +120,27 @@ function buildEnvVarCheck() {
   echo "$2"
 }
 
+# Checks for a internal_system scoped env var from Lagoon API. All env vars
+# are consolidated into the environment, project env-vars are only checked for
+# backwards compatibility.
+function internalSystemEnvVarCheck() {
+  # check for argument
+  [ "$1" ] || return
+
+  local flagVar
+
+  flagVar="$1"
+  # check Lagoon environment variables
+  flagValue=$(jq -r '.[] | select(.scope == "internal_system") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+  # check Lagoon project variables
+  flagValue=$(jq -r '.[] | select(.scope == "internal_system") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  [ "$flagValue" ] && echo "$flagValue" && return
+
+  echo "$2"
+}
+
+
 # Checks for a internal_container_registry scoped env var. These are set in
 # lagoon-remote.
 function internalContainerRegistryCheck() {
@@ -1182,29 +1203,49 @@ CLEANUP_WARNINGS="false"
 if [ ${#DELETE_INGRESS[@]} -ne 0 ]; then
   CLEANUP_WARNINGS="true"
   ((++BUILD_WARNING_COUNT))
-  echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
-  echo "> If you need these routes, you should update your .lagoon.yml file and make sure the routes exist."
-  if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
-    echo "> If you no longer need these routes, you can instruct Lagoon to remove it from the environment by setting the following variable"
-    echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
-    echo "> You should remove this variable after the deployment has been completed, otherwise future route removals will happen automatically"
-  else
-    echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
-    echo "> You should remove this variable if you don't want routes to be removed automatically"
-  fi
-  echo "> Future releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
-  for DI in ${DELETE_INGRESS[@]}
-  do
-    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
+  API_ROUTES_CLEANUP=$(internalSystemEnvVarCheck LAGOON_API_ROUTES_CLEANUP false)
+  if [ "$API_ROUTES_CLEANUP" == true ]; then
+    # to ensure consistency with the api, enforce route cleanup
+    # if it isn't in the api, and isn't in the .lagoon.yml file, then it shouldn't exist.
+    echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
+    echo "> As this project has routes managed in the API, these routes have been cleaned up."
+    echo "> If you need these routes, you should add them to the API."
+    for DI in ${DELETE_INGRESS[@]}
+    do
       if kubectl -n ${NAMESPACE} get ingress ${DI} &> /dev/null; then
         echo ">> Removing ingress ${DI}"
         cleanupCertificates "${DI}" "false"
         kubectl -n ${NAMESPACE} delete ingress ${DI}
       fi
+    done
+  else
+    # no routes in the api we will just continue to warn
+    # since users may not have realised they removed a route from the .lagoon.yml
+    # usually this is because of a bad merge or something, and people generally aren't reading warnings anyway
+    echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
+    echo "> If you need these routes, you should update your .lagoon.yml file and make sure the routes exist."
+    if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
+      echo "> If you no longer need these routes, you can instruct Lagoon to remove it from the environment by setting the following variable"
+      echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+      echo "> You should remove this variable after the deployment has been completed, otherwise future route removals will happen automatically"
     else
-      echo "> The route '${DI}' would be removed"
+      echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
+      echo "> You should remove this variable if you don't want routes to be removed automatically"
     fi
-  done
+    echo "> Future releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
+    for DI in ${DELETE_INGRESS[@]}
+    do
+      if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
+        if kubectl -n ${NAMESPACE} get ingress ${DI} &> /dev/null; then
+          echo ">> Removing ingress ${DI}"
+          cleanupCertificates "${DI}" "false"
+          kubectl -n ${NAMESPACE} delete ingress ${DI}
+        fi
+      else
+        echo "> The route '${DI}' would be removed"
+      fi
+    done
+  fi
 else
   echo "No route cleanup required"
 fi
