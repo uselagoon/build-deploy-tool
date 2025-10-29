@@ -338,7 +338,7 @@ func getRoutesFromAPIEnvVar(
 	} else {
 		if lagoonAPIRoutes != nil {
 			if debug {
-				fmt.Println("Collecting routes from environment variable LAGOON_ROUTES_JSON")
+				fmt.Println("Collecting routes from environment variable LAGOON_API_ROUTES")
 			}
 			// if the routesJSON is populated, then attempt to decode and unmarshal it
 			rawJSONStr, _ := base64.StdEncoding.DecodeString(lagoonAPIRoutes.Value)
