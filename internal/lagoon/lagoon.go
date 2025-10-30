@@ -107,9 +107,29 @@ type Autogenerate struct {
 	Insecure            string                  `json:"insecure"`
 	Prefixes            []string                `json:"prefixes"`
 	TLSAcme             *bool                   `json:"tls-acme,omitempty"`
-	IngressClass        string                  `json:"ingressClass"`
+	IngressClass        string                  `json:"ingressClass,omitempty"`
 	RequestVerification *bool                   `json:"disableRequestVerification,omitempty"`
 	PathRoutes          []AutogeneratePathRoute `json:"pathRoutes,omitempty"`
+}
+
+// handle `tlsAcme` from the API and `tls-acme` from .lagoon.yml
+// :ugh: legacy stuff
+// maybe one day we can produce warnings/deprecation of certain fields but today is not that day
+func (r *Autogenerate) UnmarshalJSON(data []byte) error {
+	type TempAutogenerate Autogenerate
+	tr := &struct {
+		TLSAcme_ *bool `json:"tlsAcme,omitempty"`
+		*TempAutogenerate
+	}{
+		TempAutogenerate: (*TempAutogenerate)(r),
+	}
+	if err := json.Unmarshal(data, tr); err != nil {
+		return err
+	}
+	if tr.TLSAcme_ != nil {
+		r.TLSAcme = tr.TLSAcme_
+	}
+	return nil
 }
 
 type AutogeneratePathRoute struct {

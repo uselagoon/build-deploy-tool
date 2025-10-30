@@ -43,6 +43,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:      "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -88,6 +89,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:      "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -133,6 +135,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 						Watch: false,
 					},
 					IngressName: "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:      "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -179,6 +182,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -227,6 +231,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					HSTSEnabled:  helpers.BoolPtr(true),
 					HSTSMaxAge:   31536000,
 					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -278,6 +283,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					HSTSIncludeSubdomains: helpers.BoolPtr(true),
 					HSTSPreload:           helpers.BoolPtr(true),
 					IngressName:           "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:                "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -325,6 +331,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -373,6 +380,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -411,6 +419,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressClass: "nginx",
 					IngressName:  "hmm-this-is-a-really-long-branch-name-designed-to-test-a-specific-feature.www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -458,6 +467,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					Wildcard:     helpers.BoolPtr(true),
 					WildcardApex: helpers.BoolPtr(true),
 					IngressName:  "wildcard-www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -505,6 +515,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					Wildcard:     helpers.BoolPtr(true),
 					WildcardApex: helpers.BoolPtr(true),
 					IngressName:  "wildcard-this-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.extra-long-name.a-really-long-name-that-should-truncate.www.e-f1945",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -550,6 +561,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 					RequestVerification: helpers.BoolPtr(true),
+					Source:              "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -612,6 +624,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
 					RequestVerification: helpers.BoolPtr(true),
+					Source:              "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -674,6 +687,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					},
 					RequestVerification: helpers.BoolPtr(true),
 					IngressName:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					Source:              "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
@@ -722,6 +736,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 					Wildcard:     helpers.BoolPtr(true),
 					WildcardApex: helpers.BoolPtr(false),
 					IngressName:  "wildcard-www.example.com",
+					Source:       "YAML",
 				},
 				values: generator.BuildValues{
 					Project:         "example-project",
