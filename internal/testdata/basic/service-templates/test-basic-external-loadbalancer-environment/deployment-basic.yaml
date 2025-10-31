@@ -67,6 +67,9 @@ spec:
         - containerPort: 8080
           name: tcp-8080
           protocol: TCP
+        - containerPort: 8080
+          name: udp-8080
+          protocol: UDP
         readinessProbe:
           initialDelaySeconds: 1
           tcpSocket:

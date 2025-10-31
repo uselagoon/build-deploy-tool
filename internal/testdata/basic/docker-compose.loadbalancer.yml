@@ -7,5 +7,7 @@ services:
       lagoon.type: basic
       lagoon.service.usecomposeports: true
       lagoon.service.loadbalancer: true
+      lagoon.service.loadbalancer.config: '{"ports":[{"port":8080,"protocol":"udp"}]}'
     ports:
       - '8080'
+      - '8080/udp'

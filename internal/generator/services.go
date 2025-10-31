@@ -15,7 +15,9 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/servicetypes"
 	machinerynamespace "github.com/uselagoon/machinery/utils/namespace"
+	v1 "k8s.io/api/core/v1"
 	networkv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 // this is commented out as this is not enforced currently, but some enforcement should be implemented
@@ -571,45 +573,76 @@ func composeToServiceValues(
 		externalLoadBalancer := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.service.loadbalancer")
 		if externalLoadBalancer != "" {
 			if externalLoadBalancer == "true" && buildValues.Features.ExternalLoadBalancer {
+				if useComposeServices == "" {
+					return nil, fmt.Errorf(
+						"'lagoon.service.usecomposeports' must be enabled for loadbalancer support %s",
+						composeService,
+					)
+
+				}
+				externalLoadBalancerConfig := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.service.loadbalancer.config")
+				if externalLoadBalancerConfig == "" {
+					return nil, fmt.Errorf(
+						"no configuration found for loadbalancer for service %s",
+						composeService,
+					)
+				}
+				lbConfig := &LoadBalancerConfiguration{}
+				json.Unmarshal([]byte(externalLoadBalancerConfig), lbConfig)
+
 				cService.ExternalLoadBalancer = true
-				// set an internally crafted network policy rule to block inter namespace, but still allow external traffic
-				// other policies may apply too to allow internal communications
-				// this may need more options or settings potentially to "relax" them a bit if required, ie, allow all, even internal
-				// but this opens it up to access via the `$service.$namespace.svc:$port` access too, not just on the external LB
-				/*
-					apiVersion: networking.k8s.io/v1
-					kind: NetworkPolicy
-					metadata:
-					  name: nginx-loadbalancer
-					spec:
-					  podSelector:
-					    matchLabels:
-					      lagoon.sh/service: nginx
-					  ingress:
-					  - from:
-					    - ipBlock:
-					        cidr: '0.0.0.0/0'
-					        except: ['10.0.0.0/8']
-				*/
-				buildValues.LagoonYAML.NetworkPolicies = append(buildValues.LagoonYAML.NetworkPolicies, lagoon.NetworkPolicy{
-					Service:      cService.OverrideName,
-					LoadBalancer: true,
-					LoadBalancerRules: []networkv1.NetworkPolicyIngressRule{
-						{
-							From: []networkv1.NetworkPolicyPeer{
-								{
-									IPBlock: &networkv1.IPBlock{
-										CIDR: "0.0.0.0/0",
-										// this might be too restrictive :'(
-										// Except: []string{
-										// 	"10.0.0.0/8",
-										// },
+				// setup the network policy for the loadbalancer service
+				lbNetPol := lagoon.NetworkPolicy{
+					Service:           cService.OverrideName,
+					LoadBalancer:      true,
+					LoadBalancerRules: []networkv1.NetworkPolicyIngressRule{},
+				}
+				for _, port := range lbConfig.Ports {
+					if cService.AdditionalServicePorts != nil {
+						for _, sPort := range cService.AdditionalServicePorts {
+							lbNetPolRule := networkv1.NetworkPolicyIngressRule{}
+							if port.Port == int32(sPort.ServicePort.Target) && port.Protocol == sPort.ServicePort.Protocol {
+								// if this port is one in our configuration that is to be exposed publicly
+								// set the ip allow to all ip addresses
+								lbNetPolRule.From = []networkv1.NetworkPolicyPeer{
+									{
+										IPBlock: &networkv1.IPBlock{
+											CIDR: "0.0.0.0/0",
+										},
 									},
-								},
-							},
-						},
-					},
-				})
+								}
+								portProto := strings.ToUpper(sPort.ServicePort.Protocol)
+								lbNetPolRule.Ports = append(lbNetPolRule.Ports, networkv1.NetworkPolicyPort{
+									Protocol: (*v1.Protocol)(&portProto),
+									Port: &intstr.IntOrString{
+										IntVal: int32(sPort.ServicePort.Target),
+									},
+								})
+							} else {
+								// if not exposed, reject traffic unless it is internal
+								// essentially not exposing it
+								// would be better to create a dedicated `kind: Service` that only exposed
+								// the required services, but that requires significant refactoring
+								lbNetPolRule.From = []networkv1.NetworkPolicyPeer{
+									{
+										IPBlock: &networkv1.IPBlock{
+											CIDR: "10.0.0.0/8",
+										},
+									},
+								}
+								portProto := strings.ToUpper(sPort.ServicePort.Protocol)
+								lbNetPolRule.Ports = append(lbNetPolRule.Ports, networkv1.NetworkPolicyPort{
+									Protocol: (*v1.Protocol)(&portProto),
+									Port: &intstr.IntOrString{
+										IntVal: int32(sPort.ServicePort.Target),
+									},
+								})
+							}
+							lbNetPol.LoadBalancerRules = append(lbNetPol.LoadBalancerRules, lbNetPolRule)
+						}
+					}
+				}
+				buildValues.LagoonYAML.NetworkPolicies = append(buildValues.LagoonYAML.NetworkPolicies, lbNetPol)
 			} else {
 				return nil, fmt.Errorf(
 					"the requested loadbalancer type for service %s is not a allowed",

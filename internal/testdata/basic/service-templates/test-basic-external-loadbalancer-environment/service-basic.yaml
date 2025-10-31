@@ -25,6 +25,10 @@ spec:
     port: 8080
     protocol: TCP
     targetPort: tcp-8080
+  - name: udp-8080
+    port: 8080
+    protocol: UDP
+    targetPort: udp-8080
   selector:
     app.kubernetes.io/instance: basic
     app.kubernetes.io/name: basic

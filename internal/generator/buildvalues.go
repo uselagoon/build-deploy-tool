@@ -275,3 +275,12 @@ type PruneRetention struct {
 	Weekly  int `json:"weekly"`
 	Monthly int `json:"monthly"`
 }
+
+type LoadBalancerConfiguration struct {
+	Ports []LoadBalancerPortProtocol `json:"ports"`
+}
+
+type LoadBalancerPortProtocol struct {
+	Port     int32  `json:"port"`
+	Protocol string `json:"protocol"`
+}
