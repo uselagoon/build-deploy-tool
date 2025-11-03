@@ -584,6 +584,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						AlternativeNames:    []string{},
 						IngressName:         "www.example.com",
 						RequestVerification: helpers.BoolPtr(false),
+						Source:              "API",
 					},
 					{
 						Domain:              "hsts.example.com",
@@ -597,6 +598,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						AlternativeNames:    []string{},
 						IngressName:         "hsts.example.com",
 						RequestVerification: helpers.BoolPtr(false),
+						Source:              "API",
 					},
 					{
 						Domain:              "another.example.com",
@@ -608,6 +610,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						AlternativeNames:    []string{},
 						IngressName:         "another.example.com",
 						RequestVerification: helpers.BoolPtr(false),
+						Source:              "API",
 					},
 				},
 			},
@@ -674,6 +677,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						WildcardApex:        helpers.BoolPtr(true),
 						IngressName:         "wildcard-example.com",
 						RequestVerification: helpers.BoolPtr(false),
+						Source:              "API",
 					},
 					{
 						Domain:              "a.example.com",
@@ -687,6 +691,7 @@ func TestMergeRouteStructures(t *testing.T) {
 						WildcardApex:        helpers.BoolPtr(true),
 						IngressName:         "wildcard-a.example.com",
 						RequestVerification: helpers.BoolPtr(false),
+						Source:              "API",
 					},
 				},
 			},

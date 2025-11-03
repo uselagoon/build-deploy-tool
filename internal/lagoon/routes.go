@@ -20,7 +20,7 @@ type RoutesV2 struct {
 type RouteV2 struct {
 	Domain                string            `json:"domain"`
 	LagoonService         string            `json:"service"`
-	ComposeService        string            `json:"composeService"` // the
+	ComposeService        string            `json:"composeService"`
 	TLSAcme               *bool             `json:"tls-acme"`
 	Migrate               *bool             `json:"migrate,omitempty"`
 	Insecure              *string           `json:"insecure,omitempty"`
@@ -40,6 +40,42 @@ type RouteV2 struct {
 	WildcardApex          *bool             `json:"wildcardApex,omitempty"`
 	RequestVerification   *bool             `json:"disableRequestVerification,omitempty"`
 	PathRoutes            []PathRoute       `json:"pathRoutes,omitempty"`
+	Source                string            `json:"source,omitempty"`
+	Primary               *bool             `json:"primary,omitempty"`
+	Type                  RouteType         `json:"type,omitempty"`
+}
+
+// @TODO: Update machinery schema at some point
+type RouteType string
+
+const (
+	Standard RouteType = "STANDARD"
+	Active   RouteType = "ACTIVE"
+	Standby  RouteType = "STANDBY"
+)
+
+// handle `tlsAcme`/`monitoringPath` from the API and `tls-acme`/`monitoring-path` from .lagoon.yml
+// :ugh: legacy stuff
+// maybe one day we can produce warnings/deprecation of certain fields but today is not that day
+func (r *RouteV2) UnmarshalJSON(data []byte) error {
+	type TempRouteV2 RouteV2
+	tr := &struct {
+		TLSAcme_        *bool   `json:"tlsAcme,omitempty"`
+		MonitoringPath_ *string `json:"monitoringPath,omitempty"`
+		*TempRouteV2
+	}{
+		TempRouteV2: (*TempRouteV2)(r),
+	}
+	if err := json.Unmarshal(data, tr); err != nil {
+		return err
+	}
+	if tr.TLSAcme_ != nil {
+		r.TLSAcme = tr.TLSAcme_
+	}
+	if tr.MonitoringPath_ != nil {
+		r.MonitoringPath = *tr.MonitoringPath_
+	}
+	return nil
 }
 
 // Ingress represents a Lagoon route.
@@ -349,6 +385,19 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 		routeAdd.IngressClass = apiRoute.IngressClass
 	} else {
 		routeAdd.IngressClass = defaultIngressClass
+	}
+
+	// if the route comes through as an active or standby route from the api
+	// handle setting the migrate flag on the route
+	if apiRoute.Type == Active || apiRoute.Type == Standby {
+		routeAdd.Migrate = helpers.BoolPtr(true)
+	}
+
+	// if an apiRoute source is not defined, set the route source to be api
+	// generally this shouldn't be unset unless it comes through in the older `LAGOON_ROUTES_JSON` variable
+	if apiRoute.Source != "API" {
+		// @TODO: Use schema at some point, for now hardcoded to the string
+		routeAdd.Source = "API"
 	}
 
 	// handle hsts here
