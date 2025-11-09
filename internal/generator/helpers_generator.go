@@ -12,6 +12,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
+	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -313,4 +314,18 @@ func determineRefreshImage(serviceName, imageName string, envVars []lagoon.Envir
 		}
 	}
 	return parsed, errs
+}
+
+// GetLagoonEnvVars will get the project and environment variables from the build
+// unmarshal them and then merge them down, where environment will override project
+func GetLagoonEnvVars() []lagoon.EnvironmentVariable {
+	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", "", false)
+	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", "", false)
+	// unmarshal and then merge the two so there is only 1 set of variables to iterate over
+	projectVars := []lagoon.EnvironmentVariable{}
+	envVars := []lagoon.EnvironmentVariable{}
+	_ = json.Unmarshal([]byte(projectVariables), &projectVars)
+	_ = json.Unmarshal([]byte(environmentVariables), &envVars)
+	// set the environment variables to all the known merged variables so far
+	return lagoon.MergeVariables(projectVars, envVars)
 }
