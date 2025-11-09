@@ -427,8 +427,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/active-standby-api-routes",
+			want: "internal/testdata/node/ingress-templates/active-standby-api-routes",
 		},
 		{
 			name: "api-defined-routes-with-lagoon-yml",
@@ -449,8 +448,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml",
+			want: "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml",
 		},
 		{
 			name: "api-defined-routes-with-lagoon-yml-fastly",
@@ -476,8 +474,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
+			want: "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
 		},
 	}
 	for _, tt := range tests {

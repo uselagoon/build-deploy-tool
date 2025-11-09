@@ -651,8 +651,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/basic/service-templates/test-basic-deployment-revision-history",
+			want: "internal/testdata/basic/service-templates/test-basic-deployment-revision-history",
 		},
 	}
 	for _, tt := range tests {
