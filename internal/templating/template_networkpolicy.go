@@ -132,13 +132,19 @@ func GenerateServiceNetworkPolicies(
 				// this generates any organization specific policies
 				npirs = append(npirs, generateOrganizationIngressRule(op))
 			}
+
+			name := netpol.Service
+			if netpol.LoadBalancer {
+				npirs = append(npirs, netpol.LoadBalancerRules...)
+				name = fmt.Sprintf("%s-loadbalancer", netpol.Service)
+			}
 			np := networkv1.NetworkPolicy{
 				TypeMeta: metav1.TypeMeta{
 					Kind:       "NetworkPolicy",
 					APIVersion: "networking.k8s.io/v1",
 				},
 				ObjectMeta: metav1.ObjectMeta{
-					Name:        netpol.Service,
+					Name:        name,
 					Labels:      labels,
 					Annotations: annotations,
 				},
