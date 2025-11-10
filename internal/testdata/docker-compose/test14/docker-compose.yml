@@ -1,0 +1,113 @@
+version: '2.3'
+
+x-lagoon-project:
+  # Lagoon project name (leave `&lagoon-project` when you edit this)
+  &lagoon-project "${COMPOSE_PROJECT_NAME}"
+
+x-environment:
+  &default-environment
+  LAGOON_PROJECT: *lagoon-project
+  # Route that should be used locally
+  LAGOON_ROUTE: "https://${DRUPAL_HOSTNAME}"
+  SSMTP_MAILHUB: "host.docker.internal:1025"
+
+services:
+
+  cli: # cli container, will be used for executing composer and any local commands (drush, drupal, etc.)
+    container_name: "${COMPOSE_PROJECT_NAME}-cli"
+    build:
+      context: .
+      dockerfile: lagoon/cli.dockerfile
+    image: *lagoon-project # this image will be reused as `CLI_IMAGE` in subsequent Docker builds
+    labels:
+      # Lagoon Labels
+      lagoon.type: cli-persistent
+      lagoon.persistent.name: nginx # mount the persistent storage of nginx into this container
+      lagoon.persistent: "/app/public/sites/default/files/" # location where the persistent storage should be mounted
+    volumes:
+      - .:/app:delegated
+      - ssh:/tmp/amazeeio_ssh-agent
+    environment:
+      << : *default-environment # loads the defined environment variables from the top
+      SIMPLETEST_BASE_URL: "http://nginx:8080"
+      SIMPLETEST_DB: "mysql://drupal:drupal@mariadb:3306/drupal"
+      DRUSH_OPTIONS_URI: "https://${DRUPAL_HOSTNAME}"
+    env_file:
+      - path: .env.local
+        required: true
+
+  nginx:
+    container_name: "${COMPOSE_PROJECT_NAME}-nginx"
+    build:
+      context: .
+      dockerfile: lagoon/nginx.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project # Inject the name of the cli image
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.persistent: "/app/public/sites/default/files/" # define where the persistent file storage should be mounted too
+    volumes:
+      - .:/app:delegated
+    depends_on:
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      << : *default-environment # loads the defined environment variables from the top
+      LAGOON_LOCALDEV_URL: "${DRUPAL_HOSTNAME}" # generate another route for nginx, by default we go to varnish
+    networks:
+      - stonehenge-network
+      - default
+
+  php:
+    container_name: "${COMPOSE_PROJECT_NAME}-php"
+    build:
+      context: .
+      dockerfile: lagoon/php.dockerfile
+      args:
+        CLI_IMAGE: *lagoon-project
+    labels:
+      lagoon.type: nginx-php-persistent
+      lagoon.name: nginx # we want this service be part of the nginx pod in Lagoon
+      lagoon.persistent: /app/public/sites/default/files/ # define where the persistent storage should be mounted too
+    volumes:
+      - .:/app:delegated
+    depends_on:
+      - cli # basically just tells docker-compose to build the cli first
+    environment:
+      << : *default-environment # loads the defined environment variables from the top
+    env_file:
+      - path: .env.local
+        required: false
+
+  mariadb:
+    container_name: "${COMPOSE_PROJECT_NAME}-db"
+    image: uselagoon/mariadb-drupal:latest
+    labels:
+      lagoon.type: mariadb
+    ports:
+      - "3306" # exposes the port 3306 with a random local port, find it with `docker-compose port mariadb 3306`
+    environment:
+      << : *default-environment
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: "${COMPOSE_PROJECT_NAME}-pma"
+    environment:
+      PMA_HOST: mariadb
+      PMA_USER: drupal
+      PMA_PASSWORD: drupal
+      UPLOAD_LIMIT: 1G
+    labels:
+      lagoon.type: none
+    networks:
+      - default
+      - stonehenge-network
+
+networks:
+  stonehenge-network:
+    external: true
+
+volumes:
+  es_data:
+  ssh:
+    name: stonehenge-ssh
+    external: true

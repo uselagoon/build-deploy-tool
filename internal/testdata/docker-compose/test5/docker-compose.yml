@@ -53,8 +53,7 @@ services:
       dockerfile: .docker/Dockerfile.nginx-drupal
       args:
         CLI_IMAGE: *project
-    <<: *default-volumes
-    <<: *default-user
+    << : [*default-volumes, *default-user]
     environment:
       <<: *default-environment
     depends_on:
@@ -74,8 +73,7 @@ services:
       dockerfile: .docker/Dockerfile.php
       args:
         CLI_IMAGE: *project
-    <<: *default-volumes
-    <<: *default-user
+    << : [*default-volumes, *default-user]
     environment:
       <<: *default-environment
     depends_on:

@@ -1,7 +1,7 @@
 package generator
 
 import (
-	composetypes "github.com/compose-spec/compose-go/types"
+	composetypes "github.com/compose-spec/compose-go/v2/types"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	corev1 "k8s.io/api/core/v1"
