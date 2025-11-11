@@ -50,14 +50,7 @@ func TestValidateDockerCompose(t *testing.T) {
 				file: "internal/testdata/docker-compose/test7/lagoon.yml",
 			},
 			wantErr:    true,
-			wantErrMsg: "Non-string key in x-site-branch: <nil>",
-		},
-		{
-			name: "test6 check an invalid docker-compose (same as test5 but ignoring the errors)",
-			args: args{
-				file:                     "internal/testdata/docker-compose/test8/lagoon.yml",
-				ignoreNonStringKeyErrors: true,
-			},
+			wantErrMsg: "non-string key in x-site-branch: <nil>",
 		},
 		{
 			name: "test7 check an valid docker-compose with missing env_files ",
@@ -66,14 +59,6 @@ func TestValidateDockerCompose(t *testing.T) {
 			},
 			wantErr:    true,
 			wantErrMsg: "no such file or directory",
-		},
-		{
-			name: "test8 check an valid docker-compose with missing env_files (same as test7 but ignoring the missing file errors)",
-			args: args{
-				file:                     "internal/testdata/docker-compose/test9/lagoon.yml",
-				ignoreNonStringKeyErrors: true,
-				ignoreMissingEnvFiles:    true,
-			},
 		},
 	}
 	for _, tt := range tests {

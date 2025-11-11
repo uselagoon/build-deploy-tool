@@ -33,7 +33,8 @@ services:
       SIMPLETEST_DB: "mysql://drupal:drupal@mariadb:3306/drupal"
       DRUSH_OPTIONS_URI: "https://${DRUPAL_HOSTNAME}"
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
 
   nginx:
     container_name: "${COMPOSE_PROJECT_NAME}-nginx"
@@ -74,7 +75,8 @@ services:
     environment:
       << : *default-environment # loads the defined environment variables from the top
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
 
   mariadb:
     container_name: "${COMPOSE_PROJECT_NAME}-db"
