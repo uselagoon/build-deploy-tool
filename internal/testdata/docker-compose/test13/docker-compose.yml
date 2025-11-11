@@ -34,7 +34,7 @@ services:
       DRUSH_OPTIONS_URI: "https://${DRUPAL_HOSTNAME}"
     env_file:
       - path: .env.local
-        required: true
+        required: false
 
   nginx:
     container_name: "${COMPOSE_PROJECT_NAME}-nginx"
