@@ -46,10 +46,10 @@ func UnmarshaDockerComposeYAML(file string, ignoreErrors, ignoreMissingEnvFiles 
 		cli.WithLoadOptions(
 			loader.WithSkipValidation,
 			loader.WithDiscardEnvFiles,
-			func(o *loader.Options) {
-				o.IgnoreNonStringKeyErrors = ignoreErrors
-				o.IgnoreMissingEnvFileCheck = ignoreMissingEnvFiles
-			},
+			// func(o *loader.Options) {
+			// 	o.IgnoreNonStringKeyErrors = ignoreErrors
+			// 	o.IgnoreMissingEnvFileCheck = ignoreMissingEnvFiles
+			// },
 		),
 	)
 	if err != nil {
