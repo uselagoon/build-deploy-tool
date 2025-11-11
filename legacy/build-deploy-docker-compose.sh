@@ -357,7 +357,6 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     echo "docker-compose file referenced in .lagoon.yml not found"
   fi
 
-  DOCKER_COMPOSE_WARNING_COUNT=0
   ##############################################
   ### RUN docker compose config check against the provided docker-compose file
   ### use the `build-validate` built in validater to run over the provided docker-compose file
