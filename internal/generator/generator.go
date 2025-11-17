@@ -377,6 +377,15 @@ func NewGenerator(
 	}
 
 	// check admin features for resources
+	revisionHistory := CheckAdminFeatureFlag("DEPLOYMENT_REVISION_HISTORY", false)
+	if revisionHistory != "" {
+		rhInt, err := strconv.Atoi(revisionHistory)
+		if err != nil {
+			return nil, fmt.Errorf("revision history does not convert to integer, contact your Lagoon administrator")
+		}
+		rhInt32 := int32(rhInt)
+		buildValues.DeploymentRevisionHistory = &rhInt32
+	}
 	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
 	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)
 	buildValues.Resources.Requests.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_REQUESTS", false)
