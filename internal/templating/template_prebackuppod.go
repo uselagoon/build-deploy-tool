@@ -71,10 +71,10 @@ func GeneratePreBackupPod(buildValues generator.BuildValues) ([]k8upv1.PreBackup
 			labels[k] = v
 		}
 		labels["app.kubernetes.io/name"] = serviceValues.Type
-		labels["app.kubernetes.io/instance"] = serviceValues.Name
-		labels["lagoon.sh/service"] = serviceValues.Name
+		labels["app.kubernetes.io/instance"] = serviceValues.OverrideName
+		labels["lagoon.sh/service"] = serviceValues.OverrideName
 		labels["lagoon.sh/service-type"] = serviceValues.Type
-		labels["prebackuppod"] = serviceValues.Name
+		labels["prebackuppod"] = serviceValues.OverrideName
 
 		annotations := make(map[string]string, len(defaultAnnotations))
 		for k, v := range defaultAnnotations {
@@ -105,7 +105,7 @@ func GeneratePreBackupPod(buildValues generator.BuildValues) ([]k8upv1.PreBackup
 		}
 
 		pod.ObjectMeta = metav1.ObjectMeta{
-			Name:        fmt.Sprintf("%s-prebackuppod", serviceValues.Name),
+			Name:        fmt.Sprintf("%s-prebackuppod", serviceValues.OverrideName),
 			Labels:      labels,
 			Annotations: annotations,
 		}
@@ -168,7 +168,7 @@ func getFileExtension(serviceValues generator.ServiceValues) (string, error) {
 		return "", fmt.Errorf("unknown service type %s passed to file extension getter", serviceValues.Type)
 	}
 
-	fileExtension := "." + serviceValues.Name + "." + extension
+	fileExtension := "." + serviceValues.OverrideName + "." + extension
 	return fileExtension, nil
 }
 
@@ -184,7 +184,7 @@ func getPodSpecs(serviceValues generator.ServiceValues) (*k8upv1.Pod, error) {
 		Args:            []string{"sleep", "infinity"},
 		Image:           "uselagoon/database-tools:latest",
 		ImagePullPolicy: corev1.PullAlways,
-		Name:            serviceValues.Name + "-prebackuppod",
+		Name:            serviceValues.OverrideName + "-prebackuppod",
 		Env:             env,
 	})
 
@@ -201,7 +201,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "lagoon-env",
 					},
-					Key: varFix(serviceValues.Name) + "_HOST",
+					Key: varFix(serviceValues.OverrideName) + "_HOST",
 				},
 			},
 		},
@@ -212,7 +212,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "lagoon-env",
 					},
-					Key: varFix(serviceValues.Name) + "_USERNAME",
+					Key: varFix(serviceValues.OverrideName) + "_USERNAME",
 				},
 			},
 		},
@@ -223,7 +223,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "lagoon-env",
 					},
-					Key: varFix(serviceValues.Name) + "_PASSWORD",
+					Key: varFix(serviceValues.OverrideName) + "_PASSWORD",
 				},
 			},
 		},
@@ -234,7 +234,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 					LocalObjectReference: corev1.LocalObjectReference{
 						Name: "lagoon-env",
 					},
-					Key: varFix(serviceValues.Name) + "_DATABASE",
+					Key: varFix(serviceValues.OverrideName) + "_DATABASE",
 				},
 			},
 		},
@@ -249,7 +249,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: "lagoon-env",
 						},
-						Key: varFix(serviceValues.Name) + "_PORT",
+						Key: varFix(serviceValues.OverrideName) + "_PORT",
 					},
 				},
 			},
@@ -260,7 +260,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: "lagoon-env",
 						},
-						Key: varFix(serviceValues.Name) + "_AUTHSOURCE",
+						Key: varFix(serviceValues.OverrideName) + "_AUTHSOURCE",
 					},
 				},
 			},
@@ -271,7 +271,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: "lagoon-env",
 						},
-						Key: varFix(serviceValues.Name) + "_AUTHMECHANISM",
+						Key: varFix(serviceValues.OverrideName) + "_AUTHMECHANISM",
 					},
 				},
 			},
@@ -282,7 +282,7 @@ func getEnvVars(serviceValues generator.ServiceValues) ([]corev1.EnvVar, error) 
 						LocalObjectReference: corev1.LocalObjectReference{
 							Name: "lagoon-env",
 						},
-						Key: varFix(serviceValues.Name) + "_AUTHTLS",
+						Key: varFix(serviceValues.OverrideName) + "_AUTHTLS",
 					},
 				},
 			},

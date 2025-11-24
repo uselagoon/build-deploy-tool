@@ -1,0 +1,36 @@
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: node
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: node
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: node
+    lagoon.sh/service-type: node
+  name: node-hpa
+spec:
+  maxReplicas: 16
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 3000
+        type: Utilization
+    type: Resource
+  minReplicas: 8
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: node
+status:
+  currentMetrics: null
+  desiredReplicas: 0

@@ -1,0 +1,28 @@
+{
+    "nginx-php-performance": {
+        "serviceType": "nginx-php-persistent",
+        "hpa": {
+            "spec": {
+                "minReplicas": 8,
+                "maxReplicas": 16,
+                "metrics": [
+                    {
+                        "type": "Resource",
+                        "resource": {
+                            "name": "cpu",
+                            "target": {
+                                "type": "Utilization",
+                                "averageUtilization": 3000
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "pdb": {
+            "spec": {
+                "minAvailable": 2
+            }
+        }
+    }
+}

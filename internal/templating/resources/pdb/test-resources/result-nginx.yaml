@@ -1,0 +1,29 @@
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  annotations:
+    lagoon.sh/branch: brancha
+    lagoon.sh/version: v2.x.x
+  creationTimestamp: null
+  labels:
+    app.kubernetes.io/instance: nginx
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: nginx-php-persistent
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: brancha
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/service: nginx
+    lagoon.sh/service-type: nginx-php-persistent
+  name: nginx-pdb
+spec:
+  minAvailable: 3
+  selector:
+    matchLabels:
+      lagoon.sh/service: nginx
+status:
+  currentHealthy: 0
+  desiredHealthy: 0
+  disruptionsAllowed: 0
+  expectedPods: 0
