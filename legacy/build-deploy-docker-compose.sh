@@ -264,6 +264,10 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     echo "You will need to run a full deployment to ensure the environment is up to date"
     exit 1
   fi
+
+  # @TODO: once https://github.com/uselagoon/build-deploy-tool/pull/274 is merged
+  # will need to do checks to see if the services in the environment are changing too
+  # this way an warning or failure state could be produced to indicate a problem if there is one
 fi
 
 currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
