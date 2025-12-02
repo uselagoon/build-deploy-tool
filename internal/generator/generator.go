@@ -377,6 +377,15 @@ func NewGenerator(
 	}
 
 	// check admin features for resources
+	revisionHistory := CheckAdminFeatureFlag("DEPLOYMENT_REVISION_HISTORY", false)
+	if revisionHistory != "" {
+		rhInt, err := strconv.Atoi(revisionHistory)
+		if err != nil {
+			return nil, fmt.Errorf("provided revision history %s is not a valid integer, contact your Lagoon administrator", revisionHistory)
+		}
+		rhInt32 := int32(rhInt)
+		buildValues.DeploymentRevisionHistory = &rhInt32
+	}
 	buildValues.Resources.Limits.Memory = CheckAdminFeatureFlag("CONTAINER_MEMORY_LIMIT", false)
 	buildValues.Resources.Limits.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_LIMIT", false)
 	buildValues.Resources.Requests.EphemeralStorage = CheckAdminFeatureFlag("EPHEMERAL_STORAGE_REQUESTS", false)
@@ -386,19 +395,19 @@ func NewGenerator(
 	if buildValues.Resources.Limits.Memory != "" {
 		err := ValidateResourceQuantity(buildValues.Resources.Limits.Memory)
 		if err != nil {
-			return nil, fmt.Errorf("provided memory limit %s is not a valid resource quantity", buildValues.Resources.Limits.Memory)
+			return nil, fmt.Errorf("provided memory limit %s is not a valid resource quantity, contact your Lagoon administrator", buildValues.Resources.Limits.Memory)
 		}
 	}
 	if buildValues.Resources.Limits.EphemeralStorage != "" {
 		err := ValidateResourceQuantity(buildValues.Resources.Limits.EphemeralStorage)
 		if err != nil {
-			return nil, fmt.Errorf("provided ephemeral storage limit %s is not a valid resource quantity", buildValues.Resources.Limits.EphemeralStorage)
+			return nil, fmt.Errorf("provided ephemeral storage limit %s is not a valid resource quantity, contact your Lagoon administrator", buildValues.Resources.Limits.EphemeralStorage)
 		}
 	}
 	if buildValues.Resources.Requests.EphemeralStorage != "" {
 		err := ValidateResourceQuantity(buildValues.Resources.Requests.EphemeralStorage)
 		if err != nil {
-			return nil, fmt.Errorf("provided  ephemeral storage requests %s is not a valid resource quantity", buildValues.Resources.Requests.EphemeralStorage)
+			return nil, fmt.Errorf("provided  ephemeral storage requests %s is not a valid resource quantity, contact your Lagoon administrator", buildValues.Resources.Requests.EphemeralStorage)
 		}
 	}
 

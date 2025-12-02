@@ -187,6 +187,7 @@ func GenerateDeploymentTemplate(
 					},
 				}
 			}
+			deployment.Spec.RevisionHistoryLimit = buildValues.DeploymentRevisionHistory
 
 			// end deployment template
 			deployments = append(deployments, *deployment)
