@@ -381,7 +381,7 @@ func NewGenerator(
 	if revisionHistory != "" {
 		rhInt, err := strconv.Atoi(revisionHistory)
 		if err != nil {
-			return nil, fmt.Errorf("revision history does not convert to integer, contact your Lagoon administrator")
+			return nil, fmt.Errorf("provided revision history %s is not a valid integer, contact your Lagoon administrator", revisionHistory)
 		}
 		rhInt32 := int32(rhInt)
 		buildValues.DeploymentRevisionHistory = &rhInt32
