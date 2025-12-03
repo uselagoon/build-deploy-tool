@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -19,12 +20,11 @@ import (
 
 func TestTemplateRoutes(t *testing.T) {
 	tests := []struct {
-		name         string
-		args         testdata.TestData
-		templatePath string
-		want         string
-		wantErr      bool
-		wantErrMsg   string
+		name       string
+		args       testdata.TestData
+		want       string
+		wantErr    bool
+		wantErrMsg string
 	}{
 		{
 			name: "test2 check LAGOON_FASTLY_SERVICE_IDS no secret and no values",
@@ -42,8 +42,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-2",
+			want: "internal/testdata/node/ingress-templates/ingress-2",
 		},
 		{
 			name: "test3 check LAGOON_FASTLY_SERVICE_ID no secret and no values",
@@ -61,8 +60,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-3",
+			want: "internal/testdata/node/ingress-templates/ingress-3",
 		},
 		{
 			name: "test4 check no fastly and no values",
@@ -73,8 +71,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-4",
+			want: "internal/testdata/node/ingress-templates/ingress-4",
 		},
 		{
 			name: "test5 multiproject1 no values",
@@ -85,8 +82,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "multiproject",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-5",
+			want: "internal/testdata/node/ingress-templates/ingress-5",
 		},
 		{
 			name: "test6 multiproject2 no values",
@@ -97,8 +93,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "multiproject",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-6",
+			want: "internal/testdata/node/ingress-templates/ingress-6",
 		},
 		{
 			name: "test7 multidomain no values",
@@ -109,8 +104,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "tworoutes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-7",
+			want: "internal/testdata/node/ingress-templates/ingress-7",
 		},
 		{
 			name: "test8 multidomain no values",
@@ -121,8 +115,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "branch/routes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-8",
+			want: "internal/testdata/node/ingress-templates/ingress-8",
 		},
 		{
 			name: "test9 active no values",
@@ -135,8 +128,7 @@ func TestTemplateRoutes(t *testing.T) {
 					StandbyEnvironment: "main-sb",
 					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-9",
+			want: "internal/testdata/node/ingress-templates/ingress-9",
 		},
 		{
 			name: "test10 standby no values",
@@ -149,8 +141,7 @@ func TestTemplateRoutes(t *testing.T) {
 					StandbyEnvironment: "main-sb",
 					LagoonYAML:         "internal/testdata/node/lagoon.activestandby.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-10",
+			want: "internal/testdata/node/ingress-templates/ingress-10",
 		},
 		{
 			name: "test11 standby no values",
@@ -161,8 +152,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "production",
 					LagoonYAML:      "internal/testdata/complex/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/complex/ingress-templates/ingress-1",
+			want: "internal/testdata/complex/ingress-templates/ingress-1",
 		},
 		{
 			name: "test12 check LAGOON_ROUTES_JSON generates ingress",
@@ -185,8 +175,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-11",
+			want: "internal/testdata/node/ingress-templates/ingress-11",
 		},
 		{
 			name: "test13 ingress class from default flag",
@@ -198,8 +187,7 @@ func TestTemplateRoutes(t *testing.T) {
 					IngressClass:    "nginx",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-12",
+			want: "internal/testdata/node/ingress-templates/ingress-12",
 		},
 		{
 			name: "test14 ingress class from lagoon.yml should overwrite default and featureflag variable",
@@ -210,7 +198,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "ingressclass",
 					IngressClass:    "nginx",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
-				}, true), templatePath: "testoutput",
+				}, true),
 			want: "internal/testdata/node/ingress-templates/ingress-13",
 		},
 		{
@@ -230,8 +218,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-14",
+			want: "internal/testdata/node/ingress-templates/ingress-14",
 		},
 		{
 			name: "test15b ingress class from lagoon api environment scope",
@@ -256,8 +243,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-15",
+			want: "internal/testdata/node/ingress-templates/ingress-15",
 		},
 		{
 			name: "test16 hsts basic",
@@ -275,8 +261,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-16",
+			want: "internal/testdata/node/ingress-templates/ingress-16",
 		},
 		{
 			name: "test17 hsts advanced",
@@ -294,8 +279,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-17",
+			want: "internal/testdata/node/ingress-templates/ingress-17",
 		},
 		{
 			name: "test18 check first route has monitoring only",
@@ -306,8 +290,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "tworoutes",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-18",
+			want: "internal/testdata/node/ingress-templates/ingress-18",
 		},
 		{
 			name: "test19 pullrequest routes",
@@ -324,8 +307,7 @@ func TestTemplateRoutes(t *testing.T) {
 					EnvironmentType: "development",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-19",
+			want: "internal/testdata/node/ingress-templates/ingress-19",
 		},
 		{
 			name: "test20 pullrequest routes polysite",
@@ -342,8 +324,7 @@ func TestTemplateRoutes(t *testing.T) {
 					EnvironmentType: "development",
 					LagoonYAML:      "internal/testdata/node/lagoon.polysite-pr.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-20",
+			want: "internal/testdata/node/ingress-templates/ingress-20",
 		},
 		{
 			name: "test21 alternative names",
@@ -354,8 +335,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "alternativename",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-21",
+			want: "internal/testdata/node/ingress-templates/ingress-21",
 		},
 		{
 			name: "test22 check wildcard",
@@ -366,8 +346,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "wildcard",
 					LagoonYAML:      "internal/testdata/node/lagoon.yml",
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-22",
+			want: "internal/testdata/node/ingress-templates/ingress-22",
 		},
 		{
 			name: "test23 exceed route quota",
@@ -385,9 +364,8 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testdata/output",
-			wantErr:      true,
-			wantErrMsg:   "this environment requests 2 custom routes, this would exceed the route quota of 1",
+			wantErr:    true,
+			wantErrMsg: "this environment requests 2 custom routes, this would exceed the route quota of 1",
 		},
 		{
 			name: "test24 unidler request verification disable",
@@ -398,8 +376,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/node/lagoon.unidler.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "internal/testdata/node/ingress-templates/ingress-23",
+			want: "internal/testdata/node/ingress-templates/ingress-23",
 		},
 		{
 			name: "test25-pathroutes",
@@ -410,8 +387,7 @@ func TestTemplateRoutes(t *testing.T) {
 					Branch:          "main",
 					LagoonYAML:      "internal/testdata/basic/lagoon.pathroutes.yml",
 				}, true),
-			templatePath: "testdata/output",
-			want:         "internal/testdata/basic/ingress-templates/test25-pathroutes",
+			want: "internal/testdata/basic/ingress-templates/test25-pathroutes",
 		},
 		{
 			name: "test25 check wildcard LAGOON_ROUTES_JSON",
@@ -429,8 +405,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/ingress-24",
+			want: "internal/testdata/node/ingress-templates/ingress-24",
 		},
 		{
 			name: "active-standby-api-routes",
@@ -452,8 +427,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/active-standby-api-routes",
+			want: "internal/testdata/node/ingress-templates/active-standby-api-routes",
 		},
 		{
 			name: "api-defined-routes-with-lagoon-yml",
@@ -474,8 +448,7 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml",
+			want: "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml",
 		},
 		{
 			name: "api-defined-routes-with-lagoon-yml-fastly",
@@ -501,25 +474,21 @@ func TestTemplateRoutes(t *testing.T) {
 						},
 					},
 				}, true),
-			templatePath: "testoutput",
-			want:         "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
+			want: "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			helpers.UnsetEnvVars(nil) //unset variables before running tests
 			// set the environment variables from args
-			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-
-			err = os.MkdirAll(savedTemplates, 0755)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
+				t.Errorf("%v", err)
 			}
-
 			defer os.RemoveAll(savedTemplates)
 
 			if err := IngressTemplateGeneration(generator); (err != nil) != tt.wantErr {
