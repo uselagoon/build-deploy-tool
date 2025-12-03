@@ -255,7 +255,7 @@ echo "Collecting information about the environment"
 ENVIRONMENT_DATA=$(build-deploy-tool collect environment)
 
 LAGOON_VARIABLES_ONLY=$(buildEnvVarCheck LAGOON_VARIABLES_ONLY "false")
-if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
+if [ "${LAGOON_VARIABLES_ONLY}" == "true" ]; then
   # do some checks to ensure safety and fail build if required
   if kubectl -n ${NAMESPACE} get configmap lagoon-env &> /dev/null; then
     # if the environment has a `lagoon-env` configmap present, fail this variable only deployment
