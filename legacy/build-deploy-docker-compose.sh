@@ -1939,7 +1939,7 @@ else
   fi
 
   currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-  patchBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentRestartComplete" "Restarting Deployments" "false"
+  finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deploymentRestartComplete" "Restarting Deployments" "false"
   previousStepEnd=${currentStepEnd}
   # variable only deployment
 fi
