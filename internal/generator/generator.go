@@ -8,9 +8,12 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/traefik/traefik/v2/pkg/config/dynamic"
+	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
+	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
 type Generator struct {
@@ -519,6 +522,65 @@ func NewGenerator(
 		}
 	}
 	/* end route generation configuration */
+
+	// traefik middlewares
+	if ingressClass == "traefik" {
+		buildValues.TraefikMiddlewares = make(map[string]traefik.MiddlewareSpec)
+		// add the aergia idling middleware for traefik
+		buildValues.TraefikMiddlewares["aergia"] = traefik.MiddlewareSpec{
+			Errors: &traefik.ErrorPage{
+				Status: []string{"503"},
+				Query:  fmt.Sprintf("/?namespace=%s&url={url}", namespace),
+				Service: traefik.Service{
+					LoadBalancerSpec: traefik.LoadBalancerSpec{
+						Name:      "aergia-backend",
+						Namespace: "aergia",
+						Port: intstr.IntOrString{
+							IntVal: 80,
+						},
+					},
+				},
+			},
+		}
+		buildValues.TraefikMiddlewares["https-redirect"] = traefik.MiddlewareSpec{
+			RedirectScheme: &dynamic.RedirectScheme{
+				Scheme: "https",
+			},
+		}
+		buildValues.TraefikMiddlewares["x-robots"] = traefik.MiddlewareSpec{
+			Headers: &dynamic.Headers{
+				CustomResponseHeaders: map[string]string{
+					"X-Robots-Tag": "noindex, nofollow",
+				},
+			},
+		}
+		for _, route := range mainRoutes.Routes {
+			if route.HSTSEnabled != nil && *route.HSTSEnabled {
+				stsHeader := &dynamic.Headers{}
+				if route.HSTSIncludeSubdomains != nil {
+					stsHeader.STSIncludeSubdomains = *route.HSTSIncludeSubdomains
+				}
+				if route.HSTSMaxAge != 0 {
+					stsHeader.STSSeconds = int64(route.HSTSMaxAge)
+				}
+				if route.HSTSPreload != nil {
+					stsHeader.STSPreload = *route.HSTSPreload
+				}
+				buildValues.TraefikMiddlewares[fmt.Sprintf("%s-hsts", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
+					Headers: stsHeader,
+				}
+			}
+			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/permanent-redirect"]; ok {
+				buildValues.TraefikMiddlewares[fmt.Sprintf("%s-redirect", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
+					RedirectRegex: &dynamic.RedirectRegex{
+						Regex:       fmt.Sprintf("^https?://%s/(.*)", route.Domain),
+						Replacement: strings.ReplaceAll(value, "$request_uri", "/${1}"),
+						Permanent:   true,
+					},
+				}
+			}
+		}
+	}
 
 	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
 	configVars := collectLagoonEnvConfigmapVariables(buildValues)
