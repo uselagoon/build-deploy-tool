@@ -159,6 +159,20 @@ func LagoonServiceTemplateGeneration(g generator.GeneratorInput) error {
 		}
 		helpers.WriteTemplateFile(fmt.Sprintf("%s/networkpolicy-%s.yaml", savedTemplates, serviceNetPol.Name), templateBytes)
 	}
+	middlewares, err := servicestemplates.GenerateMiddleware(*lagoonBuild.BuildValues)
+	if err != nil {
+		return fmt.Errorf("couldn't generate template: %v", err)
+	}
+	for _, middleware := range middlewares {
+		templateBytes, err := servicestemplates.TemplateMiddleware(&middleware)
+		if err != nil {
+			return fmt.Errorf("couldn't generate template: %v", err)
+		}
+		if g.Debug {
+			fmt.Printf("Templating middleware manifests %s\n", fmt.Sprintf("%s/middleware-%s.yaml", savedTemplates, middleware.Name))
+		}
+		helpers.WriteTemplateFile(fmt.Sprintf("%s/middleware-%s.yaml", savedTemplates, middleware.Name), templateBytes)
+	}
 	return nil
 }
 
