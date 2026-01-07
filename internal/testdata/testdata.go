@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
@@ -64,7 +63,7 @@ type TestData struct {
 }
 
 // helper function to set up all the environment variables from provided testdata
-func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (generator.GeneratorInput, error) {
+func SetupEnvironment(genInput generator.GeneratorInput, templatePath string, t TestData) (generator.GeneratorInput, error) {
 	err := os.Setenv("MONITORING_ALERTCONTACT", t.AlertContact)
 	if err != nil {
 		return generator.GeneratorInput{}, err
@@ -207,27 +206,24 @@ func SetupEnvironment(rootCmd cobra.Command, templatePath string, t TestData) (g
 			return generator.GeneratorInput{}, err
 		}
 	}
-
-	generator, err := generator.GenerateInput(rootCmd, false)
-	if err != nil {
-		return generator, err
-	}
-	generator.LagoonYAML = t.LagoonYAML
-	generator.ImageReferences = t.ImageReferences
-	generator.ConfigMapSha = t.ConfigMapSha
-	generator.SavedTemplatesPath = templatePath
+	genInput.IgnoreMissingEnvFiles = true
+	genInput.IgnoreNonStringKeyErrors = true
+	genInput.LagoonYAML = t.LagoonYAML
+	genInput.ImageReferences = t.ImageReferences
+	genInput.ConfigMapSha = t.ConfigMapSha
+	genInput.SavedTemplatesPath = templatePath
 	// add dbaasclient overrides for tests
-	generator.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
+	genInput.DBaaSClient = dbaasclient.NewClient(dbaasclient.Client{
 		RetryMax:     5,
 		RetryWaitMin: time.Duration(10) * time.Millisecond,
 		RetryWaitMax: time.Duration(50) * time.Millisecond,
 	})
 
-	generator.Namespace = namespace.GenerateNamespaceName("", t.EnvironmentName, t.ProjectName, "", "lagoon", false)
+	genInput.Namespace = namespace.GenerateNamespaceName("", t.EnvironmentName, t.ProjectName, "", "lagoon", false)
 
-	generator.BackupConfiguration.K8upVersion = t.K8UPVersion
+	genInput.BackupConfiguration.K8upVersion = t.K8UPVersion
 
-	return generator, nil
+	return genInput, nil
 }
 
 func GetSeedData(t TestData, defaultProjectVariables bool) TestData {

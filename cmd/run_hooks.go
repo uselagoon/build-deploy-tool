@@ -8,12 +8,6 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/hooks"
 )
 
-var runCmd = &cobra.Command{
-	Use:     "run",
-	Aliases: []string{"r"},
-	Short:   "Run commands",
-}
-
 var runHookCmd = &cobra.Command{
 	Use:     "hooks",
 	Aliases: []string{"hook", "h"},

@@ -1,4 +1,4 @@
-package cmd
+package identify
 
 import (
 	"os"
@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
+	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
@@ -105,7 +106,7 @@ func TestIdentifyDBaaSConsumers(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			savedTemplates := tt.templatePath
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
 				t.Errorf("%v", err)
 			}
