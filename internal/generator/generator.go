@@ -162,9 +162,6 @@ func NewGenerator(
 		// if k8upv2 (k8up.io/v1) version is specified by remote, set that here
 		buildValues.Backup.K8upVersion = "v2"
 	}
-	// get the project and environment variables
-	projectVariables := helpers.GetEnv("LAGOON_PROJECT_VARIABLES", generator.ProjectVariables, generator.Debug)
-	environmentVariables := helpers.GetEnv("LAGOON_ENVIRONMENT_VARIABLES", generator.EnvironmentVariables, generator.Debug)
 
 	// read the .lagoon.yml file and the LAGOON_YAML_OVERRIDE if set
 	if err := LoadAndUnmarshalLagoonYml(generator.LagoonYAML, generator.LagoonYAMLOverride, "LAGOON_YAML_OVERRIDE", lYAML, projectName, generator.Debug); err != nil {
@@ -269,14 +266,9 @@ func NewGenerator(
 		buildValues.DynamicDBaaSSecrets = strings.Split(dynamicDBaaSSecrets, ",")
 	}
 
-	// unmarshal and then merge the two so there is only 1 set of variables to iterate over
-	projectVars := []lagoon.EnvironmentVariable{}
-	envVars := []lagoon.EnvironmentVariable{}
-	json.Unmarshal([]byte(projectVariables), &projectVars)
-	json.Unmarshal([]byte(environmentVariables), &envVars)
-
+	// get the project and environment variables
 	// set the environment variables to all the known merged variables so far
-	buildValues.EnvironmentVariables = lagoon.MergeVariables(projectVars, envVars)
+	buildValues.EnvironmentVariables = GetLagoonEnvVars()
 
 	// if the core version is provided from the API, set the buildvalues LagoonVersion to this instead
 	lagoonCoreVersion, _ := lagoon.GetLagoonVariable("LAGOON_SYSTEM_CORE_VERSION", []string{"internal_system"}, buildValues.EnvironmentVariables)
