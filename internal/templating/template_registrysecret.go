@@ -36,9 +36,10 @@ func GenerateRegistrySecretTemplate(
 	}
 
 	// add any additional labels
-	if buildValues.BuildType == "branch" {
+	switch buildValues.BuildType {
+	case "branch":
 		annotations["lagoon.sh/branch"] = buildValues.Branch
-	} else if buildValues.BuildType == "pullrequest" {
+	case "pullrequest":
 		annotations["lagoon.sh/prNumber"] = buildValues.PRNumber
 		annotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
 		annotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch

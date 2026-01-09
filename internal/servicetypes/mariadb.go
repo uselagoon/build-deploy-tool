@@ -11,6 +11,18 @@ import (
 
 var defaultMariaDBPort int32 = 3306
 
+// placeholder for mariadb meta type, it will not get a template generated
+// but this type will be converted to a `mariadb-single` or `mariadb-dbaas` depending on what is available in the remote
+// this check is handle in internal/generator/services.go
+var mariadb = ServiceType{
+	Name: "mariadb",
+}
+
+// placeholder for mariadb-dbaas type
+var mariadbDBaaS = ServiceType{
+	Name: "mariadb-dbaas",
+}
+
 var mariadbSingle = ServiceType{
 	Name:               "mariadb-single",
 	EnableServiceLinks: true,

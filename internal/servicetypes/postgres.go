@@ -11,6 +11,18 @@ import (
 
 var defaultPostgresPort int32 = 5432
 
+// placeholder for postgres meta type, it will not get a template generated
+// but this type will be converted to a `postgres-single` or `postgres-dbaas` depending on what is available in the remote
+// this check is handle in internal/generator/services.go
+var postgres = ServiceType{
+	Name: "postgres",
+}
+
+// placeholder for postgres-dbaas type
+var postgresDBaaS = ServiceType{
+	Name: "postgres-dbaas",
+}
+
 var postgresSingle = ServiceType{
 	Name:               "postgres-single",
 	EnableServiceLinks: true,
