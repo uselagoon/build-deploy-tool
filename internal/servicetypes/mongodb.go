@@ -11,6 +11,18 @@ import (
 
 var defaultMongoDBPort int32 = 27017
 
+// placeholder for mongodb meta type, it will not get a template generated
+// but this type will be converted to a `mongodb-single` or `mongodb-dbaas` depending on what is available in the remote
+// this check is handle in internal/generator/services.go
+var mongodb = ServiceType{
+	Name: "mongodb",
+}
+
+// placeholder for mongodb-dbaas type
+var mongodbDBaaS = ServiceType{
+	Name: "mongodb-dbaas",
+}
+
 var mongodbSingle = ServiceType{
 	Name:               "mongodb-single",
 	EnableServiceLinks: true,

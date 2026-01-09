@@ -118,13 +118,13 @@ func GenerateBackupSchedule(
 			// add any additional labels
 			additionalLabels := map[string]string{}
 			additionalAnnotations := map[string]string{}
-			if lValues.BuildType == "branch" {
+			switch lValues.BuildType {
+			case "branch":
 				additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
-			} else if lValues.BuildType == "pullrequest" {
+			case "pullrequest":
 				additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
 				additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
-
 			}
 			for key, value := range additionalLabels {
 				schedule.ObjectMeta.Labels[key] = value
@@ -256,13 +256,13 @@ func GenerateBackupSchedule(
 			// add any additional labels
 			additionalLabels := map[string]string{}
 			additionalAnnotations := map[string]string{}
-			if lValues.BuildType == "branch" {
+			switch lValues.BuildType {
+			case "branch":
 				additionalAnnotations["lagoon.sh/branch"] = lValues.Branch
-			} else if lValues.BuildType == "pullrequest" {
+			case "pullrequest":
 				additionalAnnotations["lagoon.sh/prNumber"] = lValues.PRNumber
 				additionalAnnotations["lagoon.sh/prHeadBranch"] = lValues.PRHeadBranch
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
-
 			}
 			for key, value := range additionalLabels {
 				schedule.ObjectMeta.Labels[key] = value
