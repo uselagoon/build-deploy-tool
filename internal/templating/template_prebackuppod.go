@@ -80,27 +80,28 @@ func GeneratePreBackupPod(buildValues generator.BuildValues) ([]k8upv1.PreBackup
 		for k, v := range defaultAnnotations {
 			annotations[k] = v
 		}
-		if buildValues.BuildType == "branch" {
+		switch buildValues.BuildType {
+		case "branch":
 			annotations["lagoon.sh/branch"] = buildValues.Branch
-		}
-		if buildValues.BuildType == "pullrequest" {
+		case "pullrequest":
 			annotations["lagoon.sh/prNumber"] = buildValues.PRNumber
 			annotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
 			annotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
 		}
 
 		version := buildValues.Backup.K8upVersion
-		if version == "v1" {
+		switch version {
+		case "v1":
 			pod.TypeMeta = metav1.TypeMeta{
 				Kind:       "PreBackupPod",
 				APIVersion: k8upv1alpha1.GroupVersion.String(),
 			}
-		} else if version == "v2" {
+		case "v2":
 			pod.TypeMeta = metav1.TypeMeta{
 				Kind:       "PreBackupPod",
 				APIVersion: k8upv1.GroupVersion.String(),
 			}
-		} else {
+		default:
 			return nil, fmt.Errorf("invalid K8up version: %s", version)
 		}
 
