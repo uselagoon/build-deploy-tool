@@ -5,6 +5,7 @@ import (
 
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/selection"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
@@ -20,7 +21,7 @@ func (c *Collector) CollectSchedulesV1(ctx context.Context, namespace string) (*
 	})
 	list := &k8upv1.ScheduleList{}
 	err := c.Client.List(ctx, list, listOption)
-	if err != nil {
+	if apierrors.IsForbidden(err) {
 		return nil, err
 	}
 	return list, nil
@@ -36,7 +37,7 @@ func (c *Collector) CollectSchedulesV1Alpha1(ctx context.Context, namespace stri
 	})
 	list := &k8upv1alpha1.ScheduleList{}
 	err := c.Client.List(ctx, list, listOption)
-	if err != nil {
+	if apierrors.IsForbidden(err) {
 		return nil, err
 	}
 	return list, nil
