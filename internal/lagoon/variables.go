@@ -72,6 +72,12 @@ func GetLagoonVariable(name string, scope []string, variables []EnvironmentVaria
 	return nil, fmt.Errorf("variable %s not found", name)
 }
 
+// GetBuildVariable returns a `build` scoped environment variable
+func GetBuildVariable(name string, variables []EnvironmentVariable) (*EnvironmentVariable, error) {
+	buildVar, err := GetLagoonVariable(name, []string{"build", "global"}, variables)
+	return buildVar, err
+}
+
 // VariableExists checks if a variable exists in a slice of environment variables
 func VariableExists(vars *[]EnvironmentVariable, name, value string) bool {
 	exists := false

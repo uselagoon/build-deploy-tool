@@ -413,7 +413,7 @@ func NewGenerator(
 
 	// get any variables from the API here that could be used to influence a build or services within the environment
 	// collect docker buildkit value
-	dockerBuildKit, _ := lagoon.GetLagoonVariable("DOCKER_BUILDKIT", []string{"build", "global"}, buildValues.EnvironmentVariables)
+	dockerBuildKit, _ := lagoon.GetBuildVariable("DOCKER_BUILDKIT", buildValues.EnvironmentVariables)
 	if dockerBuildKit != nil {
 		bk, _ := strconv.ParseBool(dockerBuildKit.Value)
 		buildValues.DockerBuildKit = &bk

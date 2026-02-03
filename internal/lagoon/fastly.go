@@ -25,7 +25,7 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route s
 	// this is supported as `SERVICE_ID:WATCH_STATUS:SECRET_NAME(optional)` eg: "fa23rsdgsdgas:false", "fa23rsdgsdgas:true" or "fa23rsdgsdgas:true:examplecom"
 	// this will apply to ALL ingresses if one is not specifically defined in the `LAGOON_FASTLY_SERVICE_IDS` environment variable override
 	// see section `FASTLY SERVICE ID PER INGRESS OVERRIDE` in `build-deploy-docker-compose.sh` for info on `LAGOON_FASTLY_SERVICE_IDS`
-	lfsID, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_ID", []string{"build", "global"}, variables)
+	lfsID, err := GetBuildVariable("LAGOON_FASTLY_SERVICE_ID", variables)
 	if err == nil {
 		lfsIDSplit := strings.Split(lfsID.Value, ":")
 		// default watch status to true
@@ -54,7 +54,7 @@ func GenerateFastlyConfiguration(f *Fastly, noCacheServiceID, serviceID, route s
 	// # Example 3: www.example.com:x1s8asfafasf7ssf:true:examplecom
 	// # ^^^ tells the ingress creation to use the service id x1s8asfafasf7ssf for ingress www.example.com, with the watch status of true
 	// # but it will also be annotated to be told to use the secret named `examplecom` that could be defined elsewhere
-	lfsIDs, err := GetLagoonVariable("LAGOON_FASTLY_SERVICE_IDS", []string{"build", "global"}, variables)
+	lfsIDs, err := GetBuildVariable("LAGOON_FASTLY_SERVICE_IDS", variables)
 	if err == nil {
 		lfsIDsSplit := strings.Split(lfsIDs.Value, ",")
 		for _, lfs := range lfsIDsSplit {

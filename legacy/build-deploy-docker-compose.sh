@@ -40,20 +40,15 @@ function contains() {
 #    build-deploy controller. This overrides the other variables and allows
 #    policy enforcement at the cluster level.
 #
-# 2. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the
-#    Lagoon environment global scoped env-vars. This allows policy control at
-#    the environment level.
+# 2. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in a
+#    Lagoon build scoped env-var. This allows policy control at the project
+#    level.
 #
-# 3. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the
-#    Lagoon project global scoped env-vars. This allows policy control at the
-#    project level. Lagoon core consolidates all env-vars into the environment.
-#    Project env-vars are only checked for backwards compatibility.
-#
-# 4. The cluster-default feature flag, prefixed with
+# 3. The cluster-default feature flag, prefixed with
 #    LAGOON_FEATURE_FLAG_DEFAULT_, as a build pod environment variable. This is
 #    set via a flag on the build-deploy controller. This allows default policy
 #    to be set at the cluster level, but maintains the ability to selectively
-#    override at the project or environment level.
+#    override at the project level.
 #
 # The value of the first variable found is printed to stdout. If the variable
 # is not found, print an empty string. Additional arguments are ignored.
@@ -67,12 +62,7 @@ function featureFlag() {
 	forceFlagVar="LAGOON_FEATURE_FLAG_FORCE_$1"
 	[ "${!forceFlagVar}" ] && echo "${!forceFlagVar}" && return
 
-	flagVar="LAGOON_FEATURE_FLAG_$1"
-	# check Lagoon environment variables
-	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_ENVIRONMENT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
-	# check Lagoon project variables
-	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
+	flagValue=$(buildEnvVarCheck "LAGOON_FEATURE_FLAG_$1")
 	[ "$flagValue" ] && echo "$flagValue" && return
 
 	# fall back to the default, if set.
@@ -111,10 +101,10 @@ function buildEnvVarCheck() {
 
   flagVar="$1"
   # check Lagoon environment variables
-  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
   [ "$flagValue" ] && echo "$flagValue" && return
   # check Lagoon project variables
-  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
   [ "$flagValue" ] && echo "$flagValue" && return
 
   echo "$2"
@@ -1230,7 +1220,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
       echo "> If you need these routes, you should update your .lagoon.yml file and make sure the routes exist."
       if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
         echo "> If you no longer need these routes, you can instruct Lagoon to remove it from the environment by setting the following variable"
-        echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+        echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a BUILD scoped variable to this environment or project"
         echo "> You should remove this variable after the deployment has been completed, otherwise future route removals will happen automatically"
       else
         echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."

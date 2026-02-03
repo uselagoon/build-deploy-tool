@@ -252,6 +252,73 @@ func TestGetLagoonVariable(t *testing.T) {
 	}
 }
 
+func TestGetBuildVariable(t *testing.T) {
+	envVars := []EnvironmentVariable{
+		{
+			Name:  "LAGOON_FEATURE_FLAG_INSIGHTS",
+			Value: "enabled",
+			Scope: "global",
+		},
+		{
+			Name:  "LAGOON_FASTLY_SERVICE_ID",
+			Value: "1234567",
+			Scope: "build",
+		},
+		{
+			Name:  "PHP_MEMORY_LIMIT",
+			Value: "5G",
+			Scope: "runtime",
+		},
+	}
+
+	tests := []struct {
+		name    string
+		varName string
+		want    *EnvironmentVariable
+		wantErr bool
+	}{
+		{
+			name:    "test1",
+			varName: "LAGOON_FASTLY_SERVICE_ID",
+			want: &EnvironmentVariable{
+				Name:  "LAGOON_FASTLY_SERVICE_ID",
+				Value: "1234567",
+				Scope: "build",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "test2",
+			varName: "LAGOON_FEATURE_FLAG_INSIGHTS",
+			want: &EnvironmentVariable{
+				Name:  "LAGOON_FEATURE_FLAG_INSIGHTS",
+				Value: "enabled",
+				Scope: "global",
+			},
+			wantErr: false,
+		},
+		{
+			name:    "test3",
+			varName: "PHP_MEMORY_LIMIT",
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := GetBuildVariable(tt.varName, envVars)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("GetBuildVariable() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GetBuildVariable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+
+}
+
 func TestVariableExists(t *testing.T) {
 	type args struct {
 		vars  *[]EnvironmentVariable

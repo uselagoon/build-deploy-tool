@@ -318,7 +318,7 @@ func getRoutesFromAPIEnvVar(
 	debug bool,
 ) (*lagoon.RoutesV2, error) {
 	apiRoutes := &lagoon.RoutesV2{}
-	lagoonRoutesJSON, _ := lagoon.GetLagoonVariable("LAGOON_ROUTES_JSON", []string{"build", "global"}, envVars)
+	lagoonRoutesJSON, _ := lagoon.GetBuildVariable("LAGOON_ROUTES_JSON", envVars)
 	lagoonAPIRoutes, _ := lagoon.GetLagoonVariable("LAGOON_API_ROUTES", []string{"internal_system"}, envVars)
 	// if `LAGOON_ROUTES_JSON` is present, prefer it first to so not to break existing configurations
 	if lagoonRoutesJSON != nil {
