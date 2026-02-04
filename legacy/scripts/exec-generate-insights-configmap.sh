@@ -47,6 +47,11 @@ processImageInspect() {
       annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
       lagoon.sh/branch=${BRANCH}
   fi
+  if [ "$(featureFlag INSIGHTS_CORE_ENABLED | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+    kubectl -n ${NAMESPACE} \
+      annotate configmap ${IMAGE_INSPECT_CONFIGMAP} \
+      core.insights.lagoon.sh/enabled="true"
+  fi
   kubectl \
       -n ${NAMESPACE} \
       label configmap ${IMAGE_INSPECT_CONFIGMAP} \
@@ -106,6 +111,11 @@ processSbom() {
       kubectl -n ${NAMESPACE} \
         annotate configmap ${SBOM_CONFIGMAP} \
         lagoon.sh/branch=${BRANCH}
+    fi
+    if [ "$(featureFlag INSIGHTS_CORE_ENABLED | tr '[:upper:]' '[:lower:]')" = "true" ]; then
+      kubectl -n ${NAMESPACE} \
+        annotate configmap ${SBOM_CONFIGMAP} \
+        core.insights.lagoon.sh/enabled="true"
     fi
     # Support custom Dependency Track integration.
     local apiEndpoint
