@@ -38,7 +38,7 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing deployment %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing deployment %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove deployment %s\n", i.Name)
@@ -49,7 +49,7 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing volume %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing volume %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove volume %s\n", i.Name)
@@ -60,7 +60,7 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing service %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing service %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove service %s\n", i.Name)
@@ -71,11 +71,11 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing mariadb consumer %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing mariadb consumer %s\n", i.Name)
 				}
 				err := removePreBackupPod(ctx, c.Client, state, i.Name)
 				if err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing prebackuppod for mariadb consumer %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove mariadb consumer %s and associated components\n", i.Name)
@@ -86,11 +86,11 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing mongodb consumer %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing mongodb consumer %s\n", i.Name)
 				}
 				err := removePreBackupPod(ctx, c.Client, state, i.Name)
 				if err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing prebackuppod for mongodb consumer %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove mongodb consumer %s and associated components\n", i.Name)
@@ -101,11 +101,11 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 			if performDeletion {
 				fmt.Printf(">> Removing postgresql consumer %s\n", i.Name)
 				if err := c.Client.Delete(ctx, &i); err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing postgresql consumer %s\n", i.Name)
 				}
 				err := removePreBackupPod(ctx, c.Client, state, i.Name)
 				if err != nil {
-					return nil, nil, nil, nil, nil, nil, err
+					fmt.Printf("!! Error removing prebackuppod for postgresql consumer %s\n", i.Name)
 				}
 			} else {
 				fmt.Printf(">> Would remove postgresql consumer %s and associated components\n", i.Name)
