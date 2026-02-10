@@ -26,7 +26,7 @@ func GenerateDeploymentTemplate(
 	// for all the services that the build values generated
 	// iterate over them and generate any kubernetes deployments
 	for _, serviceValues := range checkedServices {
-		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok && serviceValues.Type != "external" {
+		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok && serviceValues.Type != "external" && !serviceValues.IsDBaaS {
 			serviceTypeValues := &servicetypes.ServiceType{}
 			helpers.DeepCopy(val, serviceTypeValues)
 
@@ -52,9 +52,10 @@ func GenerateDeploymentTemplate(
 			// add any additional labels
 			additionalLabels := make(map[string]string)
 			additionalAnnotations := make(map[string]string)
-			if buildValues.BuildType == "branch" {
+			switch buildValues.BuildType {
+			case "branch":
 				additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
-			} else if buildValues.BuildType == "pullrequest" {
+			case "pullrequest":
 				additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
 				additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
