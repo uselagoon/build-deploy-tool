@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/spf13/cobra"
-	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
+	"github.com/uselagoon/build-deploy-tool/internal/identify"
 )
 
 // this is an intermediate helper command while transitioning from bash to go
@@ -14,11 +14,11 @@ var dbaasIdentify = &cobra.Command{
 	Aliases: []string{"db", "d"},
 	Short:   "Identify if any dbaas consumers are created",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		generator, err := generator.GenerateInput(*rootCmd, false)
+		generator, err := GenerateInput(*rootCmd, false)
 		if err != nil {
 			return err
 		}
-		dbaasConsumers, err := IdentifyDBaaSConsumers(generator)
+		dbaasConsumers, err := identify.IdentifyDBaaSConsumers(generator)
 		if err != nil {
 			return err
 		}
@@ -27,20 +27,4 @@ var dbaasIdentify = &cobra.Command{
 		}
 		return nil
 	},
-}
-
-func IdentifyDBaaSConsumers(g generator.GeneratorInput) ([]string, error) {
-	lagoonBuild, err := generator.NewGenerator(
-		g,
-	)
-	if err != nil {
-		return nil, err
-	}
-	ret := []string{}
-	for _, svc := range lagoonBuild.BuildValues.Services {
-		if svc.IsDBaaS || svc.IsSingle {
-			ret = append(ret, fmt.Sprintf("%s:%s", svc.Name, svc.Type))
-		}
-	}
-	return ret, nil
 }

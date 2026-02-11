@@ -819,15 +819,13 @@ func TestImageBuildConfigurationIdentification(t *testing.T) {
 				}
 			}
 			// set the environment variables from args
-			savedTemplates := "testoutput"
-			generator, err := testdata.SetupEnvironment(*rootCmd, savedTemplates, tt.args)
+			savedTemplates, err := os.MkdirTemp("", "testoutput")
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-
-			err = os.MkdirAll(savedTemplates, 0755)
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, savedTemplates, tt.args)
 			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", savedTemplates, err)
+				t.Errorf("%v", err)
 			}
 
 			defer os.RemoveAll(savedTemplates)
