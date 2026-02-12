@@ -36,7 +36,7 @@ func generateBackupValues(
 		switch buildValues.BuildType {
 		case "promote":
 			if buildValues.EnvironmentType == "production" {
-				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PROD_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				lagoonBackupDevSchedule, _ := lagoon.GetBuildVariable("LAGOON_BACKUP_PROD_SCHEDULE", mergedVariables)
 				devBackupSchedule := ""
 				if lagoonBackupDevSchedule != nil {
 					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
@@ -49,7 +49,7 @@ func generateBackupValues(
 			}
 		case "branch":
 			if buildValues.EnvironmentType == "production" {
-				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PROD_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				lagoonBackupDevSchedule, _ := lagoon.GetBuildVariable("LAGOON_BACKUP_PROD_SCHEDULE", mergedVariables)
 				devBackupSchedule := ""
 				if lagoonBackupDevSchedule != nil {
 					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PROD_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
@@ -61,7 +61,7 @@ func generateBackupValues(
 				}
 			}
 			if buildValues.EnvironmentType == "development" {
-				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				lagoonBackupDevSchedule, _ := lagoon.GetBuildVariable("LAGOON_BACKUP_DEV_SCHEDULE", mergedVariables)
 				devBackupSchedule := ""
 				if lagoonBackupDevSchedule != nil {
 					devBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
@@ -73,7 +73,7 @@ func generateBackupValues(
 				}
 			}
 		case "pullrequest":
-			lagoonBackupPRSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_PR_SCHEDULE", []string{"build", "global"}, mergedVariables)
+			lagoonBackupPRSchedule, _ := lagoon.GetBuildVariable("LAGOON_BACKUP_PR_SCHEDULE", mergedVariables)
 			prBackupSchedule := ""
 			if lagoonBackupPRSchedule != nil {
 				prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", lagoonBackupPRSchedule.Value, debug)
@@ -81,7 +81,7 @@ func generateBackupValues(
 				prBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_PR_SCHEDULE", prBackupSchedule, debug)
 			}
 			if prBackupSchedule == "" {
-				lagoonBackupDevSchedule, _ := lagoon.GetLagoonVariable("LAGOON_BACKUP_DEV_SCHEDULE", []string{"build", "global"}, mergedVariables)
+				lagoonBackupDevSchedule, _ := lagoon.GetBuildVariable("LAGOON_BACKUP_DEV_SCHEDULE", mergedVariables)
 				if lagoonBackupDevSchedule != nil {
 					newBackupSchedule = helpers.GetEnv("LAGOON_FEATURE_BACKUP_DEV_SCHEDULE", lagoonBackupDevSchedule.Value, debug)
 				} else {
@@ -158,7 +158,7 @@ func generateBackupValues(
 	}
 
 	// work out the bucket name
-	lagoonBaaSBackupBucket, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_BUCKET_NAME", []string{"build", "global"}, mergedVariables)
+	lagoonBaaSBackupBucket, _ := lagoon.GetBuildVariable("LAGOON_BAAS_BUCKET_NAME", mergedVariables)
 	if lagoonBaaSBackupBucket != nil {
 		buildValues.Backup.S3BucketName = lagoonBaaSBackupBucket.Value
 	} else {
@@ -171,24 +171,24 @@ func generateBackupValues(
 	}
 
 	// check for custom baas backup variables in the API
-	lagoonBaaSCustomBackupEndpoint, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_ENDPOINT", []string{"build", "global"}, mergedVariables)
+	lagoonBaaSCustomBackupEndpoint, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_BACKUP_ENDPOINT", mergedVariables)
 	if lagoonBaaSCustomBackupEndpoint != nil {
 		buildValues.Backup.S3Endpoint = lagoonBaaSCustomBackupEndpoint.Value
 	}
-	lagoonBaaSCustomBackupBucket, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_BUCKET", []string{"build", "global"}, mergedVariables)
+	lagoonBaaSCustomBackupBucket, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_BACKUP_BUCKET", mergedVariables)
 	if lagoonBaaSCustomBackupBucket != nil {
 		buildValues.Backup.S3BucketName = lagoonBaaSCustomBackupBucket.Value
 	}
-	lagoonBaaSCustomBackupAccessKey, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY", []string{"build", "global"}, mergedVariables)
-	lagoonBaaSCustomBackupSecretKey, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY", []string{"build", "global"}, mergedVariables)
+	lagoonBaaSCustomBackupAccessKey, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_BACKUP_ACCESS_KEY", mergedVariables)
+	lagoonBaaSCustomBackupSecretKey, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_BACKUP_SECRET_KEY", mergedVariables)
 	if lagoonBaaSCustomBackupAccessKey != nil && lagoonBaaSCustomBackupSecretKey != nil {
 		buildValues.Backup.CustomLocation.BackupLocationAccessKey = lagoonBaaSCustomBackupAccessKey.Value
 		buildValues.Backup.CustomLocation.BackupLocationSecretKey = lagoonBaaSCustomBackupSecretKey.Value
 		buildValues.Backup.S3SecretName = "lagoon-baas-custom-backup-credentials"
 	}
 	// check for custom baas restore variables
-	lagoonBaaSCustomRestoreAccessKey, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY", []string{"build", "global"}, mergedVariables)
-	lagoonBaaSCustomRestoreSecretKey, _ := lagoon.GetLagoonVariable("LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY", []string{"build", "global"}, mergedVariables)
+	lagoonBaaSCustomRestoreAccessKey, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_RESTORE_ACCESS_KEY", mergedVariables)
+	lagoonBaaSCustomRestoreSecretKey, _ := lagoon.GetBuildVariable("LAGOON_BAAS_CUSTOM_RESTORE_SECRET_KEY", mergedVariables)
 	if lagoonBaaSCustomRestoreAccessKey != nil && lagoonBaaSCustomRestoreSecretKey != nil {
 		buildValues.Backup.CustomLocation.RestoreLocationAccessKey = lagoonBaaSCustomRestoreAccessKey.Value
 		buildValues.Backup.CustomLocation.RestoreLocationSecretKey = lagoonBaaSCustomRestoreSecretKey.Value

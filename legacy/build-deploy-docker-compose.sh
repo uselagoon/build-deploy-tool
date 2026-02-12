@@ -40,20 +40,15 @@ function contains() {
 #    build-deploy controller. This overrides the other variables and allows
 #    policy enforcement at the cluster level.
 #
-# 2. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the
-#    Lagoon environment global scoped env-vars. This allows policy control at
-#    the environment level.
+# 2. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in a
+#    Lagoon build scoped env-var. This allows policy control at the project
+#    level.
 #
-# 3. The regular feature flag, prefixed with LAGOON_FEATURE_FLAG_, in the
-#    Lagoon project global scoped env-vars. This allows policy control at the
-#    project level. Lagoon core consolidates all env-vars into the environment.
-#    Project env-vars are only checked for backwards compatibility.
-#
-# 4. The cluster-default feature flag, prefixed with
+# 3. The cluster-default feature flag, prefixed with
 #    LAGOON_FEATURE_FLAG_DEFAULT_, as a build pod environment variable. This is
 #    set via a flag on the build-deploy controller. This allows default policy
 #    to be set at the cluster level, but maintains the ability to selectively
-#    override at the project or environment level.
+#    override at the project level.
 #
 # The value of the first variable found is printed to stdout. If the variable
 # is not found, print an empty string. Additional arguments are ignored.
@@ -67,12 +62,7 @@ function featureFlag() {
 	forceFlagVar="LAGOON_FEATURE_FLAG_FORCE_$1"
 	[ "${!forceFlagVar}" ] && echo "${!forceFlagVar}" && return
 
-	flagVar="LAGOON_FEATURE_FLAG_$1"
-	# check Lagoon environment variables
-	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_ENVIRONMENT_VARIABLES")
-	[ "$flagValue" ] && echo "$flagValue" && return
-	# check Lagoon project variables
-	flagValue=$(jq -r '.[] | select(.scope == "global" and .name == "'"$flagVar"'") | .value' <<<"$LAGOON_PROJECT_VARIABLES")
+	flagValue=$(buildEnvVarCheck "LAGOON_FEATURE_FLAG_$1")
 	[ "$flagValue" ] && echo "$flagValue" && return
 
 	# fall back to the default, if set.
@@ -111,10 +101,10 @@ function buildEnvVarCheck() {
 
   flagVar="$1"
   # check Lagoon environment variables
-  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_ENVIRONMENT_VARIABLES")
   [ "$flagValue" ] && echo "$flagValue" && return
   # check Lagoon project variables
-  flagValue=$(jq -r '.[] | select(.scope == "build") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
+  flagValue=$(jq -r '.[] | select(.scope == "build" or .scope == "global") | select(.name == "'"$flagVar"'") | .value' <<< "$LAGOON_PROJECT_VARIABLES")
   [ "$flagValue" ] && echo "$flagValue" && return
 
   echo "$2"
@@ -447,14 +437,14 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
       # this logic will make development environments return an error by default
       # adding LAGOON_FEATURE_FLAG_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled can be used to disable the error and revert to a warning per project or environment
       # or add LAGOON_FEATURE_FLAG_DEFAULT_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled to the remote-controller as a default to disable for a cluster
-      if [[ "$(featureFlag DEVELOPMENT_DOCKER_COMPOSE_VALIDATION)" != disabled ]] && [[ "$ENVIRONMENT_TYPE" == "development" ]]; then
+      if [[ "$(featureFlag DEVELOPMENT_DOCKER_COMPOSE_VALIDATION | tr '[:upper:]' '[:lower:]')" != disabled ]] && [[ "$ENVIRONMENT_TYPE" == "development" ]]; then
         DOCKER_COMPOSE_VALIDATION_ERROR=true
       fi
       # by default, production environments won't return an error unless the feature flag is enabled.
       # this allows using the feature flag to selectively apply to production environments if required
       # adding LAGOON_FEATURE_FLAG_PRODUCTION_DOCKER_COMPOSE_VALIDATION=enabled can be used to enable the error per project or environment
       # or add LAGOON_FEATURE_FLAG_DEFAULT_PRODUCTION_DOCKER_COMPOSE_VALIDATION=enabled to the remote-controller as a default to disable for a cluster
-      if [[ "$(featureFlag PRODUCTION_DOCKER_COMPOSE_VALIDATION)" = enabled ]] && [[ "$ENVIRONMENT_TYPE" == "production" ]]; then
+      if [[ "$(featureFlag PRODUCTION_DOCKER_COMPOSE_VALIDATION | tr '[:upper:]' '[:lower:]')" = enabled ]] && [[ "$ENVIRONMENT_TYPE" == "production" ]]; then
         DOCKER_COMPOSE_VALIDATION_ERROR=true
       DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE=LAGOON_FEATURE_FLAG_PRODUCTION_DOCKER_COMPOSE_VALIDATION
       fi
@@ -1228,9 +1218,9 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
       # usually this is because of a bad merge or something, and people generally aren't reading warnings anyway
       echo ">> Lagoon detected routes that have been removed from the .lagoon.yml or Lagoon API"
       echo "> If you need these routes, you should update your .lagoon.yml file and make sure the routes exist."
-      if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" != enabled ]; then
+      if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES | tr '[:upper:]' '[:lower:]')" != enabled ]; then
         echo "> If you no longer need these routes, you can instruct Lagoon to remove it from the environment by setting the following variable"
-        echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a GLOBAL scoped variable to this environment or project"
+        echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' as a BUILD scoped variable to this environment or project"
         echo "> You should remove this variable after the deployment has been completed, otherwise future route removals will happen automatically"
       else
         echo "> 'LAGOON_FEATURE_FLAG_CLEANUP_REMOVED_LAGOON_ROUTES=enabled' is configured and the following routes will be removed."
@@ -1239,7 +1229,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
       echo "> Future releases of Lagoon may remove routes automatically, you should ensure that your routes are up always up to date if you see this warning"
       for DI in ${DELETE_INGRESS[@]}
       do
-        if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES)" = enabled ]; then
+        if [ "$(featureFlag CLEANUP_REMOVED_LAGOON_ROUTES | tr '[:upper:]' '[:lower:]')" = enabled ]; then
           if kubectl -n ${NAMESPACE} get ingress ${DI} &> /dev/null; then
             echo ">> Removing ingress ${DI}"
             cleanupCertificates "${DI}" "false"
@@ -1604,7 +1594,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     # check if k8up v2 feature flag is enabled
     LAGOON_BACKUP_YAML_FOLDER="/kubectl-build-deploy/lagoon/backup"
     mkdir -p $LAGOON_BACKUP_YAML_FOLDER
-    if [ "$(featureFlag K8UP_V2)" = enabled ]; then
+    if [ "$(featureFlag K8UP_V2 | tr '[:upper:]' '[:lower:]')" = enabled ]; then
     # build-tool doesn't do any capability checks yet, so do this for now
       if kubectl -n ${NAMESPACE} get schedule.k8up.io &> /dev/null; then
       echo "Backups: generating k8up.io/v1 resources"
@@ -1904,7 +1894,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
   finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "deployCompleted" "Build and Deploy" "false"
   previousStepEnd=${currentStepEnd}
 
-  if [ "$(featureFlag INSIGHTS)" = enabled ]; then
+  if [ "$(featureFlag INSIGHTS | tr '[:upper:]' '[:lower:]')" = enabled ]; then
     beginBuildStep "Insights Gathering" "gatheringInsights"
     ##############################################
     ### RUN insights gathering and store in configmap

@@ -40,7 +40,7 @@ func IdentifyFeatureFlag(g generator.GeneratorInput, name string) (string, error
 	if forceFlagVar != "" {
 		return forceFlagVar, nil
 	}
-	featureFlagVar, _ := lagoon.GetLagoonVariable(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_", name), []string{"build", "global"}, lagoonBuild.BuildValues.EnvironmentVariables)
+	featureFlagVar, _ := lagoon.GetBuildVariable(fmt.Sprintf("%s%s", "LAGOON_FEATURE_FLAG_", name), lagoonBuild.BuildValues.EnvironmentVariables)
 	if featureFlagVar != nil {
 		return featureFlagVar.Value, nil
 	}
