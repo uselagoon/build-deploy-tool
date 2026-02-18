@@ -1895,39 +1895,40 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
   previousStepEnd=${currentStepEnd}
 
   if [ "$(featureFlag INSIGHTS | tr '[:upper:]' '[:lower:]')" = enabled ]; then
-    beginBuildStep "Insights Gathering" "gatheringInsights"
-    ##############################################
-    ### RUN insights gathering and store in configmap
-    ##############################################
-    set +e # Ensure failures in exec-generate-insights-configmap.sh don't halt the entire build
-    INSIGHTS_WARNING_COUNT=0
-    for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
-    do
-      IMAGE_TAG="${IMAGE_TAG:-latest}"
-      IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
-      insightsOutput=$(. /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh 2>&1)
-      if (exit $?); then
-        echo "${insightsOutput}"
+    if [ "$(featureFlag INSIGHTS_EXTERNAL | tr '[:upper:]' '[:lower:]')" = disabled ]; then
+      beginBuildStep "Insights Gathering" "gatheringInsights"
+      ##############################################
+      ### RUN insights gathering and store in configmap
+      ##############################################
+      set +e # Ensure failures in exec-generate-insights-configmap.sh don't halt the entire build
+      INSIGHTS_WARNING_COUNT=0
+      for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
+      do
+        IMAGE_TAG="${IMAGE_TAG:-latest}"
+        IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
+        insightsOutput=$(. /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh 2>&1)
+        if (exit $?); then
+          echo "${insightsOutput}"
+        else
+          ((++INSIGHTS_WARNING_COUNT))
+          echo "> This insights run failed, this warning is for information only."
+          echo "${insightsOutput}"
+        fi
+        echo ""
+      done
+      set -e
+      if [[ "$INSIGHTS_WARNING_COUNT" -gt 0 ]]; then
+        ((++BUILD_WARNING_COUNT))
+        echo "##############################################"
+        currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+        finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsWarning" "Insights Gathering" "true"
+        previousStepEnd=${currentStepEnd}
       else
-        ((++INSIGHTS_WARNING_COUNT))
-        echo "> This insights run failed, this warning is for information only."
-        echo "${insightsOutput}"
+        currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
+        finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
+        previousStepEnd=${currentStepEnd}
       fi
-      echo ""
-    done
-    set -e
-    if [[ "$INSIGHTS_WARNING_COUNT" -gt 0 ]]; then
-      ((++BUILD_WARNING_COUNT))
-      echo "##############################################"
-      currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-      finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsWarning" "Insights Gathering" "true"
-      previousStepEnd=${currentStepEnd}
-    else
-      currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-      finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "insightsCompleted" "Insights Gathering" "false"
-      previousStepEnd=${currentStepEnd}
     fi
-
   fi
   # standard deployment
 else
