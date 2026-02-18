@@ -14,7 +14,6 @@ metadata:
     nginx.ingress.kubernetes.io/server-snippet: |
       add_header X-Robots-Tag "noindex, nofollow";
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: performance.example.com
     app.kubernetes.io/managed-by: build-deploy-tool

@@ -5,7 +5,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-po
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -36,7 +35,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-persist-po
     app.kubernetes.io/managed-by: build-deploy-tool

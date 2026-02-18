@@ -5,7 +5,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: k8up-lagoon-backup-schedule
     app.kubernetes.io/managed-by: build-deploy-tool

@@ -7,7 +7,6 @@ metadata:
     k8up.syn.tools/backup: "true"
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-persist
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -37,7 +36,6 @@ metadata:
     k8up.syn.tools/backup: "true"
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-persist-po
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -67,7 +65,6 @@ metadata:
     k8up.syn.tools/backup: "true"
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-persist-po
     app.kubernetes.io/managed-by: build-deploy-tool

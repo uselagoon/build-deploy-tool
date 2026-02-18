@@ -16,7 +16,6 @@ metadata:
     uptimerobot.monitor.stakater.com/alert-contacts: abcdefg
     uptimerobot.monitor.stakater.com/interval: "60"
     uptimerobot.monitor.stakater.com/status-pages: "12345"
-  creationTimestamp: null
   labels:
     activestandby.lagoon.sh/migrate: "true"
     app.kubernetes.io/instance: extra-long-name-f6c8a
