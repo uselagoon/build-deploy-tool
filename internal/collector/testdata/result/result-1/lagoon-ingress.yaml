@@ -1,7 +1,5 @@
 items:
-- apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
+- metadata:
     annotations:
       fastly.amazee.io/service-id: service-id
       fastly.amazee.io/watch: "true"
@@ -16,7 +14,6 @@ items:
       uptimerobot.monitor.stakater.com/alert-contacts: alertcontact
       uptimerobot.monitor.stakater.com/interval: "60"
       uptimerobot.monitor.stakater.com/status-pages: statuspageid
-    creationTimestamp: null
     labels:
       activestandby.lagoon.sh/migrate: "false"
       app.kubernetes.io/instance: example.com
@@ -53,9 +50,7 @@ items:
       secretName: example.com-tls
   status:
     loadBalancer: {}
-- apiVersion: networking.k8s.io/v1
-  kind: Ingress
-  metadata:
+- metadata:
     annotations:
       fastly.amazee.io/watch: "false"
       idling.amazee.io/disable-request-verification: "false"
@@ -67,7 +62,6 @@ items:
       nginx.ingress.kubernetes.io/server-snippet: |
         add_header X-Robots-Tag "noindex, nofollow";
       nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    creationTimestamp: null
     labels:
       app.kubernetes.io/instance: node
       app.kubernetes.io/managed-by: build-deploy-tool

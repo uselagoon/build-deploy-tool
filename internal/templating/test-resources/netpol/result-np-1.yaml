@@ -5,7 +5,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: isolation-network-policy
     app.kubernetes.io/managed-by: build-deploy-tool

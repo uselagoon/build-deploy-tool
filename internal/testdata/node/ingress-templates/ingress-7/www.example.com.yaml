@@ -12,7 +12,6 @@ metadata:
     monitor.stakater.com/enabled: "false"
     monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-  creationTimestamp: null
   labels:
     activestandby.lagoon.sh/migrate: "false"
     app.kubernetes.io/instance: www.example.com
