@@ -5,7 +5,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: cronjob-myservice
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -22,8 +21,7 @@ spec:
   concurrencyPolicy: Forbid
   failedJobsHistoryLimit: 1
   jobTemplate:
-    metadata:
-      creationTimestamp: null
+    metadata: {}
     spec:
       activeDeadlineSeconds: 86400
       template:
@@ -32,7 +30,6 @@ spec:
             lagoon.sh/branch: environment-name
             lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
             lagoon.sh/version: v2.x.x
-          creationTimestamp: null
           labels:
             app.kubernetes.io/instance: cronjob-myservice
             app.kubernetes.io/managed-by: build-deploy-tool

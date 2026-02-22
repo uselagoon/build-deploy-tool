@@ -5,7 +5,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -31,7 +30,6 @@ spec:
         lagoon.sh/branch: environment-name
         lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
-      creationTimestamp: null
       labels:
         app.kubernetes.io/instance: myservice
         app.kubernetes.io/managed-by: build-deploy-tool
@@ -96,7 +94,6 @@ metadata:
   annotations:
     lagoon.sh/branch: environment-name
     lagoon.sh/version: v2.x.x
-  creationTimestamp: null
   labels:
     app.kubernetes.io/instance: myservice-persist
     app.kubernetes.io/managed-by: build-deploy-tool
@@ -122,7 +119,6 @@ spec:
         lagoon.sh/branch: environment-name
         lagoon.sh/configMapSha: 32bf1359ac92178c8909f0ef938257b477708aa0d78a5a15ad7c2d7919adf273
         lagoon.sh/version: v2.x.x
-      creationTimestamp: null
       labels:
         app.kubernetes.io/instance: myservice-persist
         app.kubernetes.io/managed-by: build-deploy-tool

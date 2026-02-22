@@ -90,7 +90,7 @@ func (c *Client) CheckProvider(dbaasEndpoint, dbaasType, dbaasEnvironment string
 		return false, fmt.Errorf("dbaas operator responded, but response is not a valid JSON payload")
 	}
 	if response.Error != "" {
-		return false, fmt.Errorf(response.Error)
+		return false, fmt.Errorf("%s", response.Error)
 	}
 	if response.Result.Found {
 		return true, nil

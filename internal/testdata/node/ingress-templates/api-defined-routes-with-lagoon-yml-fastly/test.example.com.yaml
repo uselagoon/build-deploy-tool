@@ -15,7 +15,6 @@ metadata:
     uptimerobot.monitor.stakater.com/alert-contacts: alertcontact
     uptimerobot.monitor.stakater.com/interval: "60"
     uptimerobot.monitor.stakater.com/status-pages: statuspageid
-  creationTimestamp: null
   labels:
     activestandby.lagoon.sh/migrate: "false"
     app.kubernetes.io/instance: test.example.com
