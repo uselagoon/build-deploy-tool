@@ -1895,7 +1895,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
   previousStepEnd=${currentStepEnd}
 
   if [ "$(featureFlag INSIGHTS | tr '[:upper:]' '[:lower:]')" = enabled ]; then
-    if [ "$(featureFlag INSIGHTS_EXTERNAL | tr '[:upper:]' '[:lower:]')" = disabled ]; then
+    if [ "$(featureFlag INSIGHTS_EXTERNAL | tr '[:upper:]' '[:lower:]')" != enabled ]; then
       beginBuildStep "Insights Gathering" "gatheringInsights"
       ##############################################
       ### RUN insights gathering and store in configmap
