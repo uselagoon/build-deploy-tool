@@ -1379,37 +1379,40 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
   # standard deployment
 else
   # variable only deployment
+  MARIADB_CONSUMER_COUNT=0
   MARIADB_DBAAS_CONSUMERS=$(echo "$ENVIRONMENT_DATA" | jq -r '.mariadbconsumers.items[]? | @base64')
   for MARIADB_DBAAS_CONSUMER in ${MARIADB_DBAAS_CONSUMERS}; do
-    SERVICE_NAME=$(echo ${MARIADB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | .metadata.name')
-    MARIADB_DBAAS_CONSUMER_SPECS["${SERVICE_NAME}"]=$(echo ${MARIADB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
+    ((++MARIADB_CONSUMER_COUNT))
+    MARIADB_DBAAS_CONSUMER_SPECS["${MARIADB_CONSUMER_COUNT}"]=$(echo ${MARIADB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
   done
+  MONGODB_CONSUMER_COUNT=0
   MONGODB_DBAAS_CONSUMERS=$(echo "$ENVIRONMENT_DATA" | jq -r '.mongodbconsumers.items[]? | @base64')
   for MONGODB_DBAAS_CONSUMER in ${MONGODB_DBAAS_CONSUMERS}; do
-    SERVICE_NAME=$(echo ${MONGODB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | .metadata.name')
-    MONGODB_DBAAS_CONSUMER_SPECS["${SERVICE_NAME}"]=$(echo ${MONGODB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
+    ((++MONGODB_CONSUMER_COUNT))
+    MONGODB_DBAAS_CONSUMER_SPECS["${MONGODB_CONSUMER_COUNT}"]=$(echo ${MONGODB_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
   done
+  POSTGRES_CONSUMER_COUNT=0
   POSTGRES_DBAAS_CONSUMERS=$(echo "$ENVIRONMENT_DATA" | jq -r '.postgresqlconsumers.items[]? | @base64')
   for POSTGRES_DBAAS_CONSUMER in ${POSTGRES_DBAAS_CONSUMERS}; do
-    SERVICE_NAME=$(echo ${POSTGRES_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | .metadata.name')
-    POSTGRES_DBAAS_CONSUMER_SPECS["${SERVICE_NAME}"]=$(echo ${POSTGRES_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
+    ((++POSTGRES_CONSUMER_COUNT))
+    POSTGRES_DBAAS_CONSUMER_SPECS["${POSTGRES_CONSUMER_COUNT}"]=$(echo ${POSTGRES_DBAAS_CONSUMER} | jq -Rr '@base64d | fromjson | . | @base64')
   done
   # variable only deployment
 fi
 
 # convert specs into credential dump for ingestion by build-deploy-tool
 DBAAS_VARIABLES="[]"
-for SERVICE_NAME in "${!MARIADB_DBAAS_CONSUMER_SPECS[@]}"
+for MARIADB_CONSUMER_KEY in "${!MARIADB_DBAAS_CONSUMER_SPECS[@]}"
 do
-  SERVICE_NAME=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .metadata.name')
+  SERVICE_NAME=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .metadata.name')
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-  DB_HOST=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
-  DB_USER=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
-  DB_PASSWORD=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
-  DB_NAME=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
-  DB_PORT=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
+  DB_HOST=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
+  DB_USER=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
+  DB_PASSWORD=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
+  DB_NAME=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
+  DB_PORT=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
   DB_CONSUMER='{"'${SERVICE_NAME_UPPERCASE}'_HOST":"'${DB_HOST}'", "'${SERVICE_NAME_UPPERCASE}'_USERNAME":"'${DB_USER}'","'${SERVICE_NAME_UPPERCASE}'_PASSWORD":"'${DB_PASSWORD}'","'${SERVICE_NAME_UPPERCASE}'_DATABASE":"'${DB_NAME}'","'${SERVICE_NAME_UPPERCASE}'_PORT":"'${DB_PORT}'"}'
-  if DB_READREPLICA_HOSTS=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.replicas | .[]' 2>/dev/null); then
+  if DB_READREPLICA_HOSTS=$(echo ${MARIADB_DBAAS_CONSUMER_SPECS["$MARIADB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.replicas | .[]' 2>/dev/null); then
     if [ "$DB_READREPLICA_HOSTS" != "null" ]; then
       DB_READREPLICA_HOSTS=$(echo "$DB_READREPLICA_HOSTS" | sed 's/^\|$//g' | paste -sd, -)
       DB_CONSUMER=$(echo "${DB_CONSUMER}" | jq '. + {"'${SERVICE_NAME_UPPERCASE}'_READREPLICA_HOSTS":"'${DB_READREPLICA_HOSTS}'"}')
@@ -1418,17 +1421,17 @@ do
   DBAAS_VARIABLES=$(echo "$DBAAS_VARIABLES" | jq '. + '$(echo "$DB_CONSUMER" | jq -sMrc)'')
 done
 
-for SERVICE_NAME in "${!POSTGRES_DBAAS_CONSUMER_SPECS[@]}"
+for POSTGRES_CONSUMER_KEY in "${!POSTGRES_DBAAS_CONSUMER_SPECS[@]}"
 do
-  SERVICE_NAME=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .metadata.name')
+  SERVICE_NAME=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .metadata.name')
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-  DB_HOST=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
-  DB_USER=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
-  DB_PASSWORD=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
-  DB_NAME=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
-  DB_PORT=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
+  DB_HOST=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
+  DB_USER=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
+  DB_PASSWORD=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
+  DB_NAME=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
+  DB_PORT=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
   DB_CONSUMER='{"'${SERVICE_NAME_UPPERCASE}'_HOST":"'${DB_HOST}'", "'${SERVICE_NAME_UPPERCASE}'_USERNAME":"'${DB_USER}'","'${SERVICE_NAME_UPPERCASE}'_PASSWORD":"'${DB_PASSWORD}'","'${SERVICE_NAME_UPPERCASE}'_DATABASE":"'${DB_NAME}'","'${SERVICE_NAME_UPPERCASE}'_PORT":"'${DB_PORT}'"}'
-  if DB_READREPLICA_HOSTS=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.replicas | .[]' 2>/dev/null); then
+  if DB_READREPLICA_HOSTS=$(echo ${POSTGRES_DBAAS_CONSUMER_SPECS["$POSTGRES_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.replicas | .[]' 2>/dev/null); then
     if [ "$DB_READREPLICA_HOSTS" != "null" ]; then
       DB_READREPLICA_HOSTS=$(echo "$DB_READREPLICA_HOSTS" | sed 's/^\|$//g' | paste -sd, -)
       DB_CONSUMER=$(echo "${DB_CONSUMER}" | jq '. + {"'${SERVICE_NAME_UPPERCASE}'_READREPLICA_HOSTS":"'${DB_READREPLICA_HOSTS}'"}')
@@ -1437,18 +1440,18 @@ do
   DBAAS_VARIABLES=$(echo "$DBAAS_VARIABLES" | jq '. + '$(echo "$DB_CONSUMER" | jq -sMrc)'')
 done
 
-for SERVICE_NAME in "${!MONGODB_DBAAS_CONSUMER_SPECS[@]}"
+for MONGODB_CONSUMER_KEY in "${!MONGODB_DBAAS_CONSUMER_SPECS[@]}"
 do
-  SERVICE_NAME=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .metadata.name')
+  SERVICE_NAME=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .metadata.name')
   SERVICE_NAME_UPPERCASE=$(echo "$SERVICE_NAME" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
-  DB_HOST=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
-  DB_USER=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
-  DB_PASSWORD=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
-  DB_NAME=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
-  DB_PORT=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
-  DB_AUTHSOURCE=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.source')
-  DB_AUTHMECHANISM=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.mechanism')
-  DB_AUTHTLS=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$SERVICE_NAME"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.tls')
+  DB_HOST=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.services.primary')
+  DB_USER=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.username')
+  DB_PASSWORD=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.password')
+  DB_NAME=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.consumer.database')
+  DB_PORT=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.port')
+  DB_AUTHSOURCE=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.source')
+  DB_AUTHMECHANISM=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.mechanism')
+  DB_AUTHTLS=$(echo ${MONGODB_DBAAS_CONSUMER_SPECS["$MONGODB_CONSUMER_KEY"]} | jq -Rr '@base64d | fromjson | .spec.provider.auth.tls')
   DB_CONSUMER='{"'${SERVICE_NAME_UPPERCASE}'_HOST":"'${DB_HOST}'", "'${SERVICE_NAME_UPPERCASE}'_USERNAME":"'${DB_USER}'", "'${SERVICE_NAME_UPPERCASE}'_PASSWORD":"'${DB_PASSWORD}'", "'${SERVICE_NAME_UPPERCASE}'_DATABASE":"'${DB_NAME}'", "'${SERVICE_NAME_UPPERCASE}'_PORT":"'${DB_PORT}'", "'${SERVICE_NAME_UPPERCASE}'_AUTHSOURCE":"'${DB_AUTHSOURCE}'", "'${SERVICE_NAME_UPPERCASE}'_AUTHMECHANISM":"'${DB_AUTHMECHANISM}'", "'${SERVICE_NAME_UPPERCASE}'_AUTHTLS":"'${DB_AUTHTLS}'"}'
   DBAAS_VARIABLES=$(echo "$DBAAS_VARIABLES" | jq '. + '$(echo "$DB_CONSUMER" | jq -sMrc)'')
 done
