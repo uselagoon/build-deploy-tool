@@ -43,6 +43,12 @@ type RouteV2 struct {
 	Source                string            `json:"source,omitempty"`
 	Primary               *bool             `json:"primary,omitempty"`
 	Type                  RouteType         `json:"type,omitempty"`
+	// user not settable
+	HasSetRealIPFrom bool `json:"-"`
+	HasIPAllowList   bool `json:"-"`
+	HasRedirect      bool `json:"-"`
+	HasBasicAuth     bool `json:"-"`
+	HasCORS          bool `json:"-"`
 }
 
 // @TODO: Update machinery schema at some point
