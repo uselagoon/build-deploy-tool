@@ -68,20 +68,22 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 		},
 	}
 	for idx, route := range mainRoutes.Routes {
+		// placeholder for headers for this route
 		// build hsts middleware
+		routeHeaders := &dynamic.Headers{}
+		containsHeaders := false
 		if route.HSTSEnabled != nil && *route.HSTSEnabled {
-			stsHeader := &dynamic.Headers{}
 			if route.HSTSIncludeSubdomains != nil {
-				stsHeader.STSIncludeSubdomains = *route.HSTSIncludeSubdomains
+				routeHeaders.STSIncludeSubdomains = *route.HSTSIncludeSubdomains
+				containsHeaders = true
 			}
 			if route.HSTSMaxAge != 0 {
-				stsHeader.STSSeconds = int64(route.HSTSMaxAge)
+				routeHeaders.STSSeconds = int64(route.HSTSMaxAge)
+				containsHeaders = true
 			}
 			if route.HSTSPreload != nil {
-				stsHeader.STSPreload = *route.HSTSPreload
-			}
-			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-hsts", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
-				Headers: stsHeader,
+				routeHeaders.STSPreload = *route.HSTSPreload
+				containsHeaders = true
 			}
 		}
 		// build ipallowlist middleware
@@ -94,7 +96,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 			mainRoutes.Routes[idx].HasIPAllowList = true
 			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-ipallowlist", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
 				IPWhiteList: &dynamic.IPWhiteList{
-					SourceRange: strings.Split(whitelistRange, ","),
+					SourceRange: splitTrim(whitelistRange),
 				},
 			}
 		}
@@ -104,7 +106,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 				IPWhiteList: &dynamic.IPWhiteList{
 					SourceRange: []string{"0.0.0.0/0"},
 					IPStrategy: &dynamic.IPStrategy{
-						ExcludedIPs: strings.Split(denylistRange, ","),
+						ExcludedIPs: splitTrim(denylistRange),
 					},
 				},
 			}
@@ -150,38 +152,41 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 					},
 				}
 			}
+
+			headers := serverSnippetAddHeader(value)
+			if len(headers) > 0 {
+				// add any headers from the server-snippet to the custom response headers
+				routeHeaders.CustomResponseHeaders = headers
+				containsHeaders = true
+			}
 		}
 		// handle cors settings
 		if value, ok := route.Annotations["nginx.ingress.kubernetes.io/enable-cors"]; ok && value == "true" {
-			mainRoutes.Routes[idx].HasCORS = true
-			corsMiddleware := CORSMiddleware{}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-allow-origin"]; ok {
-				corsMiddleware.AllowOrigins = value
+				routeHeaders.AccessControlAllowOriginList = splitTrim(value)
+				containsHeaders = true
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-allow-methods"]; ok {
-				corsMiddleware.AllowMethods = value
+				routeHeaders.AccessControlAllowMethods = splitTrim(value)
+				containsHeaders = true
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-allow-headers"]; ok {
-				corsMiddleware.AllowHeaders = value
+				routeHeaders.AccessControlAllowHeaders = splitTrim(value)
+				containsHeaders = true
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-allow-credentials"]; ok {
 				valBool, _ := strconv.ParseBool(value)
-				corsMiddleware.AllowCredentials = &valBool
+				routeHeaders.AccessControlAllowCredentials = valBool
+				containsHeaders = true
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-expose-headers"]; ok {
-				corsMiddleware.ExposeHeaders = value
+				routeHeaders.AccessControlExposeHeaders = splitTrim(value)
+				containsHeaders = true
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-max-age"]; ok {
 				valInt, _ := strconv.Atoi(value)
-				corsMiddleware.MaxAge = &valInt
-			}
-			corsByte, _ := json.Marshal(corsMiddleware)
-			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-cors", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
-				Plugin: map[string]v1.JSON{
-					"corsmiddleware": {
-						Raw: corsByte,
-					},
-				},
+				routeHeaders.AccessControlMaxAge = int64(valInt)
+				containsHeaders = true
 			}
 		}
 		// handle basic auth
@@ -201,6 +206,12 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 				basicAuth.BasicAuth.Realm = value
 			}
 			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-basicauth", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = basicAuth
+		}
+		if containsHeaders {
+			mainRoutes.Routes[idx].HasHeaders = true
+			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-headers", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
+				Headers: routeHeaders,
+			}
 		}
 	}
 	return nil
@@ -234,4 +245,30 @@ func serverSnippetSetRealIPFrom(snippet string) []string {
 		}
 	}
 	return ips
+}
+
+var addHeaderRegex = regexp.MustCompile(`add_header\s+([A-Za-z0-9-]+)\s+(?:"([^"]*)"|([^;]+))\s*(?:always)?\s*;`)
+
+// extract add_header from server-snippets to add to headers
+func serverSnippetAddHeader(conf string) map[string]string {
+	headers := map[string]string{}
+	matches := addHeaderRegex.FindAllStringSubmatch(conf, -1)
+	for _, m := range matches {
+		name := m[1]
+		value := m[2]
+		if value == "" {
+			value = strings.TrimSpace(m[3])
+		}
+		headers[name] = value
+	}
+	return headers
+}
+
+// split and trip a string
+func splitTrim(input string) []string {
+	slc := strings.Split(input, ",")
+	for i := range slc {
+		slc[i] = strings.TrimSpace(slc[i])
+	}
+	return slc
 }

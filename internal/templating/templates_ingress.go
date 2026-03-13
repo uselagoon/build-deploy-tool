@@ -130,6 +130,11 @@ func GenerateIngressTemplate(
 	case "Allow":
 		additionalAnnotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "false"
 		additionalAnnotations["ingress.kubernetes.io/ssl-redirect"] = "false"
+		if route.IngressClass == "traefik" {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-https-redirect@kubernetescrd", lValues.Namespace),
+			)
+		}
 	case "Redirect", "None":
 		additionalAnnotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "true"
 		additionalAnnotations["ingress.kubernetes.io/ssl-redirect"] = "true"
@@ -155,15 +160,13 @@ func GenerateIngressTemplate(
 		additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-x-lagoon@kubernetescrd", lValues.Namespace),
 		)
-		// cors
-		if route.HasCORS {
-			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
-				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-cors@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
-			)
-		}
 		// realipfrom
 		if route.HasSetRealIPFrom {
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-setrealip@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
 				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-setrealip@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
 		}
@@ -172,10 +175,18 @@ func GenerateIngressTemplate(
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
 				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-ipallowlist@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-ipallowlist@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
 		}
 		// basicauth
 		if route.HasBasicAuth {
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-basicauth@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
 				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-basicauth@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
 		}
@@ -183,6 +194,19 @@ func GenerateIngressTemplate(
 		if route.HasRedirect {
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
 				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-redirect@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-redirect@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+		if route.HasHeaders {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-headers@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-headers@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
 		}
 	}
@@ -229,11 +253,6 @@ func GenerateIngressTemplate(
 			additionalAnnotations["nginx.ingress.kubernetes.io/configuration-snippet"] = fmt.Sprintf(
 				"%s;\n",
 				hstsHeader,
-			)
-		}
-		if route.IngressClass == "traefik" {
-			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
-				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-hsts@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
 		}
 	}
@@ -443,6 +462,12 @@ func addMiddleware(middlewares string, middleware string) string {
 		return middleware
 	}
 	parts := strings.Split(middlewares, ",")
+	for _, p := range parts {
+		if p == middleware {
+			// exists already, return the existing middlewares
+			return middlewares
+		}
+	}
 	for _, c := range parts {
 		if c == middleware {
 			return middlewares
@@ -450,4 +475,29 @@ func addMiddleware(middlewares string, middleware string) string {
 	}
 	newMiddlewares := middlewares + "," + middleware
 	return newMiddlewares
+}
+
+func removeMiddleware(middlewares string, middleware string) string {
+	if middlewares == "" {
+		return ""
+	}
+	parts := strings.Split(middlewares, ",")
+	found := false
+	for _, p := range parts {
+		if p == middleware {
+			found = true
+			break
+		}
+	}
+	if !found {
+		// doesnt exist, return the existing middlewares
+		return middlewares
+	}
+	var result []string
+	for _, m := range parts {
+		if m != middleware {
+			result = append(result, m)
+		}
+	}
+	return strings.Join(result, ",")
 }

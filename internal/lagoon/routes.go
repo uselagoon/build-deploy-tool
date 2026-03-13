@@ -48,7 +48,7 @@ type RouteV2 struct {
 	HasIPAllowList   bool `json:"-"`
 	HasRedirect      bool `json:"-"`
 	HasBasicAuth     bool `json:"-"`
-	HasCORS          bool `json:"-"`
+	HasHeaders       bool `json:"-"`
 }
 
 // @TODO: Update machinery schema at some point
