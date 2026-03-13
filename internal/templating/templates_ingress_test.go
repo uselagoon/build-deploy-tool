@@ -798,3 +798,79 @@ func TestGenerateIngressTemplate(t *testing.T) {
 		})
 	}
 }
+
+func Test_addMiddleware(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		middlewares string
+		middleware  string
+		want        string
+	}{
+		{
+			name:        "test1",
+			middlewares: "",
+			middleware:  "test-one@kubernetescrd",
+			want:        "test-one@kubernetescrd",
+		},
+		{
+			name:        "test2",
+			middlewares: "test-one@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd,test-two@kubernetescrd",
+		},
+		{
+			name:        "test3",
+			middlewares: "test-one@kubernetescrd,test-two@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd,test-two@kubernetescrd",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := addMiddleware(tt.middlewares, tt.middleware)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("addMiddleware() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_removeMiddleware(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		middlewares string
+		middleware  string
+		want        string
+		wantErr     bool
+	}{
+		{
+			name:        "test1",
+			middlewares: "test-one@kubernetescrd",
+			middleware:  "test-one@kubernetescrd",
+			want:        "",
+		},
+		{
+			name:        "test2",
+			middlewares: "test-one@kubernetescrd,test-two@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd",
+		},
+		{
+			name:        "test3",
+			middlewares: "test-three@kubernetescrd",
+			middleware:  "test-one@kubernetescrd",
+			want:        "",
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := removeMiddleware(tt.middlewares, tt.middleware)
+			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
+				t.Errorf("removeMiddleware() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
