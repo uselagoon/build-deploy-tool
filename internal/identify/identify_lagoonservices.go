@@ -82,6 +82,7 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 	for _, pvc := range pvcs {
 		servicesData.Volumes = append(servicesData.Volumes, pvc.Name)
 		size := pvc.Spec.Resources.Requests.Storage
+		sizeInt64, _ := size().AsInt64()
 		storeType := "block"
 		if pvc.Spec.StorageClassName != nil {
 			switch *pvc.Spec.StorageClassName {
@@ -90,10 +91,10 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 			}
 		}
 		kubevol := schema.EnvironmentVolume{
-			Name:        pvc.Name,
-			StorageType: storeType,
-			Type:        pvc.Labels["lagoon.sh/service-type"],
-			Size:        size().String(),
+			Name:         pvc.Name,
+			StorageType:  storeType,
+			Type:         pvc.Labels["lagoon.sh/service-type"],
+			KiBRequested: sizeInt64 / 1024, //convert to byte to kibibyte to match storage saved in api
 		}
 		lagoonServices.Volumes = append(lagoonServices.Volumes, kubevol)
 	}

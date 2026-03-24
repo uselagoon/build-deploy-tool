@@ -129,6 +129,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	var volDelete []corev1.PersistentVolumeClaim
 	for _, exist := range state.PVCs.Items {
 		size := exist.Spec.Resources.Requests.Storage
+		sizeInt64, _ := size().AsInt64()
 		storeType := "block"
 		if exist.Spec.StorageClassName != nil {
 			switch *exist.Spec.StorageClassName {
@@ -137,10 +138,10 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 			}
 		}
 		kubevol := schema.EnvironmentVolume{
-			Name:        exist.Name,
-			StorageType: storeType,
-			Type:        exist.Labels["lagoon.sh/service-type"],
-			Size:        size().String(),
+			Name:         exist.Name,
+			StorageType:  storeType,
+			Type:         exist.Labels["lagoon.sh/service-type"],
+			KiBRequested: sizeInt64 / 1024, //convert to byte to kibibyte to match storage saved in api
 		}
 		for _, prov := range out.Volumes {
 			if exist.Name == prov {

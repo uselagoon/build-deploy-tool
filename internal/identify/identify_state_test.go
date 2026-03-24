@@ -14,10 +14,20 @@ import (
 	"github.com/uselagoon/build-deploy-tool/internal/k8s"
 	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 	"github.com/uselagoon/machinery/api/schema"
+	"k8s.io/apimachinery/pkg/api/resource"
 
 	// changes the testing to source from root so paths to test resources must be defined from repo root
 	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
 )
+
+func resourceToInt64(r string) int64 {
+	q, err := resource.ParseQuantity(r)
+	if err != nil {
+		return 0
+	}
+	sizeInt64, _ := q.AsInt64()
+	return sizeInt64 / 1024
+}
 
 func TestGetCurrentState(t *testing.T) {
 	tests := []struct {
@@ -150,22 +160,22 @@ func TestGetCurrentState(t *testing.T) {
 				},
 				Volumes: []schema.EnvironmentVolume{
 					{
-						Name:        "custom-config",
-						StorageType: "bulk",
-						Type:        "additional-volume",
-						Size:        "5Gi",
+						Name:         "custom-config",
+						StorageType:  "bulk",
+						Type:         "additional-volume",
+						KiBRequested: resourceToInt64("5Gi"),
 					},
 					{
-						Name:        "custom-files",
-						StorageType: "bulk",
-						Type:        "additional-volume",
-						Size:        "10Gi",
+						Name:         "custom-files",
+						StorageType:  "bulk",
+						Type:         "additional-volume",
+						KiBRequested: resourceToInt64("10Gi"),
 					},
 					{
-						Name:        "node",
-						StorageType: "bulk",
-						Type:        "basic-persistent",
-						Size:        "5Gi",
+						Name:         "node",
+						StorageType:  "bulk",
+						Type:         "basic-persistent",
+						KiBRequested: resourceToInt64("5Gi"),
 					},
 				},
 			},
@@ -343,34 +353,34 @@ func TestGetCurrentState(t *testing.T) {
 				},
 				Volumes: []schema.EnvironmentVolume{
 					{
-						Name:        "mariadb-10-5",
-						StorageType: "block",
-						Type:        "mariadb-single",
-						Size:        "100Mi",
+						Name:         "mariadb-10-5",
+						StorageType:  "block",
+						Type:         "mariadb-single",
+						KiBRequested: resourceToInt64("100Mi"),
 					},
 					{
-						Name:        "opensearch-2",
-						StorageType: "block",
-						Type:        "opensearch-persistent",
-						Size:        "100Mi",
+						Name:         "opensearch-2",
+						StorageType:  "block",
+						Type:         "opensearch-persistent",
+						KiBRequested: resourceToInt64("100Mi"),
 					},
 					{
-						Name:        "postgres-11",
-						StorageType: "block",
-						Type:        "postgres-single",
-						Size:        "100Mi",
+						Name:         "postgres-11",
+						StorageType:  "block",
+						Type:         "postgres-single",
+						KiBRequested: resourceToInt64("100Mi"),
 					},
 					{
-						Name:        "solr-8",
-						StorageType: "block",
-						Type:        "solr-php-persistent",
-						Size:        "100Mi",
+						Name:         "solr-8",
+						StorageType:  "block",
+						Type:         "solr-php-persistent",
+						KiBRequested: resourceToInt64("100Mi"),
 					},
 					{
-						Name:        "web",
-						StorageType: "bulk",
-						Type:        "basic-persistent",
-						Size:        "10Mi",
+						Name:         "web",
+						StorageType:  "bulk",
+						Type:         "basic-persistent",
+						KiBRequested: resourceToInt64("10Mi"),
 					},
 				},
 			},
@@ -488,10 +498,10 @@ func TestGetCurrentState(t *testing.T) {
 				},
 				Volumes: []schema.EnvironmentVolume{
 					{
-						Name:        "nginx-php",
-						StorageType: "bulk",
-						Type:        "nginx-php-persistent",
-						Size:        "5Gi",
+						Name:         "nginx-php",
+						StorageType:  "bulk",
+						Type:         "nginx-php-persistent",
+						KiBRequested: resourceToInt64("5Gi"),
 					},
 				},
 			},
