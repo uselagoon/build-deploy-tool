@@ -19,7 +19,7 @@ require (
 	github.com/k8up-io/k8up/v2 v2.13.1
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.10.0
-	github.com/uselagoon/machinery v0.0.36-0.20260324052503-ad9dc32c888e
+	github.com/uselagoon/machinery v0.0.36-0.20260325022732-a5737fb93ab0
 	github.com/vshn/k8up v1.99.99
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
