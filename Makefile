@@ -1,5 +1,6 @@
 VERSION=$(shell echo $(shell git describe --abbrev=0 --tags)+$(shell git rev-parse --short=8 HEAD))
 BUILD=$(shell date +%FT%T%z)
+# renovate: datasource=golang-version depName=go
 GO_VER=1.25
 GOOS=linux
 GOARCH=amd64

@@ -3,10 +3,12 @@ ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
 
-FROM golang:${GO_VER:-1.25}-alpine3.22 AS golang
+FROM golang:${GO_VER:-1.25}-alpine3.23 AS golang
 
 RUN apk add --no-cache git
-RUN go install github.com/a8m/envsubst/cmd/envsubst@v1.4.2
+# renovate: datasource=github-releases depName=a8m/envsubst
+ENV ENVSUBST_VERSION=v1.4.3
+RUN go install github.com/a8m/envsubst/cmd/envsubst@${ENVSUBST_VERSION}
 
 WORKDIR /app
 
@@ -41,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:27.1.1-alpine3.20
+FROM docker:29.3.0-alpine3.23
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/build-deploy-tool" repository="https://github.com/uselagoon/build-deploy-tool"
@@ -71,11 +73,17 @@ ENV TMPDIR=/tmp \
     BASH_ENV=/home/.bashrc
 
 # Defining Versions
-ENV KUBECTL_VERSION=v1.30.3 \
-    HELM_VERSION=v3.15.3
+# renovate: datasource=github-tags depName=kubernetes/kubernetes
+ENV KUBECTL_VERSION=v1.35.3
+# renovate: datasource=github-releases depName=helm/helm
+ENV HELM_VERSION=v3.20.2
+# renovate: datasource=github-releases depName=mikefarah/yq
+ENV YQ_VERSION=v4.52.5
+# renovate: datasource=github-releases depName=uselagoon/lagoon-linter
+ENV LAGOON_LINTER_VERSION=v0.8.0
 
 RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
-    && apk upgrade --no-cache openssh openssh-keygen openssh-client-common openssh-client-default \
+    && apk upgrade --no-cache \
     && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
     && pip install --break-system-packages yq
@@ -83,7 +91,7 @@ RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing au
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -Lo /usr/bin/kubectl https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/${architecture}/kubectl \
     && chmod +x /usr/bin/kubectl \
-    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/v4.35.2/yq_linux_${architecture} \
+    && curl -Lo /usr/bin/yq https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_${architecture} \
     && chmod +x /usr/bin/yq \
     && curl -Lo /tmp/helm.tar.gz https://get.helm.sh/helm-${HELM_VERSION}-linux-${architecture}.tar.gz \
     && mkdir /tmp/helm \
@@ -109,7 +117,7 @@ ENV DOCKER_HOST=docker-host.lagoon.svc
 ENV LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL=https://docs.lagoon.sh
 
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
-    && curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/v0.8.0/lagoon-linter_0.8.0_linux_${architecture}.tar.gz \
+    && curl -sSL https://github.com/uselagoon/lagoon-linter/releases/download/${LAGOON_LINTER_VERSION}/lagoon-linter_${LAGOON_LINTER_VERSION#v}_linux_${architecture}.tar.gz \
     | tar -xz -C /usr/local/bin lagoon-linter
 
 COPY --from=golang /app/build-deploy-tool /usr/local/bin/build-deploy-tool
