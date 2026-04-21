@@ -1,7 +1,6 @@
 package servicetypes
 
 import (
-	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 )
@@ -10,29 +9,12 @@ import (
 var cli = ServiceType{
 	Name:                   "cli",
 	AllowAdditionalVolumes: true,
+	AllowSSHKeyMount:       true,
 	PrimaryContainer: ServiceContainer{
 		Name: "cli",
-		Volumes: []corev1.Volume{
-			{
-				Name: "lagoon-sshkey",
-				VolumeSource: corev1.VolumeSource{
-					Secret: &corev1.SecretVolumeSource{
-						DefaultMode: helpers.Int32Ptr(420),
-						SecretName:  "lagoon-sshkey",
-					},
-				},
-			},
-		},
 		Container: corev1.Container{
 			ImagePullPolicy: corev1.PullAlways,
 			SecurityContext: &corev1.SecurityContext{},
-			VolumeMounts: []corev1.VolumeMount{
-				{
-					Name:      "lagoon-sshkey",
-					ReadOnly:  true,
-					MountPath: "/var/run/secrets/lagoon/sshkey/",
-				},
-			},
 			ReadinessProbe: &corev1.Probe{
 				ProbeHandler: corev1.ProbeHandler{
 					Exec: &corev1.ExecAction{
@@ -62,6 +44,7 @@ var cliPersistent = ServiceType{
 	Name:                     "cli-persistent",
 	ConsumesPersistentVolume: true,
 	AllowAdditionalVolumes:   true,
+	AllowSSHKeyMount:         true,
 	PrimaryContainer: ServiceContainer{
 		Name:      cli.PrimaryContainer.Name,
 		Container: cli.PrimaryContainer.Container,
