@@ -212,6 +212,7 @@ type ServiceValues struct {
 	AdditionalVolumes                      []ServiceVolume         `json:"additionalVolumes,omitempty"`
 	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
 	ExternalServiceName                    string                  `json:"externalServiceName,omitempty"`
+	MountSSHKey                            *bool                   `json:"mountSSHKey"`
 }
 
 type ExternalService struct {
