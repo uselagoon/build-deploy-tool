@@ -82,8 +82,7 @@ ENV YQ_VERSION=v4.52.5
 # renovate: datasource=github-releases depName=uselagoon/lagoon-linter
 ENV LAGOON_LINTER_VERSION=v0.8.0
 
-RUN apk add -U --repository http://dl-cdn.alpinelinux.org/alpine/edge/testing aufs-util \
-    && apk upgrade --no-cache \
+RUN apk upgrade --no-cache \
     && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
     && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
     && pip install --break-system-packages yq
