@@ -2,7 +2,7 @@ package generator
 
 import (
 	composetypes "github.com/compose-spec/compose-go/types"
-	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
+	traefik "github.com/traefik/traefik/v3/pkg/provider/kubernetes/crd/traefikio/v1alpha1"
 	"github.com/uselagoon/build-deploy-tool/internal/dbaasclient"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	corev1 "k8s.io/api/core/v1"

@@ -31,6 +31,7 @@ func TestRunCleanup(t *testing.T) {
 		wantDep        []string
 		wantVol        []string
 		wantServ       []string
+		wantMiddleware []string
 	}{
 		{
 			name: "basic deployment",
@@ -69,6 +70,7 @@ func TestRunCleanup(t *testing.T) {
 			wantMariaDB:    nil,
 			wantDep:        []string{"node"},
 			wantServ:       []string{"node"},
+			wantVol:        []string{"custom-config", "custom-files", "node"},
 		},
 		{
 			name: "complex-singles",
@@ -94,6 +96,7 @@ func TestRunCleanup(t *testing.T) {
 			wantMariaDB:    nil,
 			wantDep:        []string{"mariadb-10-5", "opensearch-2", "postgres-11", "redis-6", "redis-7", "solr-8", "web"},
 			wantServ:       []string{"mariadb-10-5", "opensearch-2", "postgres-11", "redis-6", "redis-7", "solr-8", "web"},
+			wantVol:        []string{"mariadb-10-5", "opensearch-2", "postgres-11", "solr-8", "web"},
 		},
 		{
 			name: "complex-nginx",
@@ -117,6 +120,34 @@ func TestRunCleanup(t *testing.T) {
 			wantMariaDB:    nil,
 			wantDep:        []string{"nginx-php", "cli", "redis", "varnish"},
 			wantServ:       []string{"nginx-php", "redis", "varnish"},
+			wantVol:        []string{"nginx-php"},
+		},
+		{
+			name: "basic deployment traefik middleware",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					// BuildPodVariables: []helpers.EnvironmentVariable{
+					// 	{
+					// 		Name:  "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS",
+					// 		Value: "custom-traefik",
+					// 	},
+					// 	{
+					// 		Name:  "LAGOON_FEATURE_FLAG_DEFAULT_TRAEFIK_MIDDLEWARE",
+					// 		Value: "enabled",
+					// 	},
+					// },
+				}, true),
+			deleteServices: false,
+			namespace:      "example-project-main",
+			seedDir:        "internal/testdata/basic/cleanup-seed/basic-deployment-traefik-middleware",
+			wantMiddleware: []string{"aergia", "https-redirect", "x-robots", "x-lagoon"},
 		},
 	}
 	for _, tt := range tests {
@@ -153,74 +184,112 @@ func TestRunCleanup(t *testing.T) {
 			}
 			col := collector.NewCollector(client)
 			beforeState, _ := col.Collect(context.Background(), tt.namespace)
+			if len(tt.wantDep) > 0 && len(beforeState.Deployments.Items) == 0 {
+				t.Errorf("RunCleanup() deployments should exist")
+			}
 			want := false
-			for _, i2 := range tt.wantDep {
-				for _, i1 := range beforeState.Deployments.Items {
+			for _, i1 := range beforeState.Deployments.Items {
+				for _, i2 := range tt.wantDep {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() deployment %v should exist", i2)
+					t.Errorf("RunCleanup() deployment %v should exist", i1.Name)
 				}
 				want = false
 			}
-			for _, i2 := range tt.wantVol {
-				for _, i1 := range beforeState.PVCs.Items {
+			if len(tt.wantVol) > 0 && len(beforeState.PVCs.Items) == 0 {
+				t.Errorf("RunCleanup() pvcs should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.PVCs.Items {
+				for _, i2 := range tt.wantVol {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() pvc %v should exist", i2)
+					t.Errorf("RunCleanup() pvc %v should exist", i1.Name)
 				}
 				want = false
 			}
-			for _, i2 := range tt.wantServ {
-				for _, i1 := range beforeState.Services.Items {
+			if len(tt.wantMariaDB) > 0 && len(beforeState.Services.Items) == 0 {
+				t.Errorf("RunCleanup() services should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.Services.Items {
+				for _, i2 := range tt.wantServ {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() service %v should exist", i2)
+					t.Errorf("RunCleanup() service %v should exist", i1.Name)
 				}
 				want = false
 			}
-			for _, i2 := range tt.wantMariaDB {
-				for _, i1 := range beforeState.MariaDBConsumers.Items {
+			if len(tt.wantMariaDB) > 0 && len(beforeState.MariaDBConsumers.Items) == 0 {
+				t.Errorf("RunCleanup() mariadb consumers should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.MariaDBConsumers.Items {
+				for _, i2 := range tt.wantMariaDB {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() mariadb consumer %v should exist", i2)
+					t.Errorf("RunCleanup() mariadb consumer %v should exist", i1.Name)
 				}
 				want = false
 			}
-			for _, i2 := range tt.wantMongoDB {
-				for _, i1 := range beforeState.MongoDBConsumers.Items {
+			if len(tt.wantMongoDB) > 0 && len(beforeState.MongoDBConsumers.Items) == 0 {
+				t.Errorf("RunCleanup() mongodb consumers should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.MongoDBConsumers.Items {
+				for _, i2 := range tt.wantMongoDB {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() mongodb consumer %v should exist", i2)
+					t.Errorf("RunCleanup() mongodb consumer %v should exist", i1.Name)
 				}
 				want = false
 			}
-			for _, i2 := range tt.wantPsqlDB {
-				for _, i1 := range beforeState.PostgreSQLConsumers.Items {
+			if len(tt.wantPsqlDB) > 0 && len(beforeState.PostgreSQLConsumers.Items) == 0 {
+				t.Errorf("RunCleanup() postgres consumers should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.PostgreSQLConsumers.Items {
+				for _, i2 := range tt.wantPsqlDB {
 					if i1.Name == i2 {
 						want = true
 					}
 				}
 				if !want {
-					t.Errorf("RunCleanup() mariadb consumer %v should exist", i2)
+					t.Errorf("RunCleanup() postgres consumer %v should exist", i1.Name)
 				}
 				want = false
 			}
-			mdb, mongdb, psqdb, dep, vol, serv, err := RunCleanup(col, generator, tt.deleteServices)
+			if len(tt.wantMiddleware) > 0 && len(beforeState.TraefikMiddleware.Items) == 0 {
+				t.Errorf("RunCleanup() middlewares should exist")
+			}
+			want = false
+			for _, i1 := range beforeState.TraefikMiddleware.Items {
+				for _, i2 := range tt.wantMiddleware {
+					if i1.Name == i2 {
+						want = true
+					}
+				}
+				if !want {
+					t.Errorf("RunCleanup() middleware %v should exist", i1.Name)
+				}
+				want = false
+			}
+			mdb, mongdb, psqdb, dep, vol, serv, middleware, err := RunCleanup(col, generator, tt.deleteServices)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("RunCleanup() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -282,6 +351,13 @@ func TestRunCleanup(t *testing.T) {
 				for _, i2 := range dep {
 					if i1.Name == i2 {
 						t.Errorf("RunCleanup() postgres consumer %v shouldn't exist", i2)
+					}
+				}
+			}
+			for _, i1 := range afterState.TraefikMiddleware.Items {
+				for _, i2 := range middleware {
+					if i1.Name == i2 {
+						t.Errorf("RunCleanup() middleware %v shouldn't exist", i2)
 					}
 				}
 			}
