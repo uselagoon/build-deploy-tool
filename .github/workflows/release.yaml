@@ -10,7 +10,7 @@ jobs:
       new-tag: ${{ steps.bump-tag.outputs.new }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       with:
         fetch-depth: 0
     - name: Configure Git
@@ -18,7 +18,7 @@ jobs:
         git config --global user.name "$GITHUB_ACTOR"
         git config --global user.email "$GITHUB_ACTOR@users.noreply.github.com"
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version: "1.25"
     - name: Install ccv
@@ -43,17 +43,17 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       with:
         fetch-depth: 0
     - name: Install Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
       with:
         go-version: "^1.25"
     - name: Set up environment
       run: echo "GOVERSION=$(go version)" >> $GITHUB_ENV
     - name: Run GoReleaser
-      uses: goreleaser/goreleaser-action@v5
+      uses: goreleaser/goreleaser-action@ec59f474b9834571250b370d4735c50f8e2d1e29 # v7
       with:
         version: latest
         args: release --rm-dist
