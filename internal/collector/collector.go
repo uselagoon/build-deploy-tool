@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
-	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
+	traefik "github.com/traefik/traefik/v3/pkg/provider/kubernetes/crd/traefikio/v1alpha1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"

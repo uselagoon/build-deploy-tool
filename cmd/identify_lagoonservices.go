@@ -49,7 +49,7 @@ var lagoonServiceIdentify = &cobra.Command{
 		}
 		gen.Namespace = namespace
 		gen.ImageReferences = imageRefs.Images
-		services, _, _, _, _, _, _, _, err := identify.GetCurrentState(col, gen)
+		services, _, _, _, _, _, _, _, _, err := identify.GetCurrentState(col, gen)
 		if err != nil {
 			return err
 		}
