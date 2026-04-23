@@ -356,6 +356,10 @@ func MergeRoutesV2(yamlRoutes RoutesV2, apiRoutes RoutesV2, variables []Environm
 		fRoute.Domain = strings.ToLower(fRoute.Domain)
 		finalRoutes.Routes = append(finalRoutes.Routes, fRoute)
 	}
+	// validate the route annotations and error if any annotations are restricted
+	if err := validateRouteAnnotations(finalRoutes); err != nil {
+		return RoutesV2{}, err
+	}
 	return finalRoutes, nil
 }
 
