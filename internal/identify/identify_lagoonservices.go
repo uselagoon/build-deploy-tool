@@ -8,9 +8,10 @@ import (
 )
 
 type IdentifyServices struct {
-	Deployments []string `json:"deployments,omitempty"`
-	Volumes     []string `json:"volumes,omitempty"`
-	Services    []string `json:"services,omitempty"`
+	Deployments       []string `json:"deployments,omitempty"`
+	Volumes           []string `json:"volumes,omitempty"`
+	Services          []string `json:"services,omitempty"`
+	TraefikMiddleware []string `json:"middleware,omitempty"`
 }
 
 // eventually replace with https://github.com/uselagoon/machinery/pull/99
@@ -74,6 +75,15 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 	}
 
 	lagoonServices := &LagoonServices{}
+
+	middlewares, err := servicestemplates.GenerateMiddleware(*lagoonBuild.BuildValues)
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't generate template: %v", err)
+	}
+	for _, middleware := range middlewares {
+		servicesData.TraefikMiddleware = append(servicesData.TraefikMiddleware, middleware.Name)
+	}
+
 	pvcs, err := servicestemplates.GeneratePVCTemplate(*lagoonBuild.BuildValues)
 	if err != nil {
 		return nil, nil, fmt.Errorf("couldn't identify volumes: %v", err)
