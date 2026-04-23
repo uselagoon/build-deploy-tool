@@ -9,6 +9,7 @@ import (
 	mongodbv1 "github.com/amazeeio/dbaas-operator/apis/mongodb/v1"
 	postgresv1 "github.com/amazeeio/dbaas-operator/apis/postgres/v1"
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
+	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -48,6 +49,9 @@ func setScheme() (*runtime.Scheme, error) {
 		return nil, err
 	}
 	if err := networkv1.AddToScheme(k8sScheme); err != nil {
+		return nil, err
+	}
+	if err := traefik.AddToScheme(k8sScheme); err != nil {
 		return nil, err
 	}
 	if err := corev1.AddToScheme(k8sScheme); err != nil {
