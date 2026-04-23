@@ -1,0 +1,82 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "baseBranches": [
+    "main"
+  ],
+  "extends": [
+    "mergeConfidence:all-badges",
+    "config:recommended",
+    ":disableRateLimiting",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "labels": [
+    "dependencies"
+  ],
+  "dependencyDashboard": true,
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/)Dockerfile$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nENV \\w+=(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["(^|/)Makefile$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)\\nGO_VER=(?<currentValue>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub actions monthly minor/patch",
+      "matchUpdateTypes": [
+        "minor",
+        "patch",
+        "digest"
+      ],
+      "schedule": [
+        "on the first day of the month"
+      ],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "groupName": "GitHub actions major",
+      "matchUpdateTypes": [
+        "major"
+      ],
+      "automerge": true,
+      "automergeType": "pr"
+    },
+    {
+      "matchPackageNames": ["kubernetes/kubernetes", "helm/helm", "mikefarah/yq"],
+      "allowedVersions": "/^v[0-9]+\\.[0-9]+\\.[0-9]+$/",
+      "separateMinorPatch": true
+    },
+    {
+      "groupName": "Tooling patch updates",
+      "matchPackageNames": ["kubernetes/kubernetes", "helm/helm", "mikefarah/yq"],
+      "matchUpdateTypes": ["patch"],
+      "schedule": [
+        "on monday"
+      ],
+      "draftPR": true
+    },
+    {
+      "matchPackageNames": ["kubernetes/kubernetes", "helm/helm", "mikefarah/yq"],
+      "matchUpdateTypes": ["minor", "major"],
+      "draftPR": true
+    }
+  ]
+}
