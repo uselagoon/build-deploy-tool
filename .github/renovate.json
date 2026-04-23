@@ -3,6 +3,10 @@
   "baseBranches": [
     "main"
   ],
+  "ignorePaths": [
+    "internal/testdata/**",
+    "**/testdata/**"
+  ],
   "extends": [
     "mergeConfidence:all-badges",
     "config:recommended",
@@ -34,6 +38,15 @@
   "packageRules": [
     {
       "matchManagers": [
+        "gomod"
+      ],
+      "matchPackageNames": [
+        "github.com/compose-spec/compose-go"
+      ],
+      "enabled": false
+    },
+    {
+      "matchManagers": [
         "github-actions"
       ],
       "groupName": "GitHub actions monthly minor/patch",
@@ -45,6 +58,7 @@
       "schedule": [
         "on the first day of the month"
       ],
+      "minimumReleaseAge": "7 days",
       "automerge": true,
       "automergeType": "pr"
     },
@@ -56,6 +70,7 @@
       "matchUpdateTypes": [
         "major"
       ],
+      "minimumReleaseAge": "7 days",
       "automerge": true,
       "automergeType": "pr"
     },
@@ -76,6 +91,27 @@
     {
       "matchPackageNames": ["kubernetes/kubernetes", "helm/helm", "mikefarah/yq"],
       "matchUpdateTypes": ["minor", "major"],
+      "draftPR": true
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "Go dependencies minor/patch",
+      "matchUpdateTypes": [
+        "minor",
+        "patch"
+      ],
+      "draftPR": true
+    },
+    {
+      "matchManagers": [
+        "gomod"
+      ],
+      "groupName": "Go dependencies major",
+      "matchUpdateTypes": [
+        "major"
+      ],
       "draftPR": true
     }
   ]
