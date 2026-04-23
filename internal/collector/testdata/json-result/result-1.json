@@ -697,5 +697,9 @@
   "networkpolicies": {
     "metadata": {},
     "items": []
+  },
+  "traefikmiddleware": {
+    "metadata": {},
+    "items": []
   }
 }

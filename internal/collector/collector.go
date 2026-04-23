@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	k8upv1 "github.com/k8up-io/k8up/v2/api/v1"
+	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
 	k8upv1alpha1 "github.com/vshn/k8up/api/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	batchv1 "k8s.io/api/batch/v1"
@@ -24,20 +25,21 @@ type Collector struct {
 }
 
 type LagoonEnvState struct {
-	Deployments           *appsv1.DeploymentList             `json:"deployments"`
-	Cronjobs              *batchv1.CronJobList               `json:"cronjobs"`
-	Ingress               *networkv1.IngressList             `json:"ingress"`
-	Services              *corev1.ServiceList                `json:"services"`
-	Secrets               *corev1.SecretList                 `json:"secrets"`
-	PVCs                  *corev1.PersistentVolumeClaimList  `json:"pvcs"`
-	SchedulesV1           *k8upv1.ScheduleList               `json:"schedulesv1"`
-	SchedulesV1Alpha1     *k8upv1alpha1.ScheduleList         `json:"schedulesv1alpha1"`
-	PreBackupPodsV1       *k8upv1.PreBackupPodList           `json:"prebackuppodsv1"`
-	PreBackupPodsV1Alpha1 *k8upv1alpha1.PreBackupPodList     `json:"prebackuppodsv1alpha1"`
-	MariaDBConsumers      *mariadbv1.MariaDBConsumerList     `json:"mariadbconsumers"`
-	MongoDBConsumers      *mongodbv1.MongoDBConsumerList     `json:"mongodbconsumers"`
-	PostgreSQLConsumers   *postgresv1.PostgreSQLConsumerList `json:"postgresqlconsumers"`
-	NetworkPolicies       *networkv1.NetworkPolicyList       `json:"networkpolicies"`
+	Deployments           *appsv1.DeploymentList             `json:"deployments,omitempty"`
+	Cronjobs              *batchv1.CronJobList               `json:"cronjobs,omitempty"`
+	Ingress               *networkv1.IngressList             `json:"ingress,omitempty"`
+	Services              *corev1.ServiceList                `json:"services,omitempty"`
+	Secrets               *corev1.SecretList                 `json:"secrets,omitempty"`
+	PVCs                  *corev1.PersistentVolumeClaimList  `json:"pvcs,omitempty"`
+	SchedulesV1           *k8upv1.ScheduleList               `json:"schedulesv1,omitempty"`
+	SchedulesV1Alpha1     *k8upv1alpha1.ScheduleList         `json:"schedulesv1alpha1,omitempty"`
+	PreBackupPodsV1       *k8upv1.PreBackupPodList           `json:"prebackuppodsv1,omitempty"`
+	PreBackupPodsV1Alpha1 *k8upv1alpha1.PreBackupPodList     `json:"prebackuppodsv1alpha1,omitempty"`
+	MariaDBConsumers      *mariadbv1.MariaDBConsumerList     `json:"mariadbconsumers,omitempty"`
+	MongoDBConsumers      *mongodbv1.MongoDBConsumerList     `json:"mongodbconsumers,omitempty"`
+	PostgreSQLConsumers   *postgresv1.PostgreSQLConsumerList `json:"postgresqlconsumers,omitempty"`
+	NetworkPolicies       *networkv1.NetworkPolicyList       `json:"networkpolicies,omitempty"`
+	TraefikMiddleware     *traefik.MiddlewareList            `json:"traefikmiddleware,omitempty"`
 }
 
 func NewCollector(client client.Client) *Collector {
@@ -70,6 +72,10 @@ func (c *Collector) Collect(ctx context.Context, namespace string) (*LagoonEnvSt
 		return nil, err
 	}
 	state.PVCs, err = c.CollectPVCs(ctx, namespace)
+	if err != nil {
+		return nil, err
+	}
+	state.TraefikMiddleware, err = c.CollectTraefikMiddleware(ctx, namespace)
 	if err != nil {
 		return nil, err
 	}
