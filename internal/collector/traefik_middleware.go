@@ -11,7 +11,8 @@ import (
 )
 
 func (c *Collector) CollectTraefikMiddleware(ctx context.Context, namespace string) (*traefik.MiddlewareList, error) {
-	labelRequirements1, _ := labels.NewRequirement("lagoon.sh/service", selection.Exists, nil)
+	// grab all middleware with lagoon.sh/project label, since middleware are not specific to a service
+	labelRequirements1, _ := labels.NewRequirement("lagoon.sh/project", selection.Exists, nil)
 	listOption := (&client.ListOptions{}).ApplyOptions([]client.ListOption{
 		client.InNamespace(namespace),
 		client.MatchingLabelsSelector{
