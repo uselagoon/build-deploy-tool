@@ -10,7 +10,7 @@ import (
 	metavalidation "k8s.io/apimachinery/pkg/apis/meta/v1/validation"
 	"sigs.k8s.io/yaml"
 
-	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
+	traefik "github.com/traefik/traefik/v3/pkg/provider/kubernetes/crd/traefikio/v1alpha1"
 )
 
 // GenerateRegistrySecretTemplate generates the lagoon template to apply.

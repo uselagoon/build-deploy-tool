@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/traefik/traefik/v2/pkg/config/dynamic"
-	traefik "github.com/traefik/traefik/v2/pkg/provider/kubernetes/crd/traefik/v1alpha1"
+	"github.com/traefik/traefik/v3/pkg/config/dynamic"
+	traefik "github.com/traefik/traefik/v3/pkg/provider/kubernetes/crd/traefikio/v1alpha1"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 	v1 "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1"
@@ -78,7 +78,8 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 				containsHeaders = true
 			}
 			if route.HSTSMaxAge != 0 {
-				routeHeaders.STSSeconds = int64(route.HSTSMaxAge)
+				sts := int64(route.HSTSMaxAge)
+				routeHeaders.STSSeconds = &sts
 				containsHeaders = true
 			}
 			if route.HSTSPreload != nil {
