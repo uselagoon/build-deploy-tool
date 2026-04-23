@@ -357,7 +357,6 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     echo "docker-compose file referenced in .lagoon.yml not found"
   fi
 
-  DOCKER_COMPOSE_WARNING_COUNT=0
   ##############################################
   ### RUN docker compose config check against the provided docker-compose file
   ### use the `build-validate` built in validater to run over the provided docker-compose file
@@ -398,84 +397,6 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     echo "
   ##############################################"
     exit 1
-  fi
-
-  ## validate the docker-compose in a way to eventually phase out forked library by displaying warnings
-  dccOutput=$(build-deploy-tool validate docker-compose --ignore-non-string-key-errors=false --ignore-missing-env-files=false --lagoon-yml .lagoon.yml; exit $? 2>&1)
-  dccExit=$?
-  if [ "${dccExit}" != "0" ]; then
-    ((++BUILD_WARNING_COUNT))
-    ((++DOCKER_COMPOSE_WARNING_COUNT))
-    echo "
-  ##############################################
-  Warning!
-  There are issues with your docker compose file that lagoon uses that should be fixed.
-  You can run docker compose config locally to check that your docker-compose file is valid.
-  "
-    if [[ "${dccOutput}" =~ "no such file or directory" ]]; then
-      echo "> an env_file is defined in your docker-compose file, but no matching file found."
-    fi
-    if [[ "${dccOutput}" =~ "Non-string key" ]]; then
-      echo "> an invalid string key was detected in your docker-compose file."
-    fi
-    echo ERR: ${dccOutput}
-    echo ""
-  fi
-
-  dccOutput=$(build-deploy-tool validate docker-compose-with-errors --lagoon-yml .lagoon.yml; exit $? 2>&1)
-  dccExit2=$?
-  if [ "${dccExit2}" != "0" ]; then
-    ((++DOCKER_COMPOSE_WARNING_COUNT))
-    if [ "${dccExit}" == "0" ]; then
-
-      # this logic is to phase rollout of https://github.com/uselagoon/build-deploy-tool/pull/304
-      # anything returned by this section will be a yaml error that we need to check if the feature to enable/disable errors
-      # is configured, and that the environment type matches.
-      # eventually this logic will be changed entirely from warnings to errors
-      DOCKER_COMPOSE_VALIDATION_ERROR=false
-      DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE=LAGOON_FEATURE_FLAG_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION
-      # this logic will make development environments return an error by default
-      # adding LAGOON_FEATURE_FLAG_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled can be used to disable the error and revert to a warning per project or environment
-      # or add LAGOON_FEATURE_FLAG_DEFAULT_DEVELOPMENT_DOCKER_COMPOSE_VALIDATION=disabled to the remote-controller as a default to disable for a cluster
-      if [[ "$(featureFlag DEVELOPMENT_DOCKER_COMPOSE_VALIDATION | tr '[:upper:]' '[:lower:]')" != disabled ]] && [[ "$ENVIRONMENT_TYPE" == "development" ]]; then
-        DOCKER_COMPOSE_VALIDATION_ERROR=true
-      fi
-      # by default, production environments won't return an error unless the feature flag is enabled.
-      # this allows using the feature flag to selectively apply to production environments if required
-      # adding LAGOON_FEATURE_FLAG_PRODUCTION_DOCKER_COMPOSE_VALIDATION=enabled can be used to enable the error per project or environment
-      # or add LAGOON_FEATURE_FLAG_DEFAULT_PRODUCTION_DOCKER_COMPOSE_VALIDATION=enabled to the remote-controller as a default to disable for a cluster
-      if [[ "$(featureFlag PRODUCTION_DOCKER_COMPOSE_VALIDATION | tr '[:upper:]' '[:lower:]')" = enabled ]] && [[ "$ENVIRONMENT_TYPE" == "production" ]]; then
-        DOCKER_COMPOSE_VALIDATION_ERROR=true
-      DOCKER_COMPOSE_VALIDATION_ERROR_VARIABLE=LAGOON_FEATURE_FLAG_PRODUCTION_DOCKER_COMPOSE_VALIDATION
-      fi
-
-      ((++BUILD_WARNING_COUNT))
-      echo "
-  ##############################################"
-      if [[ "$DOCKER_COMPOSE_VALIDATION_ERROR" == "true" ]]; then
-        echo "Error!"
-      else
-        echo "Warning!"
-      fi
-
-      echo "There are issues with your docker compose file that lagoon uses that should be fixed.
-  You can run docker compose config locally to check that your docker-compose file is valid.
-  "
-    fi
-    echo "> There are yaml validation errors in your docker-compose file that should be corrected."
-    echo ERR: ${dccOutput}
-    echo ""
-  fi
-
-  if [[ "$DOCKER_COMPOSE_WARNING_COUNT" -gt 0 ]]; then
-    echo "Read the docs for more on errors displayed here ${LAGOON_FEATURE_FLAG_DEFAULT_DOCUMENTATION_URL}/lagoon-build-errors
-  "
-    echo "##############################################"
-    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidationWarning" "Docker Compose Validation" "true"
-  else
-    currentStepEnd="$(date +"%Y-%m-%d %H:%M:%S")"
-    finalizeBuildStep "${buildStartTime}" "${previousStepEnd}" "${currentStepEnd}" "${NAMESPACE}" "dockerComposeValidation" "Docker Compose Validation" "false"
   fi
   set -e
 
