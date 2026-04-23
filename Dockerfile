@@ -3,7 +3,7 @@ ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
 
-FROM golang:${GO_VER:-1.25}-alpine3.23 AS golang
+FROM golang:${GO_VER:-1.26}-alpine3.23 AS golang
 
 RUN apk add --no-cache git
 # renovate: datasource=github-releases depName=a8m/envsubst
