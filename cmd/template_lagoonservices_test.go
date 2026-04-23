@@ -653,6 +653,31 @@ func TestTemplateLagoonServices(t *testing.T) {
 				}, true),
 			want: "internal/testdata/basic/service-templates/test-basic-deployment-revision-history",
 		},
+		{
+			name:        "test-basic-deployment-traefik-middleware",
+			description: "tests a basic deployment with traefik middleware",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					ImageReferences: map[string]string{
+						"node": "harbor.example/example-project/main/node@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_INGRESS_CLASS",
+							Value: "custom-traefik",
+						},
+						{
+							Name:  "LAGOON_FEATURE_FLAG_DEFAULT_TRAEFIK_MIDDLEWARE",
+							Value: "enabled",
+						},
+					},
+				}, true),
+			want: "internal/testdata/basic/service-templates/test-basic-deployment-traefik-middleware",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
