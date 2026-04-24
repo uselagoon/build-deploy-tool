@@ -41,7 +41,8 @@
         "gomod"
       ],
       "matchPackageNames": [
-        "github.com/compose-spec/compose-go"
+        "github.com/compose-spec/compose-go",
+        "github.com/imdario/mergo"
       ],
       "enabled": false
     },
@@ -102,16 +103,17 @@
         "minor",
         "patch"
       ],
+      "postUpdateOptions": ["gomodTidy","gomodUpdateImportPaths"],
       "draftPR": true
     },
     {
       "matchManagers": [
         "gomod"
       ],
-      "groupName": "Go dependencies major",
       "matchUpdateTypes": [
         "major"
       ],
+      "postUpdateOptions": ["gomodTidy","gomodUpdateImportPaths"],
       "draftPR": true
     }
   ]
