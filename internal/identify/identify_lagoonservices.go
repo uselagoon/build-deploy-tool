@@ -5,6 +5,7 @@ import (
 
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	servicestemplates "github.com/uselagoon/build-deploy-tool/internal/templating"
+	"github.com/uselagoon/machinery/api/schema"
 )
 
 type IdentifyServices struct {
@@ -15,50 +16,50 @@ type IdentifyServices struct {
 
 // eventually replace with https://github.com/uselagoon/machinery/pull/99
 type LagoonServices struct {
-	Services []EnvironmentService `json:"services,omitempty"`
-	Volumes  []EnvironmentVolume  `json:"volumes,omitempty"`
+	Services []schema.EnvironmentService `json:"services,omitempty"`
+	Volumes  []schema.EnvironmentVolume  `json:"volumes,omitempty"`
 	// Services []schema.EnvironmentService `json:"services,omitempty"`
 	// Volumes  []schema.EnvironmentVolume  `json:"volumes,omitempty"`
 }
 
-// eventually replace with https://github.com/uselagoon/machinery/pull/99
-type EnvironmentService struct {
-	ID         int                `json:"id,omitempty"`
-	Name       string             `json:"name,omitempty"`
-	Type       string             `json:"type,omitempty"`
-	Updated    string             `json:"updated,omitempty"`
-	Containers []ServiceContainer `json:"containers,omitempty"`
-	Created    string             `json:"created,omitempty"`
-	Abandoned  bool               `json:"abandoned,omitempty"` // no longer tracked in the docker-compose file
-}
+// // eventually replace with https://github.com/uselagoon/machinery/pull/99
+// type EnvironmentService struct {
+// 	ID         int                `json:"id,omitempty"`
+// 	Name       string             `json:"name,omitempty"`
+// 	Type       string             `json:"type,omitempty"`
+// 	Updated    string             `json:"updated,omitempty"`
+// 	Containers []ServiceContainer `json:"containers,omitempty"`
+// 	Created    string             `json:"created,omitempty"`
+// 	Abandoned  bool               `json:"abandoned,omitempty"` // no longer tracked in the docker-compose file
+// }
 
-// eventually replace with https://github.com/uselagoon/machinery/pull/99
-type ServiceContainer struct {
-	Name    string          `json:"name,omitempty"`
-	Volumes []VolumeMount   `json:"volumes,omitempty"`
-	Ports   []ContainerPort `json:"ports,omitempty"`
-}
+// // eventually replace with https://github.com/uselagoon/machinery/pull/99
+// type ServiceContainer struct {
+// 	Name    string          `json:"name,omitempty"`
+// 	Volumes []VolumeMount   `json:"volumes,omitempty"`
+// 	Ports   []ContainerPort `json:"ports,omitempty"`
+// }
 
-// eventually replace with https://github.com/uselagoon/machinery/pull/99
-type EnvironmentVolume struct {
-	Name        string `json:"name,omitempty"`
-	StorageType string `json:"storageType,omitempty"`
-	Type        string `json:"type,omitempty"`
-	Size        string `json:"size,omitempty"`
-	Abandoned   bool   `json:"abandoned,omitempty"` // no longer tracked in the docker-compose file
-}
+// // eventually replace with https://github.com/uselagoon/machinery/pull/99
+// type EnvironmentVolume struct {
+// 	Name        string `json:"name,omitempty"`
+// 	StorageType string `json:"storageType,omitempty"`
+// 	Type        string `json:"type,omitempty"`
+// 	Size        string `json:"size,omitempty"`
+// 	Abandoned   bool   `json:"abandoned,omitempty"` // no longer tracked in the docker-compose file
+// }
 
-// eventually replace with https://github.com/uselagoon/machinery/pull/99
-type VolumeMount struct {
-	Name string `json:"name,omitempty"`
-	Path string `json:"path,omitempty"`
-}
+// // eventually replace with https://github.com/uselagoon/machinery/pull/99
+// type VolumeMount struct {
+// 	Name string `json:"name,omitempty"`
+// 	Path string `json:"path,omitempty"`
+// }
 
-// eventually replace with https://github.com/uselagoon/machinery/pull/99
-type ContainerPort struct {
-	Name string `json:"name,omitempty"`
-	Port int    `json:"port,omitempty"`
-}
+// // eventually replace with https://github.com/uselagoon/machinery/pull/99
+// type ContainerPort struct {
+// 	Name string `json:"name,omitempty"`
+// 	Port int    `json:"port,omitempty"`
+// }
 
 // LagoonServiceTemplateIdentification takes the output of the generator and returns a JSON payload that contains information
 // about the services that lagoon will be deploying (this will be kubernetes `kind: deployment`, but lagoon calls them services ¯\_(ツ)_/¯)
@@ -81,6 +82,7 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 	for _, pvc := range pvcs {
 		servicesData.Volumes = append(servicesData.Volumes, pvc.Name)
 		size := pvc.Spec.Resources.Requests.Storage
+		sizeInt64, _ := size().AsInt64()
 		storeType := "block"
 		if pvc.Spec.StorageClassName != nil {
 			switch *pvc.Spec.StorageClassName {
@@ -88,11 +90,11 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 				storeType = "bulk"
 			}
 		}
-		kubevol := EnvironmentVolume{
-			Name:        pvc.Name,
-			StorageType: storeType,
-			Type:        pvc.Labels["lagoon.sh/service-type"],
-			Size:        size().String(),
+		kubevol := schema.EnvironmentVolume{
+			Name:         pvc.Name,
+			StorageType:  storeType,
+			Type:         pvc.Labels["lagoon.sh/service-type"],
+			KiBRequested: sizeInt64 / 1024, //convert to byte to kibibyte to match storage saved in api
 		}
 		lagoonServices.Volumes = append(lagoonServices.Volumes, kubevol)
 	}
@@ -102,33 +104,33 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 	}
 	for _, d := range deployments {
 		servicesData.Deployments = append(servicesData.Deployments, d.Name)
-		containers := []ServiceContainer{}
+		containers := []schema.ServiceContainer{}
 		for _, c := range d.Spec.Template.Spec.Containers {
-			volumes := []VolumeMount{}
+			volumes := []schema.VolumeMount{}
 			for _, v := range c.VolumeMounts {
 				for _, vo := range lagoonServices.Volumes {
 					if vo.Name == v.Name {
-						volumes = append(volumes, VolumeMount{
+						volumes = append(volumes, schema.VolumeMount{
 							Name: v.Name,
 							Path: v.MountPath,
 						})
 					}
 				}
 			}
-			ports := []ContainerPort{}
+			ports := []schema.ContainerPort{}
 			for _, p := range c.Ports {
-				ports = append(ports, ContainerPort{
+				ports = append(ports, schema.ContainerPort{
 					Name: p.Name,
 					Port: int(p.ContainerPort),
 				})
 			}
-			containers = append(containers, ServiceContainer{
-				Name:    c.Name,
-				Volumes: volumes,
-				Ports:   ports,
+			containers = append(containers, schema.ServiceContainer{
+				Name:         c.Name,
+				Volumemounts: volumes,
+				Ports:        ports,
 			})
 		}
-		service := EnvironmentService{
+		service := schema.EnvironmentService{
 			Name:       d.Name,
 			Type:       d.Labels["lagoon.sh/service-type"],
 			Containers: containers,
