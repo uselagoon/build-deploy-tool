@@ -10,11 +10,25 @@ import (
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDeletion bool) ([]string, []string, []string, []string, []string, []string, error) {
-	_, mariadbDelete, mongodbDelete, postgresqlDelete, depDelete, volDelete, servDelete, state, err := identify.GetCurrentState(c, gen)
+func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDeletion bool) ([]string, []string, []string, []string, []string, []string, []string, error) {
+	_, mariadbDelete, mongodbDelete, postgresqlDelete, depDelete, volDelete, servDelete, middlewareDelete, state, err := identify.GetCurrentState(c, gen)
 	if err != nil {
-		return nil, nil, nil, nil, nil, nil, err
+		return nil, nil, nil, nil, nil, nil, nil, err
 	}
+	middlewareToDelete := []string{}
+	// always cleanup any unused middlewares
+	if len(middlewareDelete) > 0 {
+		ctx := context.Background()
+		for _, i := range middlewareDelete {
+			if err := c.Client.Delete(ctx, &i); err != nil {
+				fmt.Printf("!! Error removing middleware %s\n", i.Name)
+			} else {
+				middlewareToDelete = append(middlewareToDelete, i.Name)
+			}
+
+		}
+	}
+	// now deal with services
 	if len(mariadbDelete) > 0 || len(mongodbDelete) > 0 || len(postgresqlDelete) > 0 || len(depDelete) > 0 || len(volDelete) > 0 || len(servDelete) > 0 {
 		fmt.Println(`>> Lagoon detected services or volumes that have been removed from the docker-compose file`)
 		if !performDeletion {
@@ -111,9 +125,9 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				fmt.Printf(">> Would remove postgresql consumer %s and associated components\n", i.Name)
 			}
 		}
-		return mariaDBToDelete, mongoDBToDelete, postgresToDelete, deploymentsToDelete, volumesToDelete, servicesToDelete, nil
+		return mariaDBToDelete, mongoDBToDelete, postgresToDelete, deploymentsToDelete, volumesToDelete, servicesToDelete, middlewareToDelete, nil
 	} else {
-		return nil, nil, nil, nil, nil, nil, nil
+		return nil, nil, nil, nil, nil, nil, middlewareToDelete, nil
 	}
 }
 

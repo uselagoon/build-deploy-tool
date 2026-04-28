@@ -764,6 +764,55 @@ func TestGenerateIngressTemplate(t *testing.T) {
 			},
 			want: "test-resources/ingress/result-wildcard-ingress3.yaml",
 		},
+		{
+			name: "traefik-custom-ingress1",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation": "custom annotation value",
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					IngressClass: "traefik",
+					Source:       "YAML",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					IngressClass:            "traefik",
+					EnableTraefikMiddleware: true,
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/ingress/result-traefik-custom-ingress1.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -794,6 +843,82 @@ func TestGenerateIngressTemplate(t *testing.T) {
 				if !reflect.DeepEqual(string(gotR), string(r1)) {
 					t.Errorf("GenerateIngressTemplate() = \n%v", diff.LineDiff(string(r1), string(gotR)))
 				}
+			}
+		})
+	}
+}
+
+func Test_addMiddleware(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		middlewares string
+		middleware  string
+		want        string
+	}{
+		{
+			name:        "test1",
+			middlewares: "",
+			middleware:  "test-one@kubernetescrd",
+			want:        "test-one@kubernetescrd",
+		},
+		{
+			name:        "test2",
+			middlewares: "test-one@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd,test-two@kubernetescrd",
+		},
+		{
+			name:        "test3",
+			middlewares: "test-one@kubernetescrd,test-two@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd,test-two@kubernetescrd",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := addMiddleware(tt.middlewares, tt.middleware)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("addMiddleware() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_removeMiddleware(t *testing.T) {
+	tests := []struct {
+		name string // description of this test case
+		// Named input parameters for target function.
+		middlewares string
+		middleware  string
+		want        string
+		wantErr     bool
+	}{
+		{
+			name:        "test1",
+			middlewares: "test-one@kubernetescrd",
+			middleware:  "test-one@kubernetescrd",
+			want:        "",
+		},
+		{
+			name:        "test2",
+			middlewares: "test-one@kubernetescrd,test-two@kubernetescrd",
+			middleware:  "test-two@kubernetescrd",
+			want:        "test-one@kubernetescrd",
+		},
+		{
+			name:        "test3",
+			middlewares: "test-three@kubernetescrd",
+			middleware:  "test-one@kubernetescrd",
+			want:        "",
+			wantErr:     true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := removeMiddleware(tt.middlewares, tt.middleware)
+			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
+				t.Errorf("removeMiddleware() = %v, want %v", got, tt.want)
 			}
 		})
 	}

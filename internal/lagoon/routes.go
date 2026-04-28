@@ -43,6 +43,12 @@ type RouteV2 struct {
 	Source                string            `json:"source,omitempty"`
 	Primary               *bool             `json:"primary,omitempty"`
 	Type                  RouteType         `json:"type,omitempty"`
+	// user not settable
+	HasSetRealIPFrom bool `json:"-"`
+	HasIPAllowList   bool `json:"-"`
+	HasRedirect      bool `json:"-"`
+	HasBasicAuth     bool `json:"-"`
+	HasHeaders       bool `json:"-"`
 }
 
 // @TODO: Update machinery schema at some point
@@ -349,6 +355,10 @@ func MergeRoutesV2(yamlRoutes RoutesV2, apiRoutes RoutesV2, variables []Environm
 		}
 		fRoute.Domain = strings.ToLower(fRoute.Domain)
 		finalRoutes.Routes = append(finalRoutes.Routes, fRoute)
+	}
+	// validate the route annotations and error if any annotations are restricted
+	if err := validateRouteAnnotations(finalRoutes); err != nil {
+		return RoutesV2{}, err
 	}
 	return finalRoutes, nil
 }

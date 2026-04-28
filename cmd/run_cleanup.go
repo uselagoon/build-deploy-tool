@@ -47,7 +47,7 @@ var cleanupCmd = &cobra.Command{
 		}
 		gen.Namespace = namespace
 		gen.ImageReferences = imageRefs.Images
-		_, _, _, _, _, _, err = cleanup.RunCleanup(col, gen, deleteServices)
+		_, _, _, _, _, _, _, err = cleanup.RunCleanup(col, gen, deleteServices)
 		if err != nil {
 			return err
 		}
