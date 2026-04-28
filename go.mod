@@ -5,28 +5,28 @@ go 1.25.0
 require (
 	dario.cat/mergo v1.0.2
 	github.com/PaesslerAG/gval v1.2.4
-	github.com/alessio/shellescape v1.4.1
+	github.com/alessio/shellescape v1.6.0
 	github.com/amazeeio/dbaas-operator v0.4.0
 	github.com/andreyvit/diff v0.0.0-20170406064948-c7f18ee00883
 	github.com/compose-spec/compose-go v1.2.7
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
-	github.com/deckarep/golang-set/v2 v2.8.0
+	github.com/deckarep/golang-set/v2 v2.9.0
 	github.com/distribution/reference v0.6.0
 	github.com/docker/cli v27.5.1+incompatible
 	github.com/drone/envsubst v1.0.3
 	github.com/google/go-cmp v0.7.0
-	github.com/hashicorp/go-retryablehttp v0.7.7
-	github.com/k8up-io/k8up/v2 v2.13.1
+	github.com/hashicorp/go-retryablehttp v0.7.8
+	github.com/k8up-io/k8up/v2 v2.15.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/spf13/cobra v1.10.0
-	github.com/uselagoon/machinery v0.0.34
+	github.com/spf13/cobra v1.10.2
+	github.com/uselagoon/machinery v0.0.36
 	github.com/vshn/k8up v1.99.99
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
-	k8s.io/api v0.35.1
-	k8s.io/apimachinery v0.35.1
-	k8s.io/client-go v0.35.1
-	sigs.k8s.io/controller-runtime v0.23.1
+	k8s.io/api v0.36.0
+	k8s.io/apimachinery v0.36.0
+	k8s.io/client-go v0.36.0
+	sigs.k8s.io/controller-runtime v0.23.3
 	sigs.k8s.io/yaml v1.6.0
 )
 
