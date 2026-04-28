@@ -76,7 +76,7 @@ ENV TMPDIR=/tmp \
 # renovate: datasource=github-tags depName=kubernetes/kubernetes
 ENV KUBECTL_VERSION=v1.35.3
 # renovate: datasource=github-releases depName=helm/helm
-ENV HELM_VERSION=v3.20.2
+ENV HELM_VERSION=v4.1.4
 # renovate: datasource=github-releases depName=mikefarah/yq
 ENV YQ_VERSION=v4.52.5
 # renovate: datasource=github-releases depName=uselagoon/lagoon-linter
