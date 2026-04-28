@@ -108,7 +108,7 @@ jobs:
           key: cache-${{ hashFiles('**/go.mod') }}
       - 
         name: inject cache into docker
-        uses: reproducible-containers/buildkit-cache-dance@v3.1.0
+        uses: reproducible-containers/buildkit-cache-dance@5de31fc1534ed8789e63d41ea933c5df9944a261 # v3.1.0
         with:
           cache-map: |
             {
