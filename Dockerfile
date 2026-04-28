@@ -43,7 +43,7 @@ RUN --mount=type=cache,target=/root/.cache/go-build \
 # RUN go mod download
 # RUN go build -o /app/build-deploy-tool
 
-FROM docker:29.3.0-alpine3.23
+FROM docker:29.4.1-alpine3.23
 
 LABEL org.opencontainers.image.authors="The Lagoon Authors" maintainer="The Lagoon Authors"
 LABEL org.opencontainers.image.source="https://github.com/uselagoon/build-deploy-tool" repository="https://github.com/uselagoon/build-deploy-tool"
