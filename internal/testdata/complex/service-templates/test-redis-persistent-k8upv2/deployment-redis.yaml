@@ -28,7 +28,7 @@ spec:
   template:
     metadata:
       annotations:
-        k8up.io/backupcommand: /bin/sh -c "timeout 5400 tar -cf - -C /data ."
+        k8up.io/backupcommand: /bin/sh -c "timeout 5400 tar -cf - -C /data --exclude='temp-*.rdb' *.rdb"
         k8up.io/file-extension: .redis.tar
         lagoon.sh/branch: main
         lagoon.sh/configMapSha: abcdefg1234567890

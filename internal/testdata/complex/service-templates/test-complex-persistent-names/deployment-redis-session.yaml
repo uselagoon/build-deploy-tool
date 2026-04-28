@@ -29,7 +29,7 @@ spec:
     metadata:
       annotations:
         k8up.syn.tools/backupcommand: /bin/sh -c "timeout 5400 tar -cf - -C /data
-          ."
+          --exclude='temp-*.rdb' *.rdb"
         k8up.syn.tools/file-extension: .redis-session.tar
         lagoon.sh/branch: main
         lagoon.sh/configMapSha: abcdefg1234567890
