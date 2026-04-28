@@ -12,7 +12,7 @@ require (
 	github.com/cxmcc/unixsums v0.0.0-20131125091133-89564297d82f
 	github.com/deckarep/golang-set/v2 v2.8.0
 	github.com/distribution/reference v0.6.0
-	github.com/docker/cli v27.5.1+incompatible
+	github.com/docker/cli v29.2.0+incompatible
 	github.com/drone/envsubst v1.0.3
 	github.com/google/go-cmp v0.7.0
 	github.com/hashicorp/go-retryablehttp v0.7.7
