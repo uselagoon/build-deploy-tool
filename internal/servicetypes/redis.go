@@ -91,7 +91,7 @@ var redisPersistent = ServiceType{
 		PersistentVolumeType: corev1.ReadWriteOnce,
 		PersistentVolumePath: "/data",
 		BackupConfiguration: BackupConfiguration{
-			Command:       `/bin/sh -c "timeout 5400 tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} ."`,
+			Command:       `/bin/sh -c "timeout 5400 tar -cf - -C {{ if .ServiceValues.PersistentVolumePath }}{{.ServiceValues.PersistentVolumePath}}{{else}}{{.ServiceTypeValues.Volumes.PersistentVolumePath}}{{end}} --exclude='temp-*.rdb' *.rdb"`,
 			FileExtension: ".{{ .ServiceValues.OverrideName }}.tar",
 		},
 	},
