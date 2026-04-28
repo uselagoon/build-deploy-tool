@@ -78,7 +78,7 @@ ENV KUBECTL_VERSION=v1.35.3
 # renovate: datasource=github-releases depName=helm/helm
 ENV HELM_VERSION=v3.20.2
 # renovate: datasource=github-releases depName=mikefarah/yq
-ENV YQ_VERSION=v4.52.5
+ENV YQ_VERSION=v4.53.2
 # renovate: datasource=github-releases depName=uselagoon/lagoon-linter
 ENV LAGOON_LINTER_VERSION=v0.8.0
 
