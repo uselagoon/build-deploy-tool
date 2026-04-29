@@ -30,4 +30,4 @@ build: fmt vet
 .PHONY: docker-build
 docker-build:
 	DOCKER_BUILDKIT=1 docker build --pull --build-arg GO_VER=${GO_VER} --build-arg VERSION=${VERSION} --build-arg BUILD=${BUILD} --rm -f Dockerfile -t lagoon/build-deploy-image:local .
-	docker run --entrypoint /bin/bash lagoon/build-deploy-image:local -c 'build-deploy-tool version'
+	docker run --rm --entrypoint /bin/bash lagoon/build-deploy-image:local -c 'build-deploy-tool version'
