@@ -74,7 +74,7 @@ ENV TMPDIR=/tmp \
 
 # Defining Versions
 # renovate: datasource=github-tags depName=kubernetes/kubernetes
-ENV KUBECTL_VERSION=v1.35.3
+ENV KUBECTL_VERSION=v1.36.0
 # renovate: datasource=github-releases depName=helm/helm
 ENV HELM_VERSION=v3.20.2
 # renovate: datasource=github-releases depName=mikefarah/yq
