@@ -20,8 +20,8 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v1.10.0
 	github.com/uselagoon/machinery v0.0.34
-	github.com/vshn/k8up v1.99.99
-	gopkg.in/yaml.v2 v2.4.0
+	github.com/vshn/k8up/v2 v2.15.0
+	gopkg.in/yaml.v3 v3.0.1
 	gopkg.in/yaml.v3 v3.0.1
 	k8s.io/api v0.35.1
 	k8s.io/apimachinery v0.35.1
@@ -89,7 +89,7 @@ require (
 	sigs.k8s.io/structured-merge-diff/v6 v6.3.2-0.20260122202528-d9cc6641c482 // indirect
 )
 
-replace github.com/imdario/mergo => github.com/imdario/mergo v0.3.16
+replace github.com/imdario/mergo => github.com/imdario/mergo v1.0.2
 
 replace github.com/compose-spec/compose-go v1.2.7 => github.com/shreddedbacon/compose-go v0.0.0-20220616064547-4e908a2865c1
 
