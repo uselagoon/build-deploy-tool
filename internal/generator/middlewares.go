@@ -122,16 +122,16 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 			mainRoutes.Routes[idx].HasRedirect = true
 			redirect := traefik.MiddlewareSpec{
 				RedirectRegex: &dynamic.RedirectRegex{
-					Regex:     fmt.Sprintf("^https?://%s/(.*)", route.Domain),
+					Regex:     ".*",
 					Permanent: false,
 				},
 			}
 			if hasPermRedirect {
-				redirect.RedirectRegex.Replacement = strings.ReplaceAll(permRedirect, "$request_uri", "/${1}")
+				redirect.RedirectRegex.Replacement = strings.ReplaceAll(permRedirect, "$request_uri", "")
 				redirect.RedirectRegex.Permanent = true
 			}
 			if hasTempRedirect {
-				redirect.RedirectRegex.Replacement = strings.ReplaceAll(tempRedirect, "$request_uri", "/${1}")
+				redirect.RedirectRegex.Replacement = strings.ReplaceAll(tempRedirect, "$request_uri", "")
 			}
 			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-redirect", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = redirect
 		}
