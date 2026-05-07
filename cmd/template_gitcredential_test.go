@@ -7,7 +7,9 @@ import (
 	"testing"
 
 	"github.com/andreyvit/diff"
+	generator "github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
+	"github.com/uselagoon/build-deploy-tool/internal/testdata"
 
 	// changes the testing to source from root so paths to test resources must be defined from repo root
 	_ "github.com/uselagoon/build-deploy-tool/internal/testing"
@@ -16,7 +18,7 @@ import (
 func TestTemplateGitCredential(t *testing.T) {
 	tests := []struct {
 		name               string
-		vars               []helpers.EnvironmentVariable
+		args               testdata.TestData
 		want               string
 		resultFilename     string
 		testResultfilename string
@@ -25,95 +27,137 @@ func TestTemplateGitCredential(t *testing.T) {
 	}{
 		{
 			name: "test1 check if variables are defined",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "SOURCE_REPOSITORY",
-					Value: "https://example.com/lagoon-demo.git",
-				},
-				{
-					Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-					Value: `[{"name":"LAGOON_GIT_HTTPS_USERNAME","scope":"build","value":"user1"},{"name":"LAGOON_GIT_HTTPS_PASSWORD","scope":"build","value":"somep@ssword"}]`,
-				},
-			},
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"},{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"}]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "https://example.com/lagoon-demo.git",
+						},
+					},
+				}, true),
 			resultFilename:     "test1",
 			testResultfilename: "internal/testdata/git-credentials/test1",
 			wantFile:           true,
 			want:               "store",
 		},
 		{
-			name: "test2 check if variable are defined (no username)",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "SOURCE_REPOSITORY",
-					Value: "https://example.com/lagoon-demo.git",
-				},
-				{
-					Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-					Value: `[{"name":"LAGOON_GIT_HTTPS_PASSWORD","scope":"build","value":"somep@ssword"}]`,
-				},
-			},
+			name: "test2 check if variables are defined for multiple git repositories",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials2.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"},{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"},{"name":"GITREPO_github_com_USERNAME","scope":"build","value":"ghuser1"},{"name":"GITREPO_github_com_PASSWORD","scope":"build","value":"ghsomep@ssword"}]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "https://example.com/lagoon-demo.git",
+						},
+					},
+				}, true),
+			resultFilename:     "test2",
+			testResultfilename: "internal/testdata/git-credentials/test2",
+			wantFile:           true,
+			want:               "store",
+		},
+		{
+			name: "test3 check if variable are defined (no username)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"}]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "https://example.com/lagoon-demo.git",
+						},
+					},
+				}, true),
 			wantErr: true,
 			want:    "",
 		},
 		{
-			name: "test3 check if variable are defined (no password)",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "SOURCE_REPOSITORY",
-					Value: "https://example.com/lagoon-demo.git",
-				},
-				{
-					Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-					Value: `[{"name":"LAGOON_GIT_HTTPS_USERNAME","scope":"build","value":"user1"}]`,
-				},
-			},
+			name: "test4 check if variable are defined (no password)",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"}]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "https://example.com/lagoon-demo.git",
+						},
+					},
+				}, true),
 			wantErr: true,
 			want:    "",
-		},
-		{
-			name: "test4 no username or password",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "SOURCE_REPOSITORY",
-					Value: "https://example.com/lagoon-demo.git",
-				},
-				{
-					Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-					Value: `[]`,
-				},
-			},
-			want: "",
 		},
 		{
 			name: "test5 ssh pass through",
-			vars: []helpers.EnvironmentVariable{
-				{
-					Name:  "SOURCE_REPOSITORY",
-					Value: "ssh://git@example.com/lagoon-demo.git",
-				},
-				{
-					Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-					Value: `[]`,
-				},
-			},
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "ssh://git@example.com/lagoon-demo.git",
+						},
+					},
+				}, true),
 			want: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for _, envVar := range tt.vars {
+			helpers.UnsetEnvVars(nil) //unset variables before running tests
+			for _, envVar := range tt.args.BuildPodVariables {
 				err := os.Setenv(envVar.Name, envVar.Value)
 				if err != nil {
 					t.Errorf("%v", err)
 				}
 			}
-			tempResults := "testoutput"
-			err := os.MkdirAll(tempResults, 0755)
+			tempResults, err := os.MkdirTemp("", "testoutput")
 			if err != nil {
-				t.Errorf("couldn't create directory %v: %v", tempResults, err)
+				t.Errorf("%v", err)
+			}
+			generator, err := testdata.SetupEnvironment(generator.GeneratorInput{}, tempResults, tt.args)
+			if err != nil {
+				t.Errorf("%v", err)
 			}
 			defer os.RemoveAll(tempResults)
-			got, err := TemplateGitCredential(fmt.Sprintf("%s/%s", tempResults, tt.resultFilename))
+			got, err := TemplateGitCredential(generator, fmt.Sprintf("%s/%s", tempResults, tt.resultFilename))
 			if (err != nil) != tt.wantErr {
 				t.Errorf("TemplateGitCredential() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -135,7 +179,8 @@ func TestTemplateGitCredential(t *testing.T) {
 				}
 			}
 			t.Cleanup(func() {
-				helpers.UnsetEnvVars(tt.vars)
+				helpers.UnsetEnvVars(nil)
+				helpers.UnsetEnvVars(tt.args.BuildPodVariables)
 			})
 		})
 	}
