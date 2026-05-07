@@ -67,6 +67,7 @@ type YAML struct {
 	BackupSchedule       BackupSchedule               `json:"backup-schedule"`
 	EnvironmentVariables EnvironmentVariables         `json:"environment_variables,omitempty"`
 	ContainerRegistries  map[string]ContainerRegistry `json:"container-registries,omitempty"`
+	GitCredentials       map[string]GitCredential     `json:"git-credentials,omitempty"`
 	NetworkPolicies      []NetworkPolicy              `json:"network-policies,omitempty"`
 }
 
@@ -74,6 +75,10 @@ type ContainerRegistry struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
 	URL      string `json:"url"`
+}
+
+type GitCredential struct {
+	URL string `json:"url"`
 }
 
 type EnvironmentVariables struct {
