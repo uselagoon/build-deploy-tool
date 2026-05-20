@@ -96,7 +96,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 		if hasWhitelist {
 			mainRoutes.Routes[idx].HasIPAllowList = true
 			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-ipallowlist", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
-				IPWhiteList: &dynamic.IPWhiteList{
+				IPAllowList: &dynamic.IPAllowList{
 					SourceRange: splitTrim(whitelistRange),
 				},
 			}
@@ -104,7 +104,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 		if hasDenylist {
 			mainRoutes.Routes[idx].HasIPAllowList = true
 			buildValues.TraefikMiddlewares[fmt.Sprintf("%s-ipallowlist", helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8])] = traefik.MiddlewareSpec{
-				IPWhiteList: &dynamic.IPWhiteList{
+				IPAllowList: &dynamic.IPAllowList{
 					SourceRange: []string{"0.0.0.0/0"},
 					IPStrategy: &dynamic.IPStrategy{
 						ExcludedIPs: splitTrim(denylistRange),
