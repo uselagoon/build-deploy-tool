@@ -2,11 +2,13 @@ package cleanup
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/uselagoon/build-deploy-tool/internal/collector"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/build-deploy-tool/internal/identify"
+	"k8s.io/apimachinery/pkg/types"
 	client "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
@@ -42,6 +44,9 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove deployment %s\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching deployment %s\n", i.Name)
+				}
 			}
 		}
 		for _, i := range volDelete {
@@ -53,6 +58,9 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove volume %s\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching volume %s\n", i.Name)
+				}
 			}
 		}
 		for _, i := range servDelete {
@@ -64,6 +72,9 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove service %s\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching service %s\n", i.Name)
+				}
 			}
 		}
 		for _, i := range mariadbDelete {
@@ -79,6 +90,12 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove mariadb consumer %s and associated components\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching mariadb consumer %s\n", i.Name)
+				}
+				if err := patchAbandonedPreBackupPod(ctx, c.Client, state, i.Name, true); err != nil {
+					fmt.Printf("!! Error patching prebackuppod for mariadb consumer %s\n", i.Name)
+				}
 			}
 		}
 		for _, i := range mongodbDelete {
@@ -94,6 +111,12 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove mongodb consumer %s and associated components\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching mongodb consumer %s\n", i.Name)
+				}
+				if err := patchAbandonedPreBackupPod(ctx, c.Client, state, i.Name, true); err != nil {
+					fmt.Printf("!! Error patching prebackuppod for mongodb consumer %s\n", i.Name)
+				}
 			}
 		}
 		for _, i := range postgresqlDelete {
@@ -109,6 +132,12 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 			} else {
 				fmt.Printf(">> Would remove postgresql consumer %s and associated components\n", i.Name)
+				if err := patchAbandoned(ctx, c.Client, &i, true); err != nil {
+					fmt.Printf("!! Error patching postgresql consumer %s\n", i.Name)
+				}
+				if err := patchAbandonedPreBackupPod(ctx, c.Client, state, i.Name, true); err != nil {
+					fmt.Printf("!! Error patching prebackuppod for postgresql consumer %s\n", i.Name)
+				}
 			}
 		}
 		return mariaDBToDelete, mongoDBToDelete, postgresToDelete, deploymentsToDelete, volumesToDelete, servicesToDelete, nil
@@ -133,6 +162,46 @@ func removePreBackupPod(ctx context.Context, c client.Client, state *collector.L
 				return err
 			}
 		}
+	}
+	return nil
+}
+func patchAbandonedPreBackupPod(ctx context.Context, c client.Client, state *collector.LagoonEnvState, name string, abandoned bool) error {
+	mergePatch, _ := json.Marshal(map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"labels": map[string]interface{}{
+				"service.lagoon.sh/abandonded": fmt.Sprintf("%t", abandoned),
+			},
+		},
+	})
+	for _, pbp := range state.PreBackupPodsV1.Items {
+		if pbp.Name == fmt.Sprintf("%s-prebackuppod", name) {
+			fmt.Printf(">> Removing mariadb prebackuppod %s\n", name)
+			if err := c.Patch(ctx, &pbp, client.RawPatch(types.MergePatchType, mergePatch)); err != nil {
+				return err
+			}
+		}
+	}
+	for _, pbp := range state.PreBackupPodsV1Alpha1.Items {
+		if pbp.Name == fmt.Sprintf("%s-prebackuppod", name) {
+			fmt.Printf(">> Removing mariadb prebackuppod %s\n", name)
+			if err := c.Patch(ctx, &pbp, client.RawPatch(types.MergePatchType, mergePatch)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func patchAbandoned(ctx context.Context, c client.Client, resource client.Object, abandoned bool) error {
+	mergePatch, _ := json.Marshal(map[string]interface{}{
+		"metadata": map[string]interface{}{
+			"labels": map[string]interface{}{
+				"service.lagoon.sh/abandonded": fmt.Sprintf("%t", abandoned),
+			},
+		},
+	})
+	if err := c.Patch(ctx, resource, client.RawPatch(types.MergePatchType, mergePatch)); err != nil {
+		return err
 	}
 	return nil
 }
