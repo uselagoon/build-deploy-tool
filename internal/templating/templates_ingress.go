@@ -153,6 +153,10 @@ func GenerateIngressTemplate(
 				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-ipallowlist@kubernetescrd", lValues.Namespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
 			)
 		}
+		// add the platform-middleware chain after any ip modification/checks
+		additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-platform-middleware@kubernetescrd", lValues.Namespace),
+		)
 		// basicauth
 		if route.HasBasicAuth {
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(

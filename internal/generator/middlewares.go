@@ -67,6 +67,12 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 			},
 		},
 	}
+	// initialise an empty platform middleware for chained middleware that a platform owner can add into namespaces
+	// this file will not be modified by lagoon, and any middlewares added to this
+	// should be considered temporary
+	buildValues.TraefikMiddlewares["platform-middleware"] = traefik.MiddlewareSpec{
+		Chain: &traefik.Chain{},
+	}
 	for idx, route := range mainRoutes.Routes {
 		// placeholder for headers for this route
 		// build hsts middleware

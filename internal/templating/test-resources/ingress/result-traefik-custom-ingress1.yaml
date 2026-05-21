@@ -14,7 +14,7 @@ metadata:
     monitor.stakater.com/enabled: "true"
     monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
-    traefik.ingress.kubernetes.io/router.middlewares: myexample-project-environment-with-really-really-reall-3fdb-x-lagoon@kubernetescrd,myexample-project-environment-with-really-really-reall-3fdb-https-redirect@kubernetescrd
+    traefik.ingress.kubernetes.io/router.middlewares: myexample-project-environment-with-really-really-reall-3fdb-x-lagoon@kubernetescrd,myexample-project-environment-with-really-really-reall-3fdb-platform-middleware@kubernetescrd,myexample-project-environment-with-really-really-reall-3fdb-https-redirect@kubernetescrd
     uptimerobot.monitor.stakater.com/alert-contacts: abcdefg
     uptimerobot.monitor.stakater.com/interval: "60"
     uptimerobot.monitor.stakater.com/status-pages: "12345"
