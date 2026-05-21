@@ -163,7 +163,18 @@ func generatePodTemplateSpec(
 			}
 		}
 	}
-	// start set up any volumes this cronjob can use
+	// start set up any volumes this pod can use
+	if serviceTypeValues.AllowSSHKeyMount && serviceValues.MountSSHKey == nil || serviceValues.MountSSHKey != nil && *serviceValues.MountSSHKey {
+		podTemplateSpec.Spec.Volumes = append(podTemplateSpec.Spec.Volumes, corev1.Volume{
+			Name: "lagoon-sshkey",
+			VolumeSource: corev1.VolumeSource{
+				Secret: &corev1.SecretVolumeSource{
+					DefaultMode: helpers.Int32Ptr(420),
+					SecretName:  "lagoon-sshkey",
+				},
+			},
+		})
+	}
 	// first handle any dynamic secret volumes that come from kubernetes secrets that are labeled
 	for _, dsv := range buildValues.DynamicSecretVolumes {
 		volume := corev1.Volume{
@@ -328,6 +339,13 @@ func generatePodTemplateSpec(
 	}
 
 	// mount the volumes in the primary container
+	if serviceTypeValues.AllowSSHKeyMount && serviceValues.MountSSHKey == nil || serviceValues.MountSSHKey != nil && *serviceValues.MountSSHKey {
+		container.Container.VolumeMounts = append(container.Container.VolumeMounts, corev1.VolumeMount{
+			Name:      "lagoon-sshkey",
+			ReadOnly:  true,
+			MountPath: "/var/run/secrets/lagoon/sshkey/",
+		})
+	}
 	for _, dsm := range buildValues.DynamicSecretMounts {
 		volumeMount := corev1.VolumeMount{
 			Name:      dsm.Name,

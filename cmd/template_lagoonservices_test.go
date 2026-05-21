@@ -653,6 +653,22 @@ func TestTemplateLagoonServices(t *testing.T) {
 				}, true),
 			want: "internal/testdata/basic/service-templates/test-basic-deployment-revision-history",
 		},
+		{
+			name:        "test-basic-deployment-cli-keymount",
+			description: "tests a basic deployment with a cli pod with the key not mounted",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.cli-key.yml",
+					ImageReferences: map[string]string{
+						"cli":   "harbor.example/example-project/main/cli@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+						"basic": "harbor.example/example-project/main/basic@sha256:b2001babafaa8128fe89aa8fd11832cade59931d14c3de5b3ca32e2a010fbaa8",
+					},
+				}, true),
+			want: "internal/testdata/basic/service-templates/test-basic-deployment-cli-keymount",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

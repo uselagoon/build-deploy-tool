@@ -19,6 +19,7 @@ type ServiceType struct {
 	ProvidesPersistentVolume bool
 	ConsumesPersistentVolume bool
 	AllowAdditionalVolumes   bool
+	AllowSSHKeyMount         bool
 }
 
 type ServicePodSecurityContext struct {
@@ -192,4 +193,8 @@ func ConvertOldServiceType(lagoonType string) string {
 		return val
 	}
 	return lagoonType
+}
+
+func SupportMountSSHKey(lagoonType string) bool {
+	return ServiceTypes[lagoonType].AllowSSHKeyMount
 }

@@ -567,6 +567,30 @@ func composeToServiceValues(
 				cService.AdditionalServicePorts = append(cService.AdditionalServicePorts, newService)
 			}
 		}
+		// handle development environment override
+		mountSSHKey := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.service.development.mountsshkey")
+		if mountSSHKey != "" && buildValues.EnvironmentType == "development" {
+			if !servicetypes.SupportMountSSHKey(lagoonType) {
+				return nil, fmt.Errorf(
+					"lagoon.type '%s' does not support mounting ssh key",
+					lagoonType,
+				)
+			}
+			b, _ := strconv.ParseBool(mountSSHKey)
+			cService.MountSSHKey = &b
+		}
+		// handle production environment override
+		mountSSHKey = lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.service.production.mountsshkey")
+		if mountSSHKey != "" && buildValues.EnvironmentType == "production" {
+			if !servicetypes.SupportMountSSHKey(lagoonType) {
+				return nil, fmt.Errorf(
+					"lagoon.type '%s' does not support mounting ssh key",
+					lagoonType,
+				)
+			}
+			b, _ := strconv.ParseBool(mountSSHKey)
+			cService.MountSSHKey = &b
+		}
 		return cService, nil
 	}
 }
