@@ -529,7 +529,7 @@ func TestGetCurrentState(t *testing.T) {
 				t.Errorf("error seeding fake data: %v", err)
 			}
 			col := collector.NewCollector(client)
-			lagoonServices, _, _, _, _, _, _, _, err := GetCurrentState(col, generator)
+			lagoonServices, _, _, _, _, _, _, _, _, err := GetCurrentState(col, generator)
 			if err != nil {
 				t.Errorf("GetCurrentState() %v ", err)
 			}
