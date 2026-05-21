@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	composetypes "github.com/compose-spec/compose-go/types"
+	composetypes "github.com/compose-spec/compose-go/v2/types"
 	"github.com/spf13/cobra"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
 )
