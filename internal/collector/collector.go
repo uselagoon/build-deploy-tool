@@ -77,7 +77,11 @@ func (c *Collector) Collect(ctx context.Context, namespace string) (*LagoonEnvSt
 	}
 	state.TraefikMiddleware, err = c.CollectTraefikMiddleware(ctx, namespace)
 	if err != nil {
-		return nil, err
+		// handle if traefik crds not installed
+		if !strings.Contains(err.Error(), "no matches for kind") {
+			fmt.Fprintln(os.Stderr, err)
+			return nil, err
+		}
 	}
 	state.MariaDBConsumers, err = c.CollectMariaDBConsumers(ctx, namespace)
 	if err != nil {

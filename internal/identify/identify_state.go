@@ -139,6 +139,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 		if !middlewareMatch {
 			middlewareDelete = append(middlewareDelete, exist)
 		}
+		middlewareMatch = false
 	}
 
 	volMatch := false
