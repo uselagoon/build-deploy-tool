@@ -892,7 +892,6 @@ func Test_removeMiddleware(t *testing.T) {
 		middlewares string
 		middleware  string
 		want        string
-		wantErr     bool
 	}{
 		{
 			name:        "test1",
@@ -910,14 +909,13 @@ func Test_removeMiddleware(t *testing.T) {
 			name:        "test3",
 			middlewares: "test-three@kubernetescrd",
 			middleware:  "test-one@kubernetescrd",
-			want:        "",
-			wantErr:     true,
+			want:        "test-three@kubernetescrd",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := removeMiddleware(tt.middlewares, tt.middleware)
-			if !reflect.DeepEqual(got, tt.want) && !tt.wantErr {
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("removeMiddleware() = %v, want %v", got, tt.want)
 			}
 		})
