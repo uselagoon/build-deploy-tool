@@ -32,11 +32,15 @@ func TestTemplateGitCredential(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					BuildPodVariables: []helpers.EnvironmentVariable{
 						{
-							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"},{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"}]`,
+							Name: "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[
+								{"name":"GITREPO_EXAMPLE_URL","scope":"build","value":"https://example.com"},
+								{"name":"GITREPO_EXAMPLE_USERNAME","scope":"build","value":"user1"},
+								{"name":"GITREPO_EXAMPLE_PASSWORD","scope":"build","value":"somep@ssword"}
+							]`,
 						},
 						{
 							Name:  "SOURCE_REPOSITORY",
@@ -56,11 +60,17 @@ func TestTemplateGitCredential(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials2.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					BuildPodVariables: []helpers.EnvironmentVariable{
 						{
-							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"},{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"},{"name":"GITREPO_github_com_USERNAME","scope":"build","value":"ghuser1"},{"name":"GITREPO_github_com_PASSWORD","scope":"build","value":"ghsomep@ssword"}]`,
+							Name: "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[
+								{"name":"GITREPO_EXAMPLE_URL","scope":"build","value":"https://example.com"},
+								{"name":"GITREPO_EXAMPLE_USERNAME","scope":"build","value":"user1"},
+								{"name":"GITREPO_EXAMPLE_PASSWORD","scope":"build","value":"somep@ssword"},
+								{"name":"GITREPO_GITHUB_USERNAME","scope":"build","value":"ghuser1"},
+								{"name":"GITREPO_GITHUB_PASSWORD","scope":"build","value":"ghsomep@ssword"}
+							]`,
 						},
 						{
 							Name:  "SOURCE_REPOSITORY",
@@ -80,11 +90,11 @@ func TestTemplateGitCredential(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					BuildPodVariables: []helpers.EnvironmentVariable{
 						{
 							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-							Value: `[{"name":"GITREPO_example_com_PASSWORD","scope":"build","value":"somep@ssword"}]`,
+							Value: `[{"name":"GITREPO_EXAMPLE_PASSWORD","scope":"build","value":"somep@ssword"}]`,
 						},
 						{
 							Name:  "SOURCE_REPOSITORY",
@@ -102,11 +112,11 @@ func TestTemplateGitCredential(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					BuildPodVariables: []helpers.EnvironmentVariable{
 						{
 							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
-							Value: `[{"name":"GITREPO_example_com_USERNAME","scope":"build","value":"user1"}]`,
+							Value: `[{"name":"GITREPO_EXAMPLE_USERNAME","scope":"build","value":"user1"}]`,
 						},
 						{
 							Name:  "SOURCE_REPOSITORY",
@@ -124,7 +134,7 @@ func TestTemplateGitCredential(t *testing.T) {
 					ProjectName:     "example-project",
 					EnvironmentName: "main",
 					Branch:          "main",
-					LagoonYAML:      "internal/testdata/basic/lagoon.git-credentials.yml",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
 					BuildPodVariables: []helpers.EnvironmentVariable{
 						{
 							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
