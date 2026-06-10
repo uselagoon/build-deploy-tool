@@ -55,14 +55,14 @@ func GetMD5HashWithNewLine(text string) string {
 
 // GetSha256Hash gets the sha256 hash of a string.
 func GetSha256Hash(text string) []byte {
-	hash := sha256.Sum256([]byte(fmt.Sprintf("%s", text)))
+	hash := sha256.Sum256([]byte(text))
 	return hash[:]
 }
 
 // GetBase32EncodedLowercase gets a lowercase version of some data in base32 encoding.
 // Lagoon does this currently, so replicating behaviour.
 func GetBase32EncodedLowercase(data []byte) string {
-	return strings.ToLower(base32.StdEncoding.EncodeToString(data)[:])
+	return strings.ToLower(base32.StdEncoding.EncodeToString(data))
 }
 
 // GetEnv gets an environment variable
@@ -70,7 +70,7 @@ func GetEnv(key, fallback string, debug bool) string {
 	if value, ok := os.LookupEnv(key); ok {
 		if value != "" {
 			if debug {
-				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+				fmt.Printf("using value from environment variable %s\n", key)
 			}
 			return value
 		}
@@ -85,7 +85,7 @@ func GetEnvInt(key string, fallback int, debug bool) int {
 			valueInt, e := strconv.Atoi(value)
 			if e == nil {
 				if debug {
-					fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+					fmt.Printf("using value from environment variable %s\n", key)
 				}
 				return valueInt
 			}
@@ -100,10 +100,10 @@ func EGetEnvInt(key string, fallback int, debug bool) (int, error) {
 		if value != "" {
 			valueInt, e := strconv.Atoi(value)
 			if e != nil {
-				return 0, fmt.Errorf("Unable to convert value %s to integer: %v", value, e)
+				return 0, fmt.Errorf("unable to convert value %s to integer: %v", value, e)
 			}
 			if debug {
-				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+				fmt.Printf("using value from environment variable %s\n", key)
 			}
 			return valueInt, nil
 		}
@@ -119,7 +119,7 @@ func GetEnvBool(key string, fallback bool, debug bool) bool {
 		if value != "" {
 			rVal, _ := strconv.ParseBool(value)
 			if debug {
-				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+				fmt.Printf("using value from environment variable %s\n", key)
 			}
 			return rVal
 		}
@@ -135,10 +135,10 @@ func EGetEnvBool(key string, fallback bool, debug bool) (bool, error) {
 		if value != "" {
 			rVal, e := strconv.ParseBool(value)
 			if e != nil {
-				return false, fmt.Errorf("Unable to convert value %s to bool: %v", value, e)
+				return false, fmt.Errorf("unable to convert value %s to bool: %v", value, e)
 			}
 			if debug {
-				fmt.Println(fmt.Sprintf("Using value from environment variable %s", key))
+				fmt.Printf("using value from environment variable %s\n", key)
 			}
 			return rVal, nil
 		}
@@ -268,8 +268,8 @@ func TemplateThings(values, src, dist interface{}) {
 	yb, _ := yaml.Marshal(src)
 	tmpl, _ := template.New("").Funcs(funcMap).Parse(string(yb))
 	queryBuilder := strings.Builder{}
-	tmpl.Execute(&queryBuilder, values)
-	yaml.Unmarshal([]byte(queryBuilder.String()), &dist)
+	_ = tmpl.Execute(&queryBuilder, values)
+	_ = yaml.Unmarshal([]byte(queryBuilder.String()), &dist)
 }
 
 var funcMap = template.FuncMap{

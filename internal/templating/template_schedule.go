@@ -97,7 +97,7 @@ func GenerateBackupSchedule(
 				},
 			}
 			// add the default labels
-			schedule.ObjectMeta.Labels = map[string]string{
+			schedule.Labels = map[string]string{
 				"app.kubernetes.io/name":       "k8up-schedule",
 				"app.kubernetes.io/instance":   "k8up-lagoon-backup-schedule",
 				"app.kubernetes.io/managed-by": "build-deploy-tool",
@@ -111,7 +111,7 @@ func GenerateBackupSchedule(
 			}
 
 			// add the default annotations
-			schedule.ObjectMeta.Annotations = map[string]string{
+			schedule.Annotations = map[string]string{
 				"lagoon.sh/version": lValues.LagoonVersion,
 			}
 
@@ -127,27 +127,27 @@ func GenerateBackupSchedule(
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
 			}
 			for key, value := range additionalLabels {
-				schedule.ObjectMeta.Labels[key] = value
+				schedule.Labels[key] = value
 			}
 			// add any additional annotations
 			for key, value := range additionalAnnotations {
-				schedule.ObjectMeta.Annotations[key] = value
+				schedule.Annotations[key] = value
 			}
 			// validate any annotations
-			if err := apivalidation.ValidateAnnotations(schedule.ObjectMeta.Annotations, nil); err != nil {
+			if err := apivalidation.ValidateAnnotations(schedule.Annotations, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the annotations for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
 				}
 			}
 			// validate any labels
-			if err := metavalidation.ValidateLabels(schedule.ObjectMeta.Labels, nil); err != nil {
+			if err := metavalidation.ValidateLabels(schedule.Labels, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the labels for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
 				}
 			}
 
 			// check length of labels
-			err := helpers.CheckLabelLength(schedule.ObjectMeta.Labels)
+			err := helpers.CheckLabelLength(schedule.Labels)
 			if err != nil {
 				return nil, err
 			}
@@ -235,7 +235,7 @@ func GenerateBackupSchedule(
 				}
 			}
 			// add the default labels
-			schedule.ObjectMeta.Labels = map[string]string{
+			schedule.Labels = map[string]string{
 				"app.kubernetes.io/name":       "k8up-schedule",
 				"app.kubernetes.io/instance":   "k8up-lagoon-backup-schedule",
 				"app.kubernetes.io/managed-by": "build-deploy-tool",
@@ -249,7 +249,7 @@ func GenerateBackupSchedule(
 			}
 
 			// add the default annotations
-			schedule.ObjectMeta.Annotations = map[string]string{
+			schedule.Annotations = map[string]string{
 				"lagoon.sh/version": lValues.LagoonVersion,
 			}
 
@@ -265,27 +265,27 @@ func GenerateBackupSchedule(
 				additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
 			}
 			for key, value := range additionalLabels {
-				schedule.ObjectMeta.Labels[key] = value
+				schedule.Labels[key] = value
 			}
 			// add any additional annotations
 			for key, value := range additionalAnnotations {
-				schedule.ObjectMeta.Annotations[key] = value
+				schedule.Annotations[key] = value
 			}
 			// validate any annotations
-			if err := apivalidation.ValidateAnnotations(schedule.ObjectMeta.Annotations, nil); err != nil {
+			if err := apivalidation.ValidateAnnotations(schedule.Annotations, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the annotations for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
 				}
 			}
 			// validate any labels
-			if err := metavalidation.ValidateLabels(schedule.ObjectMeta.Labels, nil); err != nil {
+			if err := metavalidation.ValidateLabels(schedule.Labels, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the labels for %s are not valid: %v", "k8up-lagoon-backup-schedule", err)
 				}
 			}
 
 			// check length of labels
-			err := helpers.CheckLabelLength(schedule.ObjectMeta.Labels)
+			err := helpers.CheckLabelLength(schedule.Labels)
 			if err != nil {
 				return nil, err
 			}
@@ -337,24 +337,24 @@ func TemplateSchedules(schedules *BackupSchedule) ([]byte, error) {
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
-		restoreResult := append(separator[:], sBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, sBytes...)
 	}
 	for _, schedule := range schedules.K8upV1alpha1 {
 		sBytes, err := yaml.Marshal(schedule)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
-		restoreResult := append(separator[:], sBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, sBytes...)
 	}
 	for _, secret := range schedules.Secrets {
 		sBytes, err := yaml.Marshal(secret)
 		if err != nil {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
-		restoreResult := append(separator[:], sBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, sBytes...)
 	}
 	return templateYAML, nil
 }

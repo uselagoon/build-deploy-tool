@@ -80,7 +80,10 @@ func UnmarshalLagoonDockerComposeYAML(file string) ([]OriginalServiceOrder, []Or
 	// unmarshal docker-compose.yml
 	// use to gopkg yaml v2 for MapSlice
 	m := goyaml.MapSlice{}
-	goyaml.Unmarshal(rawYAML, &m)
+	err = goyaml.Unmarshal(rawYAML, &m)
+	if err != nil {
+		return nil, nil, fmt.Errorf("couldn't unmarshal yaml %v: %v", file, err)
+	}
 	for _, item := range m {
 		// extract the services only
 		if item.Key.(string) == "services" {

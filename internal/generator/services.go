@@ -168,10 +168,10 @@ func composeToServiceValues(
 		// @TODO: this was previously used to detect which image to use for a linked service, but the logic for that has changed now
 		// this isn't required anymore. leaving the check here for now but `serviceDeploymentServiceType` is currently unused
 		// REF: https://github.com/uselagoon/build-deploy-tool/blob/997483b59ac7c055a07f04f579b91ccd7e4fb4a2/legacy/build-deploy-docker-compose.sh#L439-L444
-		serviceDeploymentServiceType := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.deployment.servicetype")
-		if serviceDeploymentServiceType == "" {
-			serviceDeploymentServiceType = composeService
-		}
+		// serviceDeploymentServiceType := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.deployment.servicetype")
+		// if serviceDeploymentServiceType == "" {
+		// 	serviceDeploymentServiceType = composeService
+		// }
 
 		// if there is a `lagoon.name` label on this service, this should be used as an override name
 		lagoonOverrideName := lagoon.CheckDockerComposeLagoonLabel(composeServiceValues.Labels, "lagoon.name")
@@ -464,14 +464,13 @@ func composeToServiceValues(
 					}
 
 					// if the cronjob is inpod, or the cronjob has an inpod flag override
-					//if inpod || (cronjob.InPod != nil && *cronjob.InPod) {
 					if *cronjob.InPod {
 						cmd := cronjob.Command
 						// Lagoon enforces that only a single instance of a cronjob can run at any one time.
 						// https://man7.org/linux/man-pages/man1/flock.1.html
 						// https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Shell-Parameter-Expansion
 						sha := sha256.New()
-						sha.Write([]byte(fmt.Sprintf("%d %s", idx, cmd)))
+						_, _ = fmt.Fprintf(sha, "%d %s", idx, cmd)
 						cmdSha := sha.Sum(nil)
 						cronjob.Command = fmt.Sprintf("flock -n /tmp/cron.lock.%x -c %s", cmdSha, shellescape.Quote(cmd))
 						inpodcronjobs = append(inpodcronjobs, cronjob)

@@ -82,9 +82,9 @@ func GenerateRegistrySecretTemplate(
 		}
 
 		labelsCopy := &map[string]string{}
-		helpers.DeepCopy(labels, labelsCopy)
+		_ = helpers.DeepCopy(labels, labelsCopy)
 		annotationsCopy := &map[string]string{}
-		helpers.DeepCopy(annotations, annotationsCopy)
+		_ = helpers.DeepCopy(annotations, annotationsCopy)
 
 		for key, value := range additionalLabels {
 			(*labelsCopy)[key] = value
@@ -93,22 +93,22 @@ func GenerateRegistrySecretTemplate(
 		for key, value := range additionalAnnotations {
 			(*annotationsCopy)[key] = value
 		}
-		irs.ObjectMeta.Labels = *labelsCopy
-		irs.ObjectMeta.Annotations = *annotationsCopy
+		irs.Labels = *labelsCopy
+		irs.Annotations = *annotationsCopy
 		// validate any annotations
-		if err := apivalidation.ValidateAnnotations(irs.ObjectMeta.Annotations, nil); err != nil {
+		if err := apivalidation.ValidateAnnotations(irs.Annotations, nil); err != nil {
 			if len(err) != 0 {
 				return nil, fmt.Errorf("the annotations for %s are not valid: %v", containerRegistry.Name, err)
 			}
 		}
 		// validate any labels
-		if err := metavalidation.ValidateLabels(irs.ObjectMeta.Labels, nil); err != nil {
+		if err := metavalidation.ValidateLabels(irs.Labels, nil); err != nil {
 			if len(err) != 0 {
 				return nil, fmt.Errorf("the labels for %s are not valid: %v", containerRegistry.Name, err)
 			}
 		}
 		// check length of labels
-		err = helpers.CheckLabelLength(irs.ObjectMeta.Labels)
+		err = helpers.CheckLabelLength(irs.Labels)
 		if err != nil {
 			return nil, err
 		}

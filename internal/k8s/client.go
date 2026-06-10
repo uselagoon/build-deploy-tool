@@ -121,7 +121,10 @@ func SeedFakeData(fakeClient client.Client, namespace string, seedDir string) er
 			return fmt.Errorf("couldn't read file %v: %v", seedFile, err)
 		}
 		u := &unstructured.Unstructured{}
-		yaml.Unmarshal(sfb, u)
+		if err := yaml.Unmarshal(sfb, u); err != nil {
+			return fmt.Errorf("couldn't unmarshal data %v: %v", seedFile, err)
+		}
+
 		u.SetNamespace(namespace)
 		err = fakeClient.Create(context.Background(), u)
 		if err != nil {
