@@ -356,9 +356,6 @@ func NewGenerator(
 	if traefikMiddleware == "enabled" {
 		buildValues.EnableTraefikMiddleware = true
 	}
-	if ingressClass == "traefik" {
-		buildValues.EnableTraefikMiddleware = true
-	}
 
 	// check for rootless workloads
 	rootlessWorkloads := CheckFeatureFlag("ROOTLESS_WORKLOAD", buildValues.EnvironmentVariables, generator.Debug)
