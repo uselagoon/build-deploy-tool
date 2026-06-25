@@ -461,7 +461,7 @@ func calculateMetric(times mapset.Set[int]) (int, error) {
 	}
 
 	if times.Cardinality() == 1 {
-		return times.ToSlice()[0], nil
+		return 1440, nil
 	}
 
 	// Sort the times
