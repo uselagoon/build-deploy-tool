@@ -18,7 +18,8 @@ services:
     volumes:
       - ./storage:/app/storage:delegated
     env_file:
-      - .env.local
+      - path: .env.local
+        required: false
     ports:
       - "8080" # exposes the port 8080 with a random local port, find it with `docker-compose port lnd 8080`
       - "10009" # exposes the port 10009 with a random local port, find it with `docker-compose port lnd 10009`
