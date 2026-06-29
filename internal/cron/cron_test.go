@@ -94,6 +94,11 @@ func TestStandardizeSchedule(t *testing.T) {
 			cron: "M/30 17/12,0-23 * * *",
 			want: "23,53 17/12,0-23 * * *",
 		},
+		{
+			name: "test26",
+			cron: "0 0 * * *",
+			want: "0 0 * * *",
+		},
 	}
 
 	for _, tt := range tests {
@@ -381,6 +386,13 @@ func TestDecideRunner(t *testing.T) {
 			},
 			expectedInPod: helpers.BoolPtr(true),
 		},
+		{
+			name: "InPod22",
+			cronjob: Cronjob{
+				Schedule: "0 0 * * *",
+			},
+			expectedInPod: helpers.BoolPtr(false),
+		},
 	}
 
 	for _, tt := range tests {
@@ -428,12 +440,16 @@ func TestCalculateMetric(t *testing.T) {
 		{
 			name:     "one element",
 			input:    []int{300}, // median of a single element is itself
-			expected: 300,
+			expected: 1440,
 		},
 		{
 			name:    "empty set",
 			input:   []int{},
 			wantErr: true,
+		}, {
+			name:     "one element at midnight",
+			input:    []int{0}, // 0 0 * * *
+			expected: 1440,
 		},
 	}
 
@@ -449,6 +465,53 @@ func TestCalculateMetric(t *testing.T) {
 
 			if !tt.wantErr && got != tt.expected {
 				t.Errorf("expected %d, got %d", tt.expected, got)
+			}
+		})
+	}
+}
+
+func Test_calculateScheduleMetric(t *testing.T) {
+	tests := []struct {
+		name     string
+		schedule string
+		want     int
+		wantErr  bool
+	}{
+		{
+			name:     "test1",
+			schedule: "0 0 * * *",
+			want:     1440,
+		},
+		{
+			name:     "test2",
+			schedule: "0 * * * *",
+			want:     60,
+		},
+		{
+			name:     "test3",
+			schedule: "3,8,13,18,23,28,33,38,43,48,53,58 * * * *",
+			want:     5,
+		},
+		{
+			name:     "test4",
+			schedule: "1 1 * * *",
+			want:     1440,
+		},
+		{
+			name:     "test5",
+			schedule: "* * * * *",
+			want:     1,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, gotErr := calculateScheduleMetric(tt.schedule)
+			if (gotErr != nil) != tt.wantErr {
+				t.Fatalf("expected error=%v, got error=%v", tt.wantErr, gotErr != nil)
+			}
+
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("expected %d, got %d", tt.want, got)
 			}
 		})
 	}
