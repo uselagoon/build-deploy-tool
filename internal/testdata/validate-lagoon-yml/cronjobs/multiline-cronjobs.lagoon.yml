@@ -32,13 +32,13 @@ environments:
           multiline
           command
 
-      - name: block scalar folded clipped
+      - name: block scalar folded clipped blank newline
         command: >
           multiline
 
           command
 
-      - name: block scalar folded stripped
+      - name: block scalar folded stripped blank newline
         command: >-
           multiline
 
