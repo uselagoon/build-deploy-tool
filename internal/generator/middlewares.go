@@ -31,6 +31,7 @@ type RealIPFromMiddleware struct {
 
 func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) error {
 	buildValues.TraefikMiddlewares = make(map[string]traefik.MiddlewareSpec)
+	buildValues.TraefikXLagoonDisabled = map[string]bool{}
 	// add the aergia idling middleware for traefik
 	buildValues.TraefikMiddlewares["aergia"] = traefik.MiddlewareSpec{
 		Errors: &traefik.ErrorPage{
@@ -166,6 +167,27 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 				routeHeaders.CustomResponseHeaders = headers
 				containsHeaders = true
 			}
+			clearHeaders := serverSnippetClearHeaders(value)
+			if len(clearHeaders) > 0 {
+				exists := false
+				for clearHeader := range clearHeaders {
+					if clearHeader == strings.ToLower("x-lagoon") {
+						// if someone is stripping the x-lagoon header, don't add the middleware to the ingress
+						// this is a temporary method and eventually should exist in `.lagoon.yml` once annotation support is deprecated
+						buildValues.TraefikXLagoonDisabled[route.Domain] = true
+						continue
+					}
+					for setHeader := range routeHeaders.CustomResponseHeaders {
+						if strings.EqualFold(setHeader, clearHeader) {
+							routeHeaders.CustomResponseHeaders[setHeader] = ""
+							exists = true
+						}
+					}
+					if !exists {
+						routeHeaders.CustomResponseHeaders[clearHeader] = ""
+					}
+				}
+			}
 		}
 		// handle cors settings
 		if value, ok := route.Annotations["nginx.ingress.kubernetes.io/enable-cors"]; ok && value == "true" {
@@ -269,6 +291,28 @@ func serverSnippetAddHeader(conf string) map[string]string {
 		headers[name] = value
 	}
 	return headers
+}
+
+var moreClearHeadersRegex = regexp.MustCompile(`more_clear_headers\s+((?:"[^"]*"|[^;\s]+)(?:\s+(?:"[^"]*"|[^;\s]+))*)\s*;`)
+
+var headerTokenRegex = regexp.MustCompile(`"([^"]*)"|([^\s]+)`)
+
+func serverSnippetClearHeaders(config string) map[string]string {
+	results := make(map[string]string)
+	matches := moreClearHeadersRegex.FindAllStringSubmatch(config, -1)
+	for _, m := range matches {
+		tokens := headerTokenRegex.FindAllStringSubmatch(m[1], -1)
+		for _, t := range tokens {
+			var header string
+			if t[1] != "" {
+				header = t[1] // quoted
+			} else {
+				header = t[2] // unquoted
+			}
+			results[header] = ""
+		}
+	}
+	return results
 }
 
 // split and trip a string

@@ -132,10 +132,11 @@ func GenerateIngressTemplate(
 	// do custom middleware for route specific items first
 	if lValues.EnableTraefikMiddleware {
 		// add generic x-lagoon header
-		// maybe this should be optional?
-		additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
-			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-x-lagoon@kubernetescrd", normalizedNamespace),
-		)
+		if !lValues.TraefikXLagoonDisabled[route.Domain] {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-x-lagoon@kubernetescrd", normalizedNamespace),
+			)
+		}
 		// realipfrom
 		if route.HasSetRealIPFrom {
 			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(

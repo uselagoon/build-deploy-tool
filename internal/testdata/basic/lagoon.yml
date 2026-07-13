@@ -7,6 +7,7 @@ x-serversnippet: &serversnippet |
   set_real_ip_from 1.1.1.1/24;
   set_real_ip_from 1.2.3.4/24;
   add_header X-Lagoon-Testing "testing" always;
+  more_clear_headers "x-lagoon";
 
 environments:
   main:
