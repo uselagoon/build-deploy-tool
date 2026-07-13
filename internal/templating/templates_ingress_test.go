@@ -813,6 +813,59 @@ func TestGenerateIngressTemplate(t *testing.T) {
 			},
 			want: "test-resources/ingress/result-traefik-custom-ingress1.yaml",
 		},
+		{
+			name: "traefik-custom-ingress2",
+			args: args{
+				route: lagoon.RouteV2{
+					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					LagoonService:  "nginx",
+					MonitoringPath: "/",
+					Insecure:       helpers.StrPtr("Redirect"),
+					TLSAcme:        helpers.BoolPtr(true),
+					Migrate:        helpers.BoolPtr(false),
+					Annotations: map[string]string{
+						"custom-annotation":                          "custom annotation value",
+						"nginx.ingress.kubernetes.io/server-snippet": `more_clear_headers "x-lagoon";`,
+					},
+					Fastly: lagoon.Fastly{
+						Watch: false,
+					},
+					IngressName:  "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
+					IngressClass: "traefik",
+					Source:       "YAML",
+				},
+				values: generator.BuildValues{
+					Project:         "example-project",
+					Environment:     "environment-with-really-really-reall-3fdb",
+					EnvironmentType: "production",
+					Namespace:       "myexample-project-environment-with-really-really-reall-3fdb",
+					BuildType:       "branch",
+					LagoonVersion:   "v2.x.x",
+					Kubernetes:      "lagoon.local",
+					Branch:          "environment-with-really-really-reall-3fdb",
+					Monitoring: generator.MonitoringConfig{
+						AlertContact: "abcdefg",
+						StatusPageID: "12345",
+						Enabled:      true,
+					},
+					IngressClass:            "traefik",
+					EnableTraefikMiddleware: true,
+					Services: []generator.ServiceValues{
+						{
+							Name:         "nginx",
+							OverrideName: "nginx",
+							Type:         "nginx-php",
+						},
+					},
+					Route: "https://extra-long-name.a-really-long-name-that-should-truncate.www.example.com/",
+					TraefikXLagoonDisabled: map[string]bool{
+						"extra-long-name.a-really-long-name-that-should-truncate.www.example.com": true,
+					},
+				},
+				activeStandby: false,
+			},
+			want: "test-resources/ingress/result-traefik-custom-ingress2.yaml",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

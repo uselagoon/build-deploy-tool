@@ -94,8 +94,9 @@ type BuildValues struct {
 	LagoonPlatformEnvVariables    map[string]string                 `json:"lagoonPlatformEnvVariables" description:"map of variables that will be saved into the lagoon-platform-env secret"`
 	AutoMountServiceAccountToken  bool                              `json:"autoMountServiceAccountToken" description:"flag to enable automounting the service account token"`
 	DeploymentRevisionHistory     *int32                            `json:"deploymentRevisionHistory" description:"how many replicasets to retain"`
-	EnableTraefikMiddleware       bool                              `json:"enableTraefikMiddleware"`
-	TraefikMiddlewares            map[string]traefik.MiddlewareSpec `json:"traefikMiddlewares"`
+	EnableTraefikMiddleware       bool                              `json:"enableTraefikMiddleware" description:"flag to enable creation of traefik related resources"`
+	TraefikMiddlewares            map[string]traefik.MiddlewareSpec `json:"traefikMiddlewares" description:"which traefik middlewares need to be created"`
+	TraefikXLagoonDisabled        map[string]bool                   `json:"traefikXLagoonDisabled" description:"temporary method for disabling x-lagoon header when using traefik"`
 }
 
 type Resources struct {
