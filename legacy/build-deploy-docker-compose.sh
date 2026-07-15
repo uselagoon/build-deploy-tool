@@ -827,11 +827,11 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
           # or what the actual cause is, making it incredibly difficult to reproduce
           # without being able to reproduce we have to use this workaround to retry :'(
           capErr=0
-          if cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: layer does not exist"; then
+          if cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q ": failed to solve: layer does not exist"; then
             capErr=1
-          elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: failed to prepare"; then
+          elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q ": failed to solve: failed to prepare"; then
             capErr=1
-          elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q "ERROR: failed to solve: failed to get layer"; then
+          elif cat /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME | grep -q ": failed to solve: failed to get layer"; then
             capErr=1
           fi
           if [ "${capErr}" != "0" ]; then
