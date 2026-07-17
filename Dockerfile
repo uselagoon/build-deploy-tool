@@ -18,6 +18,7 @@ COPY go.sum go.sum
 COPY main.go main.go
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY third_party/ third_party/
 
 ARG BUILD
 ARG GO_VER

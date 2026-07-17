@@ -214,7 +214,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 			}
 			if value, ok := route.Annotations["nginx.ingress.kubernetes.io/cors-max-age"]; ok {
 				valInt, _ := strconv.Atoi(value)
-				routeHeaders.AccessControlMaxAge = int64(valInt)
+				routeHeaders.AccessControlMaxAge = helpers.Int64Ptr(int64(valInt))
 				containsHeaders = true
 			}
 		}
