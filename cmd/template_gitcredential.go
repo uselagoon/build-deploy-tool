@@ -42,13 +42,8 @@ func TemplateGitCredential(geninput generator.GeneratorInput, file string) (stri
 	// because this runs before anything has been checked out in the repo, we have to query variables directly
 	// and handle any merging that is usually done in generator
 	variables := generator.GetLagoonEnvVars()
-	// parse the repository into a url struct so the username and password can be injected into http/https based urls
-	u, err := url.Parse(sourceRepository)
-	if err != nil {
-		return "", fmt.Errorf("unable to parse provided gitUrl")
-	}
 	// if this is a http or https based url, it may need a username and password
-	if helpers.Contains([]string{"http", "https"}, u.Scheme) {
+	if strings.HasPrefix(sourceRepository, "http://") || strings.HasPrefix(sourceRepository, "https://") {
 		// only create the git credential if the source repo is a http/https repostiory
 		urls, err := configureGitCredentials(variables)
 		if err != nil {

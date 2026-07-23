@@ -148,6 +148,27 @@ func TestTemplateGitCredential(t *testing.T) {
 				}, true),
 			want: "",
 		},
+		{
+			name: "test6 ssh pass through",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/basic/lagoon.yml",
+					BuildPodVariables: []helpers.EnvironmentVariable{
+						{
+							Name:  "LAGOON_ENVIRONMENT_VARIABLES",
+							Value: `[]`,
+						},
+						{
+							Name:  "SOURCE_REPOSITORY",
+							Value: "git@example.com:lagoon-demo.git",
+						},
+					},
+				}, true),
+			want: "",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
