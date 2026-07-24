@@ -116,9 +116,9 @@ func checkDuplicateCronjobs(cronjobs []lagoon.Cronjob) error {
 		}
 	}
 	// join the two together
-	result := append(duplicates, uniqueDuplicates...)
-	if result != nil {
-		b, _ := json.Marshal(result)
+	duplicates = append(duplicates, uniqueDuplicates...)
+	if duplicates != nil {
+		b, _ := json.Marshal(duplicates)
 		return fmt.Errorf("duplicate named cronjobs detected: %v", string(b))
 	}
 	return nil
@@ -158,7 +158,7 @@ func determineRefreshImage(serviceName, imageName string, envVars []lagoon.Envir
 		if len(matches) > 0 {
 			tv := ""
 			envVarKey := matches[1]
-			defaultVal := matches[2] //This could be empty
+			defaultVal := matches[2] // This could be empty
 			for _, v := range envVars {
 				if v.Name == envVarKey {
 					tv = v.Value

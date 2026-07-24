@@ -95,13 +95,13 @@ func generateDefaultPVC(buildValues generator.BuildValues,
 	labels, annotations map[string]string,
 ) (*corev1.PersistentVolumeClaim, error) {
 	serviceTypeValues := &servicetypes.ServiceType{}
-	helpers.DeepCopy(val, serviceTypeValues)
+	_ = helpers.DeepCopy(val, serviceTypeValues)
 	persistentVolumeSize := serviceTypeValues.Volumes.PersistentVolumeSize
 	if serviceValues.PersistentVolumeSize != "" {
 		persistentVolumeSize = serviceValues.PersistentVolumeSize
 	}
 	serviceType := &servicetypes.ServiceType{}
-	helpers.DeepCopy(val, serviceType)
+	_ = helpers.DeepCopy(val, serviceType)
 
 	additionalLabels := map[string]string{}
 	additionalAnnotations := map[string]string{}
@@ -200,9 +200,9 @@ func updatePVC(
 	labels, annotations, additionalLabels, additionalAnnotations map[string]string,
 ) error {
 	labelsCopy := &map[string]string{}
-	helpers.DeepCopy(labels, labelsCopy)
+	_ = helpers.DeepCopy(labels, labelsCopy)
 	annotationsCopy := &map[string]string{}
-	helpers.DeepCopy(annotations, annotationsCopy)
+	_ = helpers.DeepCopy(annotations, annotationsCopy)
 
 	for key, value := range additionalLabels {
 		(*labelsCopy)[key] = value
@@ -211,22 +211,22 @@ func updatePVC(
 	for key, value := range additionalAnnotations {
 		(*annotationsCopy)[key] = value
 	}
-	pvc.ObjectMeta.Labels = *labelsCopy
-	pvc.ObjectMeta.Annotations = *annotationsCopy
+	pvc.Labels = *labelsCopy
+	pvc.Annotations = *annotationsCopy
 	// validate any annotations
-	if err := apivalidation.ValidateAnnotations(pvc.ObjectMeta.Annotations, nil); err != nil {
+	if err := apivalidation.ValidateAnnotations(pvc.Annotations, nil); err != nil {
 		if len(err) != 0 {
 			return fmt.Errorf("the annotations for %s are not valid: %v", name, err)
 		}
 	}
 	// validate any labels
-	if err := metavalidation.ValidateLabels(pvc.ObjectMeta.Labels, nil); err != nil {
+	if err := metavalidation.ValidateLabels(pvc.Labels, nil); err != nil {
 		if len(err) != 0 {
 			return fmt.Errorf("the labels for %s are not valid: %v", name, err)
 		}
 	}
 	// check length of labels
-	err := helpers.CheckLabelLength(pvc.ObjectMeta.Labels)
+	err := helpers.CheckLabelLength(pvc.Labels)
 	if err != nil {
 		return err
 	}
@@ -261,11 +261,11 @@ func updatePVC(
 }
 
 func TemplatePVC(item corev1.PersistentVolumeClaim) ([]byte, error) {
-	separator := []byte("---\n")
+	templateYAML := []byte("---\n")
 	iBytes, err := yaml.Marshal(item)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	templateYAML := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, iBytes...)
 	return templateYAML, nil
 }

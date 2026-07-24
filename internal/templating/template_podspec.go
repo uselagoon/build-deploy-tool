@@ -120,14 +120,14 @@ func generatePodTemplateSpec(
 		Annotations: map[string]string{},
 	}
 	for key, value := range objectMeta.Labels {
-		podTemplateSpec.ObjectMeta.Labels[key] = value
+		podTemplateSpec.Labels[key] = value
 	}
 	// add any additional annotations
 	for key, value := range objectMeta.Annotations {
-		podTemplateSpec.ObjectMeta.Annotations[key] = value
+		podTemplateSpec.Annotations[key] = value
 	}
 	for key, value := range templateAnnotations {
-		podTemplateSpec.ObjectMeta.Annotations[key] = value
+		podTemplateSpec.Annotations[key] = value
 	}
 
 	// disable service links, this prevents some environment variables that confuse lagoon services being
@@ -204,7 +204,7 @@ func generatePodTemplateSpec(
 		// if this servicetype has defaults, use them if one is not provided
 		if serviceValues.PersistentVolumePath == "" {
 			volume.Name = serviceValues.OverrideName
-			volume.VolumeSource.PersistentVolumeClaim.ClaimName = serviceValues.OverrideName
+			volume.PersistentVolumeClaim.ClaimName = serviceValues.OverrideName
 		}
 		podTemplateSpec.Spec.Volumes = append(podTemplateSpec.Spec.Volumes, volume)
 	}
@@ -459,23 +459,20 @@ func generatePodTemplateSpec(
 						return nil, fmt.Errorf("first port defined is not a tcp port, please ensure the first port is tcp")
 					}
 				}
-				switch addPort.ServicePort.Protocol {
-				case "udp":
+				if addPort.ServicePort.Protocol == "udp" {
 					port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
 				}
 				// set the ports into the container
 				container.Container.Ports = append(container.Container.Ports, port)
 			}
-		} else {
+		} else if serviceTypeValues.Ports.CanChangePort {
 			// otherwise if the service has a default port, and it can be changed, handle changing it here
-			if serviceTypeValues.Ports.CanChangePort {
-				// check if the port override is defined
-				if serviceValues.ServicePort != 0 {
-					// and change the port in the container definition to suit
-					container.Container.ReadinessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
-					container.Container.LivenessProbe.ProbeHandler.TCPSocket.Port.IntVal = serviceValues.ServicePort
-					container.Container.Ports[0].ContainerPort = serviceValues.ServicePort
-				}
+			// check if the port override is defined
+			if serviceValues.ServicePort != 0 {
+				// and change the port in the container definition to suit
+				container.Container.ReadinessProbe.TCPSocket.Port.IntVal = serviceValues.ServicePort
+				container.Container.LivenessProbe.TCPSocket.Port.IntVal = serviceValues.ServicePort
+				container.Container.Ports[0].ContainerPort = serviceValues.ServicePort
 			}
 		}
 	}

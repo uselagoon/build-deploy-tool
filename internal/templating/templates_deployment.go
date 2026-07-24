@@ -28,7 +28,7 @@ func GenerateDeploymentTemplate(
 	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok && serviceValues.Type != "external" && !serviceValues.IsDBaaS {
 			serviceTypeValues := &servicetypes.ServiceType{}
-			helpers.DeepCopy(val, serviceTypeValues)
+			_ = helpers.DeepCopy(val, serviceTypeValues)
 
 			// add the default labels
 			labels := map[string]string{
@@ -95,8 +95,8 @@ func GenerateDeploymentTemplate(
 					Annotations: annotations,
 				},
 			}
-			deployment.ObjectMeta.Labels = labels
-			deployment.ObjectMeta.Annotations = annotations
+			deployment.Labels = labels
+			deployment.Annotations = annotations
 
 			if serviceValues.UseSpotInstances {
 				// handle spot instance label and affinity/tolerations/selectors
@@ -104,26 +104,26 @@ func GenerateDeploymentTemplate(
 			}
 
 			for key, value := range additionalLabels {
-				deployment.ObjectMeta.Labels[key] = value
+				deployment.Labels[key] = value
 			}
 			// add any additional annotations
 			for key, value := range additionalAnnotations {
-				deployment.ObjectMeta.Annotations[key] = value
+				deployment.Annotations[key] = value
 			}
 			// validate any annotations
-			if err := apivalidation.ValidateAnnotations(deployment.ObjectMeta.Annotations, nil); err != nil {
+			if err := apivalidation.ValidateAnnotations(deployment.Annotations, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 				}
 			}
 			// validate any labels
-			if err := metavalidation.ValidateLabels(deployment.ObjectMeta.Labels, nil); err != nil {
+			if err := metavalidation.ValidateLabels(deployment.Labels, nil); err != nil {
 				if len(err) != 0 {
 					return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 				}
 			}
 			// check length of labels
-			err := helpers.CheckLabelLength(deployment.ObjectMeta.Labels)
+			err := helpers.CheckLabelLength(deployment.Labels)
 			if err != nil {
 				return nil, err
 			}
@@ -198,11 +198,11 @@ func GenerateDeploymentTemplate(
 }
 
 func TemplateDeployment(item appsv1.Deployment) ([]byte, error) {
-	separator := []byte("---\n")
+	templateYAML := []byte("---\n")
 	iBytes, err := yaml.Marshal(item)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	templateYAML := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, iBytes...)
 	return templateYAML, nil
 }

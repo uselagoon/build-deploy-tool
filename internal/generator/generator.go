@@ -173,7 +173,7 @@ func NewGenerator(
 		buildValues.GitSHA = "0000000000000000000000000000000000000000"
 	}
 
-	//add the dbaas client to build values too
+	// add the dbaas client to build values too
 	buildValues.DBaaSClient = generator.DBaaSClient
 
 	buildValues.DefaultBackupSchedule = defaultBackupSchedule

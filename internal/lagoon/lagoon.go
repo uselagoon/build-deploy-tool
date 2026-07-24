@@ -172,7 +172,7 @@ type ExcludeEnvironment struct {
 
 func (a *Routes) UnmarshalJSON(data []byte) error {
 	tmpMap := map[string]interface{}{}
-	json.Unmarshal(data, &tmpMap)
+	_ = json.Unmarshal(data, &tmpMap)
 	if value, ok := tmpMap["autogenerate"]; ok {
 		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
 		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
@@ -216,7 +216,7 @@ func (a *Routes) UnmarshalJSON(data []byte) error {
 
 func (a *EnvironmentVariables) UnmarshalJSON(data []byte) error {
 	tmpMap := map[string]interface{}{}
-	json.Unmarshal(data, &tmpMap)
+	_ = json.Unmarshal(data, &tmpMap)
 	if value, ok := tmpMap["git_sha"]; ok {
 		// @TODO: eventually lagoon should be more strict, but in lagoonyaml version 2 we could do this
 		// some things in .lagoon.yml can be defined as a bool or string and lagoon builds don't care
@@ -320,7 +320,7 @@ func mergeLagoonYAMLTasks(left *[]TaskRun, right *[]TaskRun) error {
 		appendToLeft := true
 		for j, leftTask := range *left {
 			if leftTask.Run.Name != "" && leftTask.Run.Name == rightTask.Run.Name {
-				//here we merge the two, rather than appending
+				// here we merge the two, rather than appending
 				appendToLeft = false
 				if err := mergo.Merge(&(*left)[j].Run, &(*right)[i].Run, mergo.WithOverride); err != nil {
 					return err

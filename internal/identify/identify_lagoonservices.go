@@ -83,8 +83,7 @@ func LagoonServiceTemplateIdentification(g generator.GeneratorInput) (*IdentifyS
 		size := pvc.Spec.Resources.Requests.Storage
 		storeType := "block"
 		if pvc.Spec.StorageClassName != nil {
-			switch *pvc.Spec.StorageClassName {
-			case "bulk":
+			if *pvc.Spec.StorageClassName == "bulk" {
 				storeType = "bulk"
 			}
 		}

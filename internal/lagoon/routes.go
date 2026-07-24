@@ -134,7 +134,7 @@ func (r *Route) UnmarshalJSON(data []byte) error {
 		// but types are more strict, so this unmarshaler attempts to change between the two types
 		// that can be bool or string
 		tmpMap := map[string]interface{}{}
-		json.Unmarshal(data, &tmpMap)
+		_ = json.Unmarshal(data, &tmpMap)
 		for k := range tmpMap {
 			if _, ok := tmpMap[k].(map[string]interface{})["tls-acme"]; ok {
 				if reflect.TypeOf(tmpMap[k].(map[string]interface{})["tls-acme"]).Kind() == reflect.String {
@@ -217,10 +217,8 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 					}
 					if ingress.HSTSMaxAge > 0 {
 						newRoute.HSTSMaxAge = ingress.HSTSMaxAge
-					} else {
-						if newRoute.HSTSEnabled != nil && *newRoute.HSTSEnabled {
-							newRoute.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
-						}
+					} else if newRoute.HSTSEnabled != nil && *newRoute.HSTSEnabled {
+						newRoute.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
 					}
 					// hsts end
 
@@ -343,10 +341,7 @@ func MergeRoutesV2(yamlRoutes RoutesV2, apiRoutes RoutesV2, variables []Environm
 	finalRoutes := RoutesV2{}
 	for _, fRoute := range firstRoundRoutes.Routes {
 		// generate the fastly configuration for this route if required
-		err := GenerateFastlyConfiguration(&fRoute.Fastly, "", fRoute.Fastly.ServiceID, fRoute.Domain, variables)
-		if err != nil {
-			//@TODO: error handling
-		}
+		_ = GenerateFastlyConfiguration(&fRoute.Fastly, "", fRoute.Fastly.ServiceID, fRoute.Domain, variables)
 		fRoute.Domain = strings.ToLower(fRoute.Domain)
 		finalRoutes.Routes = append(finalRoutes.Routes, fRoute)
 	}
@@ -412,10 +407,8 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 	}
 	if apiRoute.HSTSMaxAge > 0 {
 		routeAdd.HSTSMaxAge = apiRoute.HSTSMaxAge
-	} else {
-		if routeAdd.HSTSEnabled != nil && *routeAdd.HSTSEnabled {
-			routeAdd.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
-		}
+	} else if routeAdd.HSTSEnabled != nil && *routeAdd.HSTSEnabled {
+		routeAdd.HSTSMaxAge = defaultHSTSMaxAge // set default hsts value if one not provided
 	}
 	// hsts end
 
