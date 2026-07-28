@@ -16,8 +16,8 @@ services:
   cli: # cli container, will be used for executing composer and any local commands (drush, drupal, etc.)
     container_name: "${COMPOSE_PROJECT_NAME}-cli"
     build:
-      context: internal/testdata/complex/docker
-      dockerfile: cli.dockerfile
+      context: .
+      dockerfile: lagoon/cli.dockerfile
     image: *lagoon-project # this image will be reused as `CLI_IMAGE` in subsequent Docker builds
     labels:
       # Lagoon Labels
@@ -39,8 +39,8 @@ services:
   nginx:
     container_name: "${COMPOSE_PROJECT_NAME}-nginx"
     build:
-      context: internal/testdata/complex/docker
-      dockerfile: nginx.dockerfile
+      context: .
+      dockerfile: lagoon/nginx.dockerfile
       args:
         CLI_IMAGE: *lagoon-project # Inject the name of the cli image
     labels:
@@ -60,8 +60,8 @@ services:
   php:
     container_name: "${COMPOSE_PROJECT_NAME}-php"
     build:
-      context: internal/testdata/complex/docker
-      dockerfile: php.dockerfile
+      context: .
+      dockerfile: lagoon/php.dockerfile
       args:
         CLI_IMAGE: *lagoon-project
     labels:
@@ -80,7 +80,7 @@ services:
 
   mariadb:
     container_name: "${COMPOSE_PROJECT_NAME}-db"
-    image: usemariadb-drupal:latest
+    image: uselagoon/mariadb-drupal:latest
     labels:
       lagoon.type: mariadb
     ports:
