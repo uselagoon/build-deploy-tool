@@ -1,0 +1,38 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  annotations:
+    lagoon.sh/branch: traefik
+    lagoon.sh/version: v2.7.x
+  labels:
+    app.kubernetes.io/instance: traefik-middleware
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: un42n5xo-headers
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: traefik
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/template: traefik-middleware-0.1.0
+  name: un42n5xo-headers
+spec:
+  headers:
+    accessControlAllowCredentials: true
+    accessControlAllowHeaders:
+    - X-CustomHeader
+    - Keep-Alive
+    - User-Agent
+    - Cache-Control
+    - Content-Type
+    - Authorization
+    accessControlAllowMethods:
+    - GET
+    - PUT
+    - POST
+    - DELETE
+    - PATCH
+    - OPTIONS
+    accessControlAllowOriginList:
+    - https://example.com
+    customResponseHeaders:
+      X-Lagoon-Testing: testing

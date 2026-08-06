@@ -352,6 +352,11 @@ func NewGenerator(
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", buildValues.EnvironmentVariables, generator.Debug)
 	buildValues.IngressClass = ingressClass
 
+	traefikMiddleware := CheckFeatureFlag("TRAEFIK_MIDDLEWARE", buildValues.EnvironmentVariables, generator.Debug)
+	if traefikMiddleware == "enabled" {
+		buildValues.EnableTraefikMiddleware = true
+	}
+
 	// check for rootless workloads
 	rootlessWorkloads := CheckFeatureFlag("ROOTLESS_WORKLOAD", buildValues.EnvironmentVariables, generator.Debug)
 	if rootlessWorkloads == "enabled" {
@@ -511,6 +516,13 @@ func NewGenerator(
 		}
 	}
 	/* end route generation configuration */
+
+	// traefik middlewares
+	if buildValues.EnableTraefikMiddleware {
+		if err := generateMiddleware(&buildValues, mainRoutes); err != nil {
+			return nil, err
+		}
+	}
 
 	// collect a bunch of the default LAGOON_X based build variables that are injected into `lagoon-env` and make them available
 	configVars := collectLagoonEnvConfigmapVariables(buildValues)
