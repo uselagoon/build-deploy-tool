@@ -23,4 +23,5 @@ spec:
       namespace: aergia
       port: 80
     status:
+    - "502"
     - "503"

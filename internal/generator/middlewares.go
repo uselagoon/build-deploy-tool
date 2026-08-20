@@ -35,7 +35,7 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 	// add the aergia idling middleware for traefik
 	buildValues.TraefikMiddlewares["aergia"] = traefik.MiddlewareSpec{
 		Errors: &traefik.ErrorPage{
-			Status: []string{"503"},
+			Status: []string{"502", "503"},
 			Query:  fmt.Sprintf("/?namespace=%s&url={url}", buildValues.Namespace),
 			Service: traefik.Service{
 				LoadBalancerSpec: traefik.LoadBalancerSpec{
