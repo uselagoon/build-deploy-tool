@@ -453,10 +453,14 @@ func TestGenerateRouteStructure(t *testing.T) {
 				yamlRouteMap: map[string][]Route{
 					"nginx": {
 						{
-							Name: "example.com",
-						},
-						{
-							Name: "www.example.com",
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									TLSAcme:      helpers.BoolPtr(false),
+									Wildcard:     helpers.BoolPtr(true),
+									WildcardApex: helpers.BoolPtr(false),
+									CertIssuer:   "testissuer",
+								},
+							},
 						},
 					},
 				},
@@ -465,32 +469,18 @@ func TestGenerateRouteStructure(t *testing.T) {
 			want: &RoutesV2{
 				Routes: []RouteV2{
 					{
-						Domain:         "example.com",
-						LagoonService:  "nginx",
-						MonitoringPath: "/",
-						Insecure:       helpers.StrPtr("Redirect"),
-						TLSAcme:        helpers.BoolPtr(true),
-						Annotations:    map[string]string{},
-						Fastly: Fastly{
-							Watch: false,
-						},
+						Domain:              "www.example.com",
+						LagoonService:       "nginx",
+						MonitoringPath:      "/",
+						Insecure:            helpers.StrPtr("Redirect"),
+						TLSAcme:             helpers.BoolPtr(false),
+						Annotations:         map[string]string{},
 						AlternativeNames:    []string{},
-						IngressName:         "example.com",
+						Wildcard:            helpers.BoolPtr(true),
+						WildcardApex:        helpers.BoolPtr(false),
+						IngressName:         "wildcard-www.example.com",
 						RequestVerification: helpers.BoolPtr(false),
-					},
-					{
-						Domain:         "www.example.com",
-						LagoonService:  "nginx",
-						MonitoringPath: "/",
-						Insecure:       helpers.StrPtr("Redirect"),
-						TLSAcme:        helpers.BoolPtr(true),
-						Annotations:    map[string]string{},
-						Fastly: Fastly{
-							Watch: false,
-						},
-						AlternativeNames:    []string{},
-						IngressName:         "www.example.com",
-						RequestVerification: helpers.BoolPtr(false),
+						CertIssuer:          "testissuer",
 					},
 				},
 			},

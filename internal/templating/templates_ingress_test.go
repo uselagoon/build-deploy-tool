@@ -814,7 +814,7 @@ func TestGenerateIngressTemplate(t *testing.T) {
 			want: "test-resources/ingress/result-traefik-custom-ingress1.yaml",
 		},
 		{
-			name: "traefik-custom-ingress",
+			name: "traefik-custom-ingress2",
 			args: args{
 				route: lagoon.RouteV2{
 					Domain:         "extra-long-name.a-really-long-name-that-should-truncate.www.example.com",
