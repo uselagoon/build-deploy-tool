@@ -1,0 +1,21 @@
+---
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  annotations:
+    lagoon.sh/branch: main
+    lagoon.sh/version: v2.7.x
+  labels:
+    app.kubernetes.io/instance: traefik-middleware
+    app.kubernetes.io/managed-by: build-deploy-tool
+    app.kubernetes.io/name: x-robots
+    lagoon.sh/buildType: branch
+    lagoon.sh/environment: main
+    lagoon.sh/environmentType: production
+    lagoon.sh/project: example-project
+    lagoon.sh/template: traefik-middleware-0.1.0
+  name: x-robots
+spec:
+  headers:
+    customResponseHeaders:
+      X-Robots-Tag: noindex, nofollow

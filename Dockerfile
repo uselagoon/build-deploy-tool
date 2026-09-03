@@ -3,7 +3,7 @@ ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
 
-FROM golang:${GO_VER:-1.25}-alpine3.23 AS golang
+FROM golang:${GO_VER:-1.26}-alpine3.23 AS golang
 
 RUN apk add --no-cache git
 # renovate: datasource=github-releases depName=a8m/envsubst
@@ -18,6 +18,7 @@ COPY go.sum go.sum
 COPY main.go main.go
 COPY cmd/ cmd/
 COPY internal/ internal/
+COPY third_party/ third_party/
 
 ARG BUILD
 ARG GO_VER

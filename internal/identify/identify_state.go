@@ -7,6 +7,8 @@ import (
 	mariadbv1 "github.com/amazeeio/dbaas-operator/apis/mariadb/v1"
 	mongodbv1 "github.com/amazeeio/dbaas-operator/apis/mongodb/v1"
 	postgresv1 "github.com/amazeeio/dbaas-operator/apis/postgres/v1"
+
+	traefik "github.com/traefik/traefik/v3/pkg/provider/kubernetes/crd/traefikio/v1alpha1"
 	"github.com/uselagoon/build-deploy-tool/internal/collector"
 	"github.com/uselagoon/build-deploy-tool/internal/generator"
 	"github.com/uselagoon/machinery/api/schema"
@@ -22,6 +24,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	[]appsv1.Deployment,
 	[]corev1.PersistentVolumeClaim,
 	[]corev1.Service,
+	[]traefik.Middleware,
 	*collector.LagoonEnvState,
 	error,
 ) {
@@ -31,17 +34,17 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 	}
 	out, currentServices, err := LagoonServiceTemplateIdentification(gen)
 	if err != nil {
-		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, err
+		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, nil, err
 	}
 
 	dbaas, err := IdentifyDBaaSConsumers(gen)
 	if err != nil {
-		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, err
+		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, nil, err
 	}
 
 	state, err := c.Collect(context.Background(), gen.Namespace)
 	if err != nil {
-		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, err
+		return lagoonServices, nil, nil, nil, nil, nil, nil, nil, nil, err
 	}
 
 	// add any dbaas that should exist to the current services
@@ -123,6 +126,21 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 		}
 		postgresqlMatch = false
 		lagoonServices.Services = append(lagoonServices.Services, service)
+	}
+
+	middlewareMatch := false
+	var middlewareDelete []traefik.Middleware
+	for _, exist := range state.TraefikMiddleware.Items {
+		for _, middleware := range out.TraefikMiddleware {
+			if exist.Name == middleware {
+				middlewareMatch = true
+				continue
+			}
+		}
+		if !middlewareMatch {
+			middlewareDelete = append(middlewareDelete, exist)
+		}
+		middlewareMatch = false
 	}
 
 	volMatch := false
@@ -232,7 +250,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 		}
 	}
 
-	return lagoonServices, mariadbDelete, mongodbDelete, postgresqlDelete, depDelete, volDelete, servDelete, state, nil
+	return lagoonServices, mariadbDelete, mongodbDelete, postgresqlDelete, depDelete, volDelete, servDelete, middlewareDelete, state, nil
 }
 
 func serviceExists(services []schema.EnvironmentService, serviceName string) bool {

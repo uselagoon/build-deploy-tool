@@ -3,6 +3,7 @@ package templating
 import (
 	"fmt"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -126,18 +127,97 @@ func GenerateIngressTemplate(
 		additionalAnnotations["lagoon.sh/prBaseBranch"] = lValues.PRBaseBranch
 	}
 
+	// traefik doesnt like `--` in namespaces
+	normalizedNamespace := regexp.MustCompile(`-{2,}`).ReplaceAllString(lValues.Namespace, "-")
+	// do custom middleware for route specific items first
+	if lValues.EnableTraefikMiddleware {
+		// add generic x-lagoon header
+		if !lValues.TraefikXLagoonDisabled[route.Domain] {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-x-lagoon@kubernetescrd", normalizedNamespace),
+			)
+		}
+		// realipfrom
+		if route.HasSetRealIPFrom {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-setrealip@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-setrealip@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+		// ipallowlist
+		if route.HasIPAllowList {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-ipallowlist@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-ipallowlist@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+		// add the platform-middleware chain after any ip modification/checks
+		additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-platform-middleware@kubernetescrd", normalizedNamespace),
+		)
+		// basicauth
+		if route.HasBasicAuth {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-basicauth@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-basicauth@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+		// perm/temp redirect
+		if route.HasRedirect {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-redirect@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-redirect@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+		if route.HasHeaders {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-headers@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		} else {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-%s-headers@kubernetescrd", normalizedNamespace, helpers.GetBase32EncodedLowercase(helpers.GetSha256Hash(route.IngressName))[:8]),
+			)
+		}
+	}
+
 	switch *route.Insecure {
 	case "Allow":
 		additionalAnnotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "false"
 		additionalAnnotations["ingress.kubernetes.io/ssl-redirect"] = "false"
+		if lValues.EnableTraefikMiddleware {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = removeMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-https-redirect@kubernetescrd", normalizedNamespace),
+			)
+		}
 	case "Redirect", "None":
 		additionalAnnotations["nginx.ingress.kubernetes.io/ssl-redirect"] = "true"
 		additionalAnnotations["ingress.kubernetes.io/ssl-redirect"] = "true"
-
+		if lValues.EnableTraefikMiddleware {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-https-redirect@kubernetescrd", normalizedNamespace),
+			)
+		}
 	}
 
 	if lValues.EnvironmentType == "development" || route.Autogenerated {
 		additionalAnnotations["nginx.ingress.kubernetes.io/server-snippet"] = "add_header X-Robots-Tag \"noindex, nofollow\";\n"
+		if lValues.EnableTraefikMiddleware {
+			additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"] = addMiddleware(
+				additionalAnnotations["traefik.ingress.kubernetes.io/router.middlewares"], fmt.Sprintf("%s-x-robots@kubernetescrd", normalizedNamespace),
+			)
+		}
 	}
 
 	switch route.Source {
@@ -193,6 +273,7 @@ func GenerateIngressTemplate(
 		additionalAnnotations["acme.cert-manager.io/http01-ingress-class"] = route.IngressClass
 	}
 
+	// add any annotations that the route had to overwrite any previous annotations
 	// add any additional labels
 	for key, value := range additionalLabels {
 		ingress.ObjectMeta.Labels[key] = value
@@ -383,4 +464,49 @@ func TemplateIngress(ingress *networkv1.Ingress) ([]byte, error) {
 	restoreResult := append(separator[:], iBytes[:]...)
 	templateYAML = append(templateYAML, restoreResult[:]...)
 	return templateYAML, nil
+}
+
+func addMiddleware(middlewares string, middleware string) string {
+	if middlewares == "" {
+		return middleware
+	}
+	parts := strings.Split(middlewares, ",")
+	for _, p := range parts {
+		if p == middleware {
+			// exists already, return the existing middlewares
+			return middlewares
+		}
+	}
+	for _, c := range parts {
+		if c == middleware {
+			return middlewares
+		}
+	}
+	newMiddlewares := middlewares + "," + middleware
+	return newMiddlewares
+}
+
+func removeMiddleware(middlewares string, middleware string) string {
+	if middlewares == "" {
+		return ""
+	}
+	parts := strings.Split(middlewares, ",")
+	found := false
+	for _, p := range parts {
+		if p == middleware {
+			found = true
+			break
+		}
+	}
+	if !found {
+		// doesnt exist, return the existing middlewares
+		return middlewares
+	}
+	var result []string
+	for _, m := range parts {
+		if m != middleware {
+			result = append(result, m)
+		}
+	}
+	return strings.Join(result, ",")
 }
