@@ -106,9 +106,6 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				if err != nil {
 					fmt.Printf("!! Error removing prebackuppod for mariadb consumer %s\n", i.Name)
 				}
-				if err := pollDeleted(ctx, c.Client, client.ObjectKeyFromObject(&i), &i); err != nil {
-					fmt.Printf("!! Error removing prebackuppod for mariadb consumer %s\n", i.Name)
-				}
 			} else {
 				fmt.Printf(">> Would remove mariadb consumer %s and associated components\n", i.Name)
 			}
@@ -125,9 +122,6 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				}
 				err := removePreBackupPod(ctx, c.Client, state, i.Name)
 				if err != nil {
-					fmt.Printf("!! Error removing prebackuppod for mongodb consumer %s\n", i.Name)
-				}
-				if err := pollDeleted(ctx, c.Client, client.ObjectKeyFromObject(&i), &i); err != nil {
 					fmt.Printf("!! Error removing prebackuppod for mongodb consumer %s\n", i.Name)
 				}
 			} else {
@@ -148,9 +142,6 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 				if err != nil {
 					fmt.Printf("!! Error removing prebackuppod for postgresql consumer %s\n", i.Name)
 				}
-				if err := pollDeleted(ctx, c.Client, client.ObjectKeyFromObject(&i), &i); err != nil {
-					fmt.Printf("!! Error removing prebackuppod for postgresql consumer %s\n", i.Name)
-				}
 			} else {
 				fmt.Printf(">> Would remove postgresql consumer %s and associated components\n", i.Name)
 			}
@@ -164,17 +155,23 @@ func RunCleanup(c *collector.Collector, gen generator.GeneratorInput, performDel
 func removePreBackupPod(ctx context.Context, c client.Client, state *collector.LagoonEnvState, name string) error {
 	for _, pbp := range state.PreBackupPodsV1.Items {
 		if pbp.Name == fmt.Sprintf("%s-prebackuppod", name) {
-			fmt.Printf(">> Removing mariadb prebackuppod %s\n", name)
+			fmt.Printf(">> Removing prebackuppod %s\n", name)
 			if err := c.Delete(ctx, &pbp); err != nil {
 				return err
+			}
+			if err := pollDeleted(ctx, c, client.ObjectKeyFromObject(&pbp), &pbp); err != nil {
+				fmt.Printf("!! Error removing prebackuppod for consumer %s\n", pbp.Name)
 			}
 		}
 	}
 	for _, pbp := range state.PreBackupPodsV1Alpha1.Items {
 		if pbp.Name == fmt.Sprintf("%s-prebackuppod", name) {
-			fmt.Printf(">> Removing mariadb prebackuppod %s\n", name)
+			fmt.Printf(">> Removing prebackuppod %s\n", name)
 			if err := c.Delete(ctx, &pbp); err != nil {
 				return err
+			}
+			if err := pollDeleted(ctx, c, client.ObjectKeyFromObject(&pbp), &pbp); err != nil {
+				fmt.Printf("!! Error removing prebackuppod for consumer %s\n", pbp.Name)
 			}
 		}
 	}
