@@ -775,7 +775,7 @@ func TestTemplateLagoonServices(t *testing.T) {
 							t.Errorf("couldn't read file %v: %v", tt.want, err)
 						}
 						if !reflect.DeepEqual(f1, r1) {
-							t.Errorf("TemplateLagoonServices() = \n%v", diff.LineDiff(string(r1), string(f1)))
+							t.Errorf("TemplateLagoonServices(%s) = \n%v", tt.name, diff.LineDiff(string(r1), string(f1)))
 						}
 					}
 				}

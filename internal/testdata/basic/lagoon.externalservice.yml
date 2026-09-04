@@ -32,6 +32,8 @@ network-policies:
   # the name of the service you want to allow connections to
   - service: basic1
     organizations: 
+    # this allows anything in the current organization
+    - name: self
     # this allows anything in this organization
     - name: example-org1
     # this allows anything in this organization from a production environment only
