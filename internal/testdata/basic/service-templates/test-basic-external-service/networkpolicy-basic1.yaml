@@ -75,6 +75,14 @@ spec:
         - key: organization.lagoon.sh/name
           operator: In
           values:
+          - example-org
+  - from:
+    - podSelector: {}
+    - namespaceSelector:
+        matchExpressions:
+        - key: organization.lagoon.sh/name
+          operator: In
+          values:
           - example-org1
   - from:
     - podSelector: {}

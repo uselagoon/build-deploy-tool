@@ -130,6 +130,12 @@ func GenerateServiceNetworkPolicies(
 			}
 
 			for _, op := range netpol.Organizations {
+				// support the magic string "self" to assign the netpol to the
+				// organization the build is running in
+				if op.Name == "self" && buildValues.Organization != "" {
+					op.Name = buildValues.Organization
+				}
+
 				// this generates any organization specific policies
 				npirs = append(npirs, generateOrganizationIngressRule(op))
 			}
