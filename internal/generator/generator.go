@@ -93,6 +93,7 @@ func NewGenerator(
 	monitoringContact := helpers.GetEnv("MONITORING_ALERTCONTACT", generator.MonitoringContact, generator.Debug)
 	monitoringStatusPageID := helpers.GetEnv("MONITORING_STATUSPAGEID", generator.MonitoringStatusPageID, generator.Debug)
 	projectName := helpers.GetEnv("PROJECT", generator.ProjectName, generator.Debug)
+	organizationName := helpers.GetEnv("LAGOON_ORGANIZATION_NAME", "", generator.Debug)
 	environmentName := helpers.GetEnv("ENVIRONMENT", generator.EnvironmentName, generator.Debug)
 	branch := helpers.GetEnv("BRANCH", generator.Branch, generator.Debug)
 	prNumber := helpers.GetEnv("PR_NUMBER", generator.PRNumber, generator.Debug)
@@ -186,6 +187,7 @@ func NewGenerator(
 
 	// start saving values into the build values variable
 	buildValues.Project = projectName
+	buildValues.Organization = organizationName
 	buildValues.Environment = environmentName
 	buildValues.Namespace = namespace
 	buildValues.EnvironmentType = environmentType

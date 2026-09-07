@@ -20,6 +20,7 @@ type TestData struct {
 	BuildName                  string
 	SourceRepository           string
 	Kubernetes                 string
+	Organization               string
 	ProjectName                string
 	EnvironmentName            string
 	Branch                     string
@@ -69,6 +70,10 @@ func SetupEnvironment(genInput generator.GeneratorInput, templatePath string, t 
 		return generator.GeneratorInput{}, err
 	}
 	err = os.Setenv("MONITORING_STATUSPAGEID", t.StatusPageID)
+	if err != nil {
+		return generator.GeneratorInput{}, err
+	}
+	err = os.Setenv("LAGOON_ORGANIZATION_NAME", t.Organization)
 	if err != nil {
 		return generator.GeneratorInput{}, err
 	}
@@ -231,6 +236,7 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 	rt := TestData{
 		AlertContact:    "alertcontact", // will be deprecated eventually
 		StatusPageID:    "statuspageid", // will be deprecated eventually
+		Organization:    "example-org",
 		ProjectName:     "example-project",
 		EnvironmentType: "production",
 		BuildType:       "branch",
@@ -250,6 +256,9 @@ func GetSeedData(t TestData, defaultProjectVariables bool) TestData {
 		Kubernetes:       "remote-cluster1",
 		GitSHA:           "abcdefg123456",
 		SSHPrivateKey:    "-----BEGIN OPENSSH PRIVATE KEY-----\nthisisafakekey\n-----END OPENSSH PRIVATE KEY-----",
+	}
+	if t.Organization != "" {
+		rt.Organization = t.Organization
 	}
 	if t.ProjectName != "" {
 		rt.ProjectName = t.ProjectName

@@ -16,6 +16,7 @@ const (
 type BuildValues struct {
 	SourceRepository              string                            `json:"sourceRepository" description:"the source repository for the project"`
 	BuildName                     string                            `json:"buildName" description:"the name of the build"`
+	Organization                  string                            `json:"organization" description:"the name of the organization the project belongs to"`
 	Project                       string                            `json:"project" description:"the name of the project"`
 	Environment                   string                            `json:"environment" description:"the name of the environment, this is the safe version and may differ from the branch name"`
 	EnvironmentType               string                            `json:"environmentType" description:"the type of the environment, production or development"`
