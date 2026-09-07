@@ -408,6 +408,24 @@ func TestTemplateRoutes(t *testing.T) {
 			want: "internal/testdata/node/ingress-templates/ingress-24",
 		},
 		{
+			name: "test26 Add cluster-issuer to route",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/node/lagoon.custom-issuer.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: "internal/testdata/node/ingress-templates/ingress-26",
+		},
+		{
 			name: "active-standby-api-routes",
 			args: testdata.GetSeedData(
 				testdata.TestData{
