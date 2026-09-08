@@ -175,7 +175,7 @@ func StandardizeSchedule(schedule string, namespaceAsSeed string) (string, error
 	seed := cksum.Cksum([]byte(fmt.Sprintf("%s\n", namespaceAsSeed)))
 	splitSchedule := strings.Split(strings.Trim(schedule, " "), " ")
 
-	if len(splitSchedule) <= 0 {
+	if len(splitSchedule) == 0 {
 		err := fmt.Errorf("cron definition '%s' is invalid", schedule)
 		schedule = ""
 		return schedule, err
@@ -361,11 +361,12 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 
 	timeRanges := strings.Split(field, ",")
 	for _, timeRange := range timeRanges {
-		if allPattern.MatchString(timeRange) {
+		switch {
+		case allPattern.MatchString(timeRange):
 			for i := min; i <= max; i++ {
 				set.Add(i)
 			}
-		} else if stepOnlyPattern.MatchString(timeRange) {
+		case stepOnlyPattern.MatchString(timeRange):
 			step, err := strconv.Atoi(stepOnlyPattern.FindStringSubmatch(timeRange)[1])
 			if err != nil || step <= 0 {
 				return nil, fmt.Errorf("invalid step value in %s", timeRange)
@@ -373,13 +374,13 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			for i := min; i <= max; i += step {
 				set.Add(i)
 			}
-		} else if singleTimePattern.MatchString(timeRange) {
+		case singleTimePattern.MatchString(timeRange):
 			time, err := strconv.Atoi(timeRange)
 			if err != nil {
 				return nil, err
 			}
 			set.Add(time)
-		} else if rangePattern.MatchString(timeRange) {
+		case rangePattern.MatchString(timeRange):
 			parts := rangePattern.FindStringSubmatch(timeRange)
 			start, err := strconv.Atoi(parts[1])
 			if err != nil {
@@ -398,7 +399,7 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			for i := start; i <= end; i++ {
 				set.Add(i)
 			}
-		} else if rangeWithIncPattern.MatchString(timeRange) {
+		case rangeWithIncPattern.MatchString(timeRange):
 			parts := rangeWithIncPattern.FindStringSubmatch(timeRange)
 			// The range with increment pattern has 3 capture groups,
 			// so parts should definitely be of size 4.
@@ -428,7 +429,7 @@ func normalizeField(field string, min int, max int) (mapset.Set[int], error) {
 			for i := start; i <= end; i += inc {
 				set.Add(i)
 			}
-		} else {
+		default:
 			return nil, fmt.Errorf("invalid range in schedule %s, range %s", field, timeRange)
 		}
 	}

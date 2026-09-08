@@ -30,7 +30,7 @@ func GenerateCronjobTemplate(
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok && serviceValues.Type != "external" {
 			for _, nCronjob := range serviceValues.NativeCronjobs {
 				serviceTypeValues := &servicetypes.ServiceType{}
-				helpers.DeepCopy(val, serviceTypeValues)
+				_ = helpers.DeepCopy(val, serviceTypeValues)
 
 				// add the default labels
 				labels := map[string]string{
@@ -54,12 +54,13 @@ func GenerateCronjobTemplate(
 				// add any additional labels
 				additionalLabels := make(map[string]string)
 				additionalAnnotations := make(map[string]string)
-				if buildValues.BuildType == "branch" {
-					additionalAnnotations["lagoon.sh/branch"] = buildValues.Branch
-				} else if buildValues.BuildType == "pullrequest" {
-					additionalAnnotations["lagoon.sh/prNumber"] = buildValues.PRNumber
-					additionalAnnotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
-					additionalAnnotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
+				switch buildValues.BuildType {
+				case "branch":
+					annotations["lagoon.sh/branch"] = buildValues.Branch
+				case "pullrequest":
+					annotations["lagoon.sh/prNumber"] = buildValues.PRNumber
+					annotations["lagoon.sh/prHeadBranch"] = buildValues.PRHeadBranch
+					annotations["lagoon.sh/prBaseBranch"] = buildValues.PRBaseBranch
 				}
 
 				templateAnnotations := make(map[string]string)
@@ -76,8 +77,8 @@ func GenerateCronjobTemplate(
 						Annotations: annotations,
 					},
 				}
-				cronjob.ObjectMeta.Labels = labels
-				cronjob.ObjectMeta.Annotations = annotations
+				cronjob.Labels = labels
+				cronjob.Annotations = annotations
 				cronjob.Spec.Schedule = nCronjob.Schedule
 				cronjob.Spec.ConcurrencyPolicy = batchv1.ForbidConcurrent
 				cronjob.Spec.SuccessfulJobsHistoryLimit = helpers.Int32Ptr(0)
@@ -96,26 +97,26 @@ func GenerateCronjobTemplate(
 				}
 
 				for key, value := range additionalLabels {
-					cronjob.ObjectMeta.Labels[key] = value
+					cronjob.Labels[key] = value
 				}
 				// add any additional annotations
 				for key, value := range additionalAnnotations {
-					cronjob.ObjectMeta.Annotations[key] = value
+					cronjob.Annotations[key] = value
 				}
 				// validate any annotations
-				if err := apivalidation.ValidateAnnotations(cronjob.ObjectMeta.Annotations, nil); err != nil {
+				if err := apivalidation.ValidateAnnotations(cronjob.Annotations, nil); err != nil {
 					if len(err) != 0 {
 						return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 					}
 				}
 				// validate any labels
-				if err := metavalidation.ValidateLabels(cronjob.ObjectMeta.Labels, nil); err != nil {
+				if err := metavalidation.ValidateLabels(cronjob.Labels, nil); err != nil {
 					if len(err) != 0 {
 						return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 					}
 				}
 				// check length of labels
-				err := helpers.CheckLabelLength(cronjob.ObjectMeta.Labels)
+				err := helpers.CheckLabelLength(cronjob.Labels)
 				if err != nil {
 					return nil, err
 				}
@@ -133,11 +134,11 @@ func GenerateCronjobTemplate(
 }
 
 func TemplateCronjobs(item batchv1.CronJob) ([]byte, error) {
-	separator := []byte("---\n")
+	templateYAML := []byte("---\n")
 	iBytes, err := yaml.Marshal(item)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	templateYAML := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, iBytes...)
 	return templateYAML, nil
 }

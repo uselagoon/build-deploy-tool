@@ -272,7 +272,7 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			helpers.UnsetEnvVars(tt.vars) //unset variables before running tests
+			helpers.UnsetEnvVars(tt.vars) // unset variables before running tests
 			for _, envVar := range tt.vars {
 				err := os.Setenv(envVar.Name, envVar.Value)
 				if err != nil {
@@ -296,9 +296,8 @@ func TestLagoonEnvTemplateGeneration(t *testing.T) {
 			if err != nil {
 				t.Errorf("%v", err)
 			}
-			dbaasCreds := &DBaaSCredRefs{}
 			if tt.dbaasCreds != "" {
-				dbaasCreds, err = loadCredsFromFile(tt.dbaasCreds)
+				dbaasCreds, err := loadCredsFromFile(tt.dbaasCreds)
 				if err != nil {
 					t.Errorf("%v", err)
 				}

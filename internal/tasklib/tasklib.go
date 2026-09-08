@@ -4,7 +4,7 @@ import (
 	"github.com/PaesslerAG/gval"
 )
 
-//Note - the structure of a task environment is going to mirror what gval uses for now
+// Note - the structure of a task environment is going to mirror what gval uses for now
 // it makes sense - but we can wrap this in convenience functions to improve the total safety
 
 // TaskEnvironment defines a task for an environment map
@@ -28,8 +28,7 @@ func EvaluateExpressionsInTaskEnvironment(expression string, env TaskEnvironment
 		}),
 		gval.Function("exists", func(args ...interface{}) bool {
 			name := args[0].(string)
-			_, ok := env[name]
-			if !ok {
+			if _, ok := env[name]; !ok {
 				return false
 			}
 			return true

@@ -282,7 +282,7 @@ func TestGeneratePVCTemplate(t *testing.T) {
 				if err != nil {
 					t.Errorf("couldn't generate template  %v", err)
 				}
-				result = append(result, templateBytes[:]...)
+				result = append(result, templateBytes...)
 			}
 			if !reflect.DeepEqual(string(result), string(r1)) {
 				t.Errorf("GeneratePVCTemplate() = \n%v", diff.LineDiff(string(r1), string(result)))
