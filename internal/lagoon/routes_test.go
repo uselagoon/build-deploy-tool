@@ -446,6 +446,45 @@ func TestGenerateRouteStructure(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "test9 - certIssuer",
+			args: args{
+				yamlRoutes: &RoutesV2{},
+				yamlRouteMap: map[string][]Route{
+					"nginx": {
+						{
+							Ingresses: map[string]Ingress{
+								"www.example.com": {
+									TLSAcme:      helpers.BoolPtr(false),
+									Wildcard:     helpers.BoolPtr(true),
+									WildcardApex: helpers.BoolPtr(false),
+									CertIssuer:   "testissuer",
+								},
+							},
+						},
+					},
+				},
+				activeStandby: false,
+			},
+			want: &RoutesV2{
+				Routes: []RouteV2{
+					{
+						Domain:              "www.example.com",
+						LagoonService:       "nginx",
+						MonitoringPath:      "/",
+						Insecure:            helpers.StrPtr("Redirect"),
+						TLSAcme:             helpers.BoolPtr(false),
+						Annotations:         map[string]string{},
+						AlternativeNames:    []string{},
+						Wildcard:            helpers.BoolPtr(true),
+						WildcardApex:        helpers.BoolPtr(false),
+						IngressName:         "wildcard-www.example.com",
+						RequestVerification: helpers.BoolPtr(false),
+						CertIssuer:          "testissuer",
+					},
+				},
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -31,6 +31,7 @@ type RouteV2 struct {
 	AlternativeNames      []string          `json:"alternativeNames"`
 	IngressName           string            `json:"ingressName"`
 	IngressClass          string            `json:"ingressClass"`
+	CertIssuer            string            `json:"certIssuer"`
 	HSTSEnabled           *bool             `json:"hstsEnabled,omitempty"`
 	HSTSMaxAge            int               `json:"hstsMaxAge,omitempty"`
 	HSTSIncludeSubdomains *bool             `json:"hstsIncludeSubdomains,omitempty"`
@@ -93,6 +94,7 @@ type Ingress struct {
 	Fastly                Fastly            `json:"fastly,omitempty"`
 	Annotations           map[string]string `json:"annotations,omitempty"`
 	IngressClass          string            `json:"ingressClass"`
+	CertIssuer            string            `json:"certIssuer,omitempty"`
 	HSTSEnabled           *bool             `json:"hstsEnabled,omitempty"`
 	HSTSMaxAge            int               `json:"hstsMaxAge,omitempty"`
 	HSTSIncludeSubdomains *bool             `json:"hstsIncludeSubdomains,omitempty"`
@@ -206,6 +208,9 @@ func GenerateRoutesV2(yamlRoutes *RoutesV2, routeMap map[string][]Route, variabl
 					}
 					if ingress.IngressClass != "" {
 						newRoute.IngressClass = ingress.IngressClass
+					}
+					if ingress.CertIssuer != "" {
+						newRoute.CertIssuer = ingress.CertIssuer
 					}
 					if ingress.MonitoringPath != "" {
 						newRoute.MonitoringPath = ingress.MonitoringPath
