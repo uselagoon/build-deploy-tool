@@ -466,7 +466,8 @@ func composeToServiceValues(
 					// if the cronjob is inpod, or the cronjob has an inpod flag override
 					//if inpod || (cronjob.InPod != nil && *cronjob.InPod) {
 					if *cronjob.InPod {
-						cmd := cronjob.Command
+						// Safely accommodate cronjobs with trailing whitespace due to yaml `>` syntax
+						cmd := strings.TrimSpace(cronjob.Command)
 						// Lagoon enforces that only a single instance of a cronjob can run at any one time.
 						// https://man7.org/linux/man-pages/man1/flock.1.html
 						// https://www.gnu.org/savannah-checkouts/gnu/bash/manual/bash.html#Shell-Parameter-Expansion
