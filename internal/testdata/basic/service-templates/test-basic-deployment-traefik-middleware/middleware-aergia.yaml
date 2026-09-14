@@ -25,3 +25,5 @@ spec:
     status:
     - "502"
     - "503"
+    statusRewrites:
+      "502": 503
