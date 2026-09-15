@@ -46,6 +46,9 @@ func generateMiddleware(buildValues *BuildValues, mainRoutes *lagoon.RoutesV2) e
 					},
 				},
 			},
+			StatusRewrites: map[string]int{
+				"502": 503,
+			},
 		},
 	}
 	buildValues.TraefikMiddlewares["https-redirect"] = traefik.MiddlewareSpec{
