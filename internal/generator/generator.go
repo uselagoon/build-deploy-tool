@@ -354,6 +354,15 @@ func NewGenerator(
 	ingressClass := CheckFeatureFlag("INGRESS_CLASS", buildValues.EnvironmentVariables, generator.Debug)
 	buildValues.IngressClass = ingressClass
 
+	// check for the ROUTE_MERGE_APEX flag, when enabled an apex domain (example.com) and its
+	// `www.` counterpart (www.example.com) defined as separate routes will be collapsed into
+	// a single ingress object, with the `www.` domain added as an alternativeName on the apex
+	// route, whenever it is safe to do so (see lagoon.MergeApexAlternativeNames)
+	mergeApexRoutes := CheckFeatureFlag("ROUTE_MERGE_APEX", buildValues.EnvironmentVariables, generator.Debug)
+	if mergeApexRoutes == "enabled" {
+		buildValues.MergeApexRoutes = true
+	}
+
 	traefikMiddleware := CheckFeatureFlag("TRAEFIK_MIDDLEWARE", buildValues.EnvironmentVariables, generator.Debug)
 	if traefikMiddleware == "enabled" {
 		buildValues.EnableTraefikMiddleware = true
