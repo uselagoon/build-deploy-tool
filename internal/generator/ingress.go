@@ -375,6 +375,12 @@ func generateAndMerge(
 		return *n, err
 	}
 
+	// optionally collapse any apex+www route pairs into a single ingress, this only
+	// happens if the feature flag is enabled and it is safe to do for a given pair
+	if buildValues.MergeApexRoutes {
+		mainRoutes.Routes = lagoon.MergeApexAlternativeNames(mainRoutes.Routes)
+	}
+
 	// check computed routes to make sure that any defined path routes have valid service backends
 	for _, mr := range mainRoutes.Routes {
 		for _, pr := range mr.PathRoutes {
