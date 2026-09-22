@@ -83,35 +83,35 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					mariaDBConsumer.ObjectMeta.Labels = map[string]string{}
-					mariaDBConsumer.ObjectMeta.Annotations = map[string]string{}
+					mariaDBConsumer.Labels = map[string]string{}
+					mariaDBConsumer.Annotations = map[string]string{}
 					for key, value := range labels {
-						mariaDBConsumer.ObjectMeta.Labels[key] = value
+						mariaDBConsumer.Labels[key] = value
 					}
 					for key, value := range annotations {
-						mariaDBConsumer.ObjectMeta.Annotations[key] = value
+						mariaDBConsumer.Annotations[key] = value
 					}
 					for key, value := range additionalLabels {
-						mariaDBConsumer.ObjectMeta.Labels[key] = value
+						mariaDBConsumer.Labels[key] = value
 					}
 					for key, value := range additionalAnnotations {
-						mariaDBConsumer.ObjectMeta.Annotations[key] = value
+						mariaDBConsumer.Annotations[key] = value
 					}
 					// validate any annotations
-					if err := apivalidation.ValidateAnnotations(mariaDBConsumer.ObjectMeta.Annotations, nil); err != nil {
+					if err := apivalidation.ValidateAnnotations(mariaDBConsumer.Annotations, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 					// validate any labels
-					if err := metavalidation.ValidateLabels(mariaDBConsumer.ObjectMeta.Labels, nil); err != nil {
+					if err := metavalidation.ValidateLabels(mariaDBConsumer.Labels, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 
 					// check length of labels
-					err := helpers.CheckLabelLength(mariaDBConsumer.ObjectMeta.Labels)
+					err := helpers.CheckLabelLength(mariaDBConsumer.Labels)
 					if err != nil {
 						return nil, err
 					}
@@ -131,34 +131,34 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					mongodbConsumer.ObjectMeta.Labels = map[string]string{}
-					mongodbConsumer.ObjectMeta.Annotations = map[string]string{}
+					mongodbConsumer.Labels = map[string]string{}
+					mongodbConsumer.Annotations = map[string]string{}
 					for key, value := range labels {
-						mongodbConsumer.ObjectMeta.Labels[key] = value
+						mongodbConsumer.Labels[key] = value
 					}
 					for key, value := range annotations {
-						mongodbConsumer.ObjectMeta.Annotations[key] = value
+						mongodbConsumer.Annotations[key] = value
 					}
 					for key, value := range additionalLabels {
-						mongodbConsumer.ObjectMeta.Labels[key] = value
+						mongodbConsumer.Labels[key] = value
 					}
 					for key, value := range additionalAnnotations {
-						mongodbConsumer.ObjectMeta.Annotations[key] = value
+						mongodbConsumer.Annotations[key] = value
 					}
 					// validate any annotations
-					if err := apivalidation.ValidateAnnotations(mongodbConsumer.ObjectMeta.Annotations, nil); err != nil {
+					if err := apivalidation.ValidateAnnotations(mongodbConsumer.Annotations, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 					// validate any labels
-					if err := metavalidation.ValidateLabels(mongodbConsumer.ObjectMeta.Labels, nil); err != nil {
+					if err := metavalidation.ValidateLabels(mongodbConsumer.Labels, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 					// check length of labels
-					err := helpers.CheckLabelLength(mongodbConsumer.ObjectMeta.Labels)
+					err := helpers.CheckLabelLength(mongodbConsumer.Labels)
 					if err != nil {
 						return nil, err
 					}
@@ -178,35 +178,35 @@ func GenerateDBaaSTemplate(
 							Environment: serviceValues.DBaaSEnvironment,
 						},
 					}
-					postgresqlConsumer.ObjectMeta.Labels = map[string]string{}
-					postgresqlConsumer.ObjectMeta.Annotations = map[string]string{}
+					postgresqlConsumer.Labels = map[string]string{}
+					postgresqlConsumer.Annotations = map[string]string{}
 					for key, value := range labels {
-						postgresqlConsumer.ObjectMeta.Labels[key] = value
+						postgresqlConsumer.Labels[key] = value
 					}
 					for key, value := range annotations {
-						postgresqlConsumer.ObjectMeta.Annotations[key] = value
+						postgresqlConsumer.Annotations[key] = value
 					}
 					for key, value := range additionalLabels {
-						postgresqlConsumer.ObjectMeta.Labels[key] = value
+						postgresqlConsumer.Labels[key] = value
 					}
 					for key, value := range additionalAnnotations {
-						postgresqlConsumer.ObjectMeta.Annotations[key] = value
+						postgresqlConsumer.Annotations[key] = value
 					}
 					// validate any annotations
-					if err := apivalidation.ValidateAnnotations(postgresqlConsumer.ObjectMeta.Annotations, nil); err != nil {
+					if err := apivalidation.ValidateAnnotations(postgresqlConsumer.Annotations, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 					// validate any labels
-					if err := metavalidation.ValidateLabels(postgresqlConsumer.ObjectMeta.Labels, nil); err != nil {
+					if err := metavalidation.ValidateLabels(postgresqlConsumer.Labels, nil); err != nil {
 						if len(err) != 0 {
 							return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.Name, err)
 						}
 					}
 
 					// check length of labels
-					err := helpers.CheckLabelLength(postgresqlConsumer.ObjectMeta.Labels)
+					err := helpers.CheckLabelLength(postgresqlConsumer.Labels)
 					if err != nil {
 						return nil, err
 					}
@@ -224,26 +224,29 @@ func TemplateConsumers(dbaas *DBaaSTemplates) ([]byte, error) {
 	for _, db := range dbaas.MariaDB {
 		dbBytes, err := yaml.Marshal(db)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't generate template: %v", err)
+			return nil, fmt.Errorf("couldn't generate template: %w", err)
 		}
-		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, dbBytes...)
 	}
 	for _, db := range dbaas.MongoDB {
 		dbBytes, err := yaml.Marshal(db)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't generate template: %v", err)
+			return nil, fmt.Errorf("couldn't generate template: %w", err)
 		}
-		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, dbBytes...)
 	}
 	for _, db := range dbaas.PostgreSQL {
 		dbBytes, err := yaml.Marshal(db)
 		if err != nil {
-			return nil, fmt.Errorf("couldn't generate template: %v", err)
+			return nil, fmt.Errorf("couldn't generate template: %w", err)
 		}
-		restoreResult := append(separator[:], dbBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, dbBytes...)
 	}
 	return templateYAML, nil
 }

@@ -59,8 +59,8 @@ func FastlyConfigGeneration(debug bool, domain string) (lagoon.Fastly, error) {
 	// unmarshal and then merge the two so there is only 1 set of variables to iterate over
 	projectVars := []lagoon.EnvironmentVariable{}
 	envVars := []lagoon.EnvironmentVariable{}
-	json.Unmarshal([]byte(projectVariables), &projectVars)
-	json.Unmarshal([]byte(environmentVariables), &envVars)
+	_ = json.Unmarshal([]byte(projectVariables), &projectVars)
+	_ = json.Unmarshal([]byte(environmentVariables), &envVars)
 	lagoonEnvVars := lagoon.MergeVariables(projectVars, envVars)
 
 	// generate the fastly configuration from the provided flags/variables

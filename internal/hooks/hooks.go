@@ -60,7 +60,7 @@ func RunHooks(hookName, hookDir string) error {
 				panic(err)
 			}
 			defer f.Close()
-			if _, err = f.WriteString(fmt.Sprintf("%s:%d\n", hookName, hookCount)); err != nil {
+			if _, err = fmt.Fprintf(f, "%s:%d\n", hookName, hookCount); err != nil {
 				panic(err)
 			}
 		}

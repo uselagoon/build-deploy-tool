@@ -50,9 +50,10 @@ func composeToVolumeValues(
 	// the lagoonType check will skip to the end and return an empty service definition
 	if composeVolumeValues.Labels != nil {
 		volumeType := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.type")
-		if volumeType == "" || volumeType == "none" {
+		switch volumeType {
+		case "", "none":
 			return nil, nil
-		} else if volumeType == "persistent" {
+		case "persistent":
 			originalVolumeName := lagoon.GetVolumeNameFromComposeName(composeName, composeVolumeValues.Name)
 			lagoonVolumeName := lagoon.GetLagoonVolumeName(originalVolumeName)
 			volumeSize := lagoon.CheckDockerComposeLagoonLabel(composeVolumeValues.Labels, "lagoon.persistent.size")

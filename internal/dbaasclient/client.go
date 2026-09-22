@@ -3,6 +3,7 @@ package dbaasclient
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -101,35 +102,56 @@ func (c *Client) CheckProvider(dbaasEndpoint, dbaasType, dbaasEnvironment string
 // TestDBaaSHTTPServer is a test server used to test dbaas-responses
 func TestDBaaSHTTPServer() *httptest.Server {
 	mux := http.NewServeMux()
+	var err error
 	mux.HandleFunc("/mariadb/production", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/mariadb/development", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/mariadb/development2", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":false},"error":"no providers for dbaas environment development2"}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true},"error":"no providers for dbaas environment development2"}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/postgres/production", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/postgres/development", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/postgres/development2", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":false},"error":"no providers for dbaas environment development2"}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true},"error":"no providers for dbaas environment development2"}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/mongodb/production", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/mongodb/development", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":true}}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true}}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/mongodb/development2", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte(`{"result":{"found":false},"error":"no providers for dbaas environment development2"}`))
+		if _, err = res.Write([]byte(`{"result":{"found":true},"error":"no providers for dbaas environment development2"}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	mux.HandleFunc("/healthz", func(res http.ResponseWriter, req *http.Request) {
-		res.Write([]byte("{}"))
+		if _, err = res.Write([]byte(`{}`)); err != nil {
+			log.Println(err)
+		}
 	})
 	ts := httptest.NewServer(mux)
 	return ts

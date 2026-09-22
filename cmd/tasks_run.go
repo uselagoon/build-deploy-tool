@@ -186,10 +186,8 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 						return true, e
 					}
 				}
-			} else {
-				if debug {
-					fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
-				}
+			} else if debug {
+				fmt.Printf("Conditional '%v' for task: \n '%v' \n evaluated to false, skipping\n", task.When, task.Command)
 			}
 		}
 		return false, nil
@@ -201,7 +199,7 @@ func iterateTaskGenerator(allowDeployMissingErrors bool, taskRunner runTaskInEnv
 // that the task should be run (i.e. we execute the task in a running container).
 func evaluateWhenConditionsForTaskInEnvironment(environment tasklib.TaskEnvironment, task lagoon.Task, debug bool) (bool, error) {
 
-	if len(task.When) == 0 { //no condition, so we run ...
+	if len(task.When) == 0 { // no condition, so we run ...
 		return true, nil
 	}
 	if debug {

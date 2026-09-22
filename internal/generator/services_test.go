@@ -553,7 +553,7 @@ func Test_composeToServiceValues(t *testing.T) {
 			},
 		},
 		{
-			//@TODO: this should FAIL in the future https://github.com/uselagoon/build-deploy-tool/issues/56
+			// @TODO: this should FAIL in the future https://github.com/uselagoon/build-deploy-tool/issues/56
 			name: "test11 - mariadb to mariadb-single via environment override with no patching db provider",
 			args: args{
 				buildValues: &BuildValues{
@@ -1186,7 +1186,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					},
 					Build: &composetypes.BuildConfig{
 						Context:    ".",
-						Dockerfile: "../testdata/basic/docker/basic.dockerfile", //intentionally wrong, override by lagoon.yml
+						Dockerfile: "../testdata/basic/docker/basic.dockerfile", // intentionally wrong, override by lagoon.yml
 					},
 				},
 			},
@@ -1234,7 +1234,7 @@ func Test_composeToServiceValues(t *testing.T) {
 					Labels: composetypes.Labels{
 						"lagoon.type": "redis",
 					},
-					Image: "uselagoon/fake-redis:latest", //intentionally wrong, override by lagoon.yml
+					Image: "uselagoon/fake-redis:latest", // intentionally wrong, override by lagoon.yml
 				},
 			},
 			want: &ServiceValues{

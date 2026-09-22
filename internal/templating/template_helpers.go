@@ -55,11 +55,11 @@ func LinkedServiceCalculator(services []generator.ServiceValues) []generator.Ser
 }
 
 func TemplateSecret(item corev1.Secret) ([]byte, error) {
-	separator := []byte("---\n")
+	templateYAML := []byte("---\n")
 	iBytes, err := yaml.Marshal(item)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	templateYAML := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, iBytes...)
 	return templateYAML, nil
 }

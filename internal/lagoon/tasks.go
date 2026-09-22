@@ -81,7 +81,7 @@ func getConfig() (*rest.Config, error) {
 	*kubeconfig = helpers.GetEnv("KUBECONFIG", "", false)
 
 	if *kubeconfig == "" {
-		//Fall back on out of cluster
+		// Fall back on out of cluster
 		// read the deployer token.
 		token, err := os.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/token")
 		if err != nil {
@@ -174,7 +174,7 @@ func ExecTaskInPod(
 	podReady := false
 	numIterations := 1
 	for ; !podReady; numIterations++ {
-		if numIterations >= task.ScaleMaxIterations { //break if there's some reason we can't scale the pod
+		if numIterations >= task.ScaleMaxIterations { // break if there's some reason we can't scale the pod
 			return errors.New("Failed to scale pods for " + deployment.Name)
 		}
 		if deployment.Status.ReadyReplicas == 0 {
@@ -187,7 +187,10 @@ func ExecTaskInPod(
 
 			if scale.Spec.Replicas == 0 {
 				scale.Spec.Replicas = 1
-				depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
+				_, err := depClient.UpdateScale(context.TODO(), deployment.Name, scale, v1.UpdateOptions{})
+				if err != nil {
+					return err
+				}
 			}
 			time.Sleep(time.Second * time.Duration(task.ScaleWaitTime))
 			deployment, err = depClient.Get(context.TODO(), deployment.Name, v1.GetOptions{})
@@ -199,7 +202,7 @@ func ExecTaskInPod(
 		}
 	}
 
-	//grab pod - for now we'll copy precisely what the build script does and use the labels
+	// grab pod - for now we'll copy precisely what the build script does and use the labels
 
 	podClient := clientset.CoreV1().Pods(task.Namespace)
 	clientList, err := podClient.List(context.TODO(), v1.ListOptions{
@@ -213,9 +216,9 @@ func ExecTaskInPod(
 	var pod corev1.Pod
 	foundRunningPod := false
 	for _, i2 := range clientList.Items {
-		if i2.Status.Phase == "Running" && i2.ObjectMeta.DeletionTimestamp == nil {
+		if i2.Status.Phase == "Running" && i2.DeletionTimestamp == nil {
 			if task.Container != "" {
-				//is this container contained herein?
+				// is this container contained herein?
 				for _, c := range i2.Spec.Containers {
 					if c.Name != task.Container {
 						continue
@@ -388,6 +391,6 @@ func UnidleNamespace(ctx context.Context, namespace string, retries int, waitTim
 }
 
 func init() {
-	//TODO: will potentially be useful to wire this up to the global debug into
+	// TODO: will potentially be useful to wire this up to the global debug into
 	debug = true
 }

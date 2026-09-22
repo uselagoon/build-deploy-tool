@@ -38,8 +38,8 @@ func TemplatePreBackupPods(pods []k8upv1.PreBackupPod) ([]byte, error) {
 			return nil, fmt.Errorf("couldn't generate template: %v", err)
 		}
 		podBytes, _ = RemoveCreationTimestamp(podBytes)
-		restoreResult := append(separator[:], podBytes[:]...)
-		templateYAML = append(templateYAML, restoreResult[:]...)
+		templateYAML = append(templateYAML, separator...)
+		templateYAML = append(templateYAML, podBytes...)
 	}
 	return templateYAML, nil
 }
@@ -378,5 +378,5 @@ var mongoBackupCommand = `/bin/sh -c "dump=$(mktemp) && mongodump \
 
 // varfix just uppercases and replaces - with _ for variable names
 func varFix(s string) string {
-	return strings.ToUpper(strings.Replace(s, "-", "_", -1))
+	return strings.ToUpper(strings.ReplaceAll(s, "-", "_"))
 }

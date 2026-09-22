@@ -157,7 +157,7 @@ func TestIdentifyFeatureFlag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			helpers.UnsetEnvVars(tt.vars) //unset variables before running tests
+			helpers.UnsetEnvVars(tt.vars) // unset variables before running tests
 			// set the environment variables from args
 			savedTemplates, err := os.MkdirTemp("", "testoutput")
 			if err != nil {

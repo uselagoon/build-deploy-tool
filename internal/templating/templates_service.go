@@ -52,7 +52,7 @@ func GenerateServiceTemplate(
 	for _, serviceValues := range checkedServices {
 		if val, ok := servicetypes.ServiceTypes[serviceValues.Type]; ok {
 			serviceType := &servicetypes.ServiceType{}
-			helpers.DeepCopy(val, serviceType)
+			_ = helpers.DeepCopy(val, serviceType)
 			service, err := GenerateService(serviceType, serviceValues, labels, annotations)
 			if err != nil {
 				return nil, err
@@ -90,9 +90,9 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 	}
 
 	labelsCopy := &map[string]string{}
-	helpers.DeepCopy(labels, labelsCopy)
+	_ = helpers.DeepCopy(labels, labelsCopy)
 	annotationsCopy := &map[string]string{}
-	helpers.DeepCopy(annotations, annotationsCopy)
+	_ = helpers.DeepCopy(annotations, annotationsCopy)
 
 	for key, value := range additionalLabels {
 		(*labelsCopy)[key] = value
@@ -101,22 +101,22 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 	for key, value := range additionalAnnotations {
 		(*annotationsCopy)[key] = value
 	}
-	service.ObjectMeta.Labels = *labelsCopy
-	service.ObjectMeta.Annotations = *annotationsCopy
+	service.Labels = *labelsCopy
+	service.Annotations = *annotationsCopy
 	// validate any annotations
-	if err := apivalidation.ValidateAnnotations(service.ObjectMeta.Annotations, nil); err != nil {
+	if err := apivalidation.ValidateAnnotations(service.Annotations, nil); err != nil {
 		if len(err) != 0 {
 			return nil, fmt.Errorf("the annotations for %s are not valid: %v", serviceValues.OverrideName, err)
 		}
 	}
 	// validate any labels
-	if err := metavalidation.ValidateLabels(service.ObjectMeta.Labels, nil); err != nil {
+	if err := metavalidation.ValidateLabels(service.Labels, nil); err != nil {
 		if len(err) != 0 {
 			return nil, fmt.Errorf("the labels for %s are not valid: %v", serviceValues.OverrideName, err)
 		}
 	}
 	// check length of labels
-	err := helpers.CheckLabelLength(service.ObjectMeta.Labels)
+	err := helpers.CheckLabelLength(service.Labels)
 	if err != nil {
 		return nil, err
 	}
@@ -150,8 +150,7 @@ func GenerateService(serviceType *servicetypes.ServiceType, serviceValues genera
 					Port: int32(addPort.ServicePort.Target),
 				}
 				// set protocol to anything but tcp if required
-				switch addPort.ServicePort.Protocol {
-				case "udp":
+				if addPort.ServicePort.Protocol == "udp" {
 					port.Name = fmt.Sprintf("udp-%d", addPort.ServicePort.Target)
 					port.TargetPort = intstr.IntOrString{
 						StrVal: fmt.Sprintf("udp-%d", addPort.ServicePort.Target),
@@ -191,11 +190,11 @@ func GenerateServiceBackendPort(addPort generator.AdditionalServicePort) network
 }
 
 func TemplateService(item corev1.Service) ([]byte, error) {
-	separator := []byte("---\n")
+	templateYAML := []byte("---\n")
 	iBytes, err := yaml.Marshal(item)
 	if err != nil {
 		return nil, fmt.Errorf("couldn't generate template: %v", err)
 	}
-	templateYAML := append(separator[:], iBytes[:]...)
+	templateYAML = append(templateYAML, iBytes...)
 	return templateYAML, nil
 }

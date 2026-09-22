@@ -88,7 +88,7 @@ func generateImageBuild(buildValues BuildValues, composeServiceValues composetyp
 			// otherwise this must be an image build
 			// set temporary image to prevent clashes?? not sure this is even required, the temporary name is just as unique as the final image name eventually is
 			// so clashing would occur in both situations
-			imageBuild.TemporaryImage = fmt.Sprintf("%s-%s", buildValues.Namespace, composeService) //@TODO maybe get rid of this
+			imageBuild.TemporaryImage = fmt.Sprintf("%s-%s", buildValues.Namespace, composeService) // @TODO maybe get rid of this
 			if buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context != "" {
 				imageBuild.Context = buildValues.LagoonYAML.Environments[buildValues.Environment].Overrides[composeService].Build.Context
 			}

@@ -150,8 +150,7 @@ func GetCurrentState(c *collector.Collector, gen generator.GeneratorInput) (
 		sizeInt64, _ := size().AsInt64()
 		storeType := "block"
 		if exist.Spec.StorageClassName != nil {
-			switch *exist.Spec.StorageClassName {
-			case "bulk":
+			if *exist.Spec.StorageClassName == "bulk" {
 				storeType = "bulk"
 			}
 		}
