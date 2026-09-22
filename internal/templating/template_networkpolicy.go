@@ -179,13 +179,22 @@ func TemplateNetworkPolicy(ingress *networkv1.NetworkPolicy) ([]byte, error) {
 }
 
 func generateProjectIngressRule(pp lagoon.ProjectNetworkPolicies) networkv1.NetworkPolicyIngressRule {
-	namespaceSelectors := []metav1.LabelSelectorRequirement{
-		{
+	namespaceSelectors := []metav1.LabelSelectorRequirement{}
+
+	if pp.Name == "any" {
+		// support the magic string "any" which allows any Lagoon project
+		namespaceSelectors = append(namespaceSelectors, metav1.LabelSelectorRequirement{
+			Key:      "lagoon.sh/project",
+			Operator: metav1.LabelSelectorOpExists,
+		})
+	} else {
+		namespaceSelectors = append(namespaceSelectors, metav1.LabelSelectorRequirement{
 			Key:      "lagoon.sh/project",
 			Operator: metav1.LabelSelectorOpIn,
 			Values:   []string{pp.Name},
-		},
+		})
 	}
+
 	if pp.Environment != "" {
 		environmentName := machineryns.ShortenEnvironment(pp.Name, machineryns.MakeSafe(pp.Environment))
 		namespaceSelectors = append(namespaceSelectors, metav1.LabelSelectorRequirement{
