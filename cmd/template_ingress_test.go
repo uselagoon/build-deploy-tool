@@ -426,6 +426,30 @@ func TestTemplateRoutes(t *testing.T) {
 			want: "internal/testdata/node/ingress-templates/ingress-26",
 		},
 		{
+			name: "api-defined-route-cluster-issuer-with-lagoon-yml",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "main",
+					Branch:          "main",
+					LagoonYAML:      "internal/testdata/node/lagoon.custom-issuer.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name: "LAGOON_API_ROUTES",
+							Value: base64.URLEncoding.EncodeToString([]byte(`{"routes":[
+                                                       {"domain":"example.com","certIssuer":"my-custom-issuer","service":"node","tlsAcme":true,"insecure":"Redirect","source":"API"}]}`)),
+							Scope: "internal_system",
+						},
+						{
+							Name:  "LAGOON_FASTLY_SERVICE_IDS",
+							Value: "example.com:service-id:true",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: "internal/testdata/node/ingress-templates/api-defined-route-cluster-issuer-with-lagoon-yml",
+		},
+		{
 			name: "active-standby-api-routes",
 			args: testdata.GetSeedData(
 				testdata.TestData{
