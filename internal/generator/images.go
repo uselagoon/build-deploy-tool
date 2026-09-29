@@ -101,11 +101,15 @@ func generateImageBuild(buildValues BuildValues, composeServiceValues composetyp
 			}
 		}
 	}
+	imageTag := "latest"
+	if buildValues.UseBuildAsImageTag {
+		imageTag = buildValues.BuildName
+	}
 	// since we know what the final build image will be, we can set it here, this is what all images will be built as during the build
 	// for `pullimages` they will get retagged as this imagename and pushed to the registry
-	imageBuild.BuildImage = fmt.Sprintf("%s/%s/%s/%s:%s", buildValues.ImageRegistry, buildValues.Project, buildValues.Environment, composeService, "latest")
+	imageBuild.BuildImage = fmt.Sprintf("%s/%s/%s/%s:%s", buildValues.ImageRegistry, buildValues.Project, buildValues.Environment, composeService, imageTag)
 	if buildValues.BuildType == "promote" {
-		imageBuild.PromoteImage = fmt.Sprintf("%s/%s/%s/%s:%s", buildValues.ImageRegistry, buildValues.Project, buildValues.PromotionSourceEnvironment, composeService, "latest")
+		imageBuild.PromoteImage = fmt.Sprintf("%s/%s/%s/%s:%s", buildValues.ImageRegistry, buildValues.Project, buildValues.PromotionSourceEnvironment, composeService, imageTag)
 	}
 	// populate the docker derived information here, this information will be used by the build and pushing scripts
 	return imageBuild, nil

@@ -1907,6 +1907,9 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
     do
       IMAGE_TAG="${IMAGE_TAG:-latest}"
+      if [ "$(featureFlag USE_BUILD_AS_IMAGE_TAG | tr '[:upper:]' '[:lower:]')" = enabled ]; then
+        IMAGE_TAG="${LAGOON_BUILD_NAME}"
+      fi
       IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
       insightsOutput=$(. /kubectl-build-deploy/scripts/exec-generate-insights-configmap.sh 2>&1)
       if (exit $?); then

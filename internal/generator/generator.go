@@ -310,6 +310,12 @@ func NewGenerator(
 	}
 
 	// feature to enable pod antiaffinity on deployments
+	useBuildAsImageTag := CheckFeatureFlag("USE_BUILD_AS_IMAGE_TAG", buildValues.EnvironmentVariables, false)
+	if useBuildAsImageTag == "enabled" {
+		buildValues.UseBuildAsImageTag = true
+	}
+
+	// feature to enable pod antiaffinity on deployments
 	podSpreadConstraints := CheckFeatureFlag("POD_SPREADCONSTRAINTS", buildValues.EnvironmentVariables, false)
 	if podSpreadConstraints == "enabled" {
 		buildValues.PodSpreadConstraints = true
