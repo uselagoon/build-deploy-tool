@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/alessio/shellescape"
+	"al.essio.dev/pkg/shellescape"
 	composetypes "github.com/compose-spec/compose-go/types"
 	"github.com/uselagoon/build-deploy-tool/internal/helpers"
 	"github.com/uselagoon/build-deploy-tool/internal/lagoon"
