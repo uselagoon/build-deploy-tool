@@ -98,6 +98,11 @@ type BuildValues struct {
 	EnableTraefikMiddleware       bool                              `json:"enableTraefikMiddleware" description:"flag to enable creation of traefik related resources"`
 	TraefikMiddlewares            map[string]traefik.MiddlewareSpec `json:"traefikMiddlewares" description:"which traefik middlewares need to be created"`
 	TraefikXLagoonDisabled        map[string]bool                   `json:"traefikXLagoonDisabled" description:"temporary method for disabling x-lagoon header when using traefik"`
+	Features                      Features                          `json:"features,omitempty"`
+}
+
+type Features struct {
+	ExternalLoadBalancer bool `json:"externalLoadBalancer"`
 }
 
 type Resources struct {
@@ -217,6 +222,7 @@ type ServiceValues struct {
 	AdditionalVolumes                      []ServiceVolume         `json:"additionalVolumes,omitempty"`
 	CreateDefaultVolume                    bool                    `json:"createDefaultVolume"`
 	ExternalServiceName                    string                  `json:"externalServiceName,omitempty"`
+	ExternalLoadBalancer                   bool                    `json:"externalLoadBalancer,omitempty"`
 }
 
 type ExternalService struct {
