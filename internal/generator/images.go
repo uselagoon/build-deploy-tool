@@ -102,7 +102,8 @@ func generateImageBuild(buildValues BuildValues, composeServiceValues composetyp
 		}
 	}
 	imageTag := "latest"
-	if buildValues.UseBuildAsImageTag {
+	// dont change the tag for promote workflows
+	if buildValues.UseBuildAsImageTag && buildValues.BuildType != "promote" {
 		imageTag = buildValues.BuildName
 	}
 	// since we know what the final build image will be, we can set it here, this is what all images will be built as during the build

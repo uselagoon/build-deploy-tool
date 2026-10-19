@@ -1907,7 +1907,8 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
     for IMAGE_NAME in "${!IMAGES_BUILD[@]}"
     do
       IMAGE_TAG="${IMAGE_TAG:-latest}"
-      if [ "$(featureFlag USE_BUILD_AS_IMAGE_TAG | tr '[:upper:]' '[:lower:]')" = enabled ]; then
+      # dont change the tag for promote workflows
+      if [ "$(featureFlag USE_BUILD_AS_IMAGE_TAG | tr '[:upper:]' '[:lower:]')" = enabled ] && [ "$BUILD_TYPE" != "promote" ]; then
         IMAGE_TAG="${LAGOON_BUILD_NAME}"
       fi
       IMAGE_FULL="${REGISTRY}/${PROJECT}/${ENVIRONMENT}/${IMAGE_NAME}:${IMAGE_TAG}"
