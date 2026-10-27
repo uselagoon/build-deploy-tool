@@ -98,6 +98,7 @@ type BuildValues struct {
 	EnableTraefikMiddleware       bool                              `json:"enableTraefikMiddleware" description:"flag to enable creation of traefik related resources"`
 	TraefikMiddlewares            map[string]traefik.MiddlewareSpec `json:"traefikMiddlewares" description:"which traefik middlewares need to be created"`
 	TraefikXLagoonDisabled        map[string]bool                   `json:"traefikXLagoonDisabled" description:"temporary method for disabling x-lagoon header when using traefik"`
+	UseBuildAsImageTag            bool                              `json:"useBuildAsImageTag"`
 }
 
 type Resources struct {
