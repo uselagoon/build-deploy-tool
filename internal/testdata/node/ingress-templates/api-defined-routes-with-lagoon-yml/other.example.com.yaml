@@ -10,6 +10,7 @@ metadata:
     lagoon.sh/branch: main
     lagoon.sh/version: v2.7.x
     monitor.stakater.com/enabled: "false"
+    monitor.stakater.com/overridePath: /
     nginx.ingress.kubernetes.io/ssl-redirect: "true"
   labels:
     activestandby.lagoon.sh/migrate: "false"

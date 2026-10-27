@@ -396,6 +396,11 @@ func handleAPIRoute(defaultIngressClass string, apiRoute RouteV2) (RouteV2, erro
 	} else {
 		routeAdd.IngressClass = defaultIngressClass
 	}
+	if apiRoute.MonitoringPath != "" {
+		routeAdd.MonitoringPath = apiRoute.MonitoringPath
+	} else {
+		routeAdd.MonitoringPath = defaultMonitoringPath
+	}
 
 	// if the route comes through as an active or standby route from the api
 	// handle setting the migrate flag on the route
