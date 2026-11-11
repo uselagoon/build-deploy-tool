@@ -273,6 +273,11 @@ func GenerateIngressTemplate(
 		additionalAnnotations["acme.cert-manager.io/http01-ingress-class"] = route.IngressClass
 	}
 
+	// add cluster-issuer if one is attached to the route
+	if route.CertIssuer != "" {
+		additionalAnnotations["cert-manager.io/cluster-issuer"] = route.CertIssuer
+	}
+
 	// add any annotations that the route had to overwrite any previous annotations
 	// add any additional labels
 	for key, value := range additionalLabels {
