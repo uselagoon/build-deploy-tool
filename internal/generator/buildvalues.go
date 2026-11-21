@@ -53,6 +53,7 @@ type BuildValues struct {
 	DBaaSEnvironmentTypeOverrides *lagoon.EnvironmentVariable       `json:"dbaasEnvironmentTypeOverrides" description:"stores any dbaas type overrides"`
 	DBaaSFallbackSingle           bool                              `json:"dbaasFallbackSingle" description:"the fallback flag to define if a single pod should be used if no provider is found"`
 	IngressClass                  string                            `json:"ingressClass" description:"the ingress class used for this environment"`
+	MergeApexRoutes               bool                              `json:"MergeApexRoutes" description:"flag to enable merging an apex domain and its www counterpart into a single ingress via alternativeNames where it is safe to do so"`
 	TaskScaleMaxIterations        int                               `json:"taskScaleMaxIterations" description:"the number of attempts to wait for pods to scale for pre and post rollout tasks"`
 	TaskScaleWaitTime             int                               `json:"taskScaleWaitTime" description:"the time to wait for pods to scale for pre and post rollout tasks"`
 	DynamicSecretMounts           []DynamicSecretMounts             `json:"dynamicSecretMounts" description:"stores any dynamic secret mount definitions"`
