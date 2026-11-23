@@ -476,6 +476,24 @@ func TestTemplateRoutes(t *testing.T) {
 				}, true),
 			want: "internal/testdata/node/ingress-templates/api-defined-routes-with-lagoon-yml-fastly",
 		},
+		{
+			name: "multidomain-merge-apex-routes",
+			args: testdata.GetSeedData(
+				testdata.TestData{
+					ProjectName:     "example-project",
+					EnvironmentName: "twootherroutes",
+					Branch:          "twootherroutes",
+					LagoonYAML:      "internal/testdata/node/lagoon.yml",
+					ProjectVariables: []lagoon.EnvironmentVariable{
+						{
+							Name:  "LAGOON_FEATURE_FLAG_ROUTE_MERGE_APEX",
+							Value: "enabled",
+							Scope: "build",
+						},
+					},
+				}, true),
+			want: "internal/testdata/node/ingress-templates/multidomain-merge-apex-routes",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

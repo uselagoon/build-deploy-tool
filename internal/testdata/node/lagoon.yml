@@ -26,6 +26,22 @@ environments:
           - example.com
           - www.example.com
 
+  twootherroutes:
+    routes:
+      - node:
+          - example.com
+          - example2.com:
+              alternativenames:
+                - en.example2.com
+                - www.example2.com
+          - www.example.com
+          - www.example3.com
+          - www.example4.com:
+              alternativenames:
+                - example4.com
+                - en.example4.com
+          - example3.com
+
   branch/routes:
     routes:
       - node:
