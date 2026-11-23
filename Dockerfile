@@ -3,12 +3,18 @@ ARG UPSTREAM_TAG
 ARG GO_VER
 FROM ${UPSTREAM_REPO:-uselagoon}/commons:${UPSTREAM_TAG:-latest} AS commons
 
-FROM golang:${GO_VER:-1.26}-alpine3.23 AS golang
+FROM --platform=$BUILDPLATFORM golang:${GO_VER:-1.26}-alpine3.23 AS golang
+
+ARG TARGETOS
+ARG TARGETARCH
 
 RUN apk add --no-cache git
 # renovate: datasource=github-releases depName=a8m/envsubst
 ENV ENVSUBST_VERSION=v1.4.3
-RUN go install github.com/a8m/envsubst/cmd/envsubst@${ENVSUBST_VERSION}
+RUN mkdir /envsubst-src && cd /envsubst-src \
+    && go mod init envsubst-build \
+    && go get github.com/a8m/envsubst/cmd/envsubst@${ENVSUBST_VERSION} \
+    && CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build -o /out/envsubst github.com/a8m/envsubst/cmd/envsubst
 
 WORKDIR /app
 
@@ -22,7 +28,7 @@ COPY third_party/ third_party/
 
 ARG BUILD
 ARG GO_VER
-ARG VERSION 
+ARG VERSION
 ENV BUILD=${BUILD} \
     GO_VER=${GO_VER} \
     VERSION=${VERSION}
@@ -33,7 +39,7 @@ RUN --mount=type=cache,target=/go/pkg/mod \
 # Do not force rebuild of up-to-date packages (do not use -a) and use the compiler cache folder
 RUN --mount=type=cache,target=/root/.cache/go-build \
     --mount=type=cache,target=/go/pkg/mod \
-    CGO_ENABLED=0 GOOS=linux GOARCH=${ARCH} go build \
+    CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -ldflags="-s -w \
     -X github.com/uselagoon/build-deploy-tool/cmd.bdtBuild=${BUILD} \
     -X github.com/uselagoon/build-deploy-tool/cmd.goVersion=${GO_VER} \
@@ -51,7 +57,7 @@ LABEL org.opencontainers.image.source="https://github.com/uselagoon/build-deploy
 
 ENV LAGOON=build-deploy-image
 
-COPY --from=golang /go/bin/envsubst /bin/envsubst
+COPY --from=golang /out/envsubst /bin/envsubst
 
 ARG LAGOON_VERSION
 ENV LAGOON_VERSION=$LAGOON_VERSION
@@ -84,9 +90,8 @@ ENV YQ_VERSION=v4.52.5
 ENV LAGOON_LINTER_VERSION=v0.8.0
 
 RUN apk upgrade --no-cache \
-    && apk add --no-cache openssl curl jq parallel bash git py-pip skopeo \
-    && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon \
-    && pip install --break-system-packages yq
+    && apk add --no-cache openssl curl jq parallel bash git skopeo \
+    && git config --global user.email "lagoon@lagoon.io" && git config --global user.name lagoon
 
 RUN architecture=$(case $(uname -m) in x86_64 | amd64) echo "amd64" ;; aarch64 | arm64 | armv8) echo "arm64" ;; *) echo "amd64" ;; esac) \
     && curl -Lo /usr/bin/kubectl https://dl.k8s.io/release/$KUBECTL_VERSION/bin/linux/${architecture}/kubectl \
