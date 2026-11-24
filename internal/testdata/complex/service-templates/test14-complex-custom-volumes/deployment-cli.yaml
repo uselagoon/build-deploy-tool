@@ -88,13 +88,13 @@ spec:
       - name: lagoon-internal-registry-secret
       priorityClassName: lagoon-priority-production
       volumes:
-      - name: custom-files
-        persistentVolumeClaim:
-          claimName: custom-files
       - name: lagoon-sshkey
         secret:
           defaultMode: 420
           secretName: lagoon-sshkey
+      - name: custom-files
+        persistentVolumeClaim:
+          claimName: custom-files
       - emptyDir: {}
         name: nginx-twig
       - name: nginx
