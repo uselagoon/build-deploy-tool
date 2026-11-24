@@ -817,7 +817,7 @@ if [ "${LAGOON_VARIABLES_ONLY}" != "true" ]; then
         # this also captures any errors that this command will encounter so that the process can then check the output file to see if the
         # error condition we are looking for is there
         set +e
-        (docker build --pull --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_TARGET_ARGS $BUILD_CONTEXT 2>&1 | tee /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME; exit ${PIPESTATUS[0]})
+        (docker build --network=host "${BUILD_ARGS[@]}" -t $TEMPORARY_IMAGE_NAME -f $BUILD_CONTEXT/$DOCKERFILE $BUILD_TARGET_ARGS $BUILD_CONTEXT 2>&1 | tee /kubectl-build-deploy/log-$TEMPORARY_IMAGE_NAME; exit ${PIPESTATUS[0]})
         buildExit=$?
         set -e
         if [ "${buildExit}" != "0" ]; then
